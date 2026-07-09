@@ -18,6 +18,12 @@
  *     slashCommands: [ { label, icon, keywords, run } ] | undefined  // for a type offering several commands
  *                                 // at once (e.g. emoji: one entry per emoji, all sharing an "emoji" keyword)
  *                                 // — mirrors BlockRegistry's own singular/plural split.
+ *     atCommand / atCommands,     // same shape as slashCommand/slashCommands, listed under useAtMenuTrigger's
+ *                                 // "@" trigger instead of (or in addition to) "/" — e.g. createSelectFieldType's
+ *                                 // `triggers` option decides which of these two lists a given field type joins.
+ *                                 // A command object itself doesn't care which character triggered it (`run`
+ *                                 // only consumes {blockId, runId, sliceStart, sliceEnd}), so the very same
+ *                                 // object can be — and typically is — assigned to both slashCommand and atCommand.
  *   }
  *
  * A plain `type: 'text'` run is handled directly by RunNode and never goes
@@ -30,6 +36,11 @@ export class InlineRegistry {
 
   register(type, entry) {
     this._types.set(type, entry);
+  }
+
+  /** Drops a registered type — e.g. deleting a user-created custom field type. */
+  unregister(type) {
+    this._types.delete(type);
   }
 
   get(type) {
@@ -45,6 +56,16 @@ export class InlineRegistry {
     for (const entry of this._types.values()) {
       if (entry.slashCommand) commands.push(entry.slashCommand);
       if (entry.slashCommands) commands.push(...entry.slashCommands);
+    }
+    return commands;
+  }
+
+  /** Same shape as listSlashCommands, sourced from atCommand/atCommands instead — see useAtMenuTrigger. */
+  listAtCommands() {
+    const commands = [];
+    for (const entry of this._types.values()) {
+      if (entry.atCommand) commands.push(entry.atCommand);
+      if (entry.atCommands) commands.push(...entry.atCommands);
     }
     return commands;
   }

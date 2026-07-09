@@ -30,7 +30,7 @@ function matchesQuery(option, query) {
  * `document.body` — same as SlashMenu/FloatingToolbar, which are also
  * mounted as siblings of the contentEditable tree, never nested inside it.
  * Several call sites mount this *trigger* deep inside an atomic
- * contentEditable=false inline chip (select/mention/table-select), which
+ * contentEditable=false inline chip (select/table-select/custom field type), which
  * itself lives inside a contentEditable=true paragraph. A real, focusable
  * `<input>` — unlike a native `<select>`'s own OS-level dropdown, which
  * never actually hands page focus to anything — left nested that deep
@@ -49,12 +49,45 @@ function matchesQuery(option, query) {
  * each option for this (see blocks/table/tagColors.js); the trigger itself
  * loses its border/background/chevron chrome entirely in this mode — just
  * the pill (or the placeholder, if nothing's chosen yet) is clickable.
+ *
+ * `options` may also be a function `(query) => Option[] | Promise<Option[]>`
+ * instead of a plain array — this is how custom field types (see
+ * createSelectFieldType) support DB/API-backed option sources (react-
+ * select's `loadOptions`, essentially) alongside plain static lists,
+ * through the exact same component and contract. When `options` is a
+ * function it's called fresh on every query change (debounced ~250ms so
+ * fast typing doesn't fire one request per keystroke) — deliberately no
+ * caching layer here, so the host's own resolver is always the source of
+ * truth for a given query; any caching is that function's own concern.
+ * Static array callers are entirely unaffected: filtering there stays
+ * synchronous and instant, exactly as before.
+ *
+ * Since a dynamic resolver's currently-loaded page may not contain the
+ * option matching the CURRENT value (it was picked under a different
+ * query, or came from elsewhere), pass `selectedLabel` to control what the
+ * trigger displays for the current value directly, instead of relying on
+ * an `options.find(...)` lookup that only works for static arrays.
  */
-export function Select({ value, options, onChange, placeholder = 'Select…', ariaLabel, className = '', variant = 'default' }) {
+export function Select({
+  value,
+  options,
+  onChange,
+  placeholder = 'Select…',
+  ariaLabel,
+  className = '',
+  variant = 'default',
+  selectedLabel,
+  selectedColor,
+  onManageOptions,
+  manageOptionsLabel = 'Manage options…',
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [rect, setRect] = useState(null);
+  const [asyncOptions, setAsyncOptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const rootRef = useRef(null);
   const buttonRef = useRef(null);
   const popoverRef = useRef(null);
@@ -62,9 +95,45 @@ export function Select({ value, options, onChange, placeholder = 'Select…', ar
   const activeOptionRef = useRef(null);
   const outsideRefs = useMemo(() => [rootRef, popoverRef], []);
   const isTag = variant === 'tag';
+  const isDynamic = typeof options === 'function';
 
-  const selected = options.find((o) => o.value === value);
-  const filtered = useMemo(() => options.filter((o) => matchesQuery(o, query)), [options, query]);
+  const staticSelected = !isDynamic ? options.find((o) => o.value === value) : undefined;
+  const selected = value
+    ? (staticSelected ?? (selectedLabel ? { value, label: selectedLabel, color: selectedColor } : undefined))
+    : undefined;
+
+  const filtered = useMemo(
+    () => (isDynamic ? asyncOptions : options.filter((o) => matchesQuery(o, query))),
+    [isDynamic, asyncOptions, options, query],
+  );
+
+  // Dynamic resolvers already do their own query-based filtering (a DB
+  // search, typically) — refetch on every query change while the popover
+  // is open, debounced so a fast typist doesn't fire one call per keystroke.
+  useEffect(() => {
+    if (!isDynamic || !isOpen) return undefined;
+    let cancelled = false;
+    setIsLoading(true);
+    setLoadError(false);
+    const timer = setTimeout(() => {
+      Promise.resolve(options(query))
+        .then((result) => {
+          if (cancelled) return;
+          setAsyncOptions(result ?? []);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setAsyncOptions([]);
+          setIsLoading(false);
+          setLoadError(true);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isDynamic, isOpen, options, query]);
 
   const close = useCallback(() => setIsOpen(false), []);
 
@@ -166,32 +235,49 @@ export function Select({ value, options, onChange, placeholder = 'Select…', ar
               aria-label={ariaLabel ? `Search ${ariaLabel}` : 'Search options'}
             />
             <div className="be-select-options" role="listbox">
-              {filtered.length === 0 && <div className="be-select-empty">No results</div>}
-              {filtered.map((option, i) => (
-                <div
-                  key={option.value}
-                  ref={i === activeIndex ? activeOptionRef : undefined}
-                  role="option"
-                  aria-selected={option.value === value}
-                  className={`be-select-option${i === activeIndex ? ' be-select-option-active' : ''}${
-                    option.value === value ? ' be-select-option-selected' : ''
-                  }`}
-                  onMouseDown={(event) => {
-                    event.preventDefault(); // keep focus in the search input until a real selection commits
-                    selectOption(option);
-                  }}
-                  onMouseEnter={() => setActiveIndex(i)}
-                >
-                  {isTag ? (
-                    <span className="be-select-tag" style={{ background: option.color?.bg, color: option.color?.text }}>
-                      {option.label}
-                    </span>
-                  ) : (
-                    option.label
-                  )}
-                </div>
-              ))}
+              {isDynamic && isLoading && <div className="be-select-empty">Loading…</div>}
+              {isDynamic && !isLoading && loadError && <div className="be-select-empty be-select-error">Couldn't load options</div>}
+              {!isLoading && !loadError && filtered.length === 0 && <div className="be-select-empty">No results</div>}
+              {!isLoading &&
+                !loadError &&
+                filtered.map((option, i) => (
+                  <div
+                    key={option.value}
+                    ref={i === activeIndex ? activeOptionRef : undefined}
+                    role="option"
+                    aria-selected={option.value === value}
+                    className={`be-select-option${i === activeIndex ? ' be-select-option-active' : ''}${
+                      option.value === value ? ' be-select-option-selected' : ''
+                    }`}
+                    onMouseDown={(event) => {
+                      event.preventDefault(); // keep focus in the search input until a real selection commits
+                      selectOption(option);
+                    }}
+                    onMouseEnter={() => setActiveIndex(i)}
+                  >
+                    {isTag ? (
+                      <span className="be-select-tag" style={{ background: option.color?.bg, color: option.color?.text }}>
+                        {option.label}
+                      </span>
+                    ) : (
+                      option.label
+                    )}
+                  </div>
+                ))}
             </div>
+            {onManageOptions && (
+              <button
+                type="button"
+                className="be-select-manage-options"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  close();
+                  onManageOptions();
+                }}
+              >
+                {manageOptionsLabel}
+              </button>
+            )}
           </div>,
           document.body,
         )}

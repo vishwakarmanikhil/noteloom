@@ -31,6 +31,18 @@ export function EditorProvider({ store, registry, inlineRegistry = null, history
   // whoever's still writing it.
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
+  // Ephemeral "which custom field type is the create/edit modal open for"
+  // state — null (closed), the string 'new' (create flow), or an existing
+  // fieldTypes id (edit flow). See useFieldTypeEditor + FieldTypeEditorModal
+  // (inlineTypes/customSelect): kept here, not in that module, so this core
+  // file never has to import anything from a concrete inline type — the
+  // modal itself is host-mounted (same pattern as EditorTrailingSpace),
+  // reading this shared open/closed target via the hook below.
+  const [fieldTypeEditorTarget, setFieldTypeEditorTarget] = useState(null);
+  const openCreateFieldType = useCallback(() => setFieldTypeEditorTarget('new'), []);
+  const openEditFieldType = useCallback((id) => setFieldTypeEditorTarget(id), []);
+  const closeFieldTypeEditor = useCallback(() => setFieldTypeEditorTarget(null), []);
+
   // A single non-editable/contentless block (image, divider, etc.) that's
   // "selected" pending a second Backspace/Delete to actually remove it —
   // matching Notion/TipTap's convention for atomic nodes: the first press
@@ -69,6 +81,10 @@ export function EditorProvider({ store, registry, inlineRegistry = null, history
       setSelectedBlockId,
       isPreviewMode,
       setIsPreviewMode,
+      fieldTypeEditorTarget,
+      openCreateFieldType,
+      openEditFieldType,
+      closeFieldTypeEditor,
     }),
     [
       store,
@@ -79,6 +95,10 @@ export function EditorProvider({ store, registry, inlineRegistry = null, history
       getSelectedBlockId,
       setSelectedBlockId,
       isPreviewMode,
+      fieldTypeEditorTarget,
+      openCreateFieldType,
+      openEditFieldType,
+      closeFieldTypeEditor,
     ],
   );
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
@@ -147,4 +167,25 @@ export function useSelectedBlock() {
 export function usePreviewMode() {
   const { isPreviewMode, setIsPreviewMode } = useEditorContext();
   return [isPreviewMode, setIsPreviewMode];
+}
+
+/**
+ * `{ target, openCreate, openEdit, close }` — shared open/closed state for
+ * the custom field type create/edit modal (see
+ * inlineTypes/customSelect/FieldTypeEditorModal.jsx). `target` is `null`
+ * when closed, `'new'` while creating, or an existing fieldTypes id while
+ * editing one. A host app renders `<FieldTypeEditorModal />` once anywhere
+ * under the provider (it reads this hook itself) and wires its own "+ New
+ * field type" button to `openCreate()`; a field type's own chips call
+ * `openEdit(id)` from their "Manage options…" popover entry (see
+ * createSelectFieldType's `onManage`).
+ */
+export function useFieldTypeEditor() {
+  const { fieldTypeEditorTarget, openCreateFieldType, openEditFieldType, closeFieldTypeEditor } = useEditorContext();
+  return {
+    target: fieldTypeEditorTarget,
+    openCreate: openCreateFieldType,
+    openEdit: openEditFieldType,
+    close: closeFieldTypeEditor,
+  };
 }

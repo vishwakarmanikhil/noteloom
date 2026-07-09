@@ -15,8 +15,9 @@ import { Select } from '../../react/Select.jsx';
  * Renders the shared searchable `Select` combobox — no inline add/remove-
  * option UI. A chip inserted via the `/select` command starts with an empty
  * options list (see index.js's slashCommand); populating/editing that list
- * is left to a host app's own options-source integration (same as
- * mention's roster), to be revisited later.
+ * is left to a host app's own options-source integration (see
+ * createSelectFieldType for a full, named/reusable version of that idea),
+ * to be revisited later.
  */
 export function SelectInlineNode({ id }) {
   const store = useEditorStore();

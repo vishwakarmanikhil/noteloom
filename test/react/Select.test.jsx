@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, fireEvent, act } from '@testing-library/react';
 import { Select } from '../../src/react/Select.jsx';
 
 const OPTIONS = [
@@ -200,5 +200,116 @@ describe('Select: keeps the active option in view while navigating with arrow ke
     } finally {
       Element.prototype.scrollIntoView = originalScrollIntoView;
     }
+  });
+});
+
+describe('Select: options as a function (dynamic/DB-backed source)', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('calls the resolver (debounced) once the popover opens and renders what it resolves to', async () => {
+    const resolver = vi.fn().mockResolvedValue([{ value: 'x', label: 'Dynamic One' }]);
+    const { container } = render(<Select value="" options={resolver} onChange={() => {}} />);
+
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+    expect(document.querySelector('.be-select-empty').textContent).toBe('Loading…');
+    expect(resolver).not.toHaveBeenCalled(); // debounced, not called immediately
+
+    await act(async () => {
+      vi.advanceTimersByTime(250);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(resolver).toHaveBeenCalledWith('');
+    expect(document.querySelectorAll('.be-select-option')).toHaveLength(1);
+    expect(document.querySelector('.be-select-option').textContent).toBe('Dynamic One');
+  });
+
+  it('debounces so fast typing only triggers one call for the final query', async () => {
+    const resolver = vi.fn().mockResolvedValue([]);
+    const { container } = render(<Select value="" options={resolver} onChange={() => {}} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+
+    await act(async () => {
+      vi.advanceTimersByTime(250);
+      await Promise.resolve();
+    });
+    resolver.mockClear();
+
+    const search = document.querySelector('.be-select-search');
+    fireEvent.change(search, { target: { value: 'a' } });
+    vi.advanceTimersByTime(100);
+    fireEvent.change(search, { target: { value: 'al' } });
+    vi.advanceTimersByTime(100);
+    fireEvent.change(search, { target: { value: 'ali' } });
+
+    await act(async () => {
+      vi.advanceTimersByTime(250);
+      await Promise.resolve();
+    });
+
+    expect(resolver).toHaveBeenCalledTimes(1);
+    expect(resolver).toHaveBeenCalledWith('ali');
+  });
+
+  it('shows an error state when the resolver rejects, instead of crashing', async () => {
+    const resolver = vi.fn().mockRejectedValue(new Error('network down'));
+    const { container } = render(<Select value="" options={resolver} onChange={() => {}} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+
+    await act(async () => {
+      vi.advanceTimersByTime(250);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(document.querySelector('.be-select-error')).not.toBeNull();
+    expect(document.querySelectorAll('.be-select-option')).toHaveLength(0);
+  });
+
+  it('uses selectedLabel/selectedColor (not an options.find lookup) to render the current value in the trigger', () => {
+    const resolver = vi.fn().mockResolvedValue([]);
+    const { container } = render(
+      <Select
+        value="x"
+        selectedLabel="Picked Elsewhere"
+        selectedColor={{ bg: '#123456', text: '#fff' }}
+        options={resolver}
+        onChange={() => {}}
+        variant="tag"
+      />,
+    );
+    const tag = container.querySelector('.be-select-tag');
+    expect(tag.textContent).toBe('Picked Elsewhere');
+  });
+
+  it('static array options are entirely unaffected: no loading state, filters synchronously', () => {
+    const { container } = render(<Select value="" options={OPTIONS} onChange={() => {}} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+    expect(document.querySelector('.be-select-empty')).toBeNull();
+    expect(document.querySelectorAll('.be-select-option')).toHaveLength(3);
+  });
+});
+
+describe('Select: onManageOptions footer', () => {
+  it('renders a "Manage options…" entry when provided, and calls it (closing the popover) on click', () => {
+    const onManageOptions = vi.fn();
+    const { container } = render(
+      <Select value="" options={OPTIONS} onChange={() => {}} onManageOptions={onManageOptions} manageOptionsLabel="Manage…" />,
+    );
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+    const manageBtn = document.querySelector('.be-select-manage-options');
+    expect(manageBtn.textContent).toBe('Manage…');
+
+    fireEvent.mouseDown(manageBtn);
+    expect(onManageOptions).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('.be-select-popover')).toBeNull();
+  });
+
+  it('does not render the footer when onManageOptions is not given', () => {
+    const { container } = render(<Select value="" options={OPTIONS} onChange={() => {}} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+    expect(document.querySelector('.be-select-manage-options')).toBeNull();
   });
 });

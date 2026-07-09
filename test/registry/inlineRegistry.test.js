@@ -37,3 +37,34 @@ describe('InlineRegistry.listSlashCommands', () => {
     expect(registry.listSlashCommands()).toEqual([]);
   });
 });
+
+describe('InlineRegistry.listAtCommands', () => {
+  it('includes a type\'s singular atCommand, independent of slashCommand', () => {
+    const registry = createInlineRegistry();
+    registry.register('assignee', {
+      slashCommand: { label: 'Assignee (slash)', keywords: [], run: () => {} },
+      atCommand: { label: 'Assignee', keywords: [], run: () => {} },
+    });
+
+    expect(registry.listAtCommands().map((c) => c.label)).toEqual(['Assignee']);
+    expect(registry.listSlashCommands().map((c) => c.label)).toEqual(['Assignee (slash)']);
+  });
+
+  it('includes every entry in a type\'s plural atCommands array', () => {
+    const registry = createInlineRegistry();
+    registry.register('assignee', {
+      atCommands: [
+        { label: 'Alex', keywords: [], run: () => {} },
+        { label: 'Bailey', keywords: [], run: () => {} },
+      ],
+    });
+
+    expect(registry.listAtCommands().map((c) => c.label)).toEqual(['Alex', 'Bailey']);
+  });
+
+  it('a type contributing neither atCommand nor atCommands is simply skipped', () => {
+    const registry = createInlineRegistry();
+    registry.register('date', { slashCommand: { label: 'Date', keywords: [], run: () => {} } });
+    expect(registry.listAtCommands()).toEqual([]);
+  });
+});

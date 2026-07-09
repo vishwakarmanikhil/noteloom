@@ -53,7 +53,7 @@ export const tableSelectInlineType = {
   toHTML,
   toPlainText,
   fromHTML,
-  // No slashCommand: unlike select/date/mention, this type is never
+  // No slashCommand: unlike select/date/custom field types, this type is never
   // inserted ad-hoc into a paragraph — it only exists inside a table cell
   // whose column type has been set to "select" (see setColumnType).
 };

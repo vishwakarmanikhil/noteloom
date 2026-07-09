@@ -7,6 +7,9 @@ export const OP = {
   SET_BLOCK_CONTENT_IDS: 'setBlockContentIds',
   REPLACE_RUN_SPAN: 'replaceRunSpan',
   SET_BLOCK_RUNS: 'setBlockRuns',
+  ADD_FIELD_TYPE: 'addFieldType',
+  UPDATE_FIELD_TYPE: 'updateFieldType',
+  REMOVE_FIELD_TYPE: 'removeFieldType',
 };
 
 export function insertBlock(block, parentId, index, subtree) {
@@ -54,4 +57,24 @@ export function replaceRunSpan(blockId, oldRunIds, newRuns) {
  */
 export function setBlockRuns(blockId, runs) {
   return { type: OP.SET_BLOCK_RUNS, blockId, runs };
+}
+
+/**
+ * Persists a user-created custom select field type (see
+ * createSelectFieldType / registerStoredFieldTypes) — `fieldType` is
+ * `{ id, label, placeholder, variant, options: [{value,label,color?}] }`.
+ * Only ever used for STATIC, in-editor-authored types; code-registered
+ * (developer-defined, possibly dynamic/DB-backed) field types never go
+ * through the store at all.
+ */
+export function addFieldType(fieldType) {
+  return { type: OP.ADD_FIELD_TYPE, fieldType };
+}
+
+export function updateFieldType(id, patch) {
+  return { type: OP.UPDATE_FIELD_TYPE, id, patch };
+}
+
+export function removeFieldType(id) {
+  return { type: OP.REMOVE_FIELD_TYPE, id };
 }

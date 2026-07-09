@@ -58,6 +58,14 @@ export class History {
     return this.store.getRootId();
   }
 
+  getFieldTypes() {
+    return this.store.getFieldTypes();
+  }
+
+  getFieldType(id) {
+    return this.store.getFieldType(id);
+  }
+
   subscribe(id, listener) {
     return this.store.subscribe(id, listener);
   }

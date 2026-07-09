@@ -338,7 +338,7 @@ function findAdjacentContentlessSiblingId(store, blockId, direction) {
  * containing leaf block — a paragraph, or a table cell) down to atomic
  * components — runs themselves have no parent back-reference in the store,
  * so this is the only place that can hand it to them. Most inline types
- * ignore it (select/date/mention are self-contained); it exists for types
+ * ignore it (select/date/custom field types are self-contained); it exists for types
  * like a table's select column that need to resolve their own containing
  * cell/row/table to read shared, column-level state.
  */

@@ -1,6 +1,6 @@
 /**
  * True when `run` contributes no real content: absent, or a text run whose
- * value is ''. An atomic (non-text) run — a date/select/checkbox/mention
+ * value is ''. An atomic (non-text) run — a date/select/checkbox/custom-field
  * chip — is never blank even without a "value", since there's a real chip
  * sitting there for the user to see/interact with.
  */

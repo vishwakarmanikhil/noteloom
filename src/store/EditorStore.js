@@ -8,7 +8,13 @@ import {
   setBlockContentIds,
   replaceRunSpan,
   setBlockRuns,
+  addFieldType,
+  updateFieldType,
+  removeFieldType,
 } from './operations.js';
+
+/** Sentinel subscribe/notify key for "the fieldTypes collection changed" — see useFieldTypes. */
+const FIELD_TYPES_KEY = '$fieldTypes';
 
 /**
  * Flat, normalized document store with per-id pub-sub.
@@ -29,6 +35,8 @@ export class EditorStore {
     this.blocks = new Map((doc?.blocks ?? []).map((b) => [b.id, b]));
     this.runs = new Map((doc?.runs ?? []).map((r) => [r.id, r]));
     this.rootId = doc?.rootId ?? null;
+    this.fieldTypes = new Map((doc?.fieldTypes ?? []).map((f) => [f.id, f]));
+    this._fieldTypesSnapshot = null; // invalidated (set to null) on every fieldTypes mutation — see getFieldTypes
     this._listeners = new Map(); // id -> Set<() => void>
   }
 
@@ -38,6 +46,22 @@ export class EditorStore {
 
   getRun(id) {
     return this.runs.get(id);
+  }
+
+  /**
+   * Persisted, user-created custom select field types (static only) —
+   * insertion order. Returns the SAME array reference across calls unless
+   * a fieldTypes op ran in between — required for useSyncExternalStore
+   * (see useFieldTypes), same reference-stability contract as
+   * getBlock/getRun.
+   */
+  getFieldTypes() {
+    if (!this._fieldTypesSnapshot) this._fieldTypesSnapshot = [...this.fieldTypes.values()];
+    return this._fieldTypesSnapshot;
+  }
+
+  getFieldType(id) {
+    return this.fieldTypes.get(id);
   }
 
   getRootId() {
@@ -240,6 +264,31 @@ export class EditorStore {
         return setBlockRuns(op.blockId, previousRuns);
       }
 
+      case OP.ADD_FIELD_TYPE: {
+        this.fieldTypes.set(op.fieldType.id, op.fieldType);
+        this._fieldTypesSnapshot = null;
+        this._notify([FIELD_TYPES_KEY]);
+        return removeFieldType(op.fieldType.id);
+      }
+
+      case OP.UPDATE_FIELD_TYPE: {
+        const existing = this.fieldTypes.get(op.id);
+        const previousPatch = {};
+        for (const key of Object.keys(op.patch)) previousPatch[key] = existing[key];
+        this.fieldTypes.set(op.id, { ...existing, ...op.patch });
+        this._fieldTypesSnapshot = null;
+        this._notify([FIELD_TYPES_KEY]);
+        return updateFieldType(op.id, previousPatch);
+      }
+
+      case OP.REMOVE_FIELD_TYPE: {
+        const existing = this.fieldTypes.get(op.id);
+        this.fieldTypes.delete(op.id);
+        this._fieldTypesSnapshot = null;
+        this._notify([FIELD_TYPES_KEY]);
+        return addFieldType(existing);
+      }
+
       default:
         throw new Error(`Unknown operation type: ${op.type}`);
     }
@@ -255,6 +304,7 @@ export class EditorStore {
       blocks: [...this.blocks.values()],
       runs: [...this.runs.values()],
       rootId: this.rootId,
+      fieldTypes: [...this.fieldTypes.values()],
     };
   }
 

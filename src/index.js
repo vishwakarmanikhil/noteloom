@@ -15,8 +15,10 @@ export {
   useWholeDocumentSelection,
   useSelectedBlock,
   usePreviewMode,
+  useFieldTypeEditor,
 } from './react/EditorProvider.jsx';
 export { useBlock, useRun } from './react/useBlock.js';
+export { useFieldTypes } from './react/useFieldTypes.js';
 export { useHistory } from './react/useHistory.js';
 export { useBlockChildren } from './react/useBlockChildren.js';
 export { useClipboardHandlers } from './react/useClipboardHandlers.js';
@@ -38,6 +40,7 @@ export { walkDomToBlocks, textToParagraphs } from './clipboard/domWalk.js';
 export { SlashMenu } from './commands/SlashMenu.jsx';
 export { useSlashMenuTrigger } from './commands/useSlashMenuTrigger.js';
 export { useEmojiMenuTrigger } from './commands/useEmojiMenuTrigger.js';
+export { useAtMenuTrigger } from './commands/useAtMenuTrigger.js';
 export { FloatingToolbar } from './commands/FloatingToolbar.jsx';
 export { useFloatingToolbarTrigger } from './commands/useFloatingToolbarTrigger.js';
 
@@ -79,3 +82,8 @@ export { isEntireBlockSelected } from './react/selectAllCommand.js';
 export { focusRunEnd, focusRunStart, focusRunAtOffset } from './react/focusRun.js';
 export { ensureRootNonEmpty } from './blocks/shared/ensureRootNonEmpty.js';
 export { duplicateBlock, moveBlockUp, moveBlockDown, deleteBlockAndFocusSibling } from './blocks/shared/blockActions.js';
+
+export { createSelectFieldType } from './inlineTypes/customSelect/createSelectFieldType.jsx';
+export { registerStoredFieldTypes } from './inlineTypes/customSelect/registerStoredFieldTypes.js';
+export { useRegisterFieldTypes } from './inlineTypes/customSelect/useRegisterFieldTypes.js';
+export { FieldTypeEditorModal } from './inlineTypes/customSelect/FieldTypeEditorModal.jsx';

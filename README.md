@@ -86,7 +86,9 @@ Note: this package ships **no default CSS** — style the block class names (`.b
 
 ## Built-in inline types
 
-Atomic, non-text content that can be spliced into running text via the slash menu at any cursor position — `select` (with in-editor add/remove-option UI), `date` (native `<input type="date">`), `mention` (`@name`, backed by a fixed demo roster — swap it for your own directory in a real app).
+Atomic, non-text content that can be spliced into running text via the slash menu at any cursor position — `select` (with in-editor add/remove-option UI), `date` (native `<input type="date">`).
+
+There's no separate hardcoded `mention` type — an `@name` chip is just an ordinary use of `createSelectFieldType`, with `triggers: ['slash', 'at']` so it also shows up under a second, dedicated "@" trigger (`useAtMenuTrigger`), alongside "/". Point its `options` at your own people/roster search (a plain array, or `(query) => Promise<Option[]>` for a real API/DB lookup) — see the example app's "Assignee" field type. Custom field types can also be created entirely in-editor via the "+ Field type" UI (`FieldTypeEditorModal`), which persists them in the document so they survive reload.
 
 ## Registering your own block/inline types
 
@@ -114,5 +116,5 @@ npm run build   # library build (dist/, ESM + CJS)
 
 - No accessibility affordance exists for grouping sibling list items under a shared `role="list"` container (each list item is an independent block, not wrapped in one) — adding `role="listitem"` without that ancestor would be worse than no role at all, so it's deliberately left out pending a bigger structural change.
 - Cross-block mark toggling (bold/italic/underline over a selection spanning multiple blocks) applies as one store operation per block, not a single atomic undo step.
-- `mention`'s roster and `select`'s option-adding UI are both meant as a starting point — a real app will want to wire its own people/options source.
+- `select`'s option-adding UI and any `createSelectFieldType`-based type's options (e.g. an "Assignee" @-mention) are meant as a starting point — a real app will want to wire its own people/options source.
 - Automated tests run under jsdom; there is no automated real-browser test suite. If you hit an edge case jsdom can't reproduce (anything involving actual native `contentEditable` browser quirks), please file an issue with the exact browser/OS and steps.
