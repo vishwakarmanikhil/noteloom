@@ -214,7 +214,7 @@ describe('EditableBlockContent: atomic inline runs', () => {
 
     expect(chip).not.toBeNull();
     expect(chip.getAttribute('contenteditable')).toBe('false');
-    expect(chip.querySelector('select')).not.toBeNull();
+    expect(chip.querySelector('.be-select-trigger')).not.toBeNull();
   });
 });
 

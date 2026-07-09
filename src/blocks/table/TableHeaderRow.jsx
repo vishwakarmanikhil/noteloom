@@ -4,8 +4,10 @@ import { insertColumnAfter, deleteColumn, renameColumn, setColumnType, setColumn
 import { COLUMN_TYPES } from './tableColumns.js';
 import { genId } from '../../utils/idGen.js';
 import { XIcon } from '../../react/icons.jsx';
+import { Select } from '../../react/Select.jsx';
 
 const TYPE_LABELS = { text: 'Text', date: 'Date', checkbox: 'Checkbox', select: 'Select' };
+const TYPE_OPTIONS = COLUMN_TYPES.map((type) => ({ value: type, label: TYPE_LABELS[type] }));
 
 /**
  * Manages a "select" column's shared option list (add/rename/remove) —
@@ -129,7 +131,7 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
     setIsMenuOpen(false);
   }, [store, tableId, colIndex]);
   const handleTypeChange = useCallback(
-    (event) => setColumnType(store, tableId, colIndex, event.target.value, inlineRegistry),
+    (type) => setColumnType(store, tableId, colIndex, type, inlineRegistry),
     [store, tableId, colIndex, inlineRegistry],
   );
 
@@ -154,14 +156,14 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
       {isMenuOpen && (
         <div ref={menuRef} role="menu" className="be-table-header-menu">
           <div className="be-table-header-menu-type">
-            <label htmlFor={`be-table-col-type-${column.id}`}>Type</label>
-            <select id={`be-table-col-type-${column.id}`} value={column.type} onChange={handleTypeChange}>
-              {COLUMN_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {TYPE_LABELS[type]}
-                </option>
-              ))}
-            </select>
+            <span id={`be-table-col-type-${column.id}`}>Type</span>
+            <Select
+              value={column.type}
+              options={TYPE_OPTIONS}
+              onChange={handleTypeChange}
+              ariaLabel="Column type"
+              className="be-table-header-type-select"
+            />
           </div>
           {column.type === 'select' && (
             <SelectOptionsManager tableId={tableId} colIndex={colIndex} options={column.options ?? []} />

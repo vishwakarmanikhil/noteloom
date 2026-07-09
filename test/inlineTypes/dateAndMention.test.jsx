@@ -94,7 +94,26 @@ describe('mention inline type', () => {
 
     const chip = container.querySelector('[data-run-id="m1"]');
     expect(chip.getAttribute('contenteditable')).toBe('false');
-    expect(chip.querySelector('select').value).toBe('u1');
+    expect(chip.querySelector('.be-select-value').textContent).toBe('Alex');
+  });
+
+  it('regression: mousedown on the chip calls preventDefault so the paragraph caret can\'t win the focus race (see SelectInlineNode)', () => {
+    const store = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['m1'], props: {} },
+      ],
+      runs: [{ id: 'm1', type: 'mention', value: '', marks: {}, data: { mentionId: '', label: '' } }],
+    });
+    const { container } = render(
+      <EditorProvider store={store} registry={{}} inlineRegistry={makeInlineRegistry()}>
+        <EditableBlockContent blockId="p1" runIds={['m1']} />
+      </EditorProvider>,
+    );
+
+    const dispatched = fireEvent.mouseDown(container.querySelector('.be-select-trigger'));
+    expect(dispatched).toBe(false); // false means preventDefault was called
   });
 
   it('changing the mention dropdown updates mentionId and label together', () => {
@@ -112,7 +131,9 @@ describe('mention inline type', () => {
       </EditorProvider>,
     );
 
-    fireEvent.change(container.querySelector('select'), { target: { value: 'u2' } });
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+    const option = [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Bailey');
+    fireEvent.mouseDown(option);
 
     expect(store.getRun('m1').data).toEqual({ mentionId: 'u2', label: 'Bailey' });
   });

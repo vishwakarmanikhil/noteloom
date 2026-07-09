@@ -3,6 +3,7 @@ import { useRun, useBlock } from '../../react/useBlock.js';
 import { useEditorStore } from '../../react/EditorProvider.jsx';
 import { updateRun } from '../../store/operations.js';
 import { resolveColumns } from '../../blocks/table/tableColumns.js';
+import { Select } from '../../react/Select.jsx';
 
 /**
  * The atomic chip for a table's "select" column type — deliberately a
@@ -36,12 +37,10 @@ export function TableSelectInlineNode({ id, blockId }) {
   const options = columns[colIndex]?.options ?? [];
 
   const handleChange = useCallback(
-    (event) => {
-      const selectedValue = event.target.value;
-      const selectedLabel = options.find((opt) => opt.value === selectedValue)?.label ?? '';
-      store.applyOperation(updateRun(id, { data: { selectedValue, selectedLabel } }));
+    (selectedValue, option) => {
+      store.applyOperation(updateRun(id, { data: { selectedValue, selectedLabel: option?.label ?? '' } }));
     },
-    [store, id, options],
+    [store, id],
   );
 
   if (!run) return null;
@@ -50,18 +49,19 @@ export function TableSelectInlineNode({ id, blockId }) {
   return (
     <span
       className="be-inline-table-select"
-      onMouseDown={(event) => event.stopPropagation()}
+      // preventDefault too, not just stopPropagation — see SelectInlineNode's
+      // onMouseDown comment: without it, the browser's default caret-
+      // collapse-to-click-position wins the race against Select's own
+      // focus() call, and the first typed character lands in the
+      // surrounding cell/paragraph instead of the search box.
+      onMouseDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
       // See SelectInlineNode's onKeyDown comment for why this is needed.
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <select value={selectedValue} onChange={handleChange}>
-        <option value="">Select…</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <Select value={selectedValue} options={options} onChange={handleChange} placeholder="Select…" ariaLabel="Select an option" />
     </span>
   );
 }

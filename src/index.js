@@ -25,6 +25,7 @@ export { BlockErrorBoundary } from './react/BlockErrorBoundary.jsx';
 export { BlockChildren } from './react/BlockChildren.jsx';
 export { EditableBlockContent } from './react/EditableBlockContent.jsx';
 export { Modal } from './react/Modal.jsx';
+export { Select } from './react/Select.jsx';
 
 export { APP_MIME } from './clipboard/mimeType.js';
 export { serializeBlockRange, remapSubtreeIds } from './clipboard/serialize.js';

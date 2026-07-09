@@ -53,15 +53,17 @@ describe('code block: renders as a leaf inside <pre><code>, with a language sele
     expect(block.querySelector('pre')).not.toBeNull();
     expect(block.querySelector('code')).not.toBeNull();
     expect(block.textContent).toContain('const x = 1;');
-    expect(block.querySelector('.be-code-block-language').value).toBe('javascript');
+    expect(block.querySelector('.be-code-block-language .be-select-value').textContent).toBe('javascript');
   });
 
   it('changing the language dropdown updates props.language', () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderDoc(store);
 
-    const select = container.querySelector('[data-block-id="c1"] .be-code-block-language');
-    fireEvent.change(select, { target: { value: 'python' } });
+    const trigger = container.querySelector('[data-block-id="c1"] .be-code-block-language .be-select-trigger');
+    fireEvent.click(trigger);
+    const option = [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'python');
+    fireEvent.mouseDown(option);
 
     expect(store.getBlock('c1').props.language).toBe('python');
   });

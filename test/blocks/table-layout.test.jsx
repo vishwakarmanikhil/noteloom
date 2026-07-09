@@ -219,8 +219,8 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
 
     const headerCell = container.querySelector('.be-table-header-cell');
     fireEvent.click(headerCell.querySelector('.be-table-header-menu-trigger'));
-    const typeSelect = headerCell.querySelector('.be-table-header-menu-type select');
-    fireEvent.change(typeSelect, { target: { value: 'checkbox' } });
+    fireEvent.click(headerCell.querySelector('.be-table-header-menu-type .be-select-trigger'));
+    fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Checkbox'));
 
     expect(store.getBlock(tableId).props.columns[0].type).toBe('checkbox');
     const newRun = store.getRun(store.getBlock(cellId).contentIds[0]);
@@ -243,7 +243,8 @@ describe('table select column: shared options, managed from the column header (n
 
     const headerCell = container.querySelector('.be-table-header-cell');
     fireEvent.click(headerCell.querySelector('.be-table-header-menu-trigger'));
-    fireEvent.change(headerCell.querySelector('.be-table-header-menu-type select'), { target: { value: 'select' } });
+    fireEvent.click(headerCell.querySelector('.be-table-header-menu-type .be-select-trigger'));
+    fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Select'));
 
     // re-open the menu (changing type may have re-rendered it closed) and add an option
     if (!headerCell.querySelector('.be-table-header-menu')) {
@@ -253,11 +254,13 @@ describe('table select column: shared options, managed from the column header (n
     fireEvent.change(addInput, { target: { value: 'Open' } });
     fireEvent.click(headerCell.querySelector('.be-table-header-menu-option-add'));
 
-    const dropdowns = container.querySelectorAll('.be-inline-table-select select');
-    expect(dropdowns.length).toBe(2); // one per row
-    for (const dropdown of dropdowns) {
-      const labels = [...dropdown.options].map((o) => o.textContent);
+    const triggers = container.querySelectorAll('.be-inline-table-select .be-select-trigger');
+    expect(triggers.length).toBe(2); // one per row
+    for (const trigger of triggers) {
+      fireEvent.click(trigger);
+      const labels = [...document.querySelectorAll('.be-select-option')].map((o) => o.textContent);
       expect(labels).toContain('Open'); // both cells see the same new option
+      fireEvent.click(trigger); // close before checking the next one
     }
   });
 
@@ -272,8 +275,23 @@ describe('table select column: shared options, managed from the column header (n
     registerBuiltInBlocks(registry);
     const { container } = renderDoc(store, registry);
 
-    expect(container.querySelector('.be-inline-table-select select')).not.toBeNull();
+    expect(container.querySelector('.be-inline-table-select .be-select-trigger')).not.toBeNull();
     expect(container.querySelector('.be-inline-select-add')).toBeNull();
+  });
+
+  it('regression: mousedown on the cell\'s Select calls preventDefault so the cell\'s own caret can\'t win the focus race', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+    const inlineRegistry = createInlineRegistry();
+    registerBuiltInInlineTypes(inlineRegistry);
+    setColumnType(store, tableId, 0, 'select', inlineRegistry);
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    const dispatched = fireEvent.mouseDown(container.querySelector('.be-inline-table-select .be-select-trigger'));
+    expect(dispatched).toBe(false); // false means preventDefault was called
   });
 });
 

@@ -31,26 +31,57 @@ function renderChip(run) {
 }
 
 describe('select inline type: rendering and choosing an existing option', () => {
-  it('renders an atomic <select> island and changing it updates selectedValue', () => {
+  it('renders the shared Select combobox and choosing an option updates selectedValue', () => {
     const { store, container } = renderChip({
+      id: 's1',
+      type: 'select',
+      value: '',
+      marks: {},
+      data: {
+        options: [
+          { value: 'flu', label: 'Influenza' },
+          { value: 'rsv', label: 'RSV' },
+        ],
+        selectedValue: 'flu',
+        placeholder: 'Select…',
+      },
+    });
+
+    const chip = container.querySelector('[data-run-id="s1"]');
+    expect(chip.getAttribute('contenteditable')).toBe('false');
+    expect(chip.querySelector('.be-select-value').textContent).toBe('Influenza');
+
+    fireEvent.click(chip.querySelector('.be-select-trigger'));
+    const option = [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'RSV');
+    fireEvent.mouseDown(option);
+
+    expect(store.getRun('s1').data.selectedValue).toBe('rsv');
+  });
+});
+
+describe('select inline type: regression — mousedown on the chip must not let the surrounding paragraph steal the caret', () => {
+  it('mousedown anywhere in the chip (trigger, search input, or an option) calls preventDefault', () => {
+    // Without preventDefault, the browser's default mousedown action
+    // collapses the paragraph's caret to the click position, winning the
+    // timing race against Select's own focus() call on its search input —
+    // the first character typed then lands back in the paragraph instead
+    // of the search box, and the chip can appear to vanish on the next
+    // reconciliation. See SelectInlineNode.jsx's onMouseDown comment.
+    const { container } = renderChip({
       id: 's1',
       type: 'select',
       value: '',
       marks: {},
       data: { options: [{ value: 'flu', label: 'Influenza' }], selectedValue: 'flu', placeholder: 'Select…' },
     });
-
     const chip = container.querySelector('[data-run-id="s1"]');
-    expect(chip.getAttribute('contenteditable')).toBe('false');
-    expect(chip.querySelector('select').value).toBe('flu');
 
-    fireEvent.change(chip.querySelector('select'), { target: { value: '' } });
-    // no other option exists yet, so this just re-confirms the wiring
-    expect(store.getRun('s1').data.selectedValue).toBe('');
+    const triggerEvent = fireEvent.mouseDown(chip.querySelector('.be-select-trigger'));
+    expect(triggerEvent).toBe(false); // fireEvent returns false when preventDefault was called
   });
 });
 
-describe('select inline type: no inline add/remove-option UI (renders only the <select> itself)', () => {
+describe('select inline type: no inline add/remove-option UI (renders only the Select combobox itself)', () => {
   it('does not render an add-option button/input or a remove-selection button, even with options and a selection present', () => {
     const { container } = renderChip({
       id: 's1',
@@ -64,7 +95,7 @@ describe('select inline type: no inline add/remove-option UI (renders only the <
     expect(chip.querySelector('.be-inline-select-add')).toBeNull();
     expect(chip.querySelector('.be-inline-select-add-input')).toBeNull();
     expect(chip.querySelector('.be-inline-select-remove')).toBeNull();
-    expect(chip.querySelector('select')).not.toBeNull(); // the select itself still renders
+    expect(chip.querySelector('.be-select-trigger')).not.toBeNull(); // the combobox itself still renders
   });
 
   it('Backspace inside the chip does not delete it (regression: onKeyDown stopPropagation still applies with no other controls present)', () => {
@@ -77,7 +108,7 @@ describe('select inline type: no inline add/remove-option UI (renders only the <
     });
     const chip = container.querySelector('[data-run-id="s1"]');
 
-    fireEvent.keyDown(chip.querySelector('select'), { key: 'Backspace' });
+    fireEvent.keyDown(chip.querySelector('.be-select-trigger'), { key: 'Backspace' });
 
     expect(store.getRun('s1')).toBeDefined(); // chip untouched
     expect(container.querySelector('[data-run-id="s1"]')).not.toBeNull();

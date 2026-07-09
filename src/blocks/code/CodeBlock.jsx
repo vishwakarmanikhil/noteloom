@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
+import { Select } from '../../react/Select.jsx';
 import { useBlock } from '../../react/useBlock.js';
 import { useEditorStore } from '../../react/EditorProvider.jsx';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
@@ -10,6 +11,7 @@ import { updateRun, updateBlockProps } from '../../store/operations.js';
 import { focusAdjacentBlock } from '../shared/navigationCommands.js';
 
 export const LANGUAGES = ['plaintext', 'javascript', 'python', 'html', 'css', 'json', 'bash', 'sql'];
+const LANGUAGE_OPTIONS = LANGUAGES.map((lang) => ({ value: lang, label: lang }));
 
 /**
  * Inserts literal text at the live caret within `blockId`'s own run,
@@ -69,7 +71,7 @@ export function CodeBlock({ id }) {
   const handleArrowDown = useCallback(() => focusAdjacentBlock(store, id, 'down'), [store, id]);
 
   const handleLanguageChange = useCallback(
-    (event) => store.applyOperation(updateBlockProps(id, { language: event.target.value })),
+    (language) => store.applyOperation(updateBlockProps(id, { language })),
     [store, id],
   );
 
@@ -80,18 +82,13 @@ export function CodeBlock({ id }) {
   return (
     <div className="be-code-block" data-block-id={id}>
       <div className="be-code-block-header" contentEditable={false}>
-        <select
+        <Select
           className="be-code-block-language"
           value={language}
+          options={LANGUAGE_OPTIONS}
           onChange={handleLanguageChange}
-          aria-label="Code language"
-        >
-          {LANGUAGES.map((lang) => (
-            <option key={lang} value={lang}>
-              {lang}
-            </option>
-          ))}
-        </select>
+          ariaLabel="Code language"
+        />
       </div>
       <pre className="be-code-block-pre">
         <code data-empty={isEmpty ? '' : undefined} data-placeholder="Empty code block">
