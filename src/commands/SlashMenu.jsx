@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 
-const MENU_ID = 'be-slash-menu';
-
 /**
  * Focus deliberately stays in the run's contentEditable (moving it into the
  * menu would exit typing) — so this follows the ARIA "listbox with
@@ -12,7 +10,7 @@ const MENU_ID = 'be-slash-menu';
  * rather than threaded through every block type, since only this component
  * knows the listbox's ids and open/active state.
  */
-function useActiveDescendantWiring(isOpen, runId, activeOptionId) {
+function useActiveDescendantWiring(isOpen, runId, activeOptionId, menuId) {
   useEffect(() => {
     if (!isOpen || !runId) return undefined;
     const runEl = document.querySelector(`[data-run-id="${runId}"]`);
@@ -20,7 +18,7 @@ function useActiveDescendantWiring(isOpen, runId, activeOptionId) {
 
     runEl.setAttribute('aria-expanded', 'true');
     runEl.setAttribute('aria-haspopup', 'listbox');
-    runEl.setAttribute('aria-controls', MENU_ID);
+    runEl.setAttribute('aria-controls', menuId);
     if (activeOptionId) runEl.setAttribute('aria-activedescendant', activeOptionId);
 
     return () => {
@@ -29,10 +27,26 @@ function useActiveDescendantWiring(isOpen, runId, activeOptionId) {
       runEl.removeAttribute('aria-controls');
       runEl.removeAttribute('aria-activedescendant');
     };
-  }, [isOpen, runId, activeOptionId]);
+  }, [isOpen, runId, activeOptionId, menuId]);
 }
 
-export function SlashMenu({ isOpen, rect, commands, runId, onSelect, onClose }) {
+/**
+ * Generic filterable command popover — not slash-specific despite the name
+ * (kept for backward compatibility), also used as-is for the ":" emoji menu
+ * (see useEmojiMenuTrigger). Pass a distinct `menuId`/`ariaLabel` for a
+ * second simultaneously-mounted instance so DOM ids and
+ * aria-controls/aria-activedescendant wiring never collide between them.
+ */
+export function SlashMenu({
+  isOpen,
+  rect,
+  commands,
+  runId,
+  onSelect,
+  onClose,
+  menuId = 'be-slash-menu',
+  ariaLabel = 'Slash commands',
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
@@ -68,23 +82,23 @@ export function SlashMenu({ isOpen, rect, commands, runId, onSelect, onClose }) 
   }, [isOpen, commands, activeIndex, onSelect, onClose]);
 
   const activeCommand = commands[activeIndex];
-  const activeOptionId = activeCommand ? `${MENU_ID}-option-${activeIndex}` : null;
-  useActiveDescendantWiring(isOpen, runId, activeOptionId);
+  const activeOptionId = activeCommand ? `${menuId}-option-${activeIndex}` : null;
+  useActiveDescendantWiring(isOpen, runId, activeOptionId, menuId);
 
   if (!isOpen || commands.length === 0 || !rect) return null;
 
   return (
     <div
-      id={MENU_ID}
+      id={menuId}
       role="listbox"
-      aria-label="Slash commands"
+      aria-label={ariaLabel}
       className="be-slash-menu"
       style={{ position: 'fixed', top: rect.bottom + 4, left: rect.left, zIndex: 1000 }}
     >
       {commands.map((command, i) => (
         <div
           key={command.label}
-          id={`${MENU_ID}-option-${i}`}
+          id={`${menuId}-option-${i}`}
           role="option"
           aria-selected={i === activeIndex}
           className={`be-slash-menu-item${i === activeIndex ? ' be-slash-menu-item-active' : ''}`}

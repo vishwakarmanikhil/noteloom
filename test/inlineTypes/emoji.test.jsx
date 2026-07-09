@@ -10,6 +10,7 @@ import { registerBuiltInBlocks } from '../../src/blocks/index.js';
 import { createInlineRegistry } from '../../src/registry/inlineRegistry.js';
 import { registerBuiltInInlineTypes } from '../../src/inlineTypes/index.js';
 import { useSlashMenuTrigger } from '../../src/commands/useSlashMenuTrigger.js';
+import { useEmojiMenuTrigger } from '../../src/commands/useEmojiMenuTrigger.js';
 import { SlashMenu } from '../../src/commands/SlashMenu.jsx';
 import { EMOJI_LIST } from '../../src/inlineTypes/emoji/emojiList.js';
 
@@ -26,11 +27,29 @@ function makeDoc() {
 
 function Harness() {
   const containerRef = useRef(null);
-  const { isOpen, rect, commands, runId, selectCommand, close } = useSlashMenuTrigger(containerRef);
+  const slash = useSlashMenuTrigger(containerRef);
+  const emoji = useEmojiMenuTrigger(containerRef);
   return (
     <div ref={containerRef}>
       <BlockChildren parentId="root" />
-      <SlashMenu isOpen={isOpen} rect={rect} commands={commands} runId={runId} onSelect={selectCommand} onClose={close} />
+      <SlashMenu
+        isOpen={slash.isOpen}
+        rect={slash.rect}
+        commands={slash.commands}
+        runId={slash.runId}
+        onSelect={slash.selectCommand}
+        onClose={slash.close}
+      />
+      <SlashMenu
+        isOpen={emoji.isOpen}
+        rect={emoji.rect}
+        commands={emoji.commands}
+        runId={emoji.runId}
+        onSelect={emoji.selectCommand}
+        onClose={emoji.close}
+        menuId="be-emoji-menu"
+        ariaLabel="Emoji"
+      />
     </div>
   );
 }
@@ -58,37 +77,47 @@ function typeIntoRunWithCaretAt(runNode, text, caretOffset) {
   fireEvent.input(runNode);
 }
 
-describe('emoji slash commands: listing and search', () => {
-  it('typing "/emoji" lists every emoji (all share the "emoji" keyword)', () => {
+describe('emoji has its own ":" trigger, separate from "/"', () => {
+  it('typing "/emoji" (the old convention) no longer lists emoji at all', () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store);
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     typeIntoRunWithCaretAt(runNode, '/emoji', 6);
-    const items = container.querySelectorAll('.be-slash-menu-item');
-    expect(items.length).toBe(EMOJI_LIST.length);
+    const items = [...container.querySelectorAll('#be-slash-menu .be-slash-menu-item')];
+    expect(items.some((el) => el.textContent.includes('🔥'))).toBe(false);
   });
 
-  it('typing a specific name/synonym like "/fire" jumps straight to just that emoji', () => {
+  it('typing ":" lists every emoji', () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store);
     const runNode = container.querySelector('[data-run-id="r1"]');
 
-    typeIntoRunWithCaretAt(runNode, '/fire', 5);
-    const items = [...container.querySelectorAll('.be-slash-menu-item')];
+    typeIntoRunWithCaretAt(runNode, ':', 1);
+    const items = container.querySelectorAll('#be-emoji-menu .be-slash-menu-item');
+    expect(items.length).toBe(EMOJI_LIST.length);
+  });
+
+  it('typing a specific name/synonym like ":fire" jumps straight to just that emoji', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store);
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    typeIntoRunWithCaretAt(runNode, ':fire', 5);
+    const items = [...container.querySelectorAll('#be-emoji-menu .be-slash-menu-item')];
     expect(items).toHaveLength(1);
     expect(items[0].textContent).toBe('🔥 fire');
   });
 });
 
-describe('emoji slash commands: inserting one splices plain text, not an atomic chip', () => {
+describe('emoji ":" menu: inserting one splices plain text, not an atomic chip', () => {
   it('selecting an emoji on an empty line inserts it as that line\'s own plain-text content', () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store);
     const runNode = container.querySelector('[data-run-id="r1"]');
 
-    typeIntoRunWithCaretAt(runNode, '/fire', 5);
-    fireEvent.mouseDown(container.querySelector('.be-slash-menu-item'));
+    typeIntoRunWithCaretAt(runNode, ':fire', 5);
+    fireEvent.mouseDown(container.querySelector('#be-emoji-menu .be-slash-menu-item'));
 
     expect(store.getBlock('root').contentIds).toEqual(['p1']); // still no new block
     const p1 = store.getBlock('p1');
@@ -102,23 +131,23 @@ describe('emoji slash commands: inserting one splices plain text, not an atomic 
     const { container } = renderHarness(store);
     const runNode = container.querySelector('[data-run-id="r1"]');
 
-    const text = 'nice /fire work';
-    typeIntoRunWithCaretAt(runNode, text, 'nice /fire'.length);
-    fireEvent.mouseDown(container.querySelector('.be-slash-menu-item'));
+    const text = 'nice :fire work';
+    typeIntoRunWithCaretAt(runNode, text, 'nice :fire'.length);
+    fireEvent.mouseDown(container.querySelector('#be-emoji-menu .be-slash-menu-item'));
 
     const p1 = store.getBlock('p1');
     expect(p1.contentIds.length).toBe(1); // spliced into the same run, no atomic chip run created
     expect(store.getRun(p1.contentIds[0]).value).toBe('nice 🔥 work');
   });
 
-  it('undo restores the run to its state before typing "/fire" and inserting (History coalesces the rapid same-run edits into one step)', () => {
+  it('undo restores the run to its state before typing ":fire" and inserting (History coalesces the rapid same-run edits into one step)', () => {
     const rawStore = new EditorStore(makeDoc());
     const store = new History(rawStore);
     const { container } = renderHarness(store);
     const runNode = container.querySelector('[data-run-id="r1"]');
 
-    typeIntoRunWithCaretAt(runNode, '/fire', 5);
-    fireEvent.mouseDown(container.querySelector('.be-slash-menu-item'));
+    typeIntoRunWithCaretAt(runNode, ':fire', 5);
+    fireEvent.mouseDown(container.querySelector('#be-emoji-menu .be-slash-menu-item'));
     expect(store.getRun('r1').value).toBe('🔥');
 
     act(() => store.undo());

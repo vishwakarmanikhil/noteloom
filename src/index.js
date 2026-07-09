@@ -33,6 +33,7 @@ export { walkDomToBlocks, textToParagraphs } from './clipboard/domWalk.js';
 
 export { SlashMenu } from './commands/SlashMenu.jsx';
 export { useSlashMenuTrigger } from './commands/useSlashMenuTrigger.js';
+export { useEmojiMenuTrigger } from './commands/useEmojiMenuTrigger.js';
 export { FloatingToolbar } from './commands/FloatingToolbar.jsx';
 export { useFloatingToolbarTrigger } from './commands/useFloatingToolbarTrigger.js';
 

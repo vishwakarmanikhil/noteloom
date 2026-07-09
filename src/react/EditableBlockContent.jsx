@@ -413,7 +413,18 @@ function getOrCreateHost(hostsMap, store, id) {
  * while each individual run's *value* reactivity is owned by RunNode/
  * TextRunSpan subscribing to that one run id themselves.
  */
-export function EditableBlockContent({ blockId, runIds, onEnter, onBackspaceAtStart, onDeleteAtEnd, onArrowUp, onArrowDown, onTab, onShiftTab }) {
+export function EditableBlockContent({
+  blockId,
+  runIds,
+  onEnter,
+  onBackspaceAtStart,
+  onDeleteAtEnd,
+  onArrowUp,
+  onArrowDown,
+  onTab,
+  onShiftTab,
+  onAutoformat,
+}) {
   const store = useEditorStore();
   const inlineRegistry = useInlineRegistry();
   const { getSelectedBlockId, setSelectedBlockId } = useSelectedBlock();
@@ -465,6 +476,13 @@ export function EditableBlockContent({ blockId, runIds, onEnter, onBackspaceAtSt
       nextRuns.forEach((run, i) => {
         if (run !== currentRuns[i]) store.applyOperation(updateRun(run.id, { value: run.value }));
       });
+      // A markdown shortcut (e.g. "1. " -> ordered list) always types into a
+      // single existing run, never a structural DOM change, so it only ever
+      // applies on this branch. On a match, blockId's block was just
+      // replaced by a different type — the container/wrapper this callback
+      // is running inside of is about to unmount, so there's nothing left
+      // here to sync.
+      if (onAutoformat?.(nextRuns)) return;
     } else {
       // Same "never zero runs" guard as removeRun — belt-and-suspenders,
       // since reconcileDomToRuns normally never drops a matched run.
@@ -473,7 +491,7 @@ export function EditableBlockContent({ blockId, runIds, onEnter, onBackspaceAtSt
       );
     }
     syncEmptyAttr(container, nextRuns);
-  }, [store, blockId, runIds]);
+  }, [store, blockId, runIds, onAutoformat]);
 
   const syncEmptyFromStore = useCallback(() => {
     syncEmptyAttr(

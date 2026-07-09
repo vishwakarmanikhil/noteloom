@@ -180,6 +180,96 @@ describe('embed block: contentless, same as divider (no runs at all)', () => {
   });
 });
 
+describe('embed block: alignment toolbar', () => {
+  it('defaults to left-aligned, full width', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://x/a.png' }));
+    expect(store.getBlock(id).props.align).toBe('left');
+    expect(store.getBlock(id).props.width).toBe(100);
+  });
+
+  it('clicking center/right updates props.align, and the active button reflects it', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://x/a.png' }));
+    const { container } = renderDoc(store);
+    const wrapper = container.querySelector(`[data-block-id="${id}"]`);
+
+    fireEvent.click(wrapper.querySelector('[aria-label="Align center"]'));
+    expect(store.getBlock(id).props.align).toBe('center');
+    expect(wrapper.querySelector('[aria-label="Align center"]').getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(wrapper.querySelector('[aria-label="Align right"]'));
+    expect(store.getBlock(id).props.align).toBe('right');
+  });
+
+  it('the alignment toolbar is available for every kind, including audio/file', () => {
+    const store = new EditorStore(emptyDoc());
+    const audioId = insertAtRoot(store, createEmbedBlock({ kind: 'audio', src: 'https://x/a.mp3' }), 0);
+    const fileId = insertAtRoot(store, createEmbedBlock({ kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' }), 1);
+    const { container } = renderDoc(store);
+
+    expect(container.querySelector(`[data-block-id="${audioId}"] [aria-label="Align center"]`)).not.toBeNull();
+    expect(container.querySelector(`[data-block-id="${fileId}"] [aria-label="Align center"]`)).not.toBeNull();
+  });
+});
+
+describe('embed block: resize handle (image/video only)', () => {
+  function stubRect(el, width) {
+    el.getBoundingClientRect = () => ({ width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0 });
+  }
+
+  it('only image/video kinds render a resize handle — audio/file do not', () => {
+    const store = new EditorStore(emptyDoc());
+    const imgId = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://x/a.png' }), 0);
+    const audioId = insertAtRoot(store, createEmbedBlock({ kind: 'audio', src: 'https://x/a.mp3' }), 1);
+    const fileId = insertAtRoot(store, createEmbedBlock({ kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' }), 2);
+    const { container } = renderDoc(store);
+
+    expect(container.querySelector(`[data-block-id="${imgId}"] .be-embed-resize-handle`)).not.toBeNull();
+    expect(container.querySelector(`[data-block-id="${audioId}"] .be-embed-resize-handle`)).toBeNull();
+    expect(container.querySelector(`[data-block-id="${fileId}"] .be-embed-resize-handle`)).toBeNull();
+  });
+
+  it('dragging the handle updates props.width once, on mouseup (not on every mousemove)', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://x/a.png' }));
+    const { container } = renderDoc(store);
+    const wrapper = container.querySelector(`[data-block-id="${id}"]`);
+    const preview = wrapper.querySelector('.be-embed-preview');
+    const frame = wrapper.querySelector('.be-embed-frame');
+    const handle = wrapper.querySelector('.be-embed-resize-handle');
+
+    stubRect(preview, 400); // container is 400px wide
+    stubRect(frame, 400); // frame starts at full (100%) width
+
+    fireEvent.mouseDown(handle, { clientX: 400 });
+    expect(store.getBlock(id).props.width).toBe(100); // no store write yet, just from mousedown
+
+    fireEvent.mouseMove(document, { clientX: 200 }); // dragged 200px left: (400-200)/400 = 50%
+    expect(store.getBlock(id).props.width).toBe(100); // still not written — only local preview state changes
+
+    fireEvent.mouseUp(document, { clientX: 200 });
+    expect(store.getBlock(id).props.width).toBe(50);
+  });
+
+  it('clamps the dragged width between 20% and 100%', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://x/a.png' }));
+    const { container } = renderDoc(store);
+    const wrapper = container.querySelector(`[data-block-id="${id}"]`);
+    const preview = wrapper.querySelector('.be-embed-preview');
+    const frame = wrapper.querySelector('.be-embed-frame');
+    const handle = wrapper.querySelector('.be-embed-resize-handle');
+
+    stubRect(preview, 400);
+    stubRect(frame, 400);
+
+    fireEvent.mouseDown(handle, { clientX: 400 });
+    fireEvent.mouseUp(document, { clientX: -1000 }); // way past the left edge
+    expect(store.getBlock(id).props.width).toBe(20);
+  });
+});
+
 describe('embed block: clipboard round-trip', () => {
   it('toHTML emits the right tag per kind', () => {
     const store = new EditorStore(emptyDoc());
@@ -197,6 +287,42 @@ describe('embed block: clipboard round-trip', () => {
 
     const file = createEmbedBlock({ kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' })('root').block;
     expect(registry.get('embed').toHTML(file)).toBe('<a class="be-embed-file-link" href="https://x/a.pdf">a.pdf</a>');
+  });
+
+  it('non-default align/width are emitted as an inline style on image/video only', () => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+
+    const resized = createEmbedBlock({ kind: 'image', src: 'https://x/a.png', width: 60 })('root').block;
+    expect(registry.get('embed').toHTML(resized)).toBe('<img src="https://x/a.png" alt="" style="width:60%">');
+
+    const centered = createEmbedBlock({ kind: 'video', src: 'https://x/a.mp4', align: 'center' })('root').block;
+    expect(registry.get('embed').toHTML(centered)).toBe(
+      '<video src="https://x/a.mp4" controls style="display:block;margin-left:auto;margin-right:auto"></video>',
+    );
+
+    // audio has no visual width concept, so align/width never affect its HTML
+    const audio = createEmbedBlock({ kind: 'audio', src: 'https://x/a.mp3', align: 'center', width: 50 })('root').block;
+    expect(registry.get('embed').toHTML(audio)).toBe('<audio src="https://x/a.mp3" controls></audio>');
+  });
+
+  it('walkDomToBlocks parses width/align back out of the inline style', () => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+
+    const [resized] = walkDomToBlocks('<img src="https://x/a.png" style="width:60%">', registry);
+    expect(resized.block.props.width).toBe(60);
+    expect(resized.block.props.align).toBe('left');
+
+    const [rightAligned] = walkDomToBlocks(
+      '<video src="https://x/a.mp4" style="display:block;margin-left:auto"></video>',
+      registry,
+    );
+    expect(rightAligned.block.props.align).toBe('right');
+
+    const [plain] = walkDomToBlocks('<img src="https://x/a.png">', registry);
+    expect(plain.block.props.align).toBe('left');
+    expect(plain.block.props.width).toBe(100);
   });
 
   it('walkDomToBlocks reconstructs image/video/audio embeds from plain tags', () => {

@@ -9,6 +9,7 @@ import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusAfterMerge } from '../shared/focusAfterMerge.js';
 import { focusRunEnd } from '../../react/focusRun.js';
 import { focusAdjacentBlock } from '../shared/navigationCommands.js';
+import { applyMarkdownShortcut } from './markdownShortcuts.js';
 
 // Container types a nested paragraph can "exit" out of on an empty last
 // line — pressing Enter on a blank final paragraph inside one of these
@@ -62,6 +63,8 @@ export function ParagraphBlock({ id }) {
   const handleArrowUp = useCallback(() => focusAdjacentBlock(store, id, 'up'), [store, id]);
   const handleArrowDown = useCallback(() => focusAdjacentBlock(store, id, 'down'), [store, id]);
 
+  const handleAutoformat = useCallback((runs) => applyMarkdownShortcut(store, id, runs), [store, id]);
+
   if (!block) return null;
   const isEmpty = isRunsEmpty(store, block.contentIds);
 
@@ -79,6 +82,7 @@ export function ParagraphBlock({ id }) {
         onBackspaceAtStart={handleBackspaceAtStart}
         onArrowUp={handleArrowUp}
         onArrowDown={handleArrowDown}
+        onAutoformat={handleAutoformat}
       />
     </div>
   );

@@ -8,12 +8,14 @@ import { genId } from '../../utils/idGen.js';
  * EmbedBlock.jsx for why there's no upload-to-a-server path in a
  * zero-runtime-dependency package with no backend); `name` is the original
  * filename or the URL itself, used as alt text / download name / link text
- * depending on kind.
+ * depending on kind. `align` ('left' | 'center' | 'right') positions the
+ * whole widget within the line; `width` (a percentage, 20-100) is only
+ * meaningful for image/video kinds — see EmbedBlock's resize handle.
  */
-export function createEmbedBlock({ kind = 'file', src = '', name = '', mimeType = '' } = {}) {
+export function createEmbedBlock({ kind = 'file', src = '', name = '', mimeType = '', align = 'left', width = 100 } = {}) {
   return function factory(parentId) {
     return {
-      block: { id: genId(), type: 'embed', parentId, contentIds: [], props: { kind, src, name, mimeType } },
+      block: { id: genId(), type: 'embed', parentId, contentIds: [], props: { kind, src, name, mimeType, align, width } },
       runs: [],
     };
   };

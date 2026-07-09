@@ -1,8 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useBlock } from '../../react/useBlock.js';
 import { useEditorStore } from '../../react/EditorProvider.jsx';
 import { updateBlockProps } from '../../store/operations.js';
-import { PaperclipIcon } from '../../react/icons.jsx';
+import { PaperclipIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from '../../react/icons.jsx';
 
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
@@ -15,6 +15,17 @@ function readFileAsDataURL(file) {
 
 const KIND_LABEL = { image: 'image', video: 'video', audio: 'audio', file: 'file' };
 const KIND_ACCEPT = { image: 'image/*', video: 'video/*', audio: 'audio/*', file: '*/*' };
+const MIN_WIDTH = 20;
+const MAX_WIDTH = 100;
+const ALIGN_OPTIONS = [
+  { value: 'left', Icon: AlignLeftIcon, label: 'Align left' },
+  { value: 'center', Icon: AlignCenterIcon, label: 'Align center' },
+  { value: 'right', Icon: AlignRightIcon, label: 'Align right' },
+];
+
+function clampWidth(pct) {
+  return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(pct)));
+}
 
 function EmbedPreview({ kind, src, name }) {
   if (kind === 'image') return <img className="be-embed-image" src={src} alt={name || ''} />;
@@ -45,12 +56,24 @@ function EmbedPreview({ kind, src, name }) {
  * behavior should intercept this at a higher level (e.g. wrapping
  * createEmbedBlock/this component with its own), which is as far as a
  * dependency-free package can reasonably go on its own.
+ *
+ * `align` positions the whole widget within the line (a flex row on
+ * `.be-embed-preview`, matching Notion's own media alignment). `width` is a
+ * percentage, dragged via `.be-embed-resize-handle` — only image/video
+ * kinds get the handle (an audio player or a file-download pill don't have
+ * a meaningful "shrink the visual" concept the same way). The drag itself
+ * only updates local state (`dragWidth`) for a live preview; the store is
+ * only written once, on mouseup, so dragging doesn't spam undo history
+ * with one step per pixel of mouse movement.
  */
 export function EmbedBlock({ id }) {
   const store = useEditorStore();
   const block = useBlock(id);
   const [urlInput, setUrlInput] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dragWidth, setDragWidth] = useState(null);
+  const previewRef = useRef(null);
+  const frameRef = useRef(null);
 
   const setMedia = useCallback((patch) => store.applyOperation(updateBlockProps(id, patch)), [store, id]);
 
@@ -92,8 +115,35 @@ export function EmbedBlock({ id }) {
 
   const clearMedia = useCallback(() => setMedia({ src: '', name: '', mimeType: '' }), [setMedia]);
 
+  const handleResizeStart = useCallback(
+    (event) => {
+      event.preventDefault();
+      const containerEl = previewRef.current;
+      const frameEl = frameRef.current;
+      if (!containerEl || !frameEl) return;
+      const containerWidth = containerEl.getBoundingClientRect().width;
+      const startWidth = frameEl.getBoundingClientRect().width;
+      const startX = event.clientX;
+
+      const computePct = (moveEvent) => clampWidth(((startWidth + (moveEvent.clientX - startX)) / containerWidth) * 100);
+
+      const handleMouseMove = (moveEvent) => setDragWidth(computePct(moveEvent));
+      const handleMouseUp = (upEvent) => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        setMedia({ width: computePct(upEvent) });
+        setDragWidth(null);
+      };
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [setMedia],
+  );
+
   if (!block) return null;
-  const { kind = 'file', src, name } = block.props;
+  const { kind = 'file', src, name, align = 'left', width = 100 } = block.props;
+  const canResize = kind === 'image' || kind === 'video';
+  const effectiveWidth = dragWidth ?? width;
 
   return (
     // tabIndex={-1}: focusable via .focus() (see setSelectedBlockId in
@@ -103,11 +153,43 @@ export function EmbedBlock({ id }) {
     // previously had focus was just removed from the DOM entirely.
     <div className="be-embed" data-block-id={id} data-kind={kind} contentEditable={false} tabIndex={-1}>
       {src ? (
-        <div className="be-embed-preview">
-          <EmbedPreview kind={kind} src={src} name={name} />
-          <button type="button" className="be-embed-remove" onClick={clearMedia} aria-label={`Remove ${KIND_LABEL[kind]}`}>
-            Remove
-          </button>
+        <div ref={previewRef} className={`be-embed-preview be-embed-align-${align}`}>
+          <div
+            ref={frameRef}
+            className="be-embed-frame"
+            style={canResize ? { width: `${effectiveWidth}%` } : undefined}
+          >
+            <div className="be-embed-toolbar" contentEditable={false}>
+              {ALIGN_OPTIONS.map(({ value, Icon, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`be-embed-toolbar-btn${align === value ? ' be-embed-toolbar-btn-active' : ''}`}
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={align === value}
+                  onClick={() => setMedia({ align: value })}
+                >
+                  <Icon size={14} />
+                </button>
+              ))}
+              <button type="button" className="be-embed-remove" onClick={clearMedia} aria-label={`Remove ${KIND_LABEL[kind]}`}>
+                Remove
+              </button>
+            </div>
+            <EmbedPreview kind={kind} src={src} name={name} />
+            {canResize && (
+              <div
+                className="be-embed-resize-handle"
+                onMouseDown={handleResizeStart}
+                role="slider"
+                aria-label={`Resize ${KIND_LABEL[kind]}`}
+                aria-valuemin={MIN_WIDTH}
+                aria-valuemax={MAX_WIDTH}
+                aria-valuenow={effectiveWidth}
+              />
+            )}
+          </div>
         </div>
       ) : (
         <div

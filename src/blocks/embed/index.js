@@ -11,11 +11,35 @@ import { updateRun } from '../../store/operations.js';
 // file embed.
 const FILE_MARKER_CLASS = 'be-embed-file-link';
 
+// Only image/video kinds ever carry a non-default align/width (see
+// EmbedBlock's resize handle/alignment toolbar) — the inline `style`
+// attribute is only ever emitted for those, and only when it actually
+// differs from the default, so a plain default-aligned embed's HTML output
+// is byte-identical to before this existed.
+function alignWidthStyle(kind, align, width) {
+  if (kind !== 'image' && kind !== 'video') return '';
+  const declarations = [];
+  if (width !== 100) declarations.push(`width:${width}%`);
+  if (align === 'center') declarations.push('display:block', 'margin-left:auto', 'margin-right:auto');
+  else if (align === 'right') declarations.push('display:block', 'margin-left:auto');
+  return declarations.length ? ` style="${declarations.join(';')}"` : '';
+}
+
+function parseAlignWidth(node) {
+  const styleWidth = node.style?.width;
+  const width = styleWidth && styleWidth.endsWith('%') ? parseInt(styleWidth, 10) : 100;
+  let align = 'left';
+  if (node.style?.marginLeft === 'auto' && node.style?.marginRight === 'auto') align = 'center';
+  else if (node.style?.marginLeft === 'auto') align = 'right';
+  return { align, width: Number.isFinite(width) ? width : 100 };
+}
+
 function toHTML(block) {
-  const { kind, src, name } = block.props;
+  const { kind, src, name, align = 'left', width = 100 } = block.props;
   if (!src) return '<p></p>'; // nothing embedded yet: nothing meaningful to export
-  if (kind === 'image') return `<img src="${escapeAttr(src)}" alt="${escapeAttr(name || '')}">`;
-  if (kind === 'video') return `<video src="${escapeAttr(src)}" controls></video>`;
+  const style = alignWidthStyle(kind, align, width);
+  if (kind === 'image') return `<img src="${escapeAttr(src)}" alt="${escapeAttr(name || '')}"${style}>`;
+  if (kind === 'video') return `<video src="${escapeAttr(src)}" controls${style}></video>`;
   if (kind === 'audio') return `<audio src="${escapeAttr(src)}" controls></audio>`;
   return `<a class="${FILE_MARKER_CLASS}" href="${escapeAttr(src)}">${escapeHTML(name || src)}</a>`;
 }
@@ -27,10 +51,10 @@ function toPlainText(block) {
 
 function fromHTML(node) {
   if (node.tagName === 'IMG') {
-    return blockOf('image', node.getAttribute('src') ?? '', node.getAttribute('alt') ?? '');
+    return blockOf('image', node.getAttribute('src') ?? '', node.getAttribute('alt') ?? '', parseAlignWidth(node));
   }
   if (node.tagName === 'VIDEO') {
-    return blockOf('video', node.getAttribute('src') ?? '', '');
+    return blockOf('video', node.getAttribute('src') ?? '', '', parseAlignWidth(node));
   }
   if (node.tagName === 'AUDIO') {
     return blockOf('audio', node.getAttribute('src') ?? '', '');
@@ -41,8 +65,11 @@ function fromHTML(node) {
   return null;
 }
 
-function blockOf(kind, src, name) {
-  return { block: { id: genId(), type: 'embed', parentId: null, contentIds: [], props: { kind, src, name } }, runs: [] };
+function blockOf(kind, src, name, { align = 'left', width = 100 } = {}) {
+  return {
+    block: { id: genId(), type: 'embed', parentId: null, contentIds: [], props: { kind, src, name, align, width } },
+    runs: [],
+  };
 }
 
 /** Same pattern as divider's slash command: an embed has no run of its own to focus into, so seed and focus a following paragraph. */
@@ -60,7 +87,7 @@ function insertEmbedCommand(kind) {
 export const embedBlockType = {
   component: EmbedBlock,
   isLeaf: true, // contentIds always [] — a pure widget, same convention as divider
-  defaultProps: { kind: 'file', src: '', name: '', mimeType: '' },
+  defaultProps: { kind: 'file', src: '', name: '', mimeType: '', align: 'left', width: 100 },
   toHTML,
   toPlainText,
   fromHTML,
