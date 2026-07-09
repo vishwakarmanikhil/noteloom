@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useEditorStore, useInlineRegistry } from '../../react/EditorProvider.jsx';
-import { insertColumnAfter, deleteColumn, renameColumn, setColumnType, setColumnOptions } from './tableEditCommands.js';
-import { COLUMN_TYPES } from './tableColumns.js';
+import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.js';
+import { insertColumnAfter, deleteColumn, renameColumn, setColumnType, setColumnOptions, setColumnWidth } from './tableEditCommands.js';
+import { COLUMN_TYPES, MIN_COLUMN_WIDTH } from './tableColumns.js';
 import { genId } from '../../utils/idGen.js';
 import { XIcon } from '../../react/icons.jsx';
 import { Select } from '../../react/Select.jsx';
@@ -91,11 +93,17 @@ function SelectOptionsManager({ tableId, colIndex, options }) {
 }
 
 /**
- * One header cell: an editable label plus a small self-built menu (change
- * type, manage select options, insert column left/right, delete column) —
- * the same "own popup, close on outside-click/Escape" pattern SlashMenu
- * uses, kept local to this component rather than promoted to something
- * shared since it's simple enough not to need it.
+ * One header cell: an editable label, a small self-built menu (change
+ * type, manage select options, insert column left/right, delete column),
+ * and a drag handle on its right edge to resize the column.
+ *
+ * The menu is portaled to `document.body` (`position: fixed`, computed
+ * from the trigger button's own bounding rect) — same convention as
+ * Select/SlashMenu elsewhere in this codebase — instead of a plain
+ * absolutely-positioned child of this `<th>`. A table can genuinely
+ * overflow its wrapper (see `.be-table-wrapper`'s `overflow-x: auto`), and
+ * a plain in-flow popup gets visually clipped by that; portaling escapes
+ * it entirely, the same reason Select's own popover is portaled.
  *
  * Changing type runs every existing cell in the column through
  * setColumnType's data-preserving conversion (see tableColumns.js) rather
@@ -106,23 +114,20 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
   const store = useEditorStore();
   const inlineRegistry = useInlineRegistry();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [rect, setRect] = useState(null);
+  const [dragWidth, setDragWidth] = useState(null);
+  const triggerRef = useRef(null);
   const menuRef = useRef(null);
+  const thRef = useRef(null);
+  const outsideRefs = useMemo(() => [triggerRef, menuRef], []);
 
-  useEffect(() => {
-    if (!isMenuOpen) return undefined;
-    const handleOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setIsMenuOpen(false);
-    };
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') setIsMenuOpen(false);
-    };
-    document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isMenuOpen]);
+  const closeMenu = useCallback(() => setIsMenuOpen(false), []);
+  useOutsideClickAndEscape(outsideRefs, isMenuOpen, closeMenu);
+
+  const openMenu = useCallback(() => {
+    setRect(triggerRef.current?.getBoundingClientRect() ?? null);
+    setIsMenuOpen(true);
+  }, []);
 
   const handleLabelChange = useCallback(
     (event) => renameColumn(store, tableId, colIndex, event.target.value),
@@ -130,23 +135,55 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
   );
   const handleInsertLeft = useCallback(() => {
     insertColumnAfter(store, tableId, colIndex - 1);
-    setIsMenuOpen(false);
-  }, [store, tableId, colIndex]);
+    closeMenu();
+  }, [store, tableId, colIndex, closeMenu]);
   const handleInsertRight = useCallback(() => {
     insertColumnAfter(store, tableId, colIndex);
-    setIsMenuOpen(false);
-  }, [store, tableId, colIndex]);
+    closeMenu();
+  }, [store, tableId, colIndex, closeMenu]);
   const handleDelete = useCallback(() => {
     deleteColumn(store, tableId, colIndex);
-    setIsMenuOpen(false);
-  }, [store, tableId, colIndex]);
+    closeMenu();
+  }, [store, tableId, colIndex, closeMenu]);
   const handleTypeChange = useCallback(
     (type) => setColumnType(store, tableId, colIndex, type, inlineRegistry),
     [store, tableId, colIndex, inlineRegistry],
   );
 
+  // Live-updates the <colgroup>'s own <col> element directly during drag
+  // (see TableBlock.jsx's data-col-index) rather than dispatching a store
+  // write on every mousemove — the store only gets ONE write, on mouseup,
+  // matching EmbedBlock's own resize-handle convention.
+  const handleResizeStart = useCallback(
+    (event) => {
+      event.preventDefault();
+      const table = thRef.current?.closest('table');
+      const col = table?.querySelector(`col[data-col-index="${colIndex}"]`);
+      if (!col) return;
+      const startWidth = thRef.current.getBoundingClientRect().width;
+      const startX = event.clientX;
+
+      const computeWidth = (moveEvent) => Math.max(MIN_COLUMN_WIDTH, Math.round(startWidth + (moveEvent.clientX - startX)));
+
+      const handleMouseMove = (moveEvent) => {
+        const width = computeWidth(moveEvent);
+        col.style.width = `${width}px`;
+        setDragWidth(width);
+      };
+      const handleMouseUp = (upEvent) => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        setColumnWidth(store, tableId, colIndex, computeWidth(upEvent));
+        setDragWidth(null);
+      };
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [store, tableId, colIndex],
+  );
+
   return (
-    <th className="be-table-header-cell" contentEditable={false}>
+    <th ref={thRef} className="be-table-header-cell" contentEditable={false}>
       <input
         className="be-table-header-label"
         value={column.label}
@@ -154,47 +191,64 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
         aria-label={`Column ${colIndex + 1} name`}
       />
       <button
+        ref={triggerRef}
         type="button"
         className="be-table-header-menu-trigger"
         aria-label={`Column ${colIndex + 1} options`}
         aria-haspopup="menu"
         aria-expanded={isMenuOpen}
-        onClick={() => setIsMenuOpen((open) => !open)}
+        onClick={() => (isMenuOpen ? closeMenu() : openMenu())}
       >
         &#8942;
       </button>
-      {isMenuOpen && (
-        <div ref={menuRef} role="menu" className="be-table-header-menu">
-          <div className="be-table-header-menu-type">
-            <span id={`be-table-col-type-${column.id}`}>Type</span>
-            <Select
-              value={column.type}
-              options={TYPE_OPTIONS}
-              onChange={handleTypeChange}
-              ariaLabel="Column type"
-              className="be-table-header-type-select"
-            />
-          </div>
-          {column.type === 'select' && (
-            <SelectOptionsManager tableId={tableId} colIndex={colIndex} options={column.options ?? []} />
-          )}
-          <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleInsertLeft}>
-            Insert column left
-          </button>
-          <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleInsertRight}>
-            Insert column right
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="be-table-header-menu-item be-table-header-menu-item-danger"
-            onClick={handleDelete}
-            disabled={colCount <= 1}
+      <div
+        className="be-table-col-resize-handle"
+        onMouseDown={handleResizeStart}
+        role="slider"
+        aria-label={`Resize column ${colIndex + 1}`}
+        aria-valuemin={MIN_COLUMN_WIDTH}
+        aria-valuenow={dragWidth ?? column.width}
+      />
+      {isMenuOpen &&
+        rect &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            className="be-table-header-menu"
+            style={{ position: 'fixed', top: rect.bottom + 4, left: rect.right, transform: 'translateX(-100%)' }}
           >
-            Delete column
-          </button>
-        </div>
-      )}
+            <div className="be-table-header-menu-type">
+              <span id={`be-table-col-type-${column.id}`}>Type</span>
+              <Select
+                value={column.type}
+                options={TYPE_OPTIONS}
+                onChange={handleTypeChange}
+                ariaLabel="Column type"
+                className="be-table-header-type-select"
+              />
+            </div>
+            {column.type === 'select' && (
+              <SelectOptionsManager tableId={tableId} colIndex={colIndex} options={column.options ?? []} />
+            )}
+            <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleInsertLeft}>
+              Insert column left
+            </button>
+            <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleInsertRight}>
+              Insert column right
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="be-table-header-menu-item be-table-header-menu-item-danger"
+              onClick={handleDelete}
+              disabled={colCount <= 1}
+            >
+              Delete column
+            </button>
+          </div>,
+          document.body,
+        )}
     </th>
   );
 }

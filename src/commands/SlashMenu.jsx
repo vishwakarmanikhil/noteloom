@@ -104,23 +104,31 @@ export function SlashMenu({
       className="be-slash-menu"
       style={{ position: 'fixed', top: rect.bottom + 4, left: rect.left, zIndex: 1000 }}
     >
-      {commands.map((command, i) => (
-        <div
-          key={command.label}
-          ref={i === activeIndex ? activeItemRef : undefined}
-          id={`${menuId}-option-${i}`}
-          role="option"
-          aria-selected={i === activeIndex}
-          className={`be-slash-menu-item${i === activeIndex ? ' be-slash-menu-item-active' : ''}`}
-          onMouseDown={(event) => {
-            event.preventDefault();
-            onSelect(command);
-          }}
-          onMouseEnter={() => setActiveIndex(i)}
-        >
-          {command.label}
-        </div>
-      ))}
+      {commands.map((command, i) => {
+        const Icon = command.icon;
+        return (
+          <div
+            key={command.label}
+            ref={i === activeIndex ? activeItemRef : undefined}
+            id={`${menuId}-option-${i}`}
+            role="option"
+            aria-selected={i === activeIndex}
+            className={`be-slash-menu-item${i === activeIndex ? ' be-slash-menu-item-active' : ''}`}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              onSelect(command);
+            }}
+            onMouseEnter={() => setActiveIndex(i)}
+          >
+            {Icon && (
+              <span className="be-slash-menu-item-icon">
+                <Icon size={16} />
+              </span>
+            )}
+            <span className="be-slash-menu-item-label">{command.label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createListItemBlock } from './createListItemBlock.js';
+import { BulletedListIcon, NumberedListIcon, CheckboxIcon, ChevronRightIcon } from '../../react/icons.jsx';
 
 /**
  * Emits just `<li>...</li>` (with nested `<ul>/<ol>` for indented children).
@@ -87,22 +88,26 @@ export const listItemBlockType = {
   slashCommands: [
     {
       label: 'Bulleted list',
+      icon: BulletedListIcon,
       keywords: ['list', 'bullet', 'ul'],
       run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: false })),
     },
     {
       label: 'Numbered list',
+      icon: NumberedListIcon,
       keywords: ['list', 'number', 'ordered', 'ol'],
       run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: true })),
     },
     {
       label: 'To-do list',
+      icon: CheckboxIcon,
       keywords: ['todo', 'checkbox', 'task', 'checklist'],
       run: (store, ctx) =>
         trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: false, checked: false })),
     },
     {
       label: 'Toggle list',
+      icon: ChevronRightIcon,
       keywords: ['toggle', 'collapse', 'expand', 'dropdown', 'accordion'],
       run: (store, ctx) =>
         trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: false, collapsed: false })),

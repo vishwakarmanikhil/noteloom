@@ -2,31 +2,42 @@ import { genId } from '../../utils/idGen.js';
 
 export const COLUMN_TYPES = ['text', 'date', 'checkbox', 'select'];
 export const DEFAULT_COLUMN_TYPE = 'text';
+export const DEFAULT_COLUMN_WIDTH = 160;
+export const MIN_COLUMN_WIDTH = 80;
 
 export function defaultColumnLabel(index) {
   return `Column ${index + 1}`;
 }
 
 export function createDefaultColumns(count) {
-  return Array.from({ length: count }, (_, i) => ({ id: genId(), label: defaultColumnLabel(i), type: DEFAULT_COLUMN_TYPE }));
+  return Array.from({ length: count }, (_, i) => ({
+    id: genId(),
+    label: defaultColumnLabel(i),
+    type: DEFAULT_COLUMN_TYPE,
+    width: DEFAULT_COLUMN_WIDTH,
+  }));
 }
 
 /**
- * Returns a table's column metadata (`{ id, label, type }` per column),
- * falling back to generated (all-text) defaults when it's missing or the
- * wrong length — a table pasted in from external HTML, loaded from a
- * document saved before this feature existed, or hand-built by a host app
- * never had a chance to set `props.columns` at all, and it's cheap
- * insurance against a stale array (e.g. a column added/removed through a
- * code path that didn't know to keep it in sync) ever crashing the header
- * row instead of just re-deriving something sensible. Also fills in
- * `type: 'text'` for any column entry that predates the typed-column
- * feature (missing `type` field).
+ * Returns a table's column metadata (`{ id, label, type, width }` per
+ * column), falling back to generated (all-text, default-width) defaults
+ * when it's missing or the wrong length — a table pasted in from external
+ * HTML, loaded from a document saved before this feature existed, or
+ * hand-built by a host app never had a chance to set `props.columns` at
+ * all, and it's cheap insurance against a stale array (e.g. a column
+ * added/removed through a code path that didn't know to keep it in sync)
+ * ever crashing the header row instead of just re-deriving something
+ * sensible. Also fills in `type: 'text'`/`width: DEFAULT_COLUMN_WIDTH` for
+ * any column entry that predates those fields.
  */
 export function resolveColumns(table, colCount) {
   const columns = table.props?.columns;
   if (!Array.isArray(columns) || columns.length !== colCount) return createDefaultColumns(colCount);
-  return columns.map((c) => (c.type ? c : { ...c, type: DEFAULT_COLUMN_TYPE }));
+  return columns.map((c) => {
+    const type = c.type ?? DEFAULT_COLUMN_TYPE;
+    const width = c.width ?? DEFAULT_COLUMN_WIDTH;
+    return type === c.type && width === c.width ? c : { ...c, type, width };
+  });
 }
 
 /**

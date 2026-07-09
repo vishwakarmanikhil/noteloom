@@ -2,7 +2,7 @@ import { removeBlock, insertBlock, updateBlockProps, setBlockRuns, updateRun } f
 import { genId } from '../../utils/idGen.js';
 import { focusBlockStart } from '../shared/navigationCommands.js';
 import { ensureRootNonEmpty } from '../shared/ensureRootNonEmpty.js';
-import { resolveColumns, createCellForColumn, convertRunToType, DEFAULT_COLUMN_TYPE } from './tableColumns.js';
+import { resolveColumns, createCellForColumn, convertRunToType, DEFAULT_COLUMN_TYPE, DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from './tableColumns.js';
 
 function applyOps(store, ops) {
   if (typeof store.performBatch === 'function') store.performBatch(ops);
@@ -87,7 +87,7 @@ export function deleteRow(store, rowId) {
 export function insertColumnAfter(store, tableId, colIndex) {
   const table = store.getBlock(tableId);
   const currentColumns = resolveColumns(table, table.contentIds[0] ? store.getBlock(table.contentIds[0]).contentIds.length : 0);
-  const newColumn = { id: genId(), label: 'New Column', type: DEFAULT_COLUMN_TYPE };
+  const newColumn = { id: genId(), label: 'New Column', type: DEFAULT_COLUMN_TYPE, width: DEFAULT_COLUMN_WIDTH };
   const ops = [];
   let firstNewCellId = null;
 
@@ -134,6 +134,17 @@ export function deleteColumn(store, tableId, colIndex) {
   const targetCellId = updatedFirstRow.contentIds[targetColIndex];
   if (targetCellId) focusBlockStart(store, targetCellId);
   return targetCellId ?? null;
+}
+
+/** Sets the column at `colIndex`'s pixel width (clamped to MIN_COLUMN_WIDTH) — one atomic undo step. */
+export function setColumnWidth(store, tableId, colIndex, width) {
+  const table = store.getBlock(tableId);
+  const firstRow = store.getBlock(table.contentIds[0]);
+  const currentColumns = resolveColumns(table, firstRow ? firstRow.contentIds.length : 0);
+  if (!currentColumns[colIndex]) return;
+  const nextColumns = [...currentColumns];
+  nextColumns[colIndex] = { ...currentColumns[colIndex], width: Math.max(MIN_COLUMN_WIDTH, Math.round(width)) };
+  store.applyOperation(updateBlockProps(tableId, { columns: nextColumns }));
 }
 
 /** Renames the column at `colIndex` — one atomic undo step. */

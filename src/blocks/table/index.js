@@ -7,6 +7,7 @@ import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createTableBlock } from './createTableBlock.js';
 import { resolveColumns } from './tableColumns.js';
+import { TableIcon } from '../../react/icons.jsx';
 
 // --- tableCell: near-identical to paragraph's toHTML/fromHTML/toPlainText ---
 
@@ -158,6 +159,7 @@ export const tableBlockType = {
   fromHTML: tableFromHTML,
   slashCommand: {
     label: 'Table',
+    icon: TableIcon,
     keywords: ['table', 'grid'],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTableBlock({ rows: 2, cols: 2 })),
   },

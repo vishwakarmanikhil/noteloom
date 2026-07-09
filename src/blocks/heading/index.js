@@ -4,6 +4,9 @@ import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
+import { Heading1Icon, Heading2Icon, Heading3Icon } from '../../react/icons.jsx';
+
+const HEADING_ICONS = { 1: Heading1Icon, 2: Heading2Icon, 3: Heading3Icon };
 
 const TAG_TO_LEVEL = { H1: 1, H2: 2, H3: 3 };
 
@@ -41,16 +44,19 @@ export const headingBlockType = {
   slashCommands: [
     {
       label: 'Heading 1',
+      icon: HEADING_ICONS[1],
       keywords: ['heading', 'h1', 'title'],
       run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 1 })),
     },
     {
       label: 'Heading 2',
+      icon: HEADING_ICONS[2],
       keywords: ['heading', 'h2', 'subtitle'],
       run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 2 })),
     },
     {
       label: 'Heading 3',
+      icon: HEADING_ICONS[3],
       keywords: ['heading', 'h3', 'title'],
       run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 3 })),
     },

@@ -1,6 +1,7 @@
 import { DateInlineNode } from './DateInlineNode.jsx';
 import { genId } from '../../utils/idGen.js';
 import { insertInlineRunAtCursor } from '../shared/insertInlineRun.js';
+import { DateIcon } from '../../react/icons.jsx';
 
 function escapeAttr(str) {
   return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
@@ -46,6 +47,7 @@ export const dateInlineType = {
   fromHTML,
   slashCommand: {
     label: 'Date',
+    icon: DateIcon,
     keywords: ['date', 'when', 'schedule', 'calendar'],
     run: (store, { blockId, runId, sliceStart, sliceEnd }) =>
       insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, () => ({

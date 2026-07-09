@@ -1,6 +1,7 @@
 import { CheckboxInlineNode } from './CheckboxInlineNode.jsx';
 import { genId } from '../../utils/idGen.js';
 import { insertInlineRunAtCursor } from '../shared/insertInlineRun.js';
+import { CheckboxIcon } from '../../react/icons.jsx';
 
 function escapeHTML(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -40,6 +41,7 @@ export const checkboxInlineType = {
   fromHTML,
   slashCommand: {
     label: 'Checkbox',
+    icon: CheckboxIcon,
     keywords: ['checkbox', 'todo', 'check', 'toggle'],
     run: (store, { blockId, runId, sliceStart, sliceEnd }) =>
       insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, () => ({

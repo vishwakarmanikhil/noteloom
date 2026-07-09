@@ -4,6 +4,7 @@ import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createButtonBlock } from './createButtonBlock.js';
+import { ButtonIcon } from '../../react/icons.jsx';
 
 // Distinctive class (not just a bare <a>) so this never collides with an
 // ordinary link pasted from elsewhere — walkDomToBlocks's generic matcher
@@ -59,6 +60,7 @@ export const buttonBlockType = {
   fromHTML,
   slashCommand: {
     label: 'Button',
+    icon: ButtonIcon,
     keywords: ['button', 'link', 'cta', 'action'],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createButtonBlock()),
   },

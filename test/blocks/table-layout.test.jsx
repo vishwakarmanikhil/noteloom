@@ -10,7 +10,8 @@ import { registerBuiltInInlineTypes } from '../../src/inlineTypes/index.js';
 import { insertBlock } from '../../src/store/operations.js';
 import { createTableBlock } from '../../src/blocks/table/createTableBlock.js';
 import { createLayoutBlock } from '../../src/blocks/layout/createLayoutBlock.js';
-import { setColumnType } from '../../src/blocks/table/tableEditCommands.js';
+import { setColumnType, setColumnWidth } from '../../src/blocks/table/tableEditCommands.js';
+import { DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from '../../src/blocks/table/tableColumns.js';
 
 function emptyDoc() {
   return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
@@ -176,7 +177,7 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
 
     const firstHeaderCell = container.querySelectorAll('.be-table-header-cell')[0];
     fireEvent.click(firstHeaderCell.querySelector('.be-table-header-menu-trigger'));
-    const insertRightButton = [...firstHeaderCell.querySelectorAll('.be-table-header-menu-item')].find((b) =>
+    const insertRightButton = [...document.querySelectorAll('.be-table-header-menu-item')].find((b) =>
       b.textContent.includes('right'),
     );
     fireEvent.click(insertRightButton);
@@ -196,7 +197,7 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
 
     const firstHeaderCell = container.querySelectorAll('.be-table-header-cell')[0];
     fireEvent.click(firstHeaderCell.querySelector('.be-table-header-menu-trigger'));
-    const deleteButton = [...firstHeaderCell.querySelectorAll('.be-table-header-menu-item')].find((b) =>
+    const deleteButton = [...document.querySelectorAll('.be-table-header-menu-item')].find((b) =>
       b.textContent.includes('Delete'),
     );
     fireEvent.click(deleteButton);
@@ -219,7 +220,7 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
 
     const headerCell = container.querySelector('.be-table-header-cell');
     fireEvent.click(headerCell.querySelector('.be-table-header-menu-trigger'));
-    fireEvent.click(headerCell.querySelector('.be-table-header-menu-type .be-select-trigger'));
+    fireEvent.click(document.querySelector('.be-table-header-menu-type .be-select-trigger'));
     fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Checkbox'));
 
     expect(store.getBlock(tableId).props.columns[0].type).toBe('checkbox');
@@ -233,6 +234,90 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
   });
 });
 
+describe('table columns: default width + resizable via drag handle', () => {
+  it('new columns default to DEFAULT_COLUMN_WIDTH, reflected in the <colgroup>', () => {
+    const store = new EditorStore(emptyDoc());
+    insertAtRoot(store, createTableBlock({ rows: 1, cols: 2 }));
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    const cols = [...container.querySelectorAll('colgroup col[data-col-index]')];
+    expect(cols).toHaveLength(2);
+    expect(cols[0].style.width).toBe(`${DEFAULT_COLUMN_WIDTH}px`);
+    expect(cols[1].style.width).toBe(`${DEFAULT_COLUMN_WIDTH}px`);
+  });
+
+  it('setColumnWidth updates just that column\'s stored width, clamped to MIN_COLUMN_WIDTH', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 2 }));
+
+    setColumnWidth(store, tableId, 0, 240);
+    expect(store.getBlock(tableId).props.columns[0].width).toBe(240);
+    expect(store.getBlock(tableId).props.columns[1].width).toBe(DEFAULT_COLUMN_WIDTH); // untouched
+
+    setColumnWidth(store, tableId, 1, 10); // below the minimum
+    expect(store.getBlock(tableId).props.columns[1].width).toBe(MIN_COLUMN_WIDTH);
+  });
+
+  it('dragging the resize handle live-updates the <col> width and commits once on mouseup', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    const th = container.querySelector('.be-table-header-cell');
+    th.getBoundingClientRect = () => ({ width: DEFAULT_COLUMN_WIDTH, height: 0, top: 0, left: 0, right: 0, bottom: 0, x: 0, y: 0 });
+    const handle = container.querySelector('.be-table-col-resize-handle');
+    const col = container.querySelector('colgroup col[data-col-index="0"]');
+
+    fireEvent.mouseDown(handle, { clientX: 100 });
+    expect(store.getBlock(tableId).props.columns[0].width).toBe(DEFAULT_COLUMN_WIDTH); // no store write yet
+
+    fireEvent.mouseMove(document, { clientX: 150 }); // dragged 50px wider
+    expect(col.style.width).toBe(`${DEFAULT_COLUMN_WIDTH + 50}px`); // live preview, no store write yet
+    expect(store.getBlock(tableId).props.columns[0].width).toBe(DEFAULT_COLUMN_WIDTH);
+
+    fireEvent.mouseUp(document, { clientX: 150 });
+    expect(store.getBlock(tableId).props.columns[0].width).toBe(DEFAULT_COLUMN_WIDTH + 50);
+  });
+});
+
+describe('table header menu: portaled to document.body (regression: was clipped by .be-table-wrapper)', () => {
+  it('the menu is NOT a DOM descendant of the table wrapper', () => {
+    const store = new EditorStore(emptyDoc());
+    insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+
+    expect(container.querySelector('.be-table-header-menu')).toBeNull(); // not inside the wrapper
+    expect(document.querySelector('.be-table-header-menu')).not.toBeNull(); // portaled to document.body
+    expect(document.body.contains(document.querySelector('.be-table-header-menu'))).toBe(true);
+  });
+
+  it('closes on outside click and Escape', () => {
+    const store = new EditorStore(emptyDoc());
+    insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    expect(document.querySelector('.be-table-header-menu')).not.toBeNull();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(document.querySelector('.be-table-header-menu')).toBeNull();
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    expect(document.querySelector('.be-table-header-menu')).not.toBeNull();
+    fireEvent.mouseDown(document.body);
+    expect(document.querySelector('.be-table-header-menu')).toBeNull();
+  });
+});
+
 describe('table select column: shared options, managed from the column header (not per cell)', () => {
   it('every cell in the column shares the same dropdown choices, and adding one option updates all cells at once', () => {
     const store = new EditorStore(emptyDoc());
@@ -243,16 +328,16 @@ describe('table select column: shared options, managed from the column header (n
 
     const headerCell = container.querySelector('.be-table-header-cell');
     fireEvent.click(headerCell.querySelector('.be-table-header-menu-trigger'));
-    fireEvent.click(headerCell.querySelector('.be-table-header-menu-type .be-select-trigger'));
+    fireEvent.click(document.querySelector('.be-table-header-menu-type .be-select-trigger'));
     fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Select'));
 
     // re-open the menu (changing type may have re-rendered it closed) and add an option
-    if (!headerCell.querySelector('.be-table-header-menu')) {
+    if (!document.querySelector('.be-table-header-menu')) {
       fireEvent.click(headerCell.querySelector('.be-table-header-menu-trigger'));
     }
-    const addInput = headerCell.querySelector('.be-table-header-menu-option-input[placeholder="New option…"]');
+    const addInput = document.querySelector('.be-table-header-menu-option-input[placeholder="New option…"]');
     fireEvent.change(addInput, { target: { value: 'Open' } });
-    fireEvent.click(headerCell.querySelector('.be-table-header-menu-option-add'));
+    fireEvent.click(document.querySelector('.be-table-header-menu-option-add'));
 
     const triggers = container.querySelectorAll('.be-inline-table-select .be-select-trigger');
     expect(triggers.length).toBe(2); // one per row
@@ -306,9 +391,9 @@ describe('table select column: shared options, managed from the column header (n
     const { container } = renderDoc(store, registry);
 
     fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
-    const addInput = container.querySelector('.be-table-header-menu-option-input[placeholder="New option…"]');
+    const addInput = document.querySelector('.be-table-header-menu-option-input[placeholder="New option…"]');
     fireEvent.change(addInput, { target: { value: 'Urgent' } });
-    fireEvent.click(container.querySelector('.be-table-header-menu-option-add'));
+    fireEvent.click(document.querySelector('.be-table-header-menu-option-add'));
 
     const column = store.getBlock(tableId).props.columns[0];
     expect(column.options[0].color).toBeDefined();
@@ -316,7 +401,7 @@ describe('table select column: shared options, managed from the column header (n
 
     // the swatch next to the option in the manager reflects that color
     // (jsdom normalizes the inline hex to rgb(), so just check it's set)
-    const swatch = container.querySelector('.be-table-header-menu-option-swatch');
+    const swatch = document.querySelector('.be-table-header-menu-option-swatch');
     expect(swatch.style.background).not.toBe('');
 
     // and the cell's own Select shows it as a colored pill, not plain text

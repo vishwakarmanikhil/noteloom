@@ -1,6 +1,7 @@
 import { CalloutBlock } from './CalloutBlock.jsx';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createCalloutBlock, DEFAULT_CALLOUT_ICON } from './createCalloutBlock.js';
+import { CalloutIcon } from '../../react/icons.jsx';
 
 function childrenToHTML(block, ctx) {
   return block.contentIds
@@ -37,10 +38,11 @@ export const calloutBlockType = {
   // external HTML shape for a "callout" box, so plain-HTML paste doesn't
   // need to reconstruct one. Same-editor copy/paste is already lossless
   // via the generic block-subtree JSON clipboard path
-  // (captureSubtreeForClipboard in clipboard/serialize.js), which walks
+  // (captureSubtree in clipboard/serialize.js), which walks
   // contentIds generically and needs no per-type awareness at all.
   slashCommand: {
     label: 'Callout',
+    icon: CalloutIcon,
     keywords: ['callout', 'aside', 'note', 'info', 'tip', 'warning'],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createCalloutBlock()),
   },

@@ -5,6 +5,9 @@ import { insertSiblingAfter, insertSiblingAfterAndFocus } from '../shared/blockC
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { createEmbedBlock } from './createEmbedBlock.js';
 import { updateRun } from '../../store/operations.js';
+import { ImageIcon, VideoIcon, AudioIcon, PaperclipIcon } from '../../react/icons.jsx';
+
+const KIND_ICONS = { image: ImageIcon, video: VideoIcon, audio: AudioIcon, file: PaperclipIcon };
 
 // Distinctive marker class for the 'file' kind's <a> — same reasoning as
 // the button block: an ordinary pasted link must never be mistaken for a
@@ -93,6 +96,7 @@ export const embedBlockType = {
   fromHTML,
   slashCommands: ['image', 'video', 'audio', 'file'].map((kind) => ({
     label: kind.charAt(0).toUpperCase() + kind.slice(1),
+    icon: KIND_ICONS[kind],
     keywords: ['embed', 'upload', 'insert', kind],
     run: insertEmbedCommand(kind),
   })),

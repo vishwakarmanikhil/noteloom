@@ -4,6 +4,7 @@ import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
+import { QuoteIcon } from '../../react/icons.jsx';
 
 function toHTML(block, ctx) {
   const runs = block.contentIds.map((runId) => ctx.store.getRun(runId));
@@ -30,6 +31,7 @@ export const blockquoteBlockType = {
   fromHTML,
   slashCommand: {
     label: 'Quote',
+    icon: QuoteIcon,
     keywords: ['quote', 'blockquote', 'citation'],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('blockquote')),
   },

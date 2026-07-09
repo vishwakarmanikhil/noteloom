@@ -139,3 +139,282 @@ export function AlignRightIcon(props) {
     </Icon>
   );
 }
+
+// A 2x3 grid of solid dots (drag-handle convention) — unlike every other
+// icon here, these are filled, not stroked outlines: a 1px-radius circle
+// with only a stroke renders as a barely-visible ring at this size, so each
+// dot overrides the shared Icon wrapper's fill="none"/stroke defaults
+// directly rather than inheriting them.
+export function GripVerticalIcon(props) {
+  return (
+    <Icon {...props}>
+      {[5, 12, 19].flatMap((cy) =>
+        [9, 15].map((cx) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.3" fill="currentColor" stroke="none" />),
+      )}
+    </Icon>
+  );
+}
+
+export function TrashIcon(props) {
+  return (
+    <Icon {...props}>
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </Icon>
+  );
+}
+
+export function CopyIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </Icon>
+  );
+}
+
+export function ArrowUpIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="12" y1="19" x2="12" y2="5" />
+      <polyline points="5 12 12 5 19 12" />
+    </Icon>
+  );
+}
+
+export function ArrowDownIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <polyline points="19 12 12 19 5 12" />
+    </Icon>
+  );
+}
+
+// --- Slash-menu command icons ---------------------------------------------
+// One icon per command so the "/" menu reads like Notion/TipTap's own
+// (glyph + label, not label-only) — see SlashMenu.jsx and each block/
+// inline type's own `slashCommand(s)` definition for where these attach.
+
+export function TextIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="17" y1="6" x2="3" y2="6" />
+      <line x1="21" y1="12" x2="3" y2="12" />
+      <line x1="15" y1="18" x2="3" y2="18" />
+    </Icon>
+  );
+}
+
+/** Parameterized by `level` (1-3) — a single "H" + digit, filled text rather than the shared stroke-only glyphs above. */
+export function HeadingIcon({ level = 1, size = 16, ...rest }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...rest}>
+      <text x="2" y="18" fontSize="14" fontWeight="700" fill="currentColor" fontFamily="inherit">
+        H{level}
+      </text>
+    </svg>
+  );
+}
+
+// Fixed-level wrappers around HeadingIcon — plain-.js command definitions
+// (e.g. blocks/heading/index.js) can't write JSX to pass `level` themselves,
+// so each level gets its own importable component instead.
+export function Heading1Icon(props) {
+  return <HeadingIcon level={1} {...props} />;
+}
+export function Heading2Icon(props) {
+  return <HeadingIcon level={2} {...props} />;
+}
+export function Heading3Icon(props) {
+  return <HeadingIcon level={3} {...props} />;
+}
+
+export function QuoteIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M7 7a3 3 0 0 0-3 3v3a2 2 0 0 0 2 2h2a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H6a3 3 0 0 1 3-3z" />
+      <path d="M17 7a3 3 0 0 0-3 3v3a2 2 0 0 0 2 2h2a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-2a3 3 0 0 1 3-3z" />
+    </Icon>
+  );
+}
+
+export function CodeIcon(props) {
+  return (
+    <Icon {...props}>
+      <polyline points="9 8 4 12 9 16" />
+      <polyline points="15 8 20 12 15 16" />
+    </Icon>
+  );
+}
+
+export function DividerIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="4" y1="12" x2="20" y2="12" />
+    </Icon>
+  );
+}
+
+export function CalloutIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+      <line x1="7" y1="9" x2="17" y2="9" />
+      <line x1="7" y1="12.5" x2="13" y2="12.5" />
+    </Icon>
+  );
+}
+
+export function ButtonIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="8" width="18" height="8" rx="3" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+    </Icon>
+  );
+}
+
+export function TableIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="1" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <line x1="3" y1="16" x2="21" y2="16" />
+      <line x1="9" y1="4" x2="9" y2="20" />
+      <line x1="15" y1="4" x2="15" y2="20" />
+    </Icon>
+  );
+}
+
+export function ColumnsIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="1" />
+      <line x1="9" y1="4" x2="9" y2="20" />
+      <line x1="15" y1="4" x2="15" y2="20" />
+    </Icon>
+  );
+}
+
+export function BulletedListIcon(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none" />
+      <line x1="9" y1="6" x2="21" y2="6" />
+      <line x1="9" y1="12" x2="21" y2="12" />
+      <line x1="9" y1="18" x2="21" y2="18" />
+    </Icon>
+  );
+}
+
+export function NumberedListIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="10" y1="6" x2="21" y2="6" />
+      <line x1="10" y1="12" x2="21" y2="12" />
+      <line x1="10" y1="18" x2="21" y2="18" />
+      <text x="2" y="8.5" fontSize="7" fontWeight="700" fill="currentColor" stroke="none">
+        1
+      </text>
+      <text x="2" y="14.5" fontSize="7" fontWeight="700" fill="currentColor" stroke="none">
+        2
+      </text>
+      <text x="2" y="20.5" fontSize="7" fontWeight="700" fill="currentColor" stroke="none">
+        3
+      </text>
+    </Icon>
+  );
+}
+
+export function CheckboxIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <polyline points="8 12 11 15 16 9" />
+    </Icon>
+  );
+}
+
+export function MentionIcon(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-4.5 7.79" />
+    </Icon>
+  );
+}
+
+export function DateIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <line x1="8" y1="3" x2="8" y2="7" />
+      <line x1="16" y1="3" x2="16" y2="7" />
+    </Icon>
+  );
+}
+
+export function SelectIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3h7a2 2 0 0 1 2 2v7a2 2 0 0 1-.59 1.41l-8 8a2 2 0 0 1-2.82 0l-7-7a2 2 0 0 1 0-2.82l8-8A2 2 0 0 1 12 3z" />
+      <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+    </Icon>
+  );
+}
+
+export function ImageIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none" />
+      <path d="M4 17l5-5 4 4 4-5 4 6" />
+    </Icon>
+  );
+}
+
+export function VideoIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="5" width="14" height="14" rx="2" />
+      <path d="M17 10l4-2.5v9L17 14" />
+    </Icon>
+  );
+}
+
+export function EyeIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </Icon>
+  );
+}
+
+export function EyeOffIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-6.5 0-10-7-10-7a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19" />
+      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </Icon>
+  );
+}
+
+export function AudioIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="4" y1="10" x2="4" y2="14" />
+      <line x1="8" y1="7" x2="8" y2="17" />
+      <line x1="12" y1="4" x2="12" y2="20" />
+      <line x1="16" y1="7" x2="16" y2="17" />
+      <line x1="20" y1="10" x2="20" y2="14" />
+    </Icon>
+  );
+}

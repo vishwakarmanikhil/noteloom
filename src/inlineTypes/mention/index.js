@@ -1,6 +1,7 @@
 import { MentionInlineNode } from './MentionInlineNode.jsx';
 import { genId } from '../../utils/idGen.js';
 import { insertInlineRunAtCursor } from '../shared/insertInlineRun.js';
+import { MentionIcon } from '../../react/icons.jsx';
 
 function escapeAttr(str) {
   return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
@@ -38,6 +39,7 @@ export const mentionInlineType = {
   fromHTML,
   slashCommand: {
     label: 'Mention',
+    icon: MentionIcon,
     keywords: ['mention', '@', 'person', 'user'],
     run: (store, { blockId, runId, sliceStart, sliceEnd }) =>
       insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, () => ({

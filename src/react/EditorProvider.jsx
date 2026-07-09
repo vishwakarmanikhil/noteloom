@@ -21,6 +21,16 @@ export function EditorProvider({ store, registry, inlineRegistry = null, history
   // own doc comment).
   const [isWholeDocumentSelected, setIsWholeDocumentSelected] = useState(false);
 
+  // Preview-mode toggle — also ephemeral UI state, not document data (a
+  // reload always starts back in edit mode). While true, BlockChildren
+  // skips rendering the per-block gutter entirely and omits any block
+  // whose own props.hidden is true, instead of rendering it dimmed the way
+  // edit mode does (see BlockGutterRow's Hide/Show menu item) — the whole
+  // point of "hidden" is that it disappears from the preview a reader
+  // eventually sees, while staying editable (just visually dimmed) for
+  // whoever's still writing it.
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
   // A single non-editable/contentless block (image, divider, etc.) that's
   // "selected" pending a second Backspace/Delete to actually remove it —
   // matching Notion/TipTap's convention for atomic nodes: the first press
@@ -57,8 +67,19 @@ export function EditorProvider({ store, registry, inlineRegistry = null, history
       setIsWholeDocumentSelected,
       getSelectedBlockId,
       setSelectedBlockId,
+      isPreviewMode,
+      setIsPreviewMode,
     }),
-    [store, registry, inlineRegistry, history, isWholeDocumentSelected, getSelectedBlockId, setSelectedBlockId],
+    [
+      store,
+      registry,
+      inlineRegistry,
+      history,
+      isWholeDocumentSelected,
+      getSelectedBlockId,
+      setSelectedBlockId,
+      isPreviewMode,
+    ],
   );
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
 }
@@ -112,4 +133,18 @@ export function useWholeDocumentSelection() {
 export function useSelectedBlock() {
   const { getSelectedBlockId, setSelectedBlockId } = useEditorContext();
   return { getSelectedBlockId, setSelectedBlockId };
+}
+
+/**
+ * `[isPreviewMode, setIsPreviewMode]` — toggles the whole editor between
+ * edit mode (every block renders normally, hidden ones dimmed via
+ * BlockGutterRow's own styling) and preview mode (BlockChildren renders
+ * without the per-block gutter at all, and skips any block whose
+ * `props.hidden` is true entirely — see BlockChildren's doc comment). A
+ * host app wires its own toggle button/keyboard shortcut to this, same as
+ * useWholeDocumentSelection.
+ */
+export function usePreviewMode() {
+  const { isPreviewMode, setIsPreviewMode } = useEditorContext();
+  return [isPreviewMode, setIsPreviewMode];
 }

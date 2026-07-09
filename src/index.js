@@ -14,6 +14,7 @@ export {
   useInlineRegistry,
   useWholeDocumentSelection,
   useSelectedBlock,
+  usePreviewMode,
 } from './react/EditorProvider.jsx';
 export { useBlock, useRun } from './react/useBlock.js';
 export { useHistory } from './react/useHistory.js';
@@ -23,9 +24,11 @@ export { useEditorKeyboardShortcuts } from './react/useEditorKeyboardShortcuts.j
 export { BlockRenderer } from './react/BlockRenderer.jsx';
 export { BlockErrorBoundary } from './react/BlockErrorBoundary.jsx';
 export { BlockChildren } from './react/BlockChildren.jsx';
+export { BlockGutterRow } from './react/BlockGutterRow.jsx';
 export { EditableBlockContent } from './react/EditableBlockContent.jsx';
 export { Modal } from './react/Modal.jsx';
 export { Select } from './react/Select.jsx';
+export { EditorTrailingSpace } from './react/EditorTrailingSpace.jsx';
 
 export { APP_MIME } from './clipboard/mimeType.js';
 export { serializeBlockRange, remapSubtreeIds } from './clipboard/serialize.js';
@@ -46,6 +49,7 @@ export {
   renameColumn,
   setColumnType,
   setColumnOptions,
+  setColumnWidth,
 } from './blocks/table/tableEditCommands.js';
 export {
   resolveColumns,
@@ -55,6 +59,8 @@ export {
   blankRunForType,
   COLUMN_TYPES,
   DEFAULT_COLUMN_TYPE,
+  DEFAULT_COLUMN_WIDTH,
+  MIN_COLUMN_WIDTH,
 } from './blocks/table/tableColumns.js';
 export { TableHeaderRow } from './blocks/table/TableHeaderRow.jsx';
 
@@ -72,3 +78,4 @@ export { resolveRunSelection, resolveMultiRunSelection, resolveCrossBlockSelecti
 export { isEntireBlockSelected } from './react/selectAllCommand.js';
 export { focusRunEnd, focusRunStart, focusRunAtOffset } from './react/focusRun.js';
 export { ensureRootNonEmpty } from './blocks/shared/ensureRootNonEmpty.js';
+export { duplicateBlock, moveBlockUp, moveBlockDown, deleteBlockAndFocusSibling } from './blocks/shared/blockActions.js';

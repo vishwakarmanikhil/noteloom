@@ -5,6 +5,7 @@ import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createToggleHeadingBlock } from './createToggleHeadingBlock.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
+import { ChevronRightIcon } from '../../react/icons.jsx';
 
 /**
  * <details>/<summary> is a genuine semantic match for a toggle heading —
@@ -82,6 +83,7 @@ export const toggleHeadingBlockType = {
   fromHTML,
   slashCommands: [1, 2, 3].map((level) => ({
     label: `Toggle heading ${level}`,
+    icon: ChevronRightIcon,
     // Deliberately does NOT include "h1"/"h2"/"h3" — those short forms
     // already belong exclusively to the plain heading commands (see
     // heading/index.js); duplicating them here would make "/h3" ambiguous

@@ -18,7 +18,7 @@ export function serializeBlockRange(store, registry, blockIds, inlineRegistry) {
         return registry.get(block.type).toPlainText(block, ctx);
       })
       .join('\n'),
-    json: JSON.stringify({ version: 1, blocks: blockIds.map((id) => captureSubtreeForClipboard(store, id)) }),
+    json: JSON.stringify({ version: 1, blocks: blockIds.map((id) => captureSubtree(store, id)) }),
   };
 }
 
@@ -65,8 +65,13 @@ function serializeHTML(store, registry, blockIds, ctx) {
   return html;
 }
 
-/** Read-only capture of a block subtree (block + descendants + their runs) for the app-specific clipboard JSON. */
-function captureSubtreeForClipboard(store, rootId) {
+/**
+ * Read-only capture of a block subtree (block + descendants + their runs)
+ * — used for the app-specific clipboard JSON, and reused as-is by
+ * `duplicateBlock` (see blocks/shared/blockActions.js) since "clone this
+ * subtree with fresh ids" is exactly the same operation either way.
+ */
+export function captureSubtree(store, rootId) {
   const blocks = [];
   const runs = [];
   const walk = (id) => {

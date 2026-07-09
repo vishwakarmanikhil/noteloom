@@ -3,6 +3,7 @@ import { runToHTML, runToPlainText, escapeHTML } from '../../inline/marks.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
+import { CodeIcon } from '../../react/icons.jsx';
 
 function toHTML(block, ctx) {
   const runs = block.contentIds.map((runId) => ctx.store.getRun(runId));
@@ -39,6 +40,7 @@ export const codeBlockType = {
   fromHTML,
   slashCommand: {
     label: 'Code',
+    icon: CodeIcon,
     keywords: ['code', 'codeblock', 'snippet', 'pre'],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('code')),
   },

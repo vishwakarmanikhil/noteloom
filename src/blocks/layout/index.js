@@ -2,6 +2,7 @@ import { LayoutBlock } from './LayoutBlock.jsx';
 import { LayoutColumnBlock } from './LayoutColumnBlock.jsx';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createLayoutBlock } from './createLayoutBlock.js';
+import { ColumnsIcon } from '../../react/icons.jsx';
 
 function containerToHTML(tagOpen, tagClose) {
   return (block, ctx) =>
@@ -41,6 +42,7 @@ export const layoutBlockType = {
   toPlainText: containerToPlainText,
   slashCommands: [2, 3, 4, 5].map((columns) => ({
     label: `${columns} columns`,
+    icon: ColumnsIcon,
     keywords: ['layout', 'columns', 'column', String(columns)],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createLayoutBlock({ columns })),
   })),

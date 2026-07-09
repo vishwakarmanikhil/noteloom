@@ -3,6 +3,7 @@ import { genId } from '../../utils/idGen.js';
 import { insertSiblingAfter, insertSiblingAfterAndFocus } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { updateRun } from '../../store/operations.js';
+import { DividerIcon } from '../../react/icons.jsx';
 
 function createDividerBlock() {
   return function factory(parentId) {
@@ -32,6 +33,7 @@ export const dividerBlockType = {
   fromHTML,
   slashCommand: {
     label: 'Divider',
+    icon: DividerIcon,
     keywords: ['divider', 'hr', 'separator', 'line'],
     run: (store, { blockId, runId, sliceStart, sliceEnd }) => {
       const run = store.getRun(runId);

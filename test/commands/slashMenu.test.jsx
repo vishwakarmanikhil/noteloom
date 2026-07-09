@@ -76,7 +76,11 @@ describe('slash command menu', () => {
     // levels — both share "heading" as a keyword/label substring
     typeIntoRun(runNode, '/hea');
     items = container.querySelectorAll('.be-slash-menu-item');
-    expect([...items].map((el) => el.textContent)).toEqual([
+    // Read the label span specifically, not the whole item's textContent —
+    // some commands' icons (e.g. HeadingIcon) render an SVG <text> glyph,
+    // which itself contributes real text content ("H1"/"H2"/"H3") that
+    // would otherwise leak into a naive textContent comparison.
+    expect([...items].map((el) => el.querySelector('.be-slash-menu-item-label').textContent)).toEqual([
       'Heading 1',
       'Heading 2',
       'Heading 3',
@@ -88,7 +92,7 @@ describe('slash command menu', () => {
     typeIntoRun(runNode, '/h3');
     items = container.querySelectorAll('.be-slash-menu-item');
     expect(items.length).toBe(1);
-    expect(items[0].textContent).toBe('Heading 3');
+    expect(items[0].querySelector('.be-slash-menu-item-label').textContent).toBe('Heading 3');
   });
 
   it('selecting a command on an otherwise-empty block converts it in place, rather than leaving an empty block behind', () => {
@@ -117,6 +121,22 @@ describe('slash command menu', () => {
 
     fireEvent.keyDown(runNode, { key: 'Escape' });
     expect(container.querySelectorAll('.be-slash-menu-item').length).toBe(0);
+  });
+});
+
+describe('slash command menu: every command shows an icon alongside its label', () => {
+  it('renders an SVG icon in every item, and the label text separately', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store);
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    typeIntoRun(runNode, '/');
+    const items = [...container.querySelectorAll('.be-slash-menu-item')];
+    expect(items.length).toBeGreaterThan(1);
+    for (const item of items) {
+      expect(item.querySelector('.be-slash-menu-item-icon svg')).not.toBeNull();
+      expect(item.querySelector('.be-slash-menu-item-label')).not.toBeNull();
+    }
   });
 });
 

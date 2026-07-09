@@ -1,6 +1,7 @@
 import { SelectInlineNode } from './SelectInlineNode.jsx';
 import { genId } from '../../utils/idGen.js';
 import { insertInlineRunAtCursor } from '../shared/insertInlineRun.js';
+import { SelectIcon } from '../../react/icons.jsx';
 
 function escapeAttr(str) {
   return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
@@ -51,6 +52,7 @@ export const selectInlineType = {
   fromHTML,
   slashCommand: {
     label: 'Select',
+    icon: SelectIcon,
     keywords: ['select', 'dropdown', 'choice', 'picker'],
     run: (store, { blockId, runId, sliceStart, sliceEnd }) =>
       insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, () => ({
