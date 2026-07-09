@@ -8,6 +8,11 @@ const OPTIONS = [
   { value: 'c', label: 'Charlie' },
 ];
 
+const TAG_OPTIONS = [
+  { value: 'a', label: 'Alpha', color: { bg: '#111', text: '#222' } },
+  { value: 'b', label: 'Bravo', color: { bg: '#333', text: '#444' } },
+];
+
 describe('Select: trigger and popover basics', () => {
   it('shows the placeholder when nothing is selected, and the option label when it is', () => {
     const { container, rerender } = render(<Select value="" options={OPTIONS} onChange={() => {}} placeholder="Pick one" />);
@@ -131,5 +136,69 @@ describe('Select: choosing an option', () => {
     expect(options[2].getAttribute('aria-selected')).toBe('true');
     expect(options[2].classList.contains('be-select-option-selected')).toBe(true);
     expect(options[0].getAttribute('aria-selected')).toBe('false');
+  });
+});
+
+describe('Select: variant="tag" (Notion-style colored pill, no dropdown-box chrome)', () => {
+  it('shows the placeholder as plain text (no border/chevron) when nothing is selected', () => {
+    const { container } = render(
+      <Select value="" options={TAG_OPTIONS} onChange={() => {}} placeholder="Empty" variant="tag" />,
+    );
+    const trigger = container.querySelector('.be-select-trigger');
+    expect(trigger.classList.contains('be-select-trigger-tag')).toBe(true);
+    expect(container.querySelector('.be-select-chevron')).toBeNull();
+    expect(container.querySelector('.be-select-value-placeholder').textContent).toBe('Empty');
+    expect(container.querySelector('.be-select-tag')).toBeNull();
+  });
+
+  it('renders the selected value as a colored pill using the option\'s color', () => {
+    const { container } = render(<Select value="a" options={TAG_OPTIONS} onChange={() => {}} variant="tag" />);
+    const tag = container.querySelector('.be-select-tag');
+    expect(tag).not.toBeNull();
+    expect(tag.textContent).toBe('Alpha');
+    expect(tag.style.background).toBe('rgb(17, 17, 17)'); // '#111'
+    expect(tag.style.color).toBe('rgb(34, 34, 34)'); // '#222'
+    expect(container.querySelector('.be-select-chevron')).toBeNull();
+  });
+
+  it('renders each option in the popover as its own colored pill', () => {
+    const { container } = render(<Select value="" options={TAG_OPTIONS} onChange={() => {}} variant="tag" />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+    const tags = [...document.querySelectorAll('.be-select-option .be-select-tag')];
+    expect(tags).toHaveLength(2);
+    expect(tags[0].textContent).toBe('Alpha');
+    expect(tags[1].style.background).toBe('rgb(51, 51, 51)'); // '#333'
+  });
+
+  it('picking a tag option still calls onChange with (value, option) as usual', () => {
+    const onChange = vi.fn();
+    const { container } = render(<Select value="" options={TAG_OPTIONS} onChange={onChange} variant="tag" />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+    fireEvent.mouseDown(document.querySelector('.be-select-option'));
+    expect(onChange).toHaveBeenCalledWith('a', TAG_OPTIONS[0]);
+  });
+});
+
+describe('Select: keeps the active option in view while navigating with arrow keys', () => {
+  it('calls scrollIntoView on the newly-active option whenever Arrow Up/Down moves the selection', () => {
+    const scrollIntoView = vi.fn();
+    const originalScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    try {
+      const { container } = render(<Select value="" options={OPTIONS} onChange={() => {}} />);
+      fireEvent.click(container.querySelector('.be-select-trigger'));
+      const search = document.querySelector('.be-select-search');
+      scrollIntoView.mockClear(); // ignore the initial mount's call for activeIndex 0
+
+      fireEvent.keyDown(search, { key: 'ArrowDown' });
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+
+      scrollIntoView.mockClear();
+      fireEvent.keyDown(search, { key: 'ArrowUp' });
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    } finally {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    }
   });
 });

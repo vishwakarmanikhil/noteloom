@@ -293,6 +293,39 @@ describe('table select column: shared options, managed from the column header (n
     const dispatched = fireEvent.mouseDown(container.querySelector('.be-inline-table-select .be-select-trigger'));
     expect(dispatched).toBe(false); // false means preventDefault was called
   });
+
+  it('a newly created option gets a color assigned once, and it renders as a colored pill in cells (Notion-style)', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+    const inlineRegistry = createInlineRegistry();
+    registerBuiltInInlineTypes(inlineRegistry);
+    setColumnType(store, tableId, 0, 'select', inlineRegistry);
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    const addInput = container.querySelector('.be-table-header-menu-option-input[placeholder="New option…"]');
+    fireEvent.change(addInput, { target: { value: 'Urgent' } });
+    fireEvent.click(container.querySelector('.be-table-header-menu-option-add'));
+
+    const column = store.getBlock(tableId).props.columns[0];
+    expect(column.options[0].color).toBeDefined();
+    expect(column.options[0].color.bg).toBeDefined();
+
+    // the swatch next to the option in the manager reflects that color
+    // (jsdom normalizes the inline hex to rgb(), so just check it's set)
+    const swatch = container.querySelector('.be-table-header-menu-option-swatch');
+    expect(swatch.style.background).not.toBe('');
+
+    // and the cell's own Select shows it as a colored pill, not plain text
+    const trigger = container.querySelector('.be-inline-table-select .be-select-trigger');
+    fireEvent.click(trigger);
+    fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Urgent'));
+    expect(container.querySelector('.be-inline-table-select .be-select-tag').textContent).toBe('Urgent');
+    expect(container.querySelector('.be-inline-table-select .be-select-chevron')).toBeNull();
+  });
 });
 
 describe('table HTML round-trip includes column labels', () => {

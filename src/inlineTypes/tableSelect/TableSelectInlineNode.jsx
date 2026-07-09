@@ -3,6 +3,7 @@ import { useRun, useBlock } from '../../react/useBlock.js';
 import { useEditorStore } from '../../react/EditorProvider.jsx';
 import { updateRun } from '../../store/operations.js';
 import { resolveColumns } from '../../blocks/table/tableColumns.js';
+import { pickTagColor } from '../../blocks/table/tagColors.js';
 import { Select } from '../../react/Select.jsx';
 
 /**
@@ -34,7 +35,13 @@ export function TableSelectInlineNode({ id, blockId }) {
 
   const colIndex = row ? row.contentIds.indexOf(blockId) : -1;
   const columns = table && row ? resolveColumns(table, row.contentIds.length) : [];
-  const options = columns[colIndex]?.options ?? [];
+  // Fallback for options created before per-option colors existed: derive
+  // one by position rather than leaving it uncolored, same convention as
+  // TableHeaderRow's own SelectOptionsManager swatch fallback.
+  const options = (columns[colIndex]?.options ?? []).map((option, i) => ({
+    ...option,
+    color: option.color ?? pickTagColor(i),
+  }));
 
   const handleChange = useCallback(
     (selectedValue, option) => {
@@ -61,7 +68,14 @@ export function TableSelectInlineNode({ id, blockId }) {
       // See SelectInlineNode's onKeyDown comment for why this is needed.
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <Select value={selectedValue} options={options} onChange={handleChange} placeholder="Select…" ariaLabel="Select an option" />
+      <Select
+        value={selectedValue}
+        options={options}
+        onChange={handleChange}
+        placeholder="Select…"
+        ariaLabel="Select an option"
+        variant="tag"
+      />
     </span>
   );
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { useRef } from 'react';
 import { EditorStore } from '../../src/store/EditorStore.js';
@@ -146,6 +146,35 @@ describe('slash command menu: accessibility (listbox + aria-activedescendant)', 
     fireEvent.keyDown(runNode, { key: 'Escape' });
     expect(runNode.hasAttribute('aria-expanded')).toBe(false);
     expect(runNode.hasAttribute('aria-activedescendant')).toBe(false);
+  });
+});
+
+describe('slash command menu: keeps the active item in view while navigating with arrow keys', () => {
+  it('calls scrollIntoView on the newly-active item whenever Arrow Up/Down moves the selection', () => {
+    // jsdom doesn't implement scrollIntoView at all (throws if actually
+    // invoked without a stub) — install a spy so we can assert it fires,
+    // without asserting anything about real scroll positions/geometry.
+    const scrollIntoView = vi.fn();
+    const originalScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    try {
+      const store = new EditorStore(makeDoc());
+      const { container } = renderHarness(store);
+      const runNode = container.querySelector('[data-run-id="r1"]');
+
+      typeIntoRun(runNode, '/hea');
+      scrollIntoView.mockClear(); // ignore the initial mount's call for activeIndex 0
+
+      fireEvent.keyDown(runNode, { key: 'ArrowDown' });
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+
+      scrollIntoView.mockClear();
+      fireEvent.keyDown(runNode, { key: 'ArrowUp' });
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    } finally {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    }
   });
 });
 

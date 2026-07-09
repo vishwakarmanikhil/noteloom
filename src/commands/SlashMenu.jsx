@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Focus deliberately stays in the run's contentEditable (moving it into the
@@ -48,10 +48,19 @@ export function SlashMenu({
   ariaLabel = 'Slash commands',
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const activeItemRef = useRef(null);
 
   useEffect(() => {
     setActiveIndex(0);
   }, [commands.length]);
+
+  // Keeps the keyboard-active item visible as Arrow Up/Down moves it past
+  // the edge of the scrollable list — without this, arrowing past the
+  // bottom (or top) leaves the highlighted item scrolled out of view with
+  // nothing on screen showing which one is currently selected.
+  useEffect(() => {
+    activeItemRef.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [activeIndex]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -98,6 +107,7 @@ export function SlashMenu({
       {commands.map((command, i) => (
         <div
           key={command.label}
+          ref={i === activeIndex ? activeItemRef : undefined}
           id={`${menuId}-option-${i}`}
           role="option"
           aria-selected={i === activeIndex}
@@ -106,6 +116,7 @@ export function SlashMenu({
             event.preventDefault();
             onSelect(command);
           }}
+          onMouseEnter={() => setActiveIndex(i)}
         >
           {command.label}
         </div>

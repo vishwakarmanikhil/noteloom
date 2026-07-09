@@ -5,6 +5,7 @@ import { COLUMN_TYPES } from './tableColumns.js';
 import { genId } from '../../utils/idGen.js';
 import { XIcon } from '../../react/icons.jsx';
 import { Select } from '../../react/Select.jsx';
+import { pickTagColor } from './tagColors.js';
 
 const TYPE_LABELS = { text: 'Text', date: 'Date', checkbox: 'Checkbox', select: 'Select' };
 const TYPE_OPTIONS = COLUMN_TYPES.map((type) => ({ value: type, label: TYPE_LABELS[type] }));
@@ -35,14 +36,23 @@ function SelectOptionsManager({ tableId, colIndex, options }) {
     const label = draft.trim();
     setDraft('');
     if (!label) return;
-    setColumnOptions(store, tableId, colIndex, [...options, { value: genId(), label }]);
+    // Color is assigned once, here, at creation time — not derived from
+    // position at render time — so it stays the same tag color even after
+    // other options are reordered/removed, matching Notion's own Select
+    // property (a tag's color is fixed once you pick/create it).
+    setColumnOptions(store, tableId, colIndex, [...options, { value: genId(), label, color: pickTagColor(options.length) }]);
   }, [store, tableId, colIndex, options, draft]);
 
   return (
     <div className="be-table-header-menu-options">
       <div className="be-table-header-menu-options-label">Options</div>
-      {options.map((option) => (
+      {options.map((option, i) => (
         <div key={option.value} className="be-table-header-menu-option-row">
+          <span
+            className="be-table-header-menu-option-swatch"
+            style={{ background: (option.color ?? pickTagColor(i)).bg }}
+            aria-hidden="true"
+          />
           <input
             className="be-table-header-menu-option-input"
             value={option.label}
