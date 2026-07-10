@@ -4,8 +4,42 @@ export * as operations from './store/operations.js';
 
 export { BlockRegistry, createBlockRegistry } from './registry/blockRegistry.js';
 export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.js';
-export { registerBuiltInBlocks } from './blocks/index.js';
-export { registerBuiltInInlineTypes } from './inlineTypes/index.js';
+
+// registerBuiltInBlocks/registerBuiltInInlineTypes register EVERY built-in
+// type at once — the quickest way to get a fully-featured editor running.
+// For an opt-in, TipTap-`extensions`-style pick of only the block/inline
+// types you actually want, use registerBlocks/registerInlineTypes with
+// whichever of the individual xBlockType/xInlineType values below you need
+// instead — none of this is an all-or-nothing choice, since
+// registerBuiltInBlocks(registry) is itself just `registerBlocks(registry,
+// { paragraph: paragraphBlockType, ... })` under the hood.
+export { registerBuiltInBlocks, registerBlocks, TABLE_BLOCKS, LAYOUT_BLOCKS } from './blocks/index.js';
+export {
+  paragraphBlockType,
+  headingBlockType,
+  listItemBlockType,
+  tableBlockType,
+  tableRowBlockType,
+  tableCellBlockType,
+  layoutBlockType,
+  layoutColumnBlockType,
+  dividerBlockType,
+  calloutBlockType,
+  blockquoteBlockType,
+  codeBlockType,
+  toggleHeadingBlockType,
+  buttonBlockType,
+  embedBlockType,
+} from './blocks/index.js';
+
+export { registerBuiltInInlineTypes, registerInlineTypes, TABLE_SELECT_INLINE_TYPES } from './inlineTypes/index.js';
+export {
+  selectInlineType,
+  dateInlineType,
+  checkboxInlineType,
+  tableSelectInlineType,
+  emojiInlineType,
+} from './inlineTypes/index.js';
 
 export {
   EditorProvider,

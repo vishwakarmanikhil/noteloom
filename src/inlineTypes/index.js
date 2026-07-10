@@ -13,9 +13,23 @@ import { emojiInlineType } from './emoji/index.js';
  * host-supplied anyway.
  */
 export function registerBuiltInInlineTypes(inlineRegistry) {
-  inlineRegistry.register('select', selectInlineType);
-  inlineRegistry.register('date', dateInlineType);
-  inlineRegistry.register('checkbox', checkboxInlineType);
-  inlineRegistry.register('tableSelect', tableSelectInlineType);
-  inlineRegistry.register('emoji', emojiInlineType);
+  registerInlineTypes(inlineRegistry, {
+    select: selectInlineType,
+    date: dateInlineType,
+    checkbox: checkboxInlineType,
+    ...TABLE_SELECT_INLINE_TYPES,
+    emoji: emojiInlineType,
+  });
 }
+
+/** Opt-in counterpart to `registerBuiltInInlineTypes` — see registerBlocks's own doc comment, same idea for inline types. */
+export function registerInlineTypes(inlineRegistry, typesByType) {
+  for (const [type, entry] of Object.entries(typesByType)) {
+    inlineRegistry.register(type, entry);
+  }
+}
+
+/** Only relevant alongside TABLE_BLOCKS (see blocks/index.js) — powers a table column set to "select" type. */
+export const TABLE_SELECT_INLINE_TYPES = { tableSelect: tableSelectInlineType };
+
+export { selectInlineType, dateInlineType, checkboxInlineType, tableSelectInlineType, emojiInlineType };

@@ -1,28 +1,54 @@
 {
   "name": "@notevo/block-editor",
   "version": "0.1.0",
-  "description": "Zero-runtime-dependency React block editor",
+  "description": "Zero-runtime-dependency, React-first block/rich-text editor — Notion-style blocks, inline widgets, slash commands, undo/redo, and clipboard, with no bundled UI framework or CSS.",
+  "keywords": [
+    "react",
+    "editor",
+    "rich-text",
+    "block-editor",
+    "wysiwyg",
+    "contenteditable",
+    "notion",
+    "slash-commands"
+  ],
   "license": "MIT",
+  "author": "Nikhil Vishwakarma",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vishwakarmanikhil/react-block-editor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vishwakarmanikhil/react-block-editor/issues"
+  },
+  "homepage": "https://github.com/vishwakarmanikhil/react-block-editor#readme",
   "type": "module",
-  "main": "./dist/block-editor.cjs.js",
+  "sideEffects": false,
+  "main": "./dist/block-editor.cjs",
   "module": "./dist/block-editor.es.js",
   "exports": {
     ".": {
       "import": "./dist/block-editor.es.js",
-      "require": "./dist/block-editor.cjs.js"
-    }
+      "require": "./dist/block-editor.cjs",
+      "default": "./dist/block-editor.es.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "vite --config examples/basic/vite.config.js",
     "build": "vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "npm test && npm run build"
   },
   "peerDependencies": {
-    "react": "^18.2.0 || ^18.3.0",
-    "react-dom": "^18.2.0 || ^18.3.0"
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.0",
