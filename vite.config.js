@@ -6,14 +6,14 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'src/index.js',
-      name: 'BlockEditor',
+      name: 'Noteloom',
       // The CJS build MUST end in `.cjs`, not `.cjs.js` — with "type":
       // "module" set in package.json, Node treats every plain `.js` file
       // as ESM purely by extension, regardless of what's actually written
       // inside it, so a `require()` consumer loading a CJS-syntax file
       // still named `.js` fails outright (ERR_REQUIRE_ESM). `.cjs` is
       // always CommonJS to Node no matter what "type" says.
-      fileName: (format) => (format === 'es' ? 'block-editor.es.js' : 'block-editor.cjs'),
+      fileName: (format) => (format === 'es' ? 'noteloom.es.js' : 'noteloom.cjs'),
       formats: ['es', 'cjs'],
     },
     rollupOptions: {

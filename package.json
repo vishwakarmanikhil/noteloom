@@ -1,5 +1,5 @@
 {
-  "name": "@notevo/block-editor",
+  "name": "noteloom",
   "version": "0.1.0",
   "description": "Zero-runtime-dependency, React-first block/rich-text editor — Notion-style blocks, inline widgets, slash commands, undo/redo, and clipboard, with no bundled UI framework or CSS.",
   "keywords": [
@@ -24,13 +24,13 @@
   "homepage": "https://github.com/vishwakarmanikhil/react-block-editor#readme",
   "type": "module",
   "sideEffects": false,
-  "main": "./dist/block-editor.cjs",
-  "module": "./dist/block-editor.es.js",
+  "main": "./dist/noteloom.cjs",
+  "module": "./dist/noteloom.es.js",
   "exports": {
     ".": {
-      "import": "./dist/block-editor.es.js",
-      "require": "./dist/block-editor.cjs",
-      "default": "./dist/block-editor.es.js"
+      "import": "./dist/noteloom.es.js",
+      "require": "./dist/noteloom.cjs",
+      "default": "./dist/noteloom.es.js"
     },
     "./package.json": "./package.json"
   },

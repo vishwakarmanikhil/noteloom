@@ -1,4 +1,4 @@
-# @notevo/block-editor
+# noteloom
 
 A React-first, block-based rich text editor with **zero runtime dependencies** — the only things it expects from your app are `react` and `react-dom`. Everything else (undo/redo, clipboard, slash commands, tables, inline widgets) is built from scratch on top of a small normalized document store.
 
@@ -12,7 +12,7 @@ Most rich-text editors either bring their own large dependency tree, or force ev
 ## Install
 
 ```bash
-npm install @notevo/block-editor react react-dom
+npm install noteloom react react-dom
 ```
 
 ## Quick start
@@ -31,7 +31,7 @@ import {
   useSlashMenuTrigger,
   useEditorKeyboardShortcuts,
   SlashMenu,
-} from '@notevo/block-editor';
+} from 'noteloom';
 import { useMemo, useRef } from 'react';
 
 function Editor() {
@@ -99,7 +99,7 @@ import {
   paragraphBlockType,
   headingBlockType,
   TABLE_BLOCKS, // table needs its row/cell types alongside it — spread the whole group
-} from '@notevo/block-editor';
+} from 'noteloom';
 
 const registry = createBlockRegistry();
 registerBlocks(registry, {
@@ -124,7 +124,7 @@ There's no separate hardcoded `mention` type — an `@name` chip is just an ordi
 `createSelectFieldType(config)` builds a full, ready-to-register inline type from a plain config object — this is how you add your own named dropdown ("Assignee", "Status", "Priority", ...) without writing a component:
 
 ```js
-import { createInlineRegistry, createSelectFieldType } from '@notevo/block-editor';
+import { createInlineRegistry, createSelectFieldType } from 'noteloom';
 
 const inlineRegistry = createInlineRegistry();
 
@@ -175,7 +175,7 @@ A few things worth knowing about the dynamic path:
 The above is for types **you** define in code. If you also want a non-technical end user to be able to create new (always static — there's no way to author a fetch function through a UI) select types from inside the editor itself, mount `FieldTypeEditorModal` once and wire a button to it:
 
 ```jsx
-import { EditorProvider, FieldTypeEditorModal, useFieldTypeEditor } from '@notevo/block-editor';
+import { EditorProvider, FieldTypeEditorModal, useFieldTypeEditor } from 'noteloom';
 
 function NewFieldTypeButton() {
   const { openCreate } = useFieldTypeEditor();
