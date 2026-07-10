@@ -3,7 +3,7 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { History } from '../../src/store/history.js';
-import { EditorProvider } from '../../src/react/EditorProvider.jsx';
+import { EditorProvider, useBlockRangeSelection } from '../../src/react/EditorProvider.jsx';
 import { BlockChildren } from '../../src/react/BlockChildren.jsx';
 import { createBlockRegistry } from '../../src/registry/blockRegistry.js';
 import { registerBuiltInBlocks } from '../../src/blocks/index.js';
@@ -318,5 +318,77 @@ describe('useClipboardHandlers: whole-document-selected (custom "select all", se
     expect(store.getBlock('root').contentIds).toEqual(['p1', 'p2']);
     expect(store.getRun('r1').value).toBe('first line');
     expect(store.getRun('r2').value).toBe('second line');
+  });
+});
+
+function RangeHarness({ ids }) {
+  const containerRef = useRef(null);
+  const { onCopy, onCut, onPaste } = useClipboardHandlers();
+  const [, setSelectedBlockRange] = useBlockRangeSelection();
+  return (
+    <div ref={containerRef} onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
+      <button type="button" onClick={() => setSelectedBlockRange(ids)}>
+        select-range
+      </button>
+      <BlockChildren parentId="root" />
+    </div>
+  );
+}
+
+function renderRangeHarness(store, ids) {
+  const registry = createBlockRegistry();
+  registerBuiltInBlocks(registry);
+  const rendered = render(
+    <EditorProvider store={store} registry={registry}>
+      <RangeHarness ids={ids} />
+    </EditorProvider>,
+  );
+  fireEvent.click(rendered.getByText('select-range'));
+  return rendered;
+}
+
+describe('useClipboardHandlers: a drag-selected block range takes priority over the native browser selection', () => {
+  it('Copy serializes exactly the range, ignoring whatever native selection (if any) happens to also exist', () => {
+    const store = new EditorStore(makeTwoParagraphDoc());
+    const { container } = renderRangeHarness(store, ['p2']);
+
+    // Also place a native selection inside p1 — the range selection must win regardless.
+    selectWithinRunNode(container.querySelector('[data-run-id="r1"]'), 0, 5);
+
+    const dt = new FakeDataTransfer();
+    fireClipboardEvent(container.firstChild, 'copy', dt);
+
+    expect(dt.getData('text/plain')).toBe('second line');
+  });
+
+  it('Cut removes every block in the range as one step and clears the range afterward', () => {
+    const store = new History(new EditorStore(makeTwoParagraphDoc()));
+    const { container } = renderRangeHarness(store, ['p1', 'p2']);
+
+    const dt = new FakeDataTransfer();
+    fireClipboardEvent(container.firstChild, 'cut', dt);
+
+    expect(dt.getData('text/plain')).toBe('first line\nsecond line');
+    expect(store.getBlock('root').contentIds).toEqual([]);
+
+    store.undo();
+    expect(store.getBlock('root').contentIds).toEqual(['p1', 'p2']);
+  });
+
+  it('Paste replaces the range with the pasted content, starting at the range\'s former position', () => {
+    const store = new History(new EditorStore(makeTwoParagraphDoc()));
+    const { container } = renderRangeHarness(store, ['p1']);
+
+    const dt = new FakeDataTransfer({ 'text/plain': 'replacement' });
+    fireClipboardEvent(container.firstChild, 'paste', dt);
+
+    const rootIds = store.getBlock('root').contentIds;
+    expect(rootIds.length).toBe(2);
+    const [newId, survivorId] = rootIds;
+    expect(store.getRun(store.getBlock(newId).contentIds[0]).value).toBe('replacement');
+    expect(survivorId).toBe('p2');
+
+    store.undo();
+    expect(store.getBlock('root').contentIds).toEqual(['p1', 'p2']);
   });
 });

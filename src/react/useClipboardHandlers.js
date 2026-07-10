@@ -1,11 +1,12 @@
 import { useCallback } from 'react';
-import { useEditorStore, useBlockRegistry, useInlineRegistry, useWholeDocumentSelection } from './EditorProvider.jsx';
+import { useEditorStore, useBlockRegistry, useInlineRegistry, useWholeDocumentSelection, useBlockRangeSelection } from './EditorProvider.jsx';
 import { serializeBlockRange } from '../clipboard/serialize.js';
 import { deserializeClipboard } from '../clipboard/deserialize.js';
 import { APP_MIME } from '../clipboard/mimeType.js';
 import { insertBlock, removeBlock, updateRun } from '../store/operations.js';
 import { resolveMultiRunSelection, resolveCrossBlockSelection, resolveCollapsedCaret } from './selectionResolve.js';
 import { deleteRunRangeInBlock, deleteOverBlockRange, deleteEntireDocument } from '../inline/deleteCommands.js';
+import { deleteBlockRange } from '../blocks/shared/blockRangeActions.js';
 import { focusRunAtOffset } from './focusRun.js';
 
 function closestBlockId(node) {
@@ -77,12 +78,20 @@ export function useClipboardHandlers() {
   const registry = useBlockRegistry();
   const inlineRegistry = useInlineRegistry();
   const [isWholeDocumentSelected, setIsWholeDocumentSelected] = useWholeDocumentSelection();
+  const [selectedBlockRange, setSelectedBlockRange] = useBlockRangeSelection();
 
   const onCopy = useCallback(
     (event) => {
+      // Priority: whole-document select-all > a drag-selected block range
+      // (see useBlockRangeDrag) > the native browser Selection. Only one of
+      // these is ever meaningfully active at once in practice (starting
+      // any of the others clears the rest), but the order still matters if
+      // more than one happens to be non-empty.
       const blockIds = isWholeDocumentSelected
         ? (store.getBlock(store.getRootId())?.contentIds ?? [])
-        : resolveSelectedBlockIds(store);
+        : selectedBlockRange.length > 0
+          ? selectedBlockRange
+          : resolveSelectedBlockIds(store);
       if (blockIds.length === 0) return;
       const { html, text, json } = serializeBlockRange(store, registry, blockIds, inlineRegistry);
       event.clipboardData.setData('text/plain', text);
@@ -90,7 +99,7 @@ export function useClipboardHandlers() {
       event.clipboardData.setData(APP_MIME, json);
       event.preventDefault();
     },
-    [store, registry, inlineRegistry, isWholeDocumentSelected],
+    [store, registry, inlineRegistry, isWholeDocumentSelected, selectedBlockRange],
   );
 
   // Cut = copy, then delete whatever was selected — same "delete selection"
@@ -106,10 +115,15 @@ export function useClipboardHandlers() {
         if (result?.runId) focusRunAtOffset(result.runId, result.offset);
         return;
       }
+      if (selectedBlockRange.length > 0) {
+        deleteBlockRange(store, selectedBlockRange);
+        setSelectedBlockRange([]);
+        return;
+      }
       const result = deleteCurrentSelection(store);
       if (result?.runId) focusRunAtOffset(result.runId, result.offset);
     },
-    [onCopy, store, isWholeDocumentSelected, setIsWholeDocumentSelected],
+    [onCopy, store, isWholeDocumentSelected, setIsWholeDocumentSelected, selectedBlockRange, setSelectedBlockRange],
   );
 
   const onPaste = useCallback(
@@ -129,6 +143,27 @@ export function useClipboardHandlers() {
         }
         applyOps(store, ops);
         setIsWholeDocumentSelected(false);
+        event.preventDefault();
+        return;
+      }
+
+      // Same idea, scoped to a drag-selected block range instead of the
+      // whole document: the range is removed and the pasted block(s) take
+      // its place, starting at the range's former position.
+      if (selectedBlockRange.length > 0) {
+        const first = store.getBlock(selectedBlockRange[0]);
+        const parentId = first?.parentId ?? null;
+        const parent = parentId && store.getBlock(parentId);
+        let index = parent ? parent.contentIds.indexOf(selectedBlockRange[0]) : 0;
+
+        const ops = selectedBlockRange.map((id) => removeBlock(id));
+        for (const { block, runs, subtreeBlocks = [] } of inserts) {
+          block.parentId = parentId;
+          ops.push(insertBlock(block, parentId, index, { blocks: [block, ...subtreeBlocks], runs }));
+          index += 1;
+        }
+        applyOps(store, ops);
+        setSelectedBlockRange([]);
         event.preventDefault();
         return;
       }
@@ -185,7 +220,7 @@ export function useClipboardHandlers() {
 
       event.preventDefault();
     },
-    [store, registry, inlineRegistry, isWholeDocumentSelected, setIsWholeDocumentSelected],
+    [store, registry, inlineRegistry, isWholeDocumentSelected, setIsWholeDocumentSelected, selectedBlockRange, setSelectedBlockRange],
   );
 
   return { onCopy, onCut, onPaste };

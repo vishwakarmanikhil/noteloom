@@ -21,6 +21,17 @@ export function EditorProvider({ store, registry, inlineRegistry = null, history
   // own doc comment).
   const [isWholeDocumentSelected, setIsWholeDocumentSelected] = useState(false);
 
+  // A contiguous run of top-level block ids selected by dragging from the
+  // gutter margin (see useBlockRangeDrag/BlockGutterRow) — Notion's "drag
+  // in the margin to select several blocks" gesture. `[]` means nothing is
+  // range-selected. Kept in DOCUMENT order (matches root.contentIds), not
+  // drag order, so Move up/down and Delete don't need to re-sort it.
+  // Ephemeral UI state, same rationale as isWholeDocumentSelected above —
+  // this is a *different* selection mechanism from that one (an arbitrary
+  // contiguous slice vs. literally everything), so they're independent,
+  // non-overlapping bits of state.
+  const [selectedBlockRange, setSelectedBlockRange] = useState([]);
+
   // Preview-mode toggle — also ephemeral UI state, not document data (a
   // reload always starts back in edit mode). While true, BlockChildren
   // skips rendering the per-block gutter entirely and omits any block
@@ -77,6 +88,8 @@ export function EditorProvider({ store, registry, inlineRegistry = null, history
       history,
       isWholeDocumentSelected,
       setIsWholeDocumentSelected,
+      selectedBlockRange,
+      setSelectedBlockRange,
       getSelectedBlockId,
       setSelectedBlockId,
       isPreviewMode,
@@ -92,6 +105,7 @@ export function EditorProvider({ store, registry, inlineRegistry = null, history
       inlineRegistry,
       history,
       isWholeDocumentSelected,
+      selectedBlockRange,
       getSelectedBlockId,
       setSelectedBlockId,
       isPreviewMode,
@@ -136,6 +150,20 @@ export function useInlineRegistry() {
 export function useWholeDocumentSelection() {
   const { isWholeDocumentSelected, setIsWholeDocumentSelected } = useEditorContext();
   return [isWholeDocumentSelected, setIsWholeDocumentSelected];
+}
+
+/**
+ * `[selectedBlockRange, setSelectedBlockRange]` — the drag-selected
+ * contiguous run of top-level block ids (see EditorProvider's doc comment).
+ * `setSelectedBlockRange([])` clears it. A host app renders the highlight
+ * itself (see be-block-row-range-selected in the example app's CSS) and
+ * mounts `<BlockRangeActionMenu />` once anywhere under the provider to get
+ * the Copy/Cut/Delete/Move/Hide action menu that appears once a drag
+ * finishes — see useBlockRangeDrag for the drag mechanics themselves.
+ */
+export function useBlockRangeSelection() {
+  const { selectedBlockRange, setSelectedBlockRange } = useEditorContext();
+  return [selectedBlockRange, setSelectedBlockRange];
 }
 
 /**

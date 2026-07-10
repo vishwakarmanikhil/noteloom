@@ -232,3 +232,4 @@ describe('preview mode: hidden blocks are skipped entirely, not just dimmed', ()
     expect(container.querySelectorAll('[data-block-id]')).toHaveLength(3);
   });
 });
+

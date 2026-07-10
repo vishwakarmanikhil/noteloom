@@ -13,6 +13,7 @@ export {
   useBlockRegistry,
   useInlineRegistry,
   useWholeDocumentSelection,
+  useBlockRangeSelection,
   useSelectedBlock,
   usePreviewMode,
   useFieldTypeEditor,
@@ -27,6 +28,8 @@ export { BlockRenderer } from './react/BlockRenderer.jsx';
 export { BlockErrorBoundary } from './react/BlockErrorBoundary.jsx';
 export { BlockChildren } from './react/BlockChildren.jsx';
 export { BlockGutterRow } from './react/BlockGutterRow.jsx';
+export { BlockRangeActionMenu } from './react/BlockRangeActionMenu.jsx';
+export { useBlockRangeDrag } from './react/useBlockRangeDrag.js';
 export { EditableBlockContent } from './react/EditableBlockContent.jsx';
 export { Modal } from './react/Modal.jsx';
 export { Select } from './react/Select.jsx';
@@ -82,6 +85,15 @@ export { isEntireBlockSelected } from './react/selectAllCommand.js';
 export { focusRunEnd, focusRunStart, focusRunAtOffset } from './react/focusRun.js';
 export { ensureRootNonEmpty } from './blocks/shared/ensureRootNonEmpty.js';
 export { duplicateBlock, moveBlockUp, moveBlockDown, deleteBlockAndFocusSibling } from './blocks/shared/blockActions.js';
+export {
+  deleteBlockRange,
+  moveBlockRangeUp,
+  moveBlockRangeDown,
+  isEntireBlockRangeHidden,
+  setBlockRangeHidden,
+  reorderBlockRangeFromStore,
+} from './blocks/shared/blockRangeActions.js';
+export { copyBlockRangeToClipboard } from './clipboard/copyBlockRange.js';
 
 export { createSelectFieldType } from './inlineTypes/customSelect/createSelectFieldType.jsx';
 export { registerStoredFieldTypes } from './inlineTypes/customSelect/registerStoredFieldTypes.js';

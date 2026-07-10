@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useEditorStore } from './EditorProvider.jsx';
+import { useEditorStore, useBlockRangeSelection } from './EditorProvider.jsx';
 import { useBlock } from './useBlock.js';
 import { useOutsideClickAndEscape } from './useOutsideClickAndEscape.js';
 import { BlockRenderer } from './BlockRenderer.jsx';
@@ -34,6 +34,13 @@ import { PlusIcon, GripVerticalIcon, CopyIcon, ArrowUpIcon, ArrowDownIcon, Trash
  * functionality, just dimmed (see the be-block-row-hidden CSS) as a visual
  * reminder it won't appear once switched to preview mode, where
  * BlockChildren skips it entirely instead.
+ *
+ * `be-block-row-range-selected` (see useBlockRangeSelection) highlights
+ * this row when it's part of a drag-selected block range — the actual
+ * drag-start detection lives in useBlockRangeDrag, mounted once at the
+ * surface level rather than here, since it needs to catch presses in the
+ * blank page margin on either side of the content column too, not just
+ * this row's own narrow gutter.
  */
 export function BlockGutterRow({ id }) {
   const store = useEditorStore();
@@ -43,6 +50,8 @@ export function BlockGutterRow({ id }) {
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
   const outsideRefs = useMemo(() => [triggerRef, menuRef], []);
+  const [selectedBlockRange] = useBlockRangeSelection();
+  const isRangeSelected = selectedBlockRange.includes(id);
 
   const closeMenu = useCallback(() => setIsMenuOpen(false), []);
   useOutsideClickAndEscape(outsideRefs, isMenuOpen, closeMenu);
@@ -85,7 +94,10 @@ export function BlockGutterRow({ id }) {
   if (!block) return null;
 
   return (
-    <div className={`be-block-row${isHidden ? ' be-block-row-hidden' : ''}`} data-block-row-id={id}>
+    <div
+      className={`be-block-row${isHidden ? ' be-block-row-hidden' : ''}${isRangeSelected ? ' be-block-row-range-selected' : ''}`}
+      data-block-row-id={id}
+    >
       <div className={`be-block-gutter${isMenuOpen ? ' be-block-gutter-active' : ''}`} contentEditable={false}>
         <button type="button" className="be-block-gutter-btn" onClick={handleAdd} aria-label="Add block below">
           <PlusIcon size={16} />
