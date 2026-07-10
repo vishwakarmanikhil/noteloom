@@ -78,7 +78,39 @@ function Editor() {
 
 See `examples/basic` for a complete working app (run `npm run dev`).
 
-Note: this package ships **no default CSS** — style the block class names (`.be-paragraph`, `.be-heading`, `.be-list-item`, `.be-table`, `.be-inline-select`, etc.) yourself, or copy `examples/basic/src/style.css` as a starting point.
+### Styling — zero setup required
+
+You don't need to import any CSS. The moment `<EditorProvider>` mounts, it injects a single `<style>` tag with a minimal, clean default theme — no `import 'noteloom/style.css'` line, no build-tool CSS configuration, nothing to wire up. It's idempotent (mounting more than one editor on a page only injects it once) and client-only (a no-op under SSR; hydrate as normal and it injects on mount).
+
+**Retheme it** by overriding the CSS custom properties it reads from — defined on `:root` (not scoped to a wrapper element, since portaled pieces like the slash menu and Select's popover aren't DOM descendants of the editor itself):
+
+```css
+:root {
+  --noteloom-accent: #16a34a;      /* swap the indigo accent for green */
+  --noteloom-radius-md: 4px;       /* sharper corners */
+  --noteloom-font: 'Inter', sans-serif;
+}
+```
+
+Dark mode follows `prefers-color-scheme` automatically; to control it explicitly instead (e.g. a manual light/dark toggle), set `data-theme="dark"` or `data-theme="light"` on any ancestor (typically `<html>`) — see the full variable list in `src/style.css`.
+
+**Scope overrides to one editor instance**, or add your own class for full custom CSS, via `<EditorProvider>`'s `className`/`style` props — passing either wraps `children` in one `<div className="be-root ...">`:
+
+```jsx
+<EditorProvider store={store} registry={registry} className="my-editor" style={{ '--noteloom-accent': '#16a34a' }}>
+  ...
+</EditorProvider>
+```
+
+No wrapper `<div>` is added unless you pass one of these props, so existing usage is unaffected either way.
+
+**Opt out entirely** with `theme="none"` — nothing gets injected, and you take full responsibility for styling every `.be-*` class yourself (or import `noteloom/style.css` manually if you just want control over *when* it loads, e.g. before your own overrides in a specific `<link>` order):
+
+```jsx
+<EditorProvider store={store} registry={registry} theme="none">
+```
+
+`examples/basic/src/style.css` shows the extra page-level chrome (fonts, page width, the demo's own toolbar buttons) a host app typically adds around the editor — none of that is part of the default theme itself.
 
 ## Built-in block types
 

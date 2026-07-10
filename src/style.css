@@ -1,0 +1,1812 @@
+/*
+ * noteloom's default theme — minimal, clean, Notion/Linear-adjacent.
+ *
+ * Ships as plain CSS custom properties on :root (not scoped to a wrapper
+ * element) deliberately: several of this package's own pieces — Select's
+ * popover, SlashMenu, FloatingToolbar, the table header menu, the block
+ * gutter/range menus, Modal — are portaled to document.body, so they are
+ * NOT DOM descendants of whatever element renders the editor itself.
+ * Scoping variables to a wrapper class would silently fail to reach any
+ * of those. `--noteloom-*` is a distinctive enough prefix that defining
+ * these on :root won't collide with a host app's own custom properties.
+ *
+ * This file is auto-injected at runtime by <EditorProvider> (see
+ * react/injectDefaultStyles.js) — you do NOT need to import this
+ * yourself. It's still published standalone at `noteloom/style.css` for:
+ *   - passing `theme="none"` to <EditorProvider> and importing this
+ *     explicitly instead (e.g. to control load order, or for SSR/CSP
+ *     setups where runtime <style> injection isn't allowed)
+ *   - copying as a starting point for your own from-scratch theme
+ *
+ * Retheme by overriding these variables in your own CSS (after the
+ * default theme loads) — every rule below reads from them, nothing is
+ * hardcoded. Override individual `.be-*` classes too, same as any other
+ * library's default styles.
+ */
+
+:root {
+  --noteloom-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+  --noteloom-text: #0f172a;
+  --noteloom-text-muted: #64748b;
+  --noteloom-text-faint: #94a3b8;
+  --noteloom-bg: #ffffff;
+  --noteloom-bg-subtle: #f8fafc;
+  --noteloom-bg-hover: #f1f5f9;
+  --noteloom-border: #e2e8f0;
+  --noteloom-accent: #6366f1;
+  --noteloom-accent-text: #ffffff;
+  --noteloom-accent-soft: rgba(99, 102, 241, 0.1);
+  --noteloom-accent-soft-hover: rgba(99, 102, 241, 0.16);
+  --noteloom-danger: #dc2626;
+  --noteloom-danger-soft: #fef2f2;
+  --noteloom-radius-sm: 6px;
+  --noteloom-radius-md: 8px;
+  --noteloom-radius-lg: 12px;
+  --noteloom-radius-xl: 16px;
+  --noteloom-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.12), 0 4px 8px -4px rgba(15, 23, 42, 0.06);
+  --noteloom-code-bg: #0f172a;
+  --noteloom-code-text: #e2e8f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --noteloom-text: #f1f5f9;
+    --noteloom-text-muted: #94a3b8;
+    --noteloom-text-faint: #64748b;
+    --noteloom-bg: #1c1932;
+    --noteloom-bg-subtle: rgba(255, 255, 255, 0.03);
+    --noteloom-bg-hover: rgba(255, 255, 255, 0.06);
+    --noteloom-border: rgba(255, 255, 255, 0.1);
+    --noteloom-accent-soft: rgba(99, 102, 241, 0.18);
+    --noteloom-accent-soft-hover: rgba(99, 102, 241, 0.26);
+    --noteloom-danger-soft: rgba(220, 38, 38, 0.15);
+    --noteloom-code-bg: #13111f;
+  }
+}
+
+/* Explicit overrides win either direction — a host toggling dark mode via
+   a class rather than the OS setting can set [data-theme="dark"/"light"]
+   on any ancestor (e.g. <html>), overriding the media query above. */
+[data-theme='dark'] {
+  --noteloom-text: #f1f5f9;
+  --noteloom-text-muted: #94a3b8;
+  --noteloom-text-faint: #64748b;
+  --noteloom-bg: #1c1932;
+  --noteloom-bg-subtle: rgba(255, 255, 255, 0.03);
+  --noteloom-bg-hover: rgba(255, 255, 255, 0.06);
+  --noteloom-border: rgba(255, 255, 255, 0.1);
+  --noteloom-accent-soft: rgba(99, 102, 241, 0.18);
+  --noteloom-accent-soft-hover: rgba(99, 102, 241, 0.26);
+  --noteloom-danger-soft: rgba(220, 38, 38, 0.15);
+  --noteloom-code-bg: #13111f;
+}
+
+[data-theme='light'] {
+  --noteloom-text: #0f172a;
+  --noteloom-text-muted: #64748b;
+  --noteloom-text-faint: #94a3b8;
+  --noteloom-bg: #ffffff;
+  --noteloom-bg-subtle: #f8fafc;
+  --noteloom-bg-hover: #f1f5f9;
+  --noteloom-border: #e2e8f0;
+  --noteloom-accent-soft: rgba(99, 102, 241, 0.1);
+  --noteloom-accent-soft-hover: rgba(99, 102, 241, 0.16);
+  --noteloom-danger-soft: #fef2f2;
+  --noteloom-code-bg: #0f172a;
+}
+
+.be-root {
+  font-family: var(--noteloom-font);
+  color: var(--noteloom-text);
+}
+
+.be-editable {
+  outline: none;
+}
+
+/* --- basic leaf blocks --- */
+
+.be-paragraph {
+  position: relative;
+  margin: 0.25rem 0;
+  line-height: 1.6;
+  outline: none;
+}
+
+.be-heading {
+  position: relative;
+  font-weight: 600;
+  margin: 1.25rem 0 0.25rem;
+  outline: none;
+  letter-spacing: -0.01em;
+}
+
+.be-divider {
+  border: none;
+  border-top: 1px solid var(--noteloom-border);
+  margin: 1.5em 0;
+  cursor: default;
+}
+
+.be-blockquote {
+  position: relative;
+  margin: 0.5em 0;
+  padding-left: 0.9em;
+  border-left: 3px solid var(--noteloom-border);
+  color: var(--noteloom-text-muted);
+  outline: none;
+}
+
+/* --- callout --- */
+
+.be-callout {
+  position: relative;
+  display: flex;
+  gap: 0.7em;
+  align-items: flex-start;
+  background: var(--noteloom-bg-subtle);
+  border-radius: var(--noteloom-radius-lg);
+  padding: 0.9em 1em;
+  margin: 0.5em 0;
+}
+
+.be-callout[data-color='gray'] { background: rgba(148, 163, 184, 0.16); }
+.be-callout[data-color='blue'] { background: rgba(99, 102, 241, 0.12); }
+.be-callout[data-color='green'] { background: rgba(34, 197, 94, 0.14); }
+.be-callout[data-color='yellow'] { background: rgba(234, 179, 8, 0.16); }
+.be-callout[data-color='orange'] { background: rgba(249, 115, 22, 0.14); }
+.be-callout[data-color='red'] { background: rgba(239, 68, 68, 0.13); }
+.be-callout[data-color='purple'] { background: rgba(168, 85, 247, 0.13); }
+.be-callout[data-color='pink'] { background: rgba(236, 72, 153, 0.13); }
+
+.be-callout-icon-wrap {
+  flex: none;
+}
+
+.be-callout-icon-input,
+.be-callout-icon {
+  width: 2em;
+  height: 2em;
+  border: none;
+  background: var(--noteloom-bg);
+  border-radius: var(--noteloom-radius-md);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  font-size: 1.15em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.be-callout-icon-input {
+  outline: none;
+  text-align: center;
+  cursor: text;
+}
+
+.be-callout-content {
+  flex: 1;
+  min-width: 0;
+  padding-right: 1.6em; /* keeps text from running under the color-swatch trigger */
+}
+
+/* First child reads as the card's title; every child after it is the
+   description — see CalloutBlock.jsx's comment for why this is a CSS
+   convention over the content, not a separate title/description field. */
+.be-callout-content > :first-child {
+  font-weight: 600;
+}
+
+.be-callout-content > :not(:first-child) {
+  color: var(--noteloom-text-muted);
+  font-size: 0.92em;
+}
+
+.be-callout-color-wrap {
+  position: absolute;
+  top: 0.6em;
+  right: 0.6em;
+}
+
+.be-callout-color-trigger {
+  border: none;
+  background: none;
+  padding: 3px;
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+  display: flex;
+}
+
+.be-callout-color-trigger:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.be-callout-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.be-callout-color-dot-gray { background: #94a3b8; }
+.be-callout-color-dot-blue { background: #6366f1; }
+.be-callout-color-dot-green { background: #22c55e; }
+.be-callout-color-dot-yellow { background: #eab308; }
+.be-callout-color-dot-orange { background: #f97316; }
+.be-callout-color-dot-red { background: #ef4444; }
+.be-callout-color-dot-purple { background: #a855f7; }
+.be-callout-color-dot-pink { background: #ec4899; }
+
+.be-callout-color-picker {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 6px;
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  box-shadow: var(--noteloom-shadow);
+}
+
+.be-callout-color-option {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.be-callout-color-option-gray { background: #94a3b8; }
+.be-callout-color-option-blue { background: #6366f1; }
+.be-callout-color-option-green { background: #22c55e; }
+.be-callout-color-option-yellow { background: #eab308; }
+.be-callout-color-option-orange { background: #f97316; }
+.be-callout-color-option-red { background: #ef4444; }
+.be-callout-color-option-purple { background: #a855f7; }
+.be-callout-color-option-pink { background: #ec4899; }
+
+.be-callout-color-option-active {
+  border-color: var(--noteloom-text);
+}
+
+/* --- code block --- */
+
+.be-code-block {
+  margin: 0.6em 0;
+  border-radius: var(--noteloom-radius-lg);
+  overflow: hidden;
+  background: var(--noteloom-code-bg);
+  color: var(--noteloom-code-text);
+}
+
+.be-code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.be-code-block-delete {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--noteloom-text-faint);
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+}
+
+.be-code-block-delete:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fca5a5;
+}
+
+.be-code-block-language {
+  background: transparent;
+  color: var(--noteloom-text-faint);
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.be-code-block-pre {
+  margin: 0;
+  padding: 0.9em 1em;
+  overflow-x: auto;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.be-code-block-pre code {
+  position: relative;
+  display: block;
+}
+
+/* --- list items (bulleted / numbered / to-do / toggle) --- */
+
+.be-list-item {
+  margin: 0.1rem 0;
+}
+
+.be-list-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4em;
+}
+
+.be-list-checkbox {
+  margin-top: 0.3em;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  accent-color: var(--noteloom-accent);
+  cursor: pointer;
+}
+
+.be-list-toggle-marker {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px;
+  margin-top: 0.1em;
+  color: var(--noteloom-text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  width: 30px;
+  border-radius: var(--noteloom-radius-sm);
+}
+
+.be-list-toggle-marker:hover {
+  background: var(--noteloom-bg-hover);
+  color: var(--noteloom-text-muted);
+}
+
+.be-list-marker {
+  min-width: 1.2em;
+  margin-top: 0.1em;
+  text-align: center;
+  color: var(--noteloom-text-faint);
+  user-select: none;
+  flex: none;
+}
+
+.be-list-item-title {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  line-height: 1.6;
+}
+
+.be-list-item-children {
+  margin-left: 2.1em;
+}
+
+/* --- toggle heading --- */
+
+.be-toggle-heading {
+  margin: 1.25rem 0 0.25rem;
+}
+
+.be-toggle-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 0.15em;
+}
+
+.be-toggle-heading-marker {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--noteloom-text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--noteloom-radius-sm);
+}
+
+.be-toggle-heading-marker:hover {
+  background: var(--noteloom-bg-hover);
+  color: var(--noteloom-text-muted);
+}
+
+.be-toggle-heading-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.be-toggle-heading-children {
+  margin-left: 2.1em;
+}
+
+/* --- layout (multi-column) --- */
+
+.be-layout {
+  margin: 0.6em 0;
+}
+
+.be-layout-column {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- button block --- */
+
+.be-button-block {
+  margin: 0.6em 0;
+}
+
+.be-button-block-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  border-radius: var(--noteloom-radius-md);
+  padding: 0.5em 1em;
+  color: var(--noteloom-accent-text);
+}
+
+.be-button-block-label {
+  position: relative;
+  outline: none;
+  min-width: 2em;
+}
+
+/* --- generic empty-state placeholder for editable leaf content ---
+   Note: this can't use :empty — an "empty" run still holds a zero-width
+   space text node (see EMPTY_RUN_PLACEHOLDER) inside its host span, so the
+   wrapper element is never actually childless. data-empty (kept in sync by
+   EditableBlockContent's syncEmptyAttr against the *logical* run content,
+   not the DOM) is the real signal. */
+
+[data-placeholder][data-empty]:focus-within::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  color: var(--noteloom-text-faint);
+  font-weight: 400;
+  font-style: normal;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.be-button-block-open,
+.be-button-block-settings {
+  flex: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+  border-radius: var(--noteloom-radius-sm);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.be-button-block-open:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.be-button-block-open:hover:not(:disabled),
+.be-button-block-settings:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* --- embed (image/video/audio/file) --- */
+
+.be-embed {
+  margin: 0.6em 0;
+}
+
+.be-embed-preview {
+  position: relative;
+  display: flex;
+}
+
+.be-embed-align-left {
+  justify-content: flex-start;
+}
+
+.be-embed-align-center {
+  justify-content: center;
+}
+
+.be-embed-align-right {
+  justify-content: flex-end;
+}
+
+.be-embed-frame {
+  position: relative;
+  max-width: 100%;
+  overflow: visible;
+  border-radius: var(--noteloom-radius-lg);
+}
+
+.be-embed-image,
+.be-embed-video {
+  border: 1px solid var(--noteloom-border);
+}
+
+.be-embed-image,
+.be-embed-video {
+  max-width: 100%;
+  display: block;
+  border-radius: var(--noteloom-radius-lg);
+}
+
+.be-embed-audio {
+  width: 100%;
+}
+
+.be-embed-file-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.75em 1em;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-xl);
+  text-decoration: none;
+  color: var(--noteloom-accent);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.be-embed-file-link:hover {
+  background: var(--noteloom-bg-subtle);
+}
+
+.be-embed-toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: var(--noteloom-radius-md);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.be-embed-preview:hover .be-embed-toolbar,
+.be-embed-toolbar:focus-within {
+  opacity: 1;
+}
+
+.be-embed-toolbar-btn {
+  border: none;
+  background: transparent;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+}
+
+.be-embed-toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.be-embed-toolbar-btn-active {
+  background: var(--noteloom-accent);
+  color: #fff;
+}
+
+.be-embed-remove {
+  border: none;
+  background: transparent;
+  border-radius: var(--noteloom-radius-sm);
+  padding: 0 8px;
+  height: 24px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.be-embed-remove:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.be-embed-resize-handle {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  border-radius: 2px;
+  border: 1px solid #fff;
+  background: var(--noteloom-accent);
+}
+
+.be-embed-dropzone {
+  border: 1.5px dashed var(--noteloom-border);
+  border-radius: var(--noteloom-radius-xl);
+  padding: 2.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+  text-align: center;
+  color: var(--noteloom-text-muted);
+}
+
+.be-embed-dropzone-active {
+  border-color: var(--noteloom-accent);
+  background: var(--noteloom-accent-soft);
+  color: var(--noteloom-accent);
+}
+
+.be-embed-upload-btn {
+  background: var(--noteloom-accent);
+  color: var(--noteloom-accent-text);
+  border-radius: var(--noteloom-radius-md);
+  padding: 0.5em 1.1em;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.be-embed-upload-btn input {
+  display: none;
+}
+
+.be-embed-dropzone-hint {
+  font-size: 0.8rem;
+  color: var(--noteloom-text-faint);
+}
+
+.be-embed-url-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.be-embed-url-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  padding: 0.45em 0.7em;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.be-embed-url-input:focus {
+  border-color: var(--noteloom-accent);
+}
+
+.be-embed-url-commit {
+  border: none;
+  background: var(--noteloom-accent);
+  color: var(--noteloom-accent-text);
+  border-radius: var(--noteloom-radius-md);
+  padding: 0.45em 0.9em;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* --- table --- */
+
+.be-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.be-table-wrapper {
+  margin: 0.9em 0;
+  overflow-x: auto;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-lg);
+  width: max-content;
+}
+
+.be-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  /* Deliberately no width:100% — combined with table-layout:fixed and each
+     column's own <col> width, that would make the browser redistribute
+     leftover space proportionally across columns, fighting individual
+     column resize (see be-table-col-resize-handle). */
+}
+
+.be-table-header-row {
+  background: var(--noteloom-bg-subtle);
+}
+
+.be-table-header-cell {
+  position: relative;
+  border-bottom: 1px solid var(--noteloom-border);
+  border-right: 1px solid var(--noteloom-border);
+  padding: 6px 10px;
+}
+
+.be-table-header-label {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--noteloom-text-muted);
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 0;
+}
+
+.be-table-header-menu-trigger {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  visibility: hidden;
+  border: none;
+  background: transparent;
+  border-radius: var(--noteloom-radius-sm);
+  padding: 2px;
+  color: var(--noteloom-text-faint);
+  cursor: pointer;
+}
+
+.be-table-header-cell:hover .be-table-header-menu-trigger {
+  visibility: visible;
+}
+
+.be-table-header-menu-trigger:hover {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-table-col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.be-table-col-resize-handle:hover,
+.be-table-col-resize-handle:active {
+  background: var(--noteloom-accent-soft-hover);
+}
+
+.be-table-header-spacer {
+  border-bottom: 1px solid var(--noteloom-border);
+}
+
+.be-table-header-spacer-col {
+  width: 32px;
+}
+
+.be-table-header-menu {
+  z-index: 1000;
+  width: 224px;
+  border-radius: var(--noteloom-radius-lg);
+  border: 1px solid var(--noteloom-border);
+  background: var(--noteloom-bg);
+  padding: 4px;
+  font-size: 0.88rem;
+  box-shadow: var(--noteloom-shadow);
+}
+
+.be-table-header-menu-options {
+  z-index: 1000;
+  padding: 4px;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--noteloom-border);
+  margin-bottom: 4px;
+}
+
+.be-table-header-menu-type {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 6px;
+  border-bottom: 1px solid var(--noteloom-border);
+  margin-bottom: 4px;
+}
+
+.be-table-header-type-select {
+  width: 100%;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-sm);
+  padding: 6px 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.be-table-header-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: var(--noteloom-radius-sm);
+  background: transparent;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--noteloom-text);
+  cursor: pointer;
+}
+
+.be-table-header-menu-item:hover {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-table-header-menu-item-danger {
+  color: var(--noteloom-danger);
+}
+
+.be-table-header-menu-item-danger:hover {
+  background: var(--noteloom-danger-soft);
+}
+
+.be-table-header-menu-options-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--noteloom-text-faint);
+  padding: 6px 8px 2px;
+}
+
+.be-table-header-menu-option-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+}
+
+.be-table-header-menu-option-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.be-table-header-menu-option-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 4px 6px;
+  border-radius: var(--noteloom-radius-sm);
+  outline: none;
+}
+
+.be-table-header-menu-option-input:focus {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-table-header-menu-option-remove,
+.be-table-header-menu-option-add {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--noteloom-text-faint);
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--noteloom-radius-sm);
+}
+
+.be-table-header-menu-option-remove:hover {
+  background: var(--noteloom-danger-soft);
+  color: var(--noteloom-danger);
+}
+
+.be-table-header-menu-option-add {
+  color: var(--noteloom-text-muted);
+}
+
+.be-table-header-menu-option-add:hover {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-table-row:hover {
+  background: var(--noteloom-bg-subtle);
+}
+
+.be-table-cell {
+  border-bottom: 1px solid var(--noteloom-border);
+  border-right: 1px solid var(--noteloom-border);
+  padding: 6px 10px;
+  vertical-align: top;
+  outline: none;
+  font-size: 0.92rem;
+  /* table-layout: fixed already keeps the COLUMN width from growing to fit
+     content — this is what stops a long unbroken string (a URL, one giant
+     word) from visually overflowing past that fixed width instead of
+     wrapping onto a new line within the cell. */
+  max-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.be-table-cell:focus-within {
+  box-shadow: inset 0 0 0 2px var(--noteloom-accent);
+  border-radius: 2px;
+}
+
+.be-table-row-actions {
+  width: 32px;
+  text-align: center;
+  vertical-align: middle;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.be-table-delete-row {
+  visibility: hidden;
+  border: none;
+  background: transparent;
+  color: var(--noteloom-text-faint);
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--noteloom-radius-sm);
+}
+
+tr.be-table-row:hover .be-table-delete-row {
+  visibility: visible;
+}
+
+.be-table-delete-row:hover {
+  background: var(--noteloom-danger-soft);
+  color: var(--noteloom-danger);
+}
+
+.be-table-add-row {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--noteloom-text-faint);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.be-table-add-row:hover {
+  background: var(--noteloom-bg-subtle);
+  color: var(--noteloom-accent);
+}
+
+.be-inline-table-select {
+  display: block;
+}
+
+.be-inline-table-select .be-select {
+  width: 100%;
+}
+
+.be-inline-table-select .be-select .be-select-tag {
+  width: -webkit-fill-available;
+}
+
+.be-inline-table-select .be-select-trigger {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  border: none;
+  border-radius: var(--noteloom-radius-sm);
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 0.92rem;
+}
+
+.be-inline-table-select .be-select-trigger:hover,
+.be-inline-table-select .be-select-trigger[aria-expanded='true'] {
+  background: var(--noteloom-bg-hover);
+  box-shadow: none;
+}
+
+/* --- per-block hover gutter (+ / drag-handle / menu) --- */
+
+.be-block-row {
+  position: relative;
+}
+
+.be-block-row-hidden {
+  opacity: 0.4;
+}
+
+.be-block-gutter {
+  position: absolute;
+  left: -56px;
+  top: 0.15em;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  user-select: none; /* it's a drag handle (see useBlockRangeDrag) — never let its own space become selectable text */
+}
+
+.be-block-row:hover .be-block-gutter,
+.be-block-gutter-active {
+  opacity: 1;
+}
+
+.be-block-gutter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--noteloom-radius-sm);
+  background: transparent;
+  color: var(--noteloom-text-faint);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.be-block-gutter-btn:hover,
+.be-block-gutter-btn[aria-expanded='true'] {
+  background: var(--noteloom-bg-hover);
+  color: var(--noteloom-text);
+}
+
+.be-block-gutter-menu,
+.be-block-range-menu {
+  z-index: 1000;
+  min-width: 200px;
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-lg);
+  box-shadow: var(--noteloom-shadow);
+  padding: 4px;
+}
+
+.be-block-gutter-menu-item,
+.be-block-range-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: var(--noteloom-radius-sm);
+  background: transparent;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--noteloom-text);
+  cursor: pointer;
+}
+
+.be-block-gutter-menu-item:hover,
+.be-block-range-menu-item:hover {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-block-gutter-menu-item-danger,
+.be-block-range-menu-item-danger {
+  color: var(--noteloom-danger);
+}
+
+.be-block-gutter-menu-item-danger:hover,
+.be-block-range-menu-item-danger:hover {
+  background: var(--noteloom-danger-soft);
+}
+
+/* --- drag-in-the-margin block range selection --- */
+
+.be-block-row-range-selected {
+  background: var(--noteloom-accent-soft);
+  border-radius: var(--noteloom-radius-md);
+  margin: 0 -8px;
+  padding: 0 8px;
+}
+
+.be-block-range-dragging,
+.be-block-range-dragging * {
+  user-select: none !important;
+}
+
+/* --- whole-document select-all / single non-editable block selected --- */
+
+.be-surface--all-selected .be-block-row-content > [data-block-id] {
+  background: var(--noteloom-accent-soft);
+  border-radius: var(--noteloom-radius-sm);
+}
+
+.be-block-selected {
+  outline: 2px solid var(--noteloom-accent);
+  outline-offset: 2px;
+  border-radius: var(--noteloom-radius-sm);
+}
+
+/* --- trailing click-to-continue space --- */
+
+.be-trailing-space {
+  cursor: text;
+  width: 100%;
+  min-height: 180px;
+}
+
+/* --- modal (button editor, field type editor) --- */
+
+.be-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1em;
+}
+
+.be-modal {
+  background: var(--noteloom-bg);
+  color: var(--noteloom-text);
+  border-radius: var(--noteloom-radius-xl);
+  border: 1px solid var(--noteloom-border);
+  padding: 1.4em;
+  width: 100%;
+  max-width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--noteloom-shadow);
+}
+
+.be-modal-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 1em;
+}
+
+.be-modal-field {
+  display: block;
+  margin-bottom: 1em;
+}
+
+.be-modal-field > span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--noteloom-text-muted);
+  margin-bottom: 5px;
+}
+
+.be-modal-field input[type='text'],
+.be-modal-field input[type='url'] {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  padding: 0.55em 0.75em;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.be-modal-field input[type='text']:focus,
+.be-modal-field input[type='url']:focus {
+  border-color: var(--noteloom-accent);
+}
+
+.be-modal-field select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  padding: 0.55em 0.75em;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.be-modal-field select:focus {
+  border-color: var(--noteloom-accent);
+}
+
+.be-modal-color-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.be-modal-color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.be-modal-color-swatch-active {
+  border-color: var(--noteloom-accent);
+  box-shadow: 0 0 0 2px var(--noteloom-bg), 0 0 0 4px var(--noteloom-accent-soft);
+}
+
+.be-modal-attr-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.be-modal-attr-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-sm);
+  padding: 0.4em 0.6em;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.be-modal-attr-remove {
+  flex: none;
+  border: none;
+  background: none;
+  color: var(--noteloom-text-faint);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--noteloom-radius-sm);
+}
+
+.be-modal-attr-remove:hover {
+  color: var(--noteloom-danger);
+}
+
+.be-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.be-modal-delete {
+  margin-right: auto; /* pushes Cancel/Save to the right, Delete stays on its own at the left */
+}
+
+.be-modal-cancel,
+.be-modal-save,
+.be-modal-delete {
+  border: none;
+  border-radius: var(--noteloom-radius-md);
+  padding: 7px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.be-modal-delete {
+  background: var(--noteloom-danger-soft);
+  color: var(--noteloom-danger);
+}
+
+.be-modal-cancel {
+  background: var(--noteloom-bg-subtle);
+  color: var(--noteloom-text);
+}
+
+.be-modal-cancel:hover {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-modal-save {
+  background: var(--noteloom-accent);
+  color: var(--noteloom-accent-text);
+}
+
+.be-modal-save:hover {
+  opacity: 0.9;
+}
+
+.be-modal-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- slash ("/") / emoji (":") / mention ("@") command menu --- */
+
+.be-slash-menu {
+  z-index: 1000;
+  width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-lg);
+  box-shadow: var(--noteloom-shadow);
+  padding: 6px;
+}
+
+.be-slash-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: var(--noteloom-radius-md);
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--noteloom-text);
+}
+
+.be-slash-menu-item-active,
+.be-slash-menu-item:hover {
+  background: var(--noteloom-accent-soft);
+}
+
+.be-slash-menu-item-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--noteloom-radius-sm);
+  border: 1px solid var(--noteloom-border);
+  color: var(--noteloom-text-muted);
+}
+
+.be-slash-menu-item-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- searchable Select (inline select/date/checkbox widgets, custom field types, table column type) --- */
+
+.be-select {
+  display: inline-flex;
+}
+
+.be-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  min-width: 6em;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  background: var(--noteloom-bg);
+  color: var(--noteloom-text);
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.be-select-trigger:hover {
+  border-color: var(--noteloom-accent);
+}
+
+.be-select-trigger[aria-expanded='true'] {
+  border-color: var(--noteloom-accent);
+  box-shadow: 0 0 0 2px var(--noteloom-accent-soft);
+}
+
+.be-select-trigger-tag {
+  min-width: 0;
+  min-height: 0;
+  border: none;
+  background: transparent;
+  padding: 2px;
+  border-radius: var(--noteloom-radius-sm);
+  outline: none;
+  border: none;
+}
+
+.be-select-trigger-tag:hover {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-select-trigger-tag[aria-expanded='true'] {
+  background: var(--noteloom-bg-hover);
+  box-shadow: none;
+}
+
+.be-select-value-placeholder {
+  color: var(--noteloom-text-faint);
+}
+
+.be-select-tag {
+  display: inline-flex;
+  flex: none;
+  max-width: 100%;
+  padding: 2px 9px;
+  border-radius: var(--noteloom-radius-sm);
+  font-size: 0.82em;
+  font-weight: 500;
+  line-height: 1.4;
+  /* Wraps rather than truncates — a fixed-width popover (see
+     .be-select-popover) or table cell (see .be-table-cell) combined with
+     nowrap+ellipsis let long option text silently overflow its box
+     instead of actually being clipped; wrapping sidesteps that entirely. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.be-select-value {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.be-select-chevron {
+  flex: none;
+  color: var(--noteloom-text-faint);
+}
+
+.be-select-popover {
+  z-index: 1000;
+  width: 224px;
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-lg);
+  box-shadow: var(--noteloom-shadow);
+  overflow: hidden;
+}
+
+.be-select-search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-bottom: 1px solid var(--noteloom-border);
+  background: transparent;
+  color: inherit;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.be-select-options {
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px;
+}
+
+.be-select-option {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--noteloom-text);
+}
+
+/* A tag-variant option list (colored pills — e.g. Priority/Assignee) must
+   read at the exact same size/weight as a plain default-variant list
+   (Diagnosis) — only the colored-chip background should differ between
+   them, not the typography. .be-select-tag's own font-size/weight (sized
+   down for when it's squeezed into a trigger button) would otherwise make
+   tag-variant options look smaller/bolder than plain ones for no reason. */
+.be-select-option .be-select-tag {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  width: -webkit-fill-available;
+}
+
+.be-select-option-active {
+  background: var(--noteloom-accent-soft);
+}
+
+.be-select-option-selected {
+  font-weight: 600;
+}
+
+.be-select-option-selected:not(.be-select-option-active) {
+  background: var(--noteloom-bg-subtle);
+}
+
+.be-select-option-selected .be-select-tag {
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.2);
+}
+
+.be-select-empty {
+  padding: 10px 12px;
+  color: var(--noteloom-text-faint);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.be-select-error {
+  color: var(--noteloom-danger);
+}
+
+.be-select-manage-options {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-top: 1px solid var(--noteloom-border);
+  background: transparent;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--noteloom-accent);
+  text-align: left;
+  cursor: pointer;
+}
+
+.be-select-manage-options:hover {
+  background: var(--noteloom-accent-soft);
+}
+
+.be-inline-select,
+.be-inline-date,
+.be-inline-checkbox {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+/* Inline chips sit in running text — match the surrounding line's own font
+   size instead of the smaller size used for the Select component elsewhere
+   (menus, table column type dropdown), where a compact UI size is right. */
+.be-inline-select .be-select-trigger {
+  min-height: 0;
+  font-size: 1em;
+  padding: 1px 8px;
+}
+
+.be-inline-select .be-select-tag {
+  font-size: 0.92em;
+}
+
+/* A mention reads as highlighted text sitting inline in the paragraph, not
+   a bulky standalone pill/button — minimal padding, small radius, no extra
+   chrome from the trigger button wrapping it. */
+.be-inline-select .be-select-trigger-mention {
+  padding: 0 !important;
+  border-radius: 3px;
+}
+
+/* A mention chip always uses this one fixed color, not each option's own
+   tag color — matches Notion/Slack/GitHub's "@mentions are one consistent
+   color" convention rather than a per-person palette. */
+.be-select-tag-mention {
+  background: var(--noteloom-accent-soft);
+  color: var(--noteloom-accent);
+  font-weight: 500;
+  padding: 0 3px;
+  border-radius: 3px;
+  line-height: inherit;
+}
+
+.be-inline-date input[type='date'] {
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  background: var(--noteloom-bg);
+  color: inherit;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.be-inline-checkbox {
+  gap: 6px;
+}
+
+.be-inline-checkbox-input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--noteloom-accent);
+  cursor: pointer;
+}
+
+.be-inline-checkbox-label {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 2px 8px;
+  outline: none;
+}
+
+.be-inline-checkbox-label:focus {
+  border-color: var(--noteloom-accent);
+}
+
+/* In a table cell (checkbox column), the browser's default text-input
+   width (~170px+) is wider than most columns, forcing the input — and with
+   it, the whole table — past the cell's own bounds. Constraining the
+   inline-flex row to the cell's actual width lets the label's flex:1 +
+   min-width:0 (above) do their job and shrink the input to fit instead. */
+.be-table-cell .be-inline-checkbox {
+  display: flex;
+  width: 100%;
+}
+
+.be-inline-checkbox-label::placeholder {
+  color: var(--noteloom-text-faint);
+}
+
+/* --- floating (selection) format toolbar --- */
+
+.be-floating-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--noteloom-text);
+  border-radius: var(--noteloom-radius-md);
+  padding: 4px;
+  box-shadow: var(--noteloom-shadow);
+  z-index: 1000;
+}
+
+.be-floating-toolbar-btn {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+}
+
+.be-floating-toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.be-floating-toolbar-btn-active {
+  background: var(--noteloom-accent);
+  color: #fff;
+}
+
+.be-floating-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 4px;
+}
+
+.be-floating-toolbar-picker-wrap {
+  position: relative;
+}
+
+.be-floating-toolbar-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  display: flex;
+  gap: 4px;
+  background: var(--noteloom-bg);
+  border-radius: var(--noteloom-radius-md);
+  padding: 6px;
+  box-shadow: var(--noteloom-shadow);
+}
+
+.be-floating-toolbar-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+/* --- link hover card (edit/remove an existing link mark) --- */
+
+.be-link-hover-card {
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 320px;
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  padding: 5px 6px 5px 10px;
+  box-shadow: var(--noteloom-shadow);
+  font-size: 0.85rem;
+}
+
+.be-link-hover-card-url {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--noteloom-accent);
+  text-decoration: none;
+}
+
+.be-link-hover-card-url:hover {
+  text-decoration: underline;
+}
+
+.be-link-hover-card-btn {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--noteloom-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+}
+
+.be-link-hover-card-btn:hover {
+  background: var(--noteloom-bg-hover);
+  color: var(--noteloom-text);
+}

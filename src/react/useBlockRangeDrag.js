@@ -117,9 +117,21 @@ export function useBlockRangeDrag(containerRef) {
 
       const row = event.target.closest('[data-block-row-id]');
       if (row) {
-        const contentEl = row.querySelector('.be-block-row-content');
-        const contentRect = contentEl?.getBoundingClientRect();
-        if (contentRect && event.clientX >= contentRect.left && event.clientX <= contentRect.right) return;
+        // DOM-ancestor check, not a geometry/rect comparison: the previous
+        // rect-based version only compared clientX against
+        // be-block-row-content's own bounding box, and (a) never checked Y
+        // at all, (b) broke down for any block whose content box isn't a
+        // simple full-width rectangle (wrapped text, an inline chip at the
+        // end of a short line, a table). Any of those could put a genuine
+        // click on real content just outside the rect's clientX range,
+        // misclassifying it as "margin" and arming a drag — which doesn't
+        // itself steal the click, but does mean the *next* mousemove (even
+        // an incidental few px of jitter before the click properly
+        // registers) can flip it into an actual drag-select, hijacking
+        // what the user experienced as a plain click. Walking the DOM via
+        // closest() instead answers "is this element actually inside the
+        // block's own rendered content" exactly, with no geometry involved.
+        if (event.target.closest('.be-block-row-content')) return;
         armDrag(row.getAttribute('data-block-row-id'), event);
         return;
       }

@@ -80,6 +80,7 @@ export function Select({
   selectedColor,
   onManageOptions,
   manageOptionsLabel = 'Manage options…',
+  mention = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -192,7 +193,7 @@ export function Select({
       <button
         type="button"
         ref={buttonRef}
-        className={`be-select-trigger${isTag ? ' be-select-trigger-tag' : ''}`}
+        className={`be-select-trigger${isTag ? ' be-select-trigger-tag' : ''}${mention ? ' be-select-trigger-mention' : ''}`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={ariaLabel}
@@ -200,8 +201,11 @@ export function Select({
       >
         {isTag ? (
           selected ? (
-            <span className="be-select-tag" style={{ background: selected.color?.bg, color: selected.color?.text }}>
-              {selected.label}
+            <span
+              className={`be-select-tag${mention ? ' be-select-tag-mention' : ''}`}
+              style={mention ? undefined : { background: selected.color?.bg, color: selected.color?.text }}
+            >
+              {mention ? `@${selected.label}` : selected.label}
             </span>
           ) : (
             <span className="be-select-value be-select-value-placeholder">{placeholder}</span>

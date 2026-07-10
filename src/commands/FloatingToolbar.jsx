@@ -6,7 +6,8 @@ import {
   setMarksOverBlockRange,
 } from '../inline/markCommands.js';
 import { focusRunEnd } from '../react/focusRun.js';
-import { BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon } from '../react/icons.jsx';
+import { LinkEditModal } from '../react/LinkEditModal.jsx';
+import { BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, LinkIcon } from '../react/icons.jsx';
 
 const BOOLEAN_BUTTONS = [
   { markName: 'bold', Icon: BoldIcon, title: 'Bold (Ctrl+B)' },
@@ -50,6 +51,7 @@ const HIGHLIGHT_COLORS = [
  */
 export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection, marks, store }) {
   const [openPicker, setOpenPicker] = useState(null); // 'color' | 'highlight' | null
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -112,9 +114,42 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
     [marks, applyPatch],
   );
 
-  if (!isOpen || !rect) return null;
+  // Captured at the moment "Link" is clicked, not read live from props —
+  // focusing the modal's URL input moves focus out of the contentEditable
+  // region, which can collapse/change the document selection the toolbar
+  // was built for (isOpen/rect/marks would otherwise go stale or the whole
+  // bar would unmount out from under the open modal).
+  const pendingLinkRef = useRef(null);
+
+  const openLinkModal = useCallback(() => {
+    pendingLinkRef.current = { kind, selection, crossSelection };
+    setIsLinkModalOpen(true);
+  }, [kind, selection, crossSelection]);
+
+  const closeLinkModal = useCallback(() => setIsLinkModalOpen(false), []);
+
+  const applyLinkPatch = useCallback(
+    (marksPatch) => {
+      const pending = pendingLinkRef.current;
+      if (!pending) return;
+      const newRunId =
+        pending.kind === 'same-block'
+          ? setMarksOverSelection(store, pending.selection.blockId, pending.selection, marksPatch)
+          : setMarksOverBlockRange(store, pending.crossSelection, marksPatch);
+      if (newRunId) focusRunEnd(newRunId);
+      setIsLinkModalOpen(false);
+    },
+    [store],
+  );
+
+  const handleSaveLink = useCallback((href, target) => applyLinkPatch({ link: { href, target } }), [applyLinkPatch]);
+  const handleRemoveLink = useCallback(() => applyLinkPatch({ link: null }), [applyLinkPatch]);
+
+  if ((!isOpen || !rect) && !isLinkModalOpen) return null;
 
   return (
+    <>
+    {isOpen && rect && (
     <div
       ref={rootRef}
       className="be-floating-toolbar"
@@ -218,6 +253,31 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
           </div>
         )}
       </div>
+
+      <span className="be-floating-toolbar-divider" />
+
+      <button
+        type="button"
+        className={`be-floating-toolbar-btn${marks.link ? ' be-floating-toolbar-btn-active' : ''}`}
+        title="Link"
+        aria-label="Link"
+        aria-pressed={Boolean(marks.link)}
+        onClick={openLinkModal}
+      >
+        <LinkIcon />
+      </button>
     </div>
+    )}
+    <LinkEditModal
+      isOpen={isLinkModalOpen}
+      initialHref={marks.link?.href ?? ''}
+      initialTarget={marks.link?.target ?? '_self'}
+      hasExistingLink={Boolean(marks.link)}
+      onSave={handleSaveLink}
+      onRemove={handleRemoveLink}
+      onClose={closeLinkModal}
+    />
+    </>
   );
 }
+

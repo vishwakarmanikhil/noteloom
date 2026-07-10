@@ -9,6 +9,8 @@ import { focusRunEnd, focusRunAtOffset } from '../../react/focusRun.js';
 import { resolveCollapsedCaret } from '../../react/selectionResolve.js';
 import { updateRun, updateBlockProps } from '../../store/operations.js';
 import { focusAdjacentBlock } from '../shared/navigationCommands.js';
+import { deleteBlockAndFocusSibling } from '../shared/blockActions.js';
+import { TrashIcon } from '../../react/icons.jsx';
 
 export const LANGUAGES = ['plaintext', 'javascript', 'python', 'html', 'css', 'json', 'bash', 'sql'];
 const LANGUAGE_OPTIONS = LANGUAGES.map((lang) => ({ value: lang, label: lang }));
@@ -75,6 +77,8 @@ export function CodeBlock({ id }) {
     [store, id],
   );
 
+  const handleDelete = useCallback(() => deleteBlockAndFocusSibling(store, id), [store, id]);
+
   if (!block) return null;
   const language = block.props?.language ?? 'plaintext';
   const isEmpty = isRunsEmpty(store, block.contentIds);
@@ -89,6 +93,9 @@ export function CodeBlock({ id }) {
           onChange={handleLanguageChange}
           ariaLabel="Code language"
         />
+        <button type="button" className="be-code-block-delete" onClick={handleDelete} aria-label="Delete code block" title="Delete code block">
+          <TrashIcon size={14} />
+        </button>
       </div>
       <pre className="be-code-block-pre">
         <code data-empty={isEmpty ? '' : undefined} data-placeholder="Empty code block">

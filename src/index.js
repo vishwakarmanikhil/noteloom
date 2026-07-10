@@ -52,6 +52,7 @@ export {
   usePreviewMode,
   useFieldTypeEditor,
 } from './react/EditorProvider.jsx';
+export { injectDefaultStyles } from './react/injectDefaultStyles.js';
 export { useBlock, useRun } from './react/useBlock.js';
 export { useFieldTypes } from './react/useFieldTypes.js';
 export { useHistory } from './react/useHistory.js';

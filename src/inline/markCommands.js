@@ -2,11 +2,22 @@ import { genId } from '../utils/idGen.js';
 import { replaceRunSpan } from '../store/operations.js';
 
 const BOOLEAN_MARK_NAMES = ['bold', 'italic', 'underline', 'strike', 'subscript', 'superscript', 'code'];
-const VALUE_MARK_NAMES = ['color', 'highlight'];
+const VALUE_MARK_NAMES = ['color', 'highlight', 'link'];
 
 function getBlockRunIds(store, blockId) {
   const block = store.getBlock(blockId);
   return block.props?.titleRunIds ?? block.contentIds;
+}
+
+// Object-valued marks (link: {href, target}) can be equal in content but
+// different references — e.g. after undo/redo, or a copy-pasted link — so
+// plain === would spuriously read as "mixed" even when every run in range
+// really does carry the same link. Primitive marks (color/highlight) are
+// unaffected: === already succeeds for them before this ever falls through.
+function sameMarkValue(a, b) {
+  if (a === b) return true;
+  if (a && b && typeof a === 'object') return JSON.stringify(a) === JSON.stringify(b);
+  return false;
 }
 
 function summarizeMarks(runs) {
@@ -17,7 +28,7 @@ function summarizeMarks(runs) {
   }
   for (const name of VALUE_MARK_NAMES) {
     const first = runs[0].marks?.[name] ?? null;
-    summary[name] = runs.every((r) => (r.marks?.[name] ?? null) === first) ? first : null;
+    summary[name] = runs.every((r) => sameMarkValue(r.marks?.[name] ?? null, first)) ? first : null;
   }
   return summary;
 }

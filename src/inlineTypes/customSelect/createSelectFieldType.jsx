@@ -60,18 +60,33 @@ export function createSelectFieldType({
   options,
   onManage,
   triggers = ['slash'],
+  // Defaults to true for an @-reachable type (Assignee, Reviewer, ...): a
+  // picked chip renders as "@Name" in a fixed accent color rather than each
+  // option's own tag color, matching how @mentions read everywhere else
+  // (Notion, Slack, GitHub) — a consistent mention style, not a per-person
+  // palette. Pass `mention: false` to opt an @-triggered type out of this
+  // (e.g. it's reachable via "@" but isn't really a "who" mention).
+  mention = triggers.includes('at'),
 }) {
   function toHTML(run) {
-    const text = run.data?.selectedLabel || '';
+    const label = run.data?.selectedLabel || '';
+    const text = mention && label ? `@${label}` : label;
     return `<span data-inline-type="${escapeAttr(type)}" data-selected-value="${escapeAttr(run.data?.selectedValue ?? '')}">${escapeHTML(text)}</span>`;
   }
 
   function toPlainText(run) {
-    return run.data?.selectedLabel ?? '';
+    const label = run.data?.selectedLabel ?? '';
+    return mention && label ? `@${label}` : label;
   }
 
   function fromHTML(node) {
     if (node.getAttribute?.('data-inline-type') !== type) return null;
+    const text = node.textContent ?? '';
+    // toHTML prepends "@" for a mention type — strip it back off so
+    // selectedLabel stays the bare name; otherwise re-rendering the pasted
+    // chip would prepend a second "@" on top of the one already baked into
+    // the round-tripped text.
+    const selectedLabel = mention && text.startsWith('@') ? text.slice(1) : text;
     return {
       id: genId(),
       type,
@@ -79,7 +94,7 @@ export function createSelectFieldType({
       marks: {},
       data: {
         selectedValue: node.getAttribute('data-selected-value') ?? '',
-        selectedLabel: node.textContent ?? '',
+        selectedLabel,
       },
     };
   }
@@ -93,6 +108,7 @@ export function createSelectFieldType({
         variant={variant}
         options={options}
         onManage={onManage}
+        mention={mention}
       />
     );
   }

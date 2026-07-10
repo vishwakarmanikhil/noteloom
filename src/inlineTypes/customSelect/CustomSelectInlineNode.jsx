@@ -16,7 +16,7 @@ import { Select } from '../../react/Select.jsx';
  * table's select column works (one shared list, not one per cell). Only
  * the resolved selection is ever written back to the run.
  */
-export function CustomSelectInlineNode({ id, label, placeholder, variant, options, onManage }) {
+export function CustomSelectInlineNode({ id, label, placeholder, variant, options, onManage, mention = false }) {
   const store = useEditorStore();
   const run = useRun(id);
 
@@ -53,6 +53,7 @@ export function CustomSelectInlineNode({ id, label, placeholder, variant, option
         variant={variant}
         ariaLabel={label}
         onManageOptions={onManage}
+        mention={mention}
       />
     </span>
   );

@@ -1,8 +1,40 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { injectDefaultStyles } from './injectDefaultStyles.js';
 
 const EditorContext = createContext(null);
 
-export function EditorProvider({ store, registry, inlineRegistry = null, history = null, children }) {
+/**
+ * `theme` (default `'default'`) auto-injects the package's own default
+ * theme as a single <style> tag in <head> the first time any
+ * <EditorProvider> mounts — see injectDefaultStyles.js — so a working,
+ * styled editor needs no separate `import 'noteloom/style.css'` line.
+ * Pass `theme="none"` to skip this entirely (e.g. to import the CSS file
+ * yourself for load-order control, or to ship a fully custom theme with
+ * no default as a starting point).
+ *
+ * `className`/`style`, if given, wrap `children` in one `<div>` (with the
+ * base `be-root` class alongside your own) — the natural "editor root"
+ * customization hook for scoping your own overrides
+ * (`.my-editor .be-paragraph { ... }`) or overriding the `--noteloom-*`
+ * CSS custom properties the default theme itself reads from (see
+ * style.css) for just this one editor instance. Deliberately NOT rendered
+ * unconditionally: most existing usage doesn't need an extra wrapper
+ * element in the DOM, so one is only added when you actually ask for it.
+ */
+export function EditorProvider({
+  store,
+  registry,
+  inlineRegistry = null,
+  history = null,
+  className,
+  style,
+  theme = 'default',
+  children,
+}) {
+  useEffect(() => {
+    if (theme !== 'none') injectDefaultStyles();
+  }, [theme]);
+
   // `store` may be a plain EditorStore or a History instance (same read/write
   // surface) — components call useEditorStore() and get whichever was given,
   // undo/redo-aware or not, without caring which.
@@ -115,7 +147,16 @@ export function EditorProvider({ store, registry, inlineRegistry = null, history
       closeFieldTypeEditor,
     ],
   );
-  return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
+  const content =
+    className || style ? (
+      <div className={className ? `be-root ${className}` : 'be-root'} style={style}>
+        {children}
+      </div>
+    ) : (
+      children
+    );
+
+  return <EditorContext.Provider value={value}>{content}</EditorContext.Provider>;
 }
 
 export function useEditorContext() {

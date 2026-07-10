@@ -36,7 +36,10 @@ export function runToHTML(run, ctx) {
   if (marks.superscript) html = `<sup>${html}</sup>`;
   if (marks.color) html = `<span style="color:${escapeAttr(marks.color)}">${html}</span>`;
   if (marks.highlight) html = `<span style="background-color:${escapeAttr(marks.highlight)}">${html}</span>`;
-  if (marks.link?.href) html = `<a href="${escapeAttr(marks.link.href)}">${html}</a>`;
+  if (marks.link?.href) {
+    const targetAttrs = marks.link.target === '_blank' ? ' target="_blank" rel="noopener noreferrer"' : '';
+    html = `<a href="${escapeAttr(marks.link.href)}"${targetAttrs}>${html}</a>`;
+  }
   return html;
 }
 

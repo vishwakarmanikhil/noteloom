@@ -8,6 +8,7 @@ import { isRunBlank, isRunsEmpty } from '../blocks/shared/blockEmpty.js';
 import { isContentlessBlock } from '../blocks/shared/contentless.js';
 import { genId } from '../utils/idGen.js';
 import { focusRunEnd, focusRunStart } from './focusRun.js';
+import { LinkHoverCard } from './LinkHoverCard.jsx';
 
 /**
  * Keeps the block wrapper's data-empty attribute (see the be-*[data-empty]
@@ -35,11 +36,13 @@ function marksToStyle(marks = {}) {
   return {
     fontWeight: marks.bold ? 'bold' : undefined,
     fontStyle: marks.italic ? 'italic' : undefined,
-    textDecoration: [marks.underline && 'underline', marks.strike && 'line-through'].filter(Boolean).join(' ') || undefined,
+    textDecoration:
+      [(marks.underline || marks.link) && 'underline', marks.strike && 'line-through'].filter(Boolean).join(' ') || undefined,
     verticalAlign: marks.subscript ? 'sub' : marks.superscript ? 'super' : undefined,
     fontSize: marks.subscript || marks.superscript ? 'smaller' : undefined,
-    color: marks.color || undefined,
+    color: marks.color || (marks.link ? 'var(--noteloom-accent)' : undefined),
     backgroundColor: marks.highlight || undefined,
+    cursor: marks.link ? 'pointer' : undefined,
   };
 }
 
@@ -89,6 +92,22 @@ function TextRunSpan({ id, host, onValueSynced }) {
     host.style.fontSize = style.fontSize ?? '';
     host.style.color = style.color ?? '';
     host.style.backgroundColor = style.backgroundColor ?? '';
+    host.style.cursor = style.cursor ?? '';
+
+    // A link mark is a *style*, not a real <a> — the host is always a plain
+    // <span> (created once, before any run's marks are known; see
+    // getOrCreateHost), so navigation is opt-in via Ctrl/Cmd+click rather
+    // than a native anchor, exactly like Notion/Google Docs: a plain click
+    // still just places the caret for editing.
+    const link = run.marks?.link;
+    host.title = link?.href ? `${link.href} — Ctrl+Click to open` : '';
+    host.onclick = link?.href
+      ? (event) => {
+          if (!event.ctrlKey && !event.metaKey) return;
+          event.preventDefault();
+          window.open(link.href, link.target === '_blank' ? '_blank' : '_self', 'noopener,noreferrer');
+        }
+      : null;
 
     // Covers value changes this component didn't cause itself — undo/redo,
     // a future collaborator's edit — which only notify this *run's* own
@@ -750,30 +769,33 @@ export function EditableBlockContent({
   );
 
   return (
-    <span
-      ref={containerRef}
-      className="be-editable"
-      contentEditable
-      suppressContentEditableWarning
-      onInput={handleInput}
-      onCompositionStart={handleCompositionStart}
-      onCompositionEnd={handleCompositionEnd}
-      onKeyDown={handleKeyDown}
-    >
-      {runIds.map((id) => {
-        const host = getOrCreateHost(hostsRef.current, store, id);
-        return createPortal(
-          <RunNode
-            key={id}
-            id={id}
-            blockId={blockId}
-            host={host}
-            inlineRegistry={inlineRegistry}
-            onValueSynced={syncEmptyFromStore}
-          />,
-          host,
-        );
-      })}
-    </span>
+    <>
+      <span
+        ref={containerRef}
+        className="be-editable"
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
+        onKeyDown={handleKeyDown}
+      >
+        {runIds.map((id) => {
+          const host = getOrCreateHost(hostsRef.current, store, id);
+          return createPortal(
+            <RunNode
+              key={id}
+              id={id}
+              blockId={blockId}
+              host={host}
+              inlineRegistry={inlineRegistry}
+              onValueSynced={syncEmptyFromStore}
+            />,
+            host,
+          );
+        })}
+      </span>
+      <LinkHoverCard containerRef={containerRef} store={store} />
+    </>
   );
 }

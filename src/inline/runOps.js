@@ -50,7 +50,7 @@ export function domInlineToRuns(node, ctx, activeMarks = {}) {
     const markName = TAG_TO_MARK[n.tagName];
     if (markName) nextMarks = { ...nextMarks, [markName]: true };
     if (n.tagName === 'A' && n.getAttribute('href')) {
-      nextMarks = { ...nextMarks, link: { href: n.getAttribute('href') } };
+      nextMarks = { ...nextMarks, link: { href: n.getAttribute('href'), target: n.getAttribute('target') === '_blank' ? '_blank' : '_self' } };
     }
     // Color/highlight round-trip via inline style (see marks.js's runToHTML)
     // rather than a fixed tag — style.color/backgroundColor are only ever

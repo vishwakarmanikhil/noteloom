@@ -125,7 +125,11 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
   useOutsideClickAndEscape(outsideRefs, isMenuOpen, closeMenu);
 
   const openMenu = useCallback(() => {
-    setRect(triggerRef.current?.getBoundingClientRect() ?? null);
+    // Anchor to the whole header cell, not the small vertically-centered
+    // trigger icon (triggerRef) — using the icon's own rect put the menu's
+    // top a few px below the icon's *midpoint*, which sat mid-cell and
+    // overlapped the column label instead of opening cleanly below it.
+    setRect(thRef.current?.getBoundingClientRect() ?? null);
     setIsMenuOpen(true);
   }, []);
 
@@ -225,7 +229,7 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
                 options={TYPE_OPTIONS}
                 onChange={handleTypeChange}
                 ariaLabel="Column type"
-                className="be-table-header-type-select"
+                className=""
               />
             </div>
             {column.type === 'select' && (

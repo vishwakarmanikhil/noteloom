@@ -10,11 +10,13 @@ export const DEFAULT_CALLOUT_ICON = '💡';
  * so there's somewhere to type immediately (same convention as
  * createLayoutBlock's columns).
  */
-export function createCalloutBlock({ icon = DEFAULT_CALLOUT_ICON } = {}) {
+export const DEFAULT_CALLOUT_COLOR = 'gray';
+
+export function createCalloutBlock({ icon = DEFAULT_CALLOUT_ICON, color = DEFAULT_CALLOUT_COLOR } = {}) {
   return function factory(parentId) {
     const calloutId = genId();
     const { block: paragraphBlock, runs } = createTextLeafBlock('paragraph')(calloutId);
-    const block = { id: calloutId, type: 'callout', parentId, contentIds: [paragraphBlock.id], props: { icon } };
+    const block = { id: calloutId, type: 'callout', parentId, contentIds: [paragraphBlock.id], props: { icon, color } };
     return { block, runs, subtreeBlocks: [paragraphBlock] };
   };
 }
