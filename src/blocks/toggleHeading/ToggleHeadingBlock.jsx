@@ -92,7 +92,7 @@ export function ToggleHeadingBlock({ id }) {
           {collapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}
         </button>
         <Tag
-          className="be-heading be-toggle-heading-title"
+          className={`be-heading be-heading-${level} be-toggle-heading-title`}
           data-empty={isRunsEmpty(store, titleRunIds) ? '' : undefined}
           data-placeholder={`Toggle heading ${level}`}
         >

@@ -1,6 +1,6 @@
 {
   "name": "noteloom",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Zero-runtime-dependency, React-first block/rich-text editor — Notion-style blocks, inline widgets, slash commands, undo/redo, and clipboard, with an optional default theme (noteloom/style.css).",
   "keywords": [
     "react",

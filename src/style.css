@@ -121,6 +121,24 @@
   letter-spacing: -0.01em;
 }
 
+/* Explicit per-level sizing, each in its own overridable class — without
+   this, h1/h2/h3 only differ via the browser's own UA-stylesheet defaults
+   (inconsistent across browsers, and not something a host can target
+   independently without fighting tag-selector specificity). Override just
+   one level with `.be-heading-1 { font-size: ...; }` in your own CSS, same
+   as any other .be-* class. */
+.be-heading-1 {
+  font-size: 1.9em;
+}
+
+.be-heading-2 {
+  font-size: 1.5em;
+}
+
+.be-heading-3 {
+  font-size: 1.2em;
+}
+
 .be-divider {
   border: none;
   border-top: 1px solid var(--noteloom-border);

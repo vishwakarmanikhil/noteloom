@@ -26,10 +26,15 @@ export function HeadingBlock({ id }) {
   const handleArrowUp = useCallback(() => focusAdjacentBlock(store, id, 'up'), [store, id]);
   const handleArrowDown = useCallback(() => focusAdjacentBlock(store, id, 'down'), [store, id]);
 
-  const className = useBlockClassName('be-heading', block);
+  // A level-specific class (be-heading-1/2/3) alongside the shared
+  // be-heading one — lets a host style/override each heading level
+  // independently (font-size, etc.) via a real class instead of having to
+  // rely on h1/h2/h3 tag-selector specificity tricks, and gives
+  // getBlockClassName's own extra string a distinct per-level hook too.
+  const level = block?.props?.level ?? 3;
+  const className = useBlockClassName(`be-heading be-heading-${level}`, block);
 
   if (!block) return null;
-  const level = block.props?.level ?? 3;
   const Tag = `h${level}`;
   const isEmpty = isRunsEmpty(store, block.contentIds);
 
