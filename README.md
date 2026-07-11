@@ -1,5 +1,10 @@
 # noteloom
 
+[![version](https://img.shields.io/npm/v/noteloom.svg?label=version&color=3178c6)](https://www.npmjs.com/package/noteloom)
+[![downloads](https://img.shields.io/npm/dm/noteloom.svg?label=downloads&color=44cc11)](https://www.npmjs.com/package/noteloom)
+[![license](https://img.shields.io/npm/l/noteloom.svg?label=license&color=44cc11)](https://github.com/vishwakarmanikhil/noteloom/blob/master/LICENSE)
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-333?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/vishwakarmanikhil)
+
 **[Live site & docs →](https://noteloom.qusere.in)** · **[Play with the demo →](https://noteloom.qusere.in/playground/)**
 
 A React-first, block-based rich text editor with **zero runtime dependencies** — the only things it expects from your app are `react` and `react-dom`. Everything else (undo/redo, clipboard, slash commands, tables, inline widgets) is built from scratch on top of a small normalized document store.
