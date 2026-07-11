@@ -16,12 +16,12 @@
   "author": "Nikhil Vishwakarma",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vishwakarmanikhil/react-block-editor.git"
+    "url": "git+https://github.com/vishwakarmanikhil/noteloom.git"
   },
   "bugs": {
-    "url": "https://github.com/vishwakarmanikhil/react-block-editor/issues"
+    "url": "https://github.com/vishwakarmanikhil/noteloom/issues"
   },
-  "homepage": "https://github.com/vishwakarmanikhil/react-block-editor#readme",
+  "homepage": "https://noteloom.qusere.in",
   "type": "module",
   "sideEffects": [
     "*.css"
