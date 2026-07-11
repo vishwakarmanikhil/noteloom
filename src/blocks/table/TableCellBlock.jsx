@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { moveToAdjacentCell } from './tableNavigation.js';
 
 // Deliberately near-identical to ParagraphBlock: a cell is a leaf block
@@ -22,10 +22,12 @@ export function TableCellBlock({ id }) {
   // Enter moves down a row (spreadsheet-familiar), matching Tab's row-wrap convention.
   const handleEnter = useCallback(() => moveToAdjacentCell(store, id, 'down'), [store, id]);
 
+  const className = useBlockClassName('be-table-cell', block);
+
   if (!block) return null;
 
   return (
-    <td className="be-table-cell" data-block-id={id}>
+    <td className={className} data-block-id={id}>
       <EditableBlockContent
         blockId={id}
         runIds={block.contentIds}

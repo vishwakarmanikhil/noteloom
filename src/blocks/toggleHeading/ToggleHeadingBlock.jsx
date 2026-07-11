@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useBlock } from '../../react/useBlock.js';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { BlockChildren } from '../../react/BlockChildren.jsx';
-import { useEditorStore, useSelectedBlock } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { insertSiblingSplitAtCaretAndFocus, insertFirstChildSplitAtCaretAndFocus } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { mergeToggleHeadingOrNoop } from './mergeCommands.js';
@@ -72,13 +72,15 @@ export function ToggleHeadingBlock({ id }) {
     store.applyOperation(updateBlockProps(id, { collapsed: !block?.props?.collapsed }));
   }, [store, id, block?.contentIds, block?.props?.collapsed]);
 
+  const className = useBlockClassName('be-toggle-heading', block);
+
   if (!block) return null;
   const { level = 2, collapsed, titleRunIds = [] } = block.props;
   const hasNestedChildren = block.contentIds.length > 0;
   const Tag = `h${level}`;
 
   return (
-    <div className="be-toggle-heading" data-block-id={id}>
+    <div className={className} data-block-id={id}>
       <div className="be-toggle-heading-row">
         <button
           type="button"

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { BlockChildren } from '../../react/BlockChildren.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { insertRowAfter } from './tableEditCommands.js';
 import { resolveColumns } from './tableColumns.js';
 import { TableHeaderRow } from './TableHeaderRow.jsx';
@@ -15,6 +15,8 @@ export function TableBlock({ id }) {
     const lastRowId = block?.contentIds?.[block.contentIds.length - 1];
     if (lastRowId) insertRowAfter(store, lastRowId);
   }, [store, block]);
+
+  const className = useBlockClassName('be-table-wrapper', block);
 
   if (!block) return null;
 
@@ -33,7 +35,7 @@ export function TableBlock({ id }) {
     // out-grown by anything inside it, regardless of what's going on
     // further up the tree.
     <div className="be-table-scroll">
-      <div className="be-table-wrapper" data-block-id={id}>
+      <div className={className} data-block-id={id}>
         <table className="be-table">
           {/*
             A <colgroup> is what makes column resizing work at all: with

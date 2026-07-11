@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { Select } from '../../react/Select.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
 import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusRunEnd, focusRunAtOffset } from '../../react/focusRun.js';
@@ -79,12 +79,14 @@ export function CodeBlock({ id }) {
 
   const handleDelete = useCallback(() => deleteBlockAndFocusSibling(store, id), [store, id]);
 
+  const className = useBlockClassName('be-code-block', block);
+
   if (!block) return null;
   const language = block.props?.language ?? 'plaintext';
   const isEmpty = isRunsEmpty(store, block.contentIds);
 
   return (
-    <div className="be-code-block" data-block-id={id}>
+    <div className={className} data-block-id={id}>
       <div className="be-code-block-header" contentEditable={false}>
         <Select
           className="be-code-block-language"

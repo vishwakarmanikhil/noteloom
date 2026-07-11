@@ -3,7 +3,7 @@ import { useBlock } from '../../react/useBlock.js';
 import { useBlockChildren } from '../../react/useBlockChildren.js';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { BlockChildren } from '../../react/BlockChildren.jsx';
-import { useEditorStore, useSelectedBlock } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { listItemDepth, orderedItemIndex, orderedMarkerText, bulletMarkerText } from './listMarkers.js';
 import { ChevronRightIcon, ChevronDownIcon } from '../../react/icons.jsx';
 import { insertSiblingSplitAtCaretAndFocus, insertFirstChildSplitAtCaretAndFocus } from '../shared/blockCommands.js';
@@ -129,6 +129,8 @@ export function ListItemBlock({ id }) {
     store.applyOperation(updateBlockProps(id, { collapsed: !block?.props?.collapsed }));
   }, [store, id, block?.contentIds, block?.props?.collapsed]);
 
+  const className = useBlockClassName('be-list-item', block);
+
   if (!block) return null;
   const { ordered, checked, collapsed, titleRunIds = [] } = block.props;
   const isTodo = checked !== undefined;
@@ -147,7 +149,7 @@ export function ListItemBlock({ id }) {
     .trim();
 
   return (
-    <div className="be-list-item" data-block-id={id}>
+    <div className={className} data-block-id={id}>
       <div className="be-list-item-row">
         {isTodo ? (
           <input

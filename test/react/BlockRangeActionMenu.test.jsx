@@ -91,28 +91,31 @@ describe('BlockRangeActionMenu: Delete', () => {
 });
 
 describe('BlockRangeActionMenu: Move up / Move down', () => {
-  it('Move up swaps the range with the preceding sibling and keeps the selection open', () => {
+  it('Move up swaps the range with the preceding sibling and closes the menu', () => {
     const store = new EditorStore(makeDoc());
     renderHarness(store, ['p3', 'p4']);
 
     fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.trim() === 'Move up'));
 
     expect(store.getBlock('root').contentIds).toEqual(['p1', 'p3', 'p4', 'p2']);
-    expect(document.querySelector('.be-block-range-menu')).not.toBeNull(); // stays open for further actions
+    // Every action closes the menu and clears the selection once it's done
+    // — re-drag-select if you want to move the same range again.
+    expect(document.querySelector('.be-block-range-menu')).toBeNull();
   });
 
-  it('Move down swaps the range with the following sibling', () => {
+  it('Move down swaps the range with the following sibling and closes the menu', () => {
     const store = new EditorStore(makeDoc());
     renderHarness(store, ['p1', 'p2']);
 
     fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.trim() === 'Move down'));
 
     expect(store.getBlock('root').contentIds).toEqual(['p3', 'p1', 'p2', 'p4']);
+    expect(document.querySelector('.be-block-range-menu')).toBeNull();
   });
 });
 
 describe('BlockRangeActionMenu: Hide/Show in preview', () => {
-  it('Hide sets props.hidden on every block in the range; the item flips to Show once all are hidden', () => {
+  it('Hide sets props.hidden on every block in the range and closes the menu', () => {
     const store = new EditorStore(makeDoc());
     renderHarness(store, ['p2', 'p3']);
 
@@ -120,8 +123,7 @@ describe('BlockRangeActionMenu: Hide/Show in preview', () => {
 
     expect(store.getBlock('p2').props.hidden).toBe(true);
     expect(store.getBlock('p3').props.hidden).toBe(true);
-    const labels = [...document.querySelectorAll('.be-block-range-menu-item')].map((el) => el.textContent.trim());
-    expect(labels).toContain('Show in preview');
+    expect(document.querySelector('.be-block-range-menu')).toBeNull();
   });
 });
 
@@ -148,6 +150,7 @@ describe('BlockRangeActionMenu: Copy / Cut', () => {
 
       expect(write).toHaveBeenCalledTimes(1);
       expect(store.getBlock('p2')).toBeDefined(); // untouched
+      expect(document.querySelector('.be-block-range-menu')).toBeNull(); // closes after acting, like every other action
     } finally {
       Object.defineProperty(navigator, 'clipboard', { value: originalClipboard, configurable: true });
       global.ClipboardItem = originalClipboardItem;

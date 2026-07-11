@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { updateBlockProps } from '../../store/operations.js';
 import { PaperclipIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from '../../react/icons.jsx';
 
@@ -140,6 +140,8 @@ export function EmbedBlock({ id }) {
     [setMedia],
   );
 
+  const className = useBlockClassName('be-embed', block);
+
   if (!block) return null;
   const { kind = 'file', src, name, align = 'left', width = 100 } = block.props;
   const canResize = kind === 'image' || kind === 'video';
@@ -151,7 +153,7 @@ export function EmbedBlock({ id }) {
     // surface's keydown listener capturing subsequent Backspace/Delete
     // presses once this block becomes selected, even when whatever
     // previously had focus was just removed from the DOM entirely.
-    <div className="be-embed" data-block-id={id} data-kind={kind} contentEditable={false} tabIndex={-1}>
+    <div className={className} data-block-id={id} data-kind={kind} contentEditable={false} tabIndex={-1}>
       {src ? (
         <div ref={previewRef} className={`be-embed-preview be-embed-align-${align}`}>
           <div

@@ -51,6 +51,7 @@ export {
   useSelectedBlock,
   usePreviewMode,
   useFieldTypeEditor,
+  useBlockClassName,
 } from './react/EditorProvider.jsx';
 export { injectDefaultStyles } from './react/injectDefaultStyles.js';
 export { useBlock, useRun } from './react/useBlock.js';
@@ -74,6 +75,8 @@ export { APP_MIME } from './clipboard/mimeType.js';
 export { serializeBlockRange, remapSubtreeIds } from './clipboard/serialize.js';
 export { deserializeClipboard } from './clipboard/deserialize.js';
 export { walkDomToBlocks, textToParagraphs } from './clipboard/domWalk.js';
+export { exportDocumentJSON, exportDocumentHTML, exportDocumentText } from './clipboard/exportDocument.js';
+export { DocumentExportButton } from './react/DocumentExportButton.jsx';
 
 export { SlashMenu } from './commands/SlashMenu.jsx';
 export { useSlashMenuTrigger } from './commands/useSlashMenuTrigger.js';

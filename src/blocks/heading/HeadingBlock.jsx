@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useSelectedBlock } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { insertSiblingSplitAtCaretAndFocus } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
@@ -26,6 +26,8 @@ export function HeadingBlock({ id }) {
   const handleArrowUp = useCallback(() => focusAdjacentBlock(store, id, 'up'), [store, id]);
   const handleArrowDown = useCallback(() => focusAdjacentBlock(store, id, 'down'), [store, id]);
 
+  const className = useBlockClassName('be-heading', block);
+
   if (!block) return null;
   const level = block.props?.level ?? 3;
   const Tag = `h${level}`;
@@ -33,7 +35,7 @@ export function HeadingBlock({ id }) {
 
   return (
     <Tag
-      className="be-heading"
+      className={className}
       data-block-id={id}
       data-empty={isEmpty ? '' : undefined}
       data-placeholder={`Heading ${level}`}

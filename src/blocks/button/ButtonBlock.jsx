@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useSelectedBlock } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { insertSiblingSplitAtCaretAndFocus } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
@@ -57,6 +57,8 @@ export function ButtonBlock({ id }) {
     if (href) window.open(href, '_blank', 'noopener,noreferrer');
   }, [block?.props?.href]);
 
+  const className = useBlockClassName('be-button-block', block);
+
   if (!block) return null;
   const href = block.props?.href ?? '';
   const color = block.props?.color ?? DEFAULT_COLOR;
@@ -69,7 +71,7 @@ export function ButtonBlock({ id }) {
   }
 
   return (
-    <div className="be-button-block" data-block-id={id}>
+    <div className={className} data-block-id={id}>
       <div className="be-button-block-pill" style={{ backgroundColor: color }} {...dataAttrs}>
         <span className="be-button-block-label" data-empty={isEmpty ? '' : undefined} data-placeholder="Button">
           <EditableBlockContent

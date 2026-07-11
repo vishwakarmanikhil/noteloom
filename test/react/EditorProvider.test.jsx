@@ -3,6 +3,9 @@ import { render } from '@testing-library/react';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { EditorProvider, useEditorStore } from '../../src/react/EditorProvider.jsx';
 import { injectDefaultStyles } from '../../src/react/injectDefaultStyles.js';
+import { BlockChildren } from '../../src/react/BlockChildren.jsx';
+import { createBlockRegistry } from '../../src/registry/blockRegistry.js';
+import { registerBuiltInBlocks } from '../../src/blocks/index.js';
 
 const STYLE_TAG_ID = 'noteloom-default-styles';
 
@@ -92,5 +95,43 @@ describe('EditorProvider: className/style (optional root wrapper)', () => {
     const wrapper = container.querySelector('.be-root');
     expect(wrapper).not.toBeNull();
     expect(wrapper.style.getPropertyValue('--noteloom-accent')).toBe('#16a34a');
+  });
+});
+
+describe('EditorProvider: getBlockClassName (internal per-block customization)', () => {
+  function makeDocWithParagraph() {
+    return new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'hello', marks: {} }],
+    });
+  }
+
+  it('leaves the block\'s base class untouched when no callback is given', () => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = render(
+      <EditorProvider store={makeDocWithParagraph()} registry={registry}>
+        <BlockChildren parentId="root" />
+      </EditorProvider>,
+    );
+    const p = container.querySelector('[data-block-id="p1"]');
+    expect(p.className).toBe('be-paragraph');
+  });
+
+  it('appends whatever getBlockClassName(block) returns, keyed off the real block object', () => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const getBlockClassName = (block) => (block.type === 'paragraph' ? `custom-${block.id}` : undefined);
+    const { container } = render(
+      <EditorProvider store={makeDocWithParagraph()} registry={registry} getBlockClassName={getBlockClassName}>
+        <BlockChildren parentId="root" />
+      </EditorProvider>,
+    );
+    const p = container.querySelector('[data-block-id="p1"]');
+    expect(p.className).toBe('be-paragraph custom-p1');
   });
 });

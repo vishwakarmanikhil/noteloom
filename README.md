@@ -112,6 +112,38 @@ No wrapper `<div>` is added unless you pass one of these props, so existing usag
 
 `examples/basic/src/style.css` shows the extra page-level chrome (fonts, page width, the demo's own toolbar buttons) a host app typically adds around the editor — none of that is part of the default theme itself.
 
+**Customize individual blocks**, not just the root, via `getBlockClassName`:
+
+```jsx
+<EditorProvider
+  store={store}
+  registry={registry}
+  getBlockClassName={(block) => (block.type === 'callout' ? 'my-callout' : undefined)}
+>
+```
+
+Whatever string you return is appended onto that block's own root element's class list (`be-paragraph my-callout`, alongside the fixed base class) — `block` is the real block object (`type`, `id`, `props`), so you can target a type, a specific id, or a prop value (e.g. every red callout) as precisely as you like.
+
+## Exporting the document (JSON / HTML / plain text)
+
+```js
+import { exportDocumentJSON, exportDocumentHTML, exportDocumentText } from 'noteloom';
+
+exportDocumentJSON(store); // { rootId, blocks, runs } — feed straight back into `new EditorStore(...)`
+exportDocumentHTML(store, registry, inlineRegistry);
+exportDocumentText(store, registry, inlineRegistry);
+```
+
+Or mount the ready-made button + modal instead of wiring your own UI:
+
+```jsx
+import { DocumentExportButton } from 'noteloom';
+
+<DocumentExportButton label="View source" />
+```
+
+It opens a modal with JSON/HTML/Text tabs (reading live from the store every time it opens) and a Copy button — useful for debugging, or as a starting point for a real "export" feature.
+
 ## Built-in block types
 
 `paragraph`, `heading` (h1–h3), `listItem` (bulleted, numbered, and to-do — with Notion-style Tab/Shift+Tab nesting and Enter conventions), `table` (with row/column insert/delete), `layout` (multi-column), `divider`.

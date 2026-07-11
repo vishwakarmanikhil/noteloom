@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { BlockChildren } from '../../react/BlockChildren.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.js';
 import { updateBlockProps } from '../../store/operations.js';
 import { DEFAULT_CALLOUT_ICON, DEFAULT_CALLOUT_COLOR } from './createCalloutBlock.js';
@@ -74,10 +74,12 @@ export function CalloutBlock({ id }) {
     [store, id],
   );
 
+  const className = useBlockClassName('be-callout', block);
+
   if (!block) return null;
 
   return (
-    <div className="be-callout" data-block-id={id} data-color={color}>
+    <div className={className} data-block-id={id} data-color={color}>
       <div className="be-callout-icon-wrap">
         {editingIcon ? (
           <input

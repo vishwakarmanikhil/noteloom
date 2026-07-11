@@ -1175,6 +1175,69 @@ tr.be-table-row:hover .be-table-delete-row {
   border-radius: var(--noteloom-radius-sm);
 }
 
+/* --- document export (view source) --- */
+
+.be-export-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--noteloom-border);
+  background: var(--noteloom-bg);
+  color: var(--noteloom-text-muted);
+  border-radius: var(--noteloom-radius-sm);
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.be-export-trigger:hover {
+  background: var(--noteloom-bg-hover);
+  color: var(--noteloom-text);
+}
+
+.be-export-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--noteloom-border);
+}
+
+.be-export-tab {
+  border: none;
+  background: transparent;
+  color: var(--noteloom-text-muted);
+  padding: 6px 10px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.be-export-tab:hover {
+  color: var(--noteloom-text);
+}
+
+.be-export-tab-active {
+  color: var(--noteloom-accent);
+  border-bottom-color: var(--noteloom-accent);
+}
+
+.be-export-pre {
+  max-height: 50vh;
+  overflow: auto;
+  margin: 0;
+  padding: 0.9em 1em;
+  border-radius: var(--noteloom-radius-md);
+  background: var(--noteloom-code-bg);
+  color: var(--noteloom-code-text);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* --- trailing click-to-continue space --- */
 
 .be-trailing-space {
@@ -1207,6 +1270,10 @@ tr.be-table-row:hover .be-table-delete-row {
   max-height: 85vh;
   overflow-y: auto;
   box-shadow: var(--noteloom-shadow);
+}
+
+.be-modal-large {
+  max-width: 640px;
 }
 
 .be-modal-title {

@@ -8,7 +8,7 @@ import { useEffect } from 'react';
  * editor package is deliberately zero-dependency, and dialogs here are
  * short, single-purpose forms, not deep navigable UI.
  */
-export function Modal({ isOpen, onClose, title, children }) {
+export function Modal({ isOpen, onClose, title, size = 'default', children }) {
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (event) => {
@@ -27,7 +27,12 @@ export function Modal({ isOpen, onClose, title, children }) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="be-modal" role="dialog" aria-modal="true" aria-label={title}>
+      <div
+        className={`be-modal${size === 'large' ? ' be-modal-large' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
         {title && <div className="be-modal-title">{title}</div>}
         {children}
       </div>

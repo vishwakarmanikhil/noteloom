@@ -8,7 +8,6 @@ import {
   moveBlockRangeDown,
   isEntireBlockRangeHidden,
   setBlockRangeHidden,
-  reorderBlockRangeFromStore,
 } from '../blocks/shared/blockRangeActions.js';
 import { CopyIcon, ScissorsIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, EyeIcon, EyeOffIcon } from './icons.jsx';
 
@@ -47,11 +46,28 @@ export function BlockRangeActionMenu() {
   useEffect(() => {
     if (!isOpen) {
       setRect(null);
-      return;
+      return undefined;
     }
-    const lastId = selectedBlockRange[selectedBlockRange.length - 1];
-    const el = document.querySelector(`[data-block-row-id="${lastId}"]`);
-    setRect(el?.getBoundingClientRect() ?? null);
+
+    // Recomputed on scroll/resize, not just once per selection change — the
+    // menu is position:fixed off a getBoundingClientRect() snapshot, which
+    // is only valid for the instant it was measured. Without this, scrolling
+    // the page after selecting a range leaves the menu stuck at its old
+    // viewport position while the actual selected blocks scroll away
+    // underneath it (exactly the "menu drifts away from the selection"
+    // symptom) instead of staying anchored to the last selected block's row.
+    const recompute = () => {
+      const lastId = selectedBlockRange[selectedBlockRange.length - 1];
+      const el = document.querySelector(`[data-block-row-id="${lastId}"]`);
+      setRect(el?.getBoundingClientRect() ?? null);
+    };
+    recompute();
+    window.addEventListener('scroll', recompute, true);
+    window.addEventListener('resize', recompute);
+    return () => {
+      window.removeEventListener('scroll', recompute, true);
+      window.removeEventListener('resize', recompute);
+    };
   }, [isOpen, selectedBlockRange]);
 
   useEffect(() => {
@@ -81,7 +97,8 @@ export function BlockRangeActionMenu() {
 
   const handleCopy = useCallback(() => {
     copyBlockRangeToClipboard(store, registry, inlineRegistry, selectedBlockRange);
-  }, [store, registry, inlineRegistry, selectedBlockRange]);
+    clear();
+  }, [store, registry, inlineRegistry, selectedBlockRange, clear]);
 
   const handleCut = useCallback(async () => {
     await copyBlockRangeToClipboard(store, registry, inlineRegistry, selectedBlockRange);
@@ -94,28 +111,28 @@ export function BlockRangeActionMenu() {
     clear();
   }, [store, selectedBlockRange, clear]);
 
+  // Every action below closes the menu and clears the selection once it's
+  // done (matching "click an option, it acts on the selection, the
+  // selection and menu both go away" — a host that wants to keep acting on
+  // the same range repeatedly can just re-drag-select it) — Move up/down
+  // and Hide/Show used to keep the range selected instead, to allow several
+  // moves/toggles in a row without reselecting, but a lingering menu after
+  // an action was already taken read as "did my click even do anything?".
   const handleMoveUp = useCallback(() => {
-    if (moveBlockRangeUp(store, selectedBlockRange)) {
-      setSelectedBlockRange(reorderBlockRangeFromStore(store, selectedBlockRange));
-    }
-  }, [store, selectedBlockRange, setSelectedBlockRange]);
+    moveBlockRangeUp(store, selectedBlockRange);
+    clear();
+  }, [store, selectedBlockRange, clear]);
 
   const handleMoveDown = useCallback(() => {
-    if (moveBlockRangeDown(store, selectedBlockRange)) {
-      setSelectedBlockRange(reorderBlockRangeFromStore(store, selectedBlockRange));
-    }
-  }, [store, selectedBlockRange, setSelectedBlockRange]);
+    moveBlockRangeDown(store, selectedBlockRange);
+    clear();
+  }, [store, selectedBlockRange, clear]);
 
   const isHidden = isEntireBlockRangeHidden(store, selectedBlockRange);
   const handleToggleHidden = useCallback(() => {
     setBlockRangeHidden(store, selectedBlockRange, !isHidden);
-    // This component isn't subscribed to individual blocks' own props (only
-    // to selectedBlockRange itself), so a plain store mutation like the one
-    // above doesn't by itself trigger a re-render — a fresh array with the
-    // same ids does, which is enough to make `isHidden` above re-evaluate
-    // against the store's now-updated props.
-    setSelectedBlockRange((ids) => [...ids]);
-  }, [store, selectedBlockRange, isHidden, setSelectedBlockRange]);
+    clear();
+  }, [store, selectedBlockRange, isHidden, clear]);
 
   if (!isOpen || !rect) return null;
 

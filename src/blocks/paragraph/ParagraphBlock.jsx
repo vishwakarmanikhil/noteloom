@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useSelectedBlock } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { insertSiblingSplitAtCaretAndFocus, insertSiblingAfterAndFocus } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
@@ -64,13 +64,14 @@ export function ParagraphBlock({ id }) {
   const handleArrowDown = useCallback(() => focusAdjacentBlock(store, id, 'down'), [store, id]);
 
   const handleAutoformat = useCallback((runs) => applyMarkdownShortcut(store, id, runs), [store, id]);
+  const className = useBlockClassName('be-paragraph', block);
 
   if (!block) return null;
   const isEmpty = isRunsEmpty(store, block.contentIds);
 
   return (
     <div
-      className="be-paragraph"
+      className={className}
       data-block-id={id}
       data-empty={isEmpty ? '' : undefined}
       data-placeholder="Type '/' for commands"

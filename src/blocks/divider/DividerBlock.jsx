@@ -1,3 +1,6 @@
+import { useBlock } from '../../react/useBlock.js';
+import { useBlockClassName } from '../../react/EditorProvider.jsx';
+
 // tabIndex={-1}: not in the normal Tab order, but focusable via .focus() —
 // needed so setSelectedBlockId (EditorProvider) can actually move DOM focus
 // here when it selects this block, keeping the surface's own keydown
@@ -5,5 +8,7 @@
 // previously had focus (e.g. an adjacent empty paragraph) has just been
 // removed from the DOM entirely.
 export function DividerBlock({ id }) {
-  return <hr className="be-divider" data-block-id={id} contentEditable={false} tabIndex={-1} />;
+  const block = useBlock(id);
+  const className = useBlockClassName('be-divider', block);
+  return <hr className={className} data-block-id={id} contentEditable={false} tabIndex={-1} />;
 }

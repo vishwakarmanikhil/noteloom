@@ -20,6 +20,12 @@ const EditorContext = createContext(null);
  * style.css) for just this one editor instance. Deliberately NOT rendered
  * unconditionally: most existing usage doesn't need an extra wrapper
  * element in the DOM, so one is only added when you actually ask for it.
+ *
+ * `getBlockClassName(block)`, if given, is the "internal" counterpart —
+ * every block component appends whatever string this returns onto its own
+ * root element's class list (see useBlockClassName), so individual blocks
+ * (by type, id, or props — the whole block object is passed in) can be
+ * customized too, not just the editor's outer wrapper.
  */
 export function EditorProvider({
   store,
@@ -29,6 +35,7 @@ export function EditorProvider({
   className,
   style,
   theme = 'default',
+  getBlockClassName,
   children,
 }) {
   useEffect(() => {
@@ -130,6 +137,7 @@ export function EditorProvider({
       openCreateFieldType,
       openEditFieldType,
       closeFieldTypeEditor,
+      getBlockClassName,
     }),
     [
       store,
@@ -145,6 +153,7 @@ export function EditorProvider({
       openCreateFieldType,
       openEditFieldType,
       closeFieldTypeEditor,
+      getBlockClassName,
     ],
   );
   const content =
@@ -249,6 +258,27 @@ export function usePreviewMode() {
  * `openEdit(id)` from their "Manage options…" popover entry (see
  * createSelectFieldType's `onManage`).
  */
+/**
+ * Combines a block type's own fixed base class (e.g. "be-paragraph") with
+ * whatever extra class name the host app's `getBlockClassName` prop (on
+ * EditorProvider) returns for this specific block — the "internal"
+ * customization hook, complementing EditorProvider's own `className`/
+ * `style` props (which only style the editor's root wrapper). Every block
+ * component calls this once for its own root element, passing its own base
+ * class and its `block` (as returned by useBlock — may be null on the
+ * render right before a block unmounts, handled gracefully here).
+ *
+ * `getBlockClassName(block)` receives the full block object (`type`, `id`,
+ * `props`, ...), so a host can target specific types, specific ids, or
+ * inspect props (e.g. give every `callout` with `props.color === 'red'` an
+ * extra class) — as fine- or coarse-grained as the callback wants.
+ */
+export function useBlockClassName(baseClassName, block) {
+  const { getBlockClassName } = useEditorContext();
+  const extra = block && getBlockClassName ? getBlockClassName(block) : undefined;
+  return extra ? `${baseClassName} ${extra}` : baseClassName;
+}
+
 export function useFieldTypeEditor() {
   const { fieldTypeEditorTarget, openCreateFieldType, openEditFieldType, closeFieldTypeEditor } = useEditorContext();
   return {
