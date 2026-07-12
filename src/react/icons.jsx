@@ -52,6 +52,16 @@ export function XIcon(props) {
   );
 }
 
+export function MoreHorizontalIcon(props) {
+  return (
+    <Icon {...props} fill="currentColor" stroke="none">
+      <circle cx="5" cy="12" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="19" cy="12" r="1.6" />
+    </Icon>
+  );
+}
+
 export function PaperclipIcon(props) {
   return (
     <Icon {...props}>

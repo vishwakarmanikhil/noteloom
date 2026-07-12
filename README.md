@@ -151,6 +151,32 @@ import { DocumentExportButton } from 'noteloom';
 
 It opens a modal with JSON/HTML/Text tabs (reading live from the store every time it opens) and a Copy button — useful for debugging, or as a starting point for a real "export" feature.
 
+## Mobile / touch support
+
+Typing "/"/"@" still works on a phone keyboard, but it's not a reliable or discoverable primary path there (autocorrect, awkward key access, nothing to discover it by) — so on a coarse (touch) pointer, mount `MobileActionBar` alongside your other trigger hooks and it takes over as the touch-first equivalent, pinned above the on-screen keyboard:
+
+```jsx
+import { MobileActionBar } from 'noteloom';
+
+// next to your other trigger hooks/components, same containerRef:
+<MobileActionBar containerRef={containerRef} />
+```
+
+It renders nothing on a mouse/trackpad, and nothing until focus is actually inside the editor. Its contents swap based on context:
+
+- **Block options** (shown whenever the caret/selection is inside any block) → Duplicate/Move up/Move down/Hide-Show/Delete, in `MobileBlockOptionsSheet` — the mobile home for the desktop per-block gutter's own grip-handle menu. The gutter itself is hidden entirely on touch input (no hover state exists to reveal it by, and its desktop position sits in a page margin that doesn't exist on a narrow viewport), so both of its actions ("+" and the options menu) live in this bar instead of the gutter on touch.
+- **Text selected** → formatting actions (bold/italic/underline/link) — the desktop `FloatingToolbar` bubble also disables itself on touch, so this is the single formatting surface either way (both share the same `useTextFormattingActions` hook, not two copies).
+- **Collapsed caret, table cell** → insert row/column.
+- **Collapsed caret, code block** → language picker.
+- **Collapsed caret, callout** → color picker.
+- **Collapsed caret, everywhere else** → "+" (opens `MobileBlockPickerSheet`, a tap-friendly bottom sheet listing every insertable block, same commands "/" already offers), Undo/Redo, dismiss-keyboard.
+
+Trigger-menu and `Select` popovers reposition above the caret instead of below it when there isn't room before the keyboard, via `useVirtualKeyboardInset()` (also exported, in case you're positioning your own UI against the keyboard).
+
+**Touch detection deliberately isn't a static `matchMedia('(pointer: coarse)')` check** (see `useCoarsePointer`, also exported) — a touchscreen laptop reports its trackpad as the "primary" pointer even though the touchscreen sitting right there can be used at any moment, so a pure media-query check would never show touch UI on that class of device. Instead, the media query only supplies the *initial* guess (correct pre-interaction, SSR-safe); every real `pointerdown` afterward overrides it with that event's own `pointerType`, so a 2-in-1 laptop correctly shows desktop UI while the trackpad is in use and mobile UI the instant the screen is tapped, live, no reload needed. The same signal is mirrored onto `<html class="be-touch-input">` so plain CSS (the gutter-hiding rule above) reacts to it too, not just `MobileActionBar` itself.
+
+**Not included**: a touch equivalent for dragging in the block gutter to select a range of blocks — Notion, TipTap, and Editor.js all keep that gesture desktop/mouse-only too.
+
 ## Built-in block types
 
 `paragraph`, `heading` (h1–h3), `listItem` (bulleted, numbered, and to-do — with Notion-style Tab/Shift+Tab nesting and Enter conventions), `table` (with row/column insert/delete), `layout` (multi-column), `divider`.

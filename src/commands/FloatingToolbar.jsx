@@ -1,11 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  toggleMarkOverSelection,
-  toggleMarkOverBlockRange,
-  setMarksOverSelection,
-  setMarksOverBlockRange,
-} from '../inline/markCommands.js';
-import { focusRunEnd } from '../react/focusRun.js';
+import { useEffect, useRef, useState } from 'react';
+import { useTextFormattingActions } from './useTextFormattingActions.js';
+import { useCoarsePointer } from '../react/useCoarsePointer.js';
 import { LinkEditModal } from '../react/LinkEditModal.jsx';
 import { BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, LinkIcon } from '../react/icons.jsx';
 
@@ -36,11 +31,9 @@ const HIGHLIGHT_COLORS = [
 
 /**
  * Notion/TipTap-style format bar that appears above a non-collapsed text
- * selection (see useFloatingToolbarTrigger). Every action goes through the
- * same setMarksOverSelection/setMarksOverBlockRange primitives the keyboard
- * shortcuts use — this is just another caller, not a parallel code path —
- * so copy/cut/paste/undo/serialization all already work correctly for
- * anything applied here, with zero extra wiring.
+ * selection (see useFloatingToolbarTrigger). Every action goes through
+ * useTextFormattingActions (shared with MobileActionBar) — this component
+ * only owns the desktop bubble's own chrome/positioning/color-picker state.
  *
  * The whole bar has one onMouseDown that calls preventDefault: the browser's
  * default mousedown action is what collapses the text selection and shifts
@@ -48,11 +41,28 @@ const HIGHLIGHT_COLORS = [
  * own onClick even fires) is what lets a toolbar button apply formatting to
  * a selection that's still fully intact, exactly like every other
  * mousedown-then-click toolbar (Google Docs, Notion, etc.).
+ *
+ * Deliberately a no-op on a coarse (touch) pointer: a floating bubble
+ * positioned off Range.getBoundingClientRect() fights the OS's own native
+ * selection-handle UI on mobile, which occupies similar screen space —
+ * MobileActionBar (pinned above the keyboard instead) is the touch
+ * equivalent, reusing the exact same useTextFormattingActions hook.
  */
 export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection, marks, store }) {
+  const isCoarsePointer = useCoarsePointer();
   const [openPicker, setOpenPicker] = useState(null); // 'color' | 'highlight' | null
-  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const rootRef = useRef(null);
+
+  const {
+    applyPatch,
+    toggleBoolean,
+    setSubSuper,
+    isLinkModalOpen,
+    openLinkModal,
+    closeLinkModal,
+    handleSaveLink,
+    handleRemoveLink,
+  } = useTextFormattingActions(store, kind, selection, crossSelection, marks);
 
   useEffect(() => {
     if (!openPicker) return undefined;
@@ -77,74 +87,7 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
     setOpenPicker(null);
   }, [rect, kind]);
 
-  const applyPatch = useCallback(
-    (marksPatch) => {
-      const newRunId =
-        kind === 'same-block'
-          ? setMarksOverSelection(store, selection.blockId, selection, marksPatch)
-          : setMarksOverBlockRange(store, crossSelection, marksPatch);
-      if (newRunId) focusRunEnd(newRunId);
-      setOpenPicker(null);
-    },
-    [store, kind, selection, crossSelection],
-  );
-
-  const toggleBoolean = useCallback(
-    (markName) => {
-      const newRunId =
-        kind === 'same-block'
-          ? toggleMarkOverSelection(store, selection.blockId, selection, markName)
-          : toggleMarkOverBlockRange(store, crossSelection, markName);
-      if (newRunId) focusRunEnd(newRunId);
-    },
-    [store, kind, selection, crossSelection],
-  );
-
-  // Subscript/superscript are mutually exclusive — enabling one always
-  // clears the other in the SAME patch (one pass over the run span), not
-  // two sequential calls, which would risk the second call addressing runs
-  // by an id the first call's split already made stale (see
-  // applyMarksPatchOverRunSpan's doc comment in markCommands.js).
-  const setSubSuper = useCallback(
-    (markName) => {
-      const opposite = markName === 'subscript' ? 'superscript' : 'subscript';
-      const enable = !marks[markName];
-      applyPatch({ [markName]: enable ? true : null, [opposite]: null });
-    },
-    [marks, applyPatch],
-  );
-
-  // Captured at the moment "Link" is clicked, not read live from props —
-  // focusing the modal's URL input moves focus out of the contentEditable
-  // region, which can collapse/change the document selection the toolbar
-  // was built for (isOpen/rect/marks would otherwise go stale or the whole
-  // bar would unmount out from under the open modal).
-  const pendingLinkRef = useRef(null);
-
-  const openLinkModal = useCallback(() => {
-    pendingLinkRef.current = { kind, selection, crossSelection };
-    setIsLinkModalOpen(true);
-  }, [kind, selection, crossSelection]);
-
-  const closeLinkModal = useCallback(() => setIsLinkModalOpen(false), []);
-
-  const applyLinkPatch = useCallback(
-    (marksPatch) => {
-      const pending = pendingLinkRef.current;
-      if (!pending) return;
-      const newRunId =
-        pending.kind === 'same-block'
-          ? setMarksOverSelection(store, pending.selection.blockId, pending.selection, marksPatch)
-          : setMarksOverBlockRange(store, pending.crossSelection, marksPatch);
-      if (newRunId) focusRunEnd(newRunId);
-      setIsLinkModalOpen(false);
-    },
-    [store],
-  );
-
-  const handleSaveLink = useCallback((href, target) => applyLinkPatch({ link: { href, target } }), [applyLinkPatch]);
-  const handleRemoveLink = useCallback(() => applyLinkPatch({ link: null }), [applyLinkPatch]);
-
+  if (isCoarsePointer) return null;
   if ((!isOpen || !rect) && !isLinkModalOpen) return null;
 
   return (
@@ -213,7 +156,10 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
                 role="menuitem"
                 className="be-floating-toolbar-swatch"
                 title={c.label}
-                onClick={() => applyPatch({ color: c.value })}
+                onClick={() => {
+                  applyPatch({ color: c.value });
+                  setOpenPicker(null);
+                }}
               >
                 <span style={{ color: c.value || '#1a1a1a', fontWeight: 700 }}>A</span>
               </button>
@@ -247,7 +193,10 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
                 className="be-floating-toolbar-swatch"
                 style={{ backgroundColor: c.value || 'transparent' }}
                 title={c.label}
-                onClick={() => applyPatch({ highlight: c.value })}
+                onClick={() => {
+                  applyPatch({ highlight: c.value });
+                  setOpenPicker(null);
+                }}
               />
             ))}
           </div>
@@ -280,4 +229,3 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
     </>
   );
 }
-

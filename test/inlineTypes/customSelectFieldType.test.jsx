@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import { createSelectFieldType } from '../../src/inlineTypes/customSelect/createSelectFieldType.jsx';
+import { SelectIcon } from '../../src/react/icons.jsx';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { EditorProvider } from '../../src/react/EditorProvider.jsx';
 import { EditableBlockContent } from '../../src/react/EditableBlockContent.jsx';
@@ -48,6 +49,21 @@ describe('createSelectFieldType: triggers config', () => {
     expect(entry.slashCommand).toBeDefined();
     expect(entry.atCommand).toBeDefined();
     expect(entry.slashCommand).toBe(entry.atCommand);
+  });
+});
+
+describe('createSelectFieldType: command icon', () => {
+  it('falls back to the built-in select type\'s own icon when the config gives none — no blank slot in the "/" menu', () => {
+    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', options: STATIC_OPTIONS });
+    expect(entry.slashCommand.icon).toBe(SelectIcon);
+  });
+
+  it('still uses whatever icon the config explicitly passes', () => {
+    function CustomIcon() {
+      return null;
+    }
+    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', options: STATIC_OPTIONS, icon: CustomIcon });
+    expect(entry.slashCommand.icon).toBe(CustomIcon);
   });
 });
 

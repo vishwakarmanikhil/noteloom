@@ -1,4 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { useVirtualKeyboardInset } from '../react/useVirtualKeyboardInset.js';
+
+// Rough worst-case menu height (max-height in .be-slash-menu's own CSS is
+// 320px, plus a little padding) — used only to decide *which side* of the
+// caret to open on, not as an exact pixel budget, so an approximation here
+// is fine either way.
+const ESTIMATED_MENU_HEIGHT = 340;
 
 /**
  * Focus deliberately stays in the run's contentEditable (moving it into the
@@ -49,6 +56,7 @@ export function SlashMenu({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeItemRef = useRef(null);
+  const keyboardInset = useVirtualKeyboardInset();
 
   useEffect(() => {
     setActiveIndex(0);
@@ -96,13 +104,23 @@ export function SlashMenu({
 
   if (!isOpen || commands.length === 0 || !rect) return null;
 
+  // Flip to open above the caret instead of below it once there isn't
+  // enough room left under it before the keyboard (or the bottom of the
+  // screen) starts — without this, the popover can render partly or
+  // entirely underneath the on-screen keyboard, invisible.
+  const availableBottom = window.innerHeight - keyboardInset;
+  const openAbove = rect.bottom + ESTIMATED_MENU_HEIGHT > availableBottom;
+  const positionStyle = openAbove
+    ? { bottom: window.innerHeight - rect.top + 4 }
+    : { top: rect.bottom + 4 };
+
   return (
     <div
       id={menuId}
       role="listbox"
       aria-label={ariaLabel}
       className="be-slash-menu"
-      style={{ position: 'fixed', top: rect.bottom + 4, left: rect.left, zIndex: 1000 }}
+      style={{ position: 'fixed', left: rect.left, zIndex: 1000, ...positionStyle }}
     >
       {commands.map((command, i) => {
         const Icon = command.icon;

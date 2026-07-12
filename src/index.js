@@ -66,6 +66,11 @@ export { BlockChildren } from './react/BlockChildren.jsx';
 export { BlockGutterRow } from './react/BlockGutterRow.jsx';
 export { BlockRangeActionMenu } from './react/BlockRangeActionMenu.jsx';
 export { useBlockRangeDrag } from './react/useBlockRangeDrag.js';
+export { useCoarsePointer } from './react/useCoarsePointer.js';
+export { useVirtualKeyboardInset } from './react/useVirtualKeyboardInset.js';
+export { MobileActionBar } from './react/MobileActionBar.jsx';
+export { MobileBlockPickerSheet } from './react/MobileBlockPickerSheet.jsx';
+export { MobileBlockOptionsSheet } from './react/MobileBlockOptionsSheet.jsx';
 export { EditableBlockContent } from './react/EditableBlockContent.jsx';
 export { Modal } from './react/Modal.jsx';
 export { Select } from './react/Select.jsx';
@@ -84,6 +89,7 @@ export { useEmojiMenuTrigger } from './commands/useEmojiMenuTrigger.js';
 export { useAtMenuTrigger } from './commands/useAtMenuTrigger.js';
 export { FloatingToolbar } from './commands/FloatingToolbar.jsx';
 export { useFloatingToolbarTrigger } from './commands/useFloatingToolbarTrigger.js';
+export { useTextFormattingActions } from './commands/useTextFormattingActions.js';
 
 export {
   insertRowAfter,

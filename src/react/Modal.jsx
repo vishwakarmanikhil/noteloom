@@ -8,7 +8,7 @@ import { useEffect } from 'react';
  * editor package is deliberately zero-dependency, and dialogs here are
  * short, single-purpose forms, not deep navigable UI.
  */
-export function Modal({ isOpen, onClose, title, size = 'default', children }) {
+export function Modal({ isOpen, onClose, title, size = 'default', variant = 'dialog', children }) {
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (event) => {
@@ -19,16 +19,17 @@ export function Modal({ isOpen, onClose, title, size = 'default', children }) {
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+  const isSheet = variant === 'sheet';
 
   return (
     <div
-      className="be-modal-overlay"
+      className={`be-modal-overlay${isSheet ? ' be-modal-overlay-sheet' : ''}`}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
       <div
-        className={`be-modal${size === 'large' ? ' be-modal-large' : ''}`}
+        className={`be-modal${size === 'large' ? ' be-modal-large' : ''}${isSheet ? ' be-modal-sheet' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

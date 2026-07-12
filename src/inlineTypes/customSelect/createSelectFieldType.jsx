@@ -1,6 +1,7 @@
 import { CustomSelectInlineNode } from './CustomSelectInlineNode.jsx';
 import { genId } from '../../utils/idGen.js';
 import { insertInlineRunAtCursor } from '../shared/insertInlineRun.js';
+import { SelectIcon } from '../../react/icons.jsx';
 
 function escapeHTML(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -115,7 +116,15 @@ export function createSelectFieldType({
 
   const command = {
     label,
-    icon,
+    // Falls back to the same icon the built-in generic `select` inline
+    // type's own slash command uses (see inlineTypes/select/index.js) —
+    // every custom field type (host-defined or created in-editor via
+    // FieldTypeEditorModal, which has no way to let a user pick an icon at
+    // all) gets a consistent, non-blank glyph in the "/"/"@" menu instead
+    // of silently rendering with no icon at all next to every other entry
+    // that has one. A host can still override it by passing its own
+    // `icon` in the config, same as before.
+    icon: icon ?? SelectIcon,
     keywords: [label.toLowerCase(), 'select', 'field'],
     run: (store, { blockId, runId, sliceStart, sliceEnd }) =>
       insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, () => ({

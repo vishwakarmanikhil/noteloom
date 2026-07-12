@@ -1117,6 +1117,20 @@ tr.be-table-row:hover .be-table-delete-row {
   transition: background-color 0.12s ease, color 0.12s ease;
 }
 
+/* Touch: no hover state exists to reveal the gutter at all, and its
+   desktop position (left: -56px, sitting in the page's own side margin)
+   would be off-screen on a narrow phone/tablet viewport regardless — so
+   rather than force it into the row itself, its two actions (Add block,
+   block options menu) live inside MobileActionBar instead (see
+   MobileActionBar.jsx), pinned above the keyboard where they're always
+   reachable. `.be-touch-input` is set by useCoarsePointer.js, based on
+   real pointerdown activity, not just a static device-capability guess —
+   see that file for why a plain `pointer: coarse` media query alone isn't
+   enough (touchscreen laptops, etc.). */
+.be-touch-input .be-block-gutter {
+  display: none;
+}
+
 .be-block-gutter-btn:hover,
 .be-block-gutter-btn[aria-expanded='true'] {
   background: var(--noteloom-bg-hover);
@@ -1292,6 +1306,132 @@ tr.be-table-row:hover .be-table-delete-row {
 
 .be-modal-large {
   max-width: 640px;
+}
+
+/* Bottom sheet variant (mobile block picker) — anchored to the bottom edge
+   instead of centered, rounded only on top, full page width. */
+.be-modal-overlay-sheet {
+  align-items: flex-end;
+  padding: 0;
+}
+
+.be-modal-sheet {
+  max-width: 100%;
+  width: 100%;
+  max-height: 70vh;
+  border-radius: var(--noteloom-radius-xl) var(--noteloom-radius-xl) 0 0;
+  border-bottom: none;
+  padding-bottom: max(1.4em, env(safe-area-inset-bottom));
+}
+
+.be-mobile-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.be-mobile-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  border-radius: var(--noteloom-radius-md);
+  padding: 12px 10px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--noteloom-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.be-mobile-picker-item:hover,
+.be-mobile-picker-item:active {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-mobile-picker-item-danger {
+  color: var(--noteloom-danger);
+}
+
+.be-mobile-picker-item-danger:hover,
+.be-mobile-picker-item-danger:active {
+  background: var(--noteloom-danger-soft);
+}
+
+.be-mobile-picker-item-danger .be-mobile-picker-item-icon {
+  color: var(--noteloom-danger);
+}
+
+/* --- mobile action bar (pinned above the on-screen keyboard) --- */
+
+.be-mobile-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px calc(6px + env(safe-area-inset-right)) 6px calc(6px + env(safe-area-inset-left));
+  background: var(--noteloom-bg);
+  border-top: 1px solid var(--noteloom-border);
+  overflow-x: auto;
+}
+
+.be-mobile-bar-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  border-radius: var(--noteloom-radius-sm);
+  color: var(--noteloom-text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.be-mobile-bar-btn:disabled {
+  opacity: 0.4;
+}
+
+.be-mobile-bar-btn-active {
+  background: var(--noteloom-accent-soft);
+  color: var(--noteloom-accent);
+}
+
+.be-mobile-bar-spacer {
+  flex: 1;
+}
+
+.be-mobile-bar-select {
+  flex: none;
+}
+
+.be-mobile-bar-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+
+.be-mobile-picker-item-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--noteloom-radius-sm);
+  background: var(--noteloom-bg-subtle);
+  color: var(--noteloom-text-muted);
 }
 
 .be-modal-title {

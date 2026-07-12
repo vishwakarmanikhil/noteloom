@@ -2,6 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDownIcon } from './icons.jsx';
 import { useOutsideClickAndEscape } from './useOutsideClickAndEscape.js';
+import { useVirtualKeyboardInset } from './useVirtualKeyboardInset.js';
+
+// Rough worst-case popover height (max-height in .be-select-options's own
+// CSS is 220px, plus the search input and padding) — only used to decide
+// which side of the trigger to open on, not as an exact pixel budget.
+const ESTIMATED_POPOVER_HEIGHT = 280;
 
 function matchesQuery(option, query) {
   if (!query) return true;
@@ -86,6 +92,7 @@ export function Select({
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [rect, setRect] = useState(null);
+  const keyboardInset = useVirtualKeyboardInset();
   const [asyncOptions, setAsyncOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -223,7 +230,18 @@ export function Select({
           <div
             ref={popoverRef}
             className="be-select-popover"
-            style={{ position: 'fixed', top: rect.bottom + 4, left: rect.left, minWidth: rect.width }}
+            style={{
+              position: 'fixed',
+              left: rect.left,
+              minWidth: rect.width,
+              // Flips above the trigger instead of below it once there isn't
+              // enough room left before the keyboard (or screen bottom) —
+              // otherwise the popover can render partly/entirely hidden
+              // underneath an open on-screen keyboard.
+              ...(rect.bottom + ESTIMATED_POPOVER_HEIGHT > window.innerHeight - keyboardInset
+                ? { bottom: window.innerHeight - rect.top + 4 }
+                : { top: rect.bottom + 4 }),
+            }}
           >
             <input
               ref={inputRef}

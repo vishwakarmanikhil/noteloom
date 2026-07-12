@@ -6,7 +6,7 @@ import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.j
 import { updateBlockProps } from '../../store/operations.js';
 import { DEFAULT_CALLOUT_ICON, DEFAULT_CALLOUT_COLOR } from './createCalloutBlock.js';
 
-const CALLOUT_COLORS = [
+export const CALLOUT_COLORS = [
   { value: 'gray', label: 'Gray' },
   { value: 'blue', label: 'Blue' },
   { value: 'green', label: 'Green' },
