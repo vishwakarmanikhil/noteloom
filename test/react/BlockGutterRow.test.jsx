@@ -141,6 +141,39 @@ describe('BlockGutterRow: more-options menu', () => {
   });
 });
 
+describe('BlockGutterRow: more-options menu is keyboard-operable', () => {
+  it('opening the menu focuses its first item; Escape closes it and returns focus to the trigger', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderDoc(store);
+
+    const row = container.querySelector('[data-block-row-id="p2"]');
+    const trigger = row.querySelector('[aria-label="More options"]');
+    fireEvent.click(trigger);
+
+    const menu = document.querySelector('.be-block-gutter-menu');
+    const firstItem = menu.querySelector('.be-block-gutter-menu-item');
+    expect(document.activeElement).toBe(firstItem);
+
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(document.activeElement.textContent.trim()).toBe('Move up');
+
+    fireEvent.keyDown(menu, { key: 'Escape' });
+    expect(document.querySelector('.be-block-gutter-menu')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('Duplicate announces the action via the shared live region', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderDoc(store);
+
+    const row = container.querySelector('[data-block-row-id="p2"]');
+    fireEvent.click(row.querySelector('[aria-label="More options"]'));
+    fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Duplicate'));
+
+    expect(document.getElementById('be-live-region')).not.toBeNull();
+  });
+});
+
 describe('BlockGutterRow: Hide/Show toggle + preview mode', () => {
   it('"Hide in preview" sets props.hidden and dims the block in edit mode; "Show in preview" reverses it', () => {
     const store = new EditorStore(makeDoc());

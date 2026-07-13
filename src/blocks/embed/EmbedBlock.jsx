@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useBlock } from '../../react/useBlock.js';
 import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { updateBlockProps } from '../../store/operations.js';
+import { Modal } from '../../react/Modal.jsx';
 import { PaperclipIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from '../../react/icons.jsx';
 
 function readFileAsDataURL(file) {
@@ -27,8 +28,12 @@ function clampWidth(pct) {
   return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(pct)));
 }
 
-function EmbedPreview({ kind, src, name }) {
-  if (kind === 'image') return <img className="be-embed-image" src={src} alt={name || ''} />;
+function EmbedPreview({ kind, src, name, alt }) {
+  // Deliberately never falls back to `name` (the uploaded file's raw
+  // filename, e.g. "IMG_2481.HEIC", or a pasted URL string) — neither is
+  // meaningful alt text, and silently presenting one as if it were a real
+  // description is worse than an empty (but at least honest) alt.
+  if (kind === 'image') return <img className="be-embed-image" src={src} alt={alt || ''} />;
   if (kind === 'video') return <video className="be-embed-video" src={src} controls />;
   if (kind === 'audio') return <audio className="be-embed-audio" src={src} controls />;
   return (
@@ -72,10 +77,26 @@ export function EmbedBlock({ id }) {
   const [urlInput, setUrlInput] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragWidth, setDragWidth] = useState(null);
+  const [isAltTextOpen, setIsAltTextOpen] = useState(false);
+  const [altDraft, setAltDraft] = useState('');
   const previewRef = useRef(null);
   const frameRef = useRef(null);
 
   const setMedia = useCallback((patch) => store.applyOperation(updateBlockProps(id, patch)), [store, id]);
+
+  const openAltText = useCallback(() => {
+    setAltDraft(block?.props?.alt ?? '');
+    setIsAltTextOpen(true);
+  }, [block?.props?.alt]);
+  const closeAltText = useCallback(() => setIsAltTextOpen(false), []);
+  const saveAltText = useCallback(
+    (event) => {
+      event.preventDefault();
+      setMedia({ alt: altDraft.trim() });
+      setIsAltTextOpen(false);
+    },
+    [altDraft, setMedia],
+  );
 
   const handleFileChange = useCallback(
     async (event) => {
@@ -143,7 +164,7 @@ export function EmbedBlock({ id }) {
   const className = useBlockClassName('be-embed', block);
 
   if (!block) return null;
-  const { kind = 'file', src, name, align = 'left', width = 100 } = block.props;
+  const { kind = 'file', src, name, alt = '', align = 'left', width = 100 } = block.props;
   const canResize = kind === 'image' || kind === 'video';
   const effectiveWidth = dragWidth ?? width;
 
@@ -175,11 +196,16 @@ export function EmbedBlock({ id }) {
                   <Icon size={14} />
                 </button>
               ))}
+              {kind === 'image' && (
+                <button type="button" className="be-embed-toolbar-btn be-embed-alt-text-btn" onClick={openAltText}>
+                  Alt text
+                </button>
+              )}
               <button type="button" className="be-embed-remove" onClick={clearMedia} aria-label={`Remove ${KIND_LABEL[kind]}`}>
                 Remove
               </button>
             </div>
-            <EmbedPreview kind={kind} src={src} name={name} />
+            <EmbedPreview kind={kind} src={src} name={name} alt={alt} />
             {canResize && (
               <div
                 className="be-embed-resize-handle"
@@ -220,6 +246,28 @@ export function EmbedBlock({ id }) {
           </div>
         </div>
       )}
+      <Modal isOpen={isAltTextOpen} onClose={closeAltText} title="Alt text">
+        <form onSubmit={saveAltText}>
+          <label className="be-modal-field">
+            <span>Describe this image for screen readers</span>
+            <input
+              type="text"
+              value={altDraft}
+              onChange={(event) => setAltDraft(event.target.value)}
+              placeholder="e.g. A hand-drawn diagram of the release process"
+              autoFocus
+            />
+          </label>
+          <div className="be-modal-actions">
+            <button type="button" className="be-modal-cancel" onClick={closeAltText}>
+              Cancel
+            </button>
+            <button type="submit" className="be-modal-save">
+              Save
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -187,6 +187,29 @@ describe('BlockRangeActionMenu: Copy / Cut', () => {
   });
 });
 
+describe('BlockRangeActionMenu: keyboard operability', () => {
+  it('opening the menu focuses its first item, and ArrowDown moves to the next one', () => {
+    const store = new EditorStore(makeDoc());
+    renderHarness(store, ['p2', 'p3']);
+
+    const menu = document.querySelector('.be-block-range-menu');
+    const items = [...menu.querySelectorAll('.be-block-range-menu-item')];
+    expect(document.activeElement).toBe(items[0]);
+
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(items[1]);
+  });
+
+  it('Move up announces via the shared live region', () => {
+    const store = new EditorStore(makeDoc());
+    renderHarness(store, ['p3', 'p4']);
+
+    fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.trim() === 'Move up'));
+
+    expect(document.getElementById('be-live-region')).not.toBeNull();
+  });
+});
+
 describe('BlockRangeActionMenu: dismissal', () => {
   it('Escape clears the selection and closes the menu', () => {
     const store = new EditorStore(makeDoc());

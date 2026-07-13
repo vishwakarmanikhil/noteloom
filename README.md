@@ -299,6 +299,14 @@ registry.register('myBlock', {
 });
 ```
 
+## Accessibility
+
+- Every portaled popover that's a genuine standalone action menu (the block gutter's Duplicate/Move/Hide/Delete menu, the block-range action menu, a table column's options menu) is keyboard-operable: opening one moves real focus onto its first item, ArrowUp/ArrowDown move between items (wrapping), Home/End jump to the first/last, and Escape closes it and returns focus to whatever opened it — not just a name-only `role="menu"` that only responds to mouse clicks.
+- `Modal` moves focus into the dialog (its first focusable element) on open and restores it to whatever had focus before on close — not a full focus trap (this package stays zero-dependency, and its dialogs are short, single-purpose forms, not deep navigable UI), just "focus doesn't go missing."
+- Structural actions that don't otherwise move focus anywhere describable (duplicate/move/hide/delete a block, or a whole selected range) announce what happened via a shared, visually-hidden `aria-live="polite"` region — screen-reader users get "Block deleted"/"3 blocks moved up" instead of silence.
+- Embed images have a real, separately-authored `alt` text field (a toolbar button opens a small dialog to set it) — `alt` is never silently filled in from the uploaded file's raw filename or a pasted URL string, since neither is meaningful alt text.
+- Table header cells have `scope="col"`, and the column-resize/embed-resize sliders both expose `aria-valuemin/valuemax/valuenow`.
+
 ## Development
 
 ```bash
@@ -311,6 +319,7 @@ npm run build   # library build (dist/, ESM + CJS)
 ## Known limitations
 
 - No accessibility affordance exists for grouping sibling list items under a shared `role="list"` container (each list item is an independent block, not wrapped in one) — adding `role="listitem"` without that ancestor would be worse than no role at all, so it's deliberately left out pending a bigger structural change.
+- The library doesn't render your editor's own root/surface element (that's host-rendered — see `examples/basic/src/App.jsx`'s `EditorSurface`), so it can't add `role="document"`/`aria-label` there itself; the example app demonstrates doing this on your own surface element, which is worth copying into your own app.
 - Cross-block mark toggling (bold/italic/underline over a selection spanning multiple blocks) applies as one store operation per block, not a single atomic undo step.
 - `select`'s option-adding UI and any `createSelectFieldType`-based type's options (e.g. an "Assignee" @-mention) are meant as a starting point — a real app will want to wire its own people/options source.
 - Automated tests run under jsdom; there is no automated real-browser test suite. If you hit an edge case jsdom can't reproduce (anything involving actual native `contentEditable` browser quirks), please file an issue with the exact browser/OS and steps.

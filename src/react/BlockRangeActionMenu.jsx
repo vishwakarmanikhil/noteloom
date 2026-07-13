@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEditorStore, useBlockRegistry, useInlineRegistry, useBlockRangeSelection } from './EditorProvider.jsx';
 import { copyBlockRangeToClipboard } from '../clipboard/copyBlockRange.js';
+import { useMenuKeyboardNav } from './useMenuKeyboardNav.js';
+import { announce } from './liveAnnouncer.js';
 import {
   deleteBlockRange,
   moveBlockRangeUp,
@@ -42,6 +44,10 @@ export function BlockRangeActionMenu() {
 
   const isOpen = selectedBlockRange.length > 0;
   const clear = useCallback(() => setSelectedBlockRange([]), [setSelectedBlockRange]);
+  // No single "trigger button" here (the menu appears after a drag gesture,
+  // not a click) — passed as undefined, which the hook handles fine; this
+  // still gets arrow-key/Home/End navigation between its own menu items.
+  useMenuKeyboardNav(menuRef, isOpen, clear, undefined);
 
   useEffect(() => {
     if (!isOpen) {
@@ -95,19 +101,26 @@ export function BlockRangeActionMenu() {
     };
   }, [isOpen, store, selectedBlockRange, clear]);
 
+  const blockWord = (n) => (n === 1 ? 'block' : 'blocks');
+
   const handleCopy = useCallback(() => {
     copyBlockRangeToClipboard(store, registry, inlineRegistry, selectedBlockRange);
+    announce(`${selectedBlockRange.length} ${blockWord(selectedBlockRange.length)} copied`);
     clear();
   }, [store, registry, inlineRegistry, selectedBlockRange, clear]);
 
   const handleCut = useCallback(async () => {
     await copyBlockRangeToClipboard(store, registry, inlineRegistry, selectedBlockRange);
+    const count = selectedBlockRange.length;
     deleteBlockRange(store, selectedBlockRange);
+    announce(`${count} ${blockWord(count)} cut`);
     clear();
   }, [store, registry, inlineRegistry, selectedBlockRange, clear]);
 
   const handleDelete = useCallback(() => {
+    const count = selectedBlockRange.length;
     deleteBlockRange(store, selectedBlockRange);
+    announce(`${count} ${blockWord(count)} deleted`);
     clear();
   }, [store, selectedBlockRange, clear]);
 
@@ -119,18 +132,27 @@ export function BlockRangeActionMenu() {
   // moves/toggles in a row without reselecting, but a lingering menu after
   // an action was already taken read as "did my click even do anything?".
   const handleMoveUp = useCallback(() => {
-    moveBlockRangeUp(store, selectedBlockRange);
+    if (moveBlockRangeUp(store, selectedBlockRange)) {
+      announce(`${selectedBlockRange.length} ${blockWord(selectedBlockRange.length)} moved up`);
+    }
     clear();
   }, [store, selectedBlockRange, clear]);
 
   const handleMoveDown = useCallback(() => {
-    moveBlockRangeDown(store, selectedBlockRange);
+    if (moveBlockRangeDown(store, selectedBlockRange)) {
+      announce(`${selectedBlockRange.length} ${blockWord(selectedBlockRange.length)} moved down`);
+    }
     clear();
   }, [store, selectedBlockRange, clear]);
 
   const isHidden = isEntireBlockRangeHidden(store, selectedBlockRange);
   const handleToggleHidden = useCallback(() => {
     setBlockRangeHidden(store, selectedBlockRange, !isHidden);
+    announce(
+      isHidden
+        ? `${selectedBlockRange.length} ${blockWord(selectedBlockRange.length)} shown in preview`
+        : `${selectedBlockRange.length} ${blockWord(selectedBlockRange.length)} hidden in preview`,
+    );
     clear();
   }, [store, selectedBlockRange, isHidden, clear]);
 

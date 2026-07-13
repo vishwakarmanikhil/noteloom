@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useEditorStore, useBlockRangeSelection } from './EditorProvider.jsx';
 import { useBlock } from './useBlock.js';
 import { useOutsideClickAndEscape } from './useOutsideClickAndEscape.js';
+import { useMenuKeyboardNav } from './useMenuKeyboardNav.js';
+import { announce } from './liveAnnouncer.js';
 import { BlockRenderer } from './BlockRenderer.jsx';
 import { insertSiblingAfterAndFocus } from '../blocks/shared/blockCommands.js';
 import { createTextLeafBlock } from '../blocks/shared/leafBlockFactory.js';
@@ -55,6 +57,7 @@ export function BlockGutterRow({ id }) {
 
   const closeMenu = useCallback(() => setIsMenuOpen(false), []);
   useOutsideClickAndEscape(outsideRefs, isMenuOpen, closeMenu);
+  useMenuKeyboardNav(menuRef, isMenuOpen, closeMenu, triggerRef);
 
   const openMenu = useCallback(() => {
     setRect(triggerRef.current?.getBoundingClientRect() ?? null);
@@ -67,27 +70,30 @@ export function BlockGutterRow({ id }) {
 
   const handleDuplicate = useCallback(() => {
     duplicateBlock(store, id);
+    announce('Block duplicated');
     closeMenu();
   }, [store, id, closeMenu]);
 
   const handleMoveUp = useCallback(() => {
-    moveBlockUp(store, id);
+    if (moveBlockUp(store, id)) announce('Block moved up');
     closeMenu();
   }, [store, id, closeMenu]);
 
   const handleMoveDown = useCallback(() => {
-    moveBlockDown(store, id);
+    if (moveBlockDown(store, id)) announce('Block moved down');
     closeMenu();
   }, [store, id, closeMenu]);
 
   const handleDelete = useCallback(() => {
     deleteBlockAndFocusSibling(store, id);
+    announce('Block deleted');
     closeMenu();
   }, [store, id, closeMenu]);
 
   const isHidden = Boolean(block?.props?.hidden);
   const handleToggleHidden = useCallback(() => {
     store.applyOperation(updateBlockProps(id, { hidden: !isHidden }));
+    announce(isHidden ? 'Block shown in preview' : 'Block hidden in preview');
     closeMenu();
   }, [store, id, isHidden, closeMenu]);
 

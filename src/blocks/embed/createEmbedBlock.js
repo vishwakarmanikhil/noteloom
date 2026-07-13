@@ -7,15 +7,27 @@ import { genId } from '../../utils/idGen.js';
  * external URL or a data: URL (for a locally-uploaded file — see
  * EmbedBlock.jsx for why there's no upload-to-a-server path in a
  * zero-runtime-dependency package with no backend); `name` is the original
- * filename or the URL itself, used as alt text / download name / link text
- * depending on kind. `align` ('left' | 'center' | 'right') positions the
- * whole widget within the line; `width` (a percentage, 20-100) is only
- * meaningful for image/video kinds — see EmbedBlock's resize handle.
+ * filename or the URL itself, used as download name / link text depending
+ * on kind — deliberately NOT used as alt text (a raw filename like
+ * "IMG_2481.HEIC" isn't a meaningful image description). `alt` is the
+ * real, separately-authored description (image kind only — see
+ * EmbedBlock's "Alt text" toolbar button), empty by default. `align`
+ * ('left' | 'center' | 'right') positions the whole widget within the
+ * line; `width` (a percentage, 20-100) is only meaningful for image/video
+ * kinds — see EmbedBlock's resize handle.
  */
-export function createEmbedBlock({ kind = 'file', src = '', name = '', mimeType = '', align = 'left', width = 100 } = {}) {
+export function createEmbedBlock({
+  kind = 'file',
+  src = '',
+  name = '',
+  alt = '',
+  mimeType = '',
+  align = 'left',
+  width = 100,
+} = {}) {
   return function factory(parentId) {
     return {
-      block: { id: genId(), type: 'embed', parentId, contentIds: [], props: { kind, src, name, mimeType, align, width } },
+      block: { id: genId(), type: 'embed', parentId, contentIds: [], props: { kind, src, name, alt, mimeType, align, width } },
       runs: [],
     };
   };

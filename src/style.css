@@ -640,6 +640,12 @@
   color: #fff;
 }
 
+.be-embed-alt-text-btn {
+  width: auto;
+  padding: 0 8px;
+  font-size: 0.75rem;
+}
+
 .be-embed-remove {
   border: none;
   background: transparent;

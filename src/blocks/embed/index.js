@@ -38,10 +38,13 @@ function parseAlignWidth(node) {
 }
 
 function toHTML(block) {
-  const { kind, src, name, align = 'left', width = 100 } = block.props;
+  const { kind, src, name, alt = '', align = 'left', width = 100 } = block.props;
   if (!src) return '<p></p>'; // nothing embedded yet: nothing meaningful to export
   const style = alignWidthStyle(kind, align, width);
-  if (kind === 'image') return `<img src="${escapeAttr(src)}" alt="${escapeAttr(name || '')}"${style}>`;
+  // Deliberately `alt`, never `name` (the uploaded file's raw filename) —
+  // same "don't silently present a filename as if it were real alt text"
+  // rationale as EmbedBlock.jsx's own EmbedPreview.
+  if (kind === 'image') return `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${style}>`;
   if (kind === 'video') return `<video src="${escapeAttr(src)}" controls${style}></video>`;
   if (kind === 'audio') return `<audio src="${escapeAttr(src)}" controls></audio>`;
   return `<a class="${FILE_MARKER_CLASS}" href="${escapeAttr(src)}">${escapeHTML(name || src)}</a>`;
@@ -54,7 +57,15 @@ function toPlainText(block) {
 
 function fromHTML(node) {
   if (node.tagName === 'IMG') {
-    return blockOf('image', node.getAttribute('src') ?? '', node.getAttribute('alt') ?? '', parseAlignWidth(node));
+    // A pasted <img>'s own alt attribute is real alt text (however good or
+    // bad it is at the source) — carried into props.alt, kept separate
+    // from `name` (which has no meaningful value here; there's no "raw
+    // filename" for an externally pasted image the way there is for a
+    // locally uploaded file).
+    return blockOf('image', node.getAttribute('src') ?? '', '', {
+      ...parseAlignWidth(node),
+      alt: node.getAttribute('alt') ?? '',
+    });
   }
   if (node.tagName === 'VIDEO') {
     return blockOf('video', node.getAttribute('src') ?? '', '', parseAlignWidth(node));
@@ -68,9 +79,9 @@ function fromHTML(node) {
   return null;
 }
 
-function blockOf(kind, src, name, { align = 'left', width = 100 } = {}) {
+function blockOf(kind, src, name, { align = 'left', width = 100, alt = '' } = {}) {
   return {
-    block: { id: genId(), type: 'embed', parentId: null, contentIds: [], props: { kind, src, name, align, width } },
+    block: { id: genId(), type: 'embed', parentId: null, contentIds: [], props: { kind, src, name, alt, align, width } },
     runs: [],
   };
 }
@@ -90,7 +101,7 @@ function insertEmbedCommand(kind) {
 export const embedBlockType = {
   component: EmbedBlock,
   isLeaf: true, // contentIds always [] — a pure widget, same convention as divider
-  defaultProps: { kind: 'file', src: '', name: '', mimeType: '', align: 'left', width: 100 },
+  defaultProps: { kind: 'file', src: '', name: '', alt: '', mimeType: '', align: 'left', width: 100 },
   toHTML,
   toPlainText,
   fromHTML,

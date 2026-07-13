@@ -232,6 +232,64 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
     expect(container.querySelector(`[data-run-id="${newRun.id}"] input[type="checkbox"]`)).not.toBeNull();
     expect(container.querySelector('.be-inline-checkbox-label').value).toBe('Flu');
   });
+
+  it('the header <th> carries scope="col", and the resize handle exposes a full aria-valuemin/now/max slider range', () => {
+    const store = new EditorStore(emptyDoc());
+    insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    expect(container.querySelector('.be-table-header-cell').getAttribute('scope')).toBe('col');
+
+    const handle = container.querySelector('.be-table-col-resize-handle');
+    expect(handle.getAttribute('role')).toBe('slider');
+    expect(handle.getAttribute('aria-valuemin')).toBe(String(MIN_COLUMN_WIDTH));
+    expect(handle.getAttribute('aria-valuenow')).toBe(String(DEFAULT_COLUMN_WIDTH));
+    expect(Number(handle.getAttribute('aria-valuemax'))).toBeGreaterThan(Number(handle.getAttribute('aria-valuenow')));
+  });
+
+  it('the column menu is keyboard-operable: opening focuses its first item, and Escape closes it and returns focus to the trigger', () => {
+    const store = new EditorStore(emptyDoc());
+    insertAtRoot(store, createTableBlock({ rows: 1, cols: 2 }));
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    const trigger = container.querySelectorAll('.be-table-header-menu-trigger')[0];
+    fireEvent.click(trigger);
+
+    const menu = document.querySelector('.be-table-header-menu');
+    expect(menu.getAttribute('aria-label')).toBe('Column 1 options');
+    const items = [...menu.querySelectorAll('.be-table-header-menu-item')];
+    expect(document.activeElement).toBe(items[0]);
+
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(items[1]);
+
+    fireEvent.keyDown(menu, { key: 'Escape' });
+    expect(document.querySelector('.be-table-header-menu')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('arrow keys inside the column menu\'s own Type <Select> and rename <input> are not hijacked by menu navigation', () => {
+    const store = new EditorStore(emptyDoc());
+    insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    const menu = document.querySelector('.be-table-header-menu');
+
+    const label = container.querySelector('.be-table-header-label');
+    label.focus();
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(label);
+  });
 });
 
 describe('table columns: default width + resizable via drag handle', () => {

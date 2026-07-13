@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEditorStore, useInlineRegistry } from '../../react/EditorProvider.jsx';
 import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.js';
+import { useMenuKeyboardNav } from '../../react/useMenuKeyboardNav.js';
 import { insertColumnAfter, deleteColumn, renameColumn, setColumnType, setColumnOptions, setColumnWidth } from './tableEditCommands.js';
 import { COLUMN_TYPES, MIN_COLUMN_WIDTH } from './tableColumns.js';
 import { genId } from '../../utils/idGen.js';
@@ -11,6 +12,12 @@ import { pickTagColor } from './tagColors.js';
 
 const TYPE_LABELS = { text: 'Text', date: 'Date', checkbox: 'Checkbox', select: 'Select' };
 const TYPE_OPTIONS = COLUMN_TYPES.map((type) => ({ value: type, label: TYPE_LABELS[type] }));
+
+// A column's actual drag width is unbounded (no real max exists in
+// tableColumns.js) — this is only a hint for the resize handle's own
+// aria-valuemax, so a screen reader has *some* sense of position within a
+// reasonable range, not a value that's ever enforced against real dragging.
+const MAX_COLUMN_WIDTH_HINT = 800;
 
 /**
  * Manages a "select" column's shared option list (add/rename/remove) —
@@ -123,6 +130,7 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
 
   const closeMenu = useCallback(() => setIsMenuOpen(false), []);
   useOutsideClickAndEscape(outsideRefs, isMenuOpen, closeMenu);
+  useMenuKeyboardNav(menuRef, isMenuOpen, closeMenu, triggerRef);
 
   const openMenu = useCallback(() => {
     // Anchor to the whole header cell, not the small vertically-centered
@@ -187,7 +195,7 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
   );
 
   return (
-    <th ref={thRef} className="be-table-header-cell" contentEditable={false}>
+    <th ref={thRef} scope="col" className="be-table-header-cell" contentEditable={false}>
       <input
         className="be-table-header-label"
         value={column.label}
@@ -211,6 +219,7 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
         role="slider"
         aria-label={`Resize column ${colIndex + 1}`}
         aria-valuemin={MIN_COLUMN_WIDTH}
+        aria-valuemax={MAX_COLUMN_WIDTH_HINT}
         aria-valuenow={dragWidth ?? column.width}
       />
       {isMenuOpen &&
@@ -219,6 +228,7 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
           <div
             ref={menuRef}
             role="menu"
+            aria-label={`Column ${colIndex + 1} options`}
             className="be-table-header-menu"
             style={{ position: 'fixed', top: rect.bottom + 4, left: rect.right, transform: 'translateX(-100%)' }}
           >

@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Modal } from './Modal.jsx';
+import { announce } from './liveAnnouncer.js';
 import { duplicateBlock, moveBlockUp, moveBlockDown, deleteBlockAndFocusSibling } from '../blocks/shared/blockActions.js';
 import { updateBlockProps } from '../store/operations.js';
 import { CopyIcon, ArrowUpIcon, ArrowDownIcon, TrashIcon, EyeIcon, EyeOffIcon } from './icons.jsx';
@@ -37,7 +38,10 @@ export function MobileBlockOptionsSheet({ isOpen, onClose, store, blockId }) {
           type="button"
           role="menuitem"
           className="be-mobile-picker-item"
-          onClick={() => run(() => duplicateBlock(store, blockId))}
+          onClick={() => run(() => {
+            duplicateBlock(store, blockId);
+            announce('Block duplicated');
+          })}
         >
           <span className="be-mobile-picker-item-icon">
             <CopyIcon size={18} />
@@ -48,7 +52,9 @@ export function MobileBlockOptionsSheet({ isOpen, onClose, store, blockId }) {
           type="button"
           role="menuitem"
           className="be-mobile-picker-item"
-          onClick={() => run(() => moveBlockUp(store, blockId))}
+          onClick={() => run(() => {
+            if (moveBlockUp(store, blockId)) announce('Block moved up');
+          })}
         >
           <span className="be-mobile-picker-item-icon">
             <ArrowUpIcon size={18} />
@@ -59,7 +65,9 @@ export function MobileBlockOptionsSheet({ isOpen, onClose, store, blockId }) {
           type="button"
           role="menuitem"
           className="be-mobile-picker-item"
-          onClick={() => run(() => moveBlockDown(store, blockId))}
+          onClick={() => run(() => {
+            if (moveBlockDown(store, blockId)) announce('Block moved down');
+          })}
         >
           <span className="be-mobile-picker-item-icon">
             <ArrowDownIcon size={18} />
@@ -70,7 +78,10 @@ export function MobileBlockOptionsSheet({ isOpen, onClose, store, blockId }) {
           type="button"
           role="menuitem"
           className="be-mobile-picker-item"
-          onClick={() => run(() => store.applyOperation(updateBlockProps(blockId, { hidden: !isHidden })))}
+          onClick={() => run(() => {
+            store.applyOperation(updateBlockProps(blockId, { hidden: !isHidden }));
+            announce(isHidden ? 'Block shown in preview' : 'Block hidden in preview');
+          })}
         >
           <span className="be-mobile-picker-item-icon">
             {isHidden ? <EyeIcon size={18} /> : <EyeOffIcon size={18} />}
@@ -81,7 +92,10 @@ export function MobileBlockOptionsSheet({ isOpen, onClose, store, blockId }) {
           type="button"
           role="menuitem"
           className="be-mobile-picker-item be-mobile-picker-item-danger"
-          onClick={() => run(() => deleteBlockAndFocusSibling(store, blockId))}
+          onClick={() => run(() => {
+            deleteBlockAndFocusSibling(store, blockId);
+            announce('Block deleted');
+          })}
         >
           <span className="be-mobile-picker-item-icon">
             <TrashIcon size={18} />

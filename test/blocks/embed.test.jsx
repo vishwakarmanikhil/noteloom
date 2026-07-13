@@ -50,7 +50,26 @@ describe('embed block: rendering per kind', () => {
     const img = container.querySelector(`[data-block-id="${id}"] img.be-embed-image`);
     expect(img).not.toBeNull();
     expect(img.getAttribute('src')).toBe('https://example.com/cat.png');
-    expect(img.getAttribute('alt')).toBe('cat');
+    // alt is deliberately NOT the filename/name — a raw filename isn't
+    // meaningful alt text, so it stays empty until the user sets a real
+    // description via the "Alt text" button (see the next test).
+    expect(img.getAttribute('alt')).toBe('');
+  });
+
+  it('sets a real, distinct alt text via the "Alt text" button, never falling back to the filename', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://example.com/cat.png', name: 'cat.png' }));
+    const { container } = renderDoc(store);
+    const wrapper = container.querySelector(`[data-block-id="${id}"]`);
+
+    fireEvent.click(wrapper.querySelector('.be-embed-alt-text-btn'));
+    const input = document.querySelector('.be-modal input[type="text"]');
+    fireEvent.change(input, { target: { value: 'A sleeping orange cat' } });
+    fireEvent.submit(input.closest('form'));
+
+    expect(store.getBlock(id).props.alt).toBe('A sleeping orange cat');
+    const img = wrapper.querySelector('img.be-embed-image');
+    expect(img.getAttribute('alt')).toBe('A sleeping orange cat');
   });
 
   it('renders a <video> with controls (video kind)', () => {
@@ -276,7 +295,7 @@ describe('embed block: clipboard round-trip', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
 
-    const img = createEmbedBlock({ kind: 'image', src: 'https://x/a.png', name: 'a' })('root').block;
+    const img = createEmbedBlock({ kind: 'image', src: 'https://x/a.png', alt: 'a' })('root').block;
     expect(registry.get('embed').toHTML(img)).toBe('<img src="https://x/a.png" alt="a">');
 
     const vid = createEmbedBlock({ kind: 'video', src: 'https://x/a.mp4' })('root').block;
@@ -333,6 +352,10 @@ describe('embed block: clipboard round-trip', () => {
     expect(imgInsert.block.type).toBe('embed');
     expect(imgInsert.block.props.kind).toBe('image');
     expect(imgInsert.block.props.src).toBe('https://x/a.png');
+    // The pasted <img>'s real alt lands in props.alt, kept separate from
+    // `name` (no meaningful "filename" concept for an externally pasted image).
+    expect(imgInsert.block.props.alt).toBe('a');
+    expect(imgInsert.block.props.name).toBe('');
 
     const [vidInsert] = walkDomToBlocks('<video src="https://x/a.mp4"></video>', registry);
     expect(vidInsert.block.props.kind).toBe('video');
