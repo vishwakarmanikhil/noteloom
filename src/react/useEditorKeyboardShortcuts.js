@@ -6,6 +6,7 @@ import { resolveMultiRunSelection, resolveCrossBlockSelection } from './selectio
 import { isEntireBlockSelected, isCurrentBlockEmpty } from './selectAllCommand.js';
 import { focusRunEnd, focusRunAtOffset } from './focusRun.js';
 import { deleteSelectedBlockAndRefocus } from '../blocks/shared/deleteSelectedBlock.js';
+import { restoreSelectionAfterHistoryChange } from './restoreHistorySelection.js';
 
 const MARK_KEYS = { b: 'bold', i: 'italic', u: 'underline' };
 
@@ -103,12 +104,12 @@ export function useEditorKeyboardShortcuts(containerRef) {
 
         if (key === 'z' && !event.shiftKey) {
           event.preventDefault();
-          store.undo?.();
+          if (store.undo?.()) restoreSelectionAfterHistoryChange(store);
           return;
         }
         if ((key === 'z' && event.shiftKey) || key === 'y') {
           event.preventDefault();
-          store.redo?.();
+          if (store.redo?.()) restoreSelectionAfterHistoryChange(store);
           return;
         }
         if (key === 'a') {

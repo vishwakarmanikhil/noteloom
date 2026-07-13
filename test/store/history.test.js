@@ -114,6 +114,147 @@ describe('History undo/redo correctness', () => {
   });
 });
 
+describe('History.getChangeLog (opt-in "what changed, from what to what" log)', () => {
+  it('is empty by default — off unless trackChanges is explicitly requested', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store);
+
+    history.perform(updateRun('r1', { value: 'hello' }), { actorId: 'user-1', timestamp: 1000 });
+    expect(history.getChangeLog()).toEqual([]);
+  });
+
+  it('records before/after values for a text edit when trackChanges is on', () => {
+    const store = new EditorStore(makeDoc()); // r1 starts as ''
+    const history = new History(store, { trackChanges: true });
+
+    history.perform(updateRun('r1', { value: 'hello' }), { actorId: 'user-1', timestamp: 1000 });
+
+    const log = history.getChangeLog();
+    expect(log).toHaveLength(1);
+    expect(log[0]).toMatchObject({
+      opType: 'updateRun',
+      id: 'r1',
+      before: { value: '' },
+      after: { value: 'hello' },
+      actorId: 'user-1',
+      timestamp: 1000,
+    });
+  });
+
+  it('logs a structural op as the bare fact — no before/after snapshot', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store, { trackChanges: true });
+
+    history.performBatch(
+      [insertBlock({ id: 'p2', type: 'paragraph', parentId: 'root', contentIds: [], props: {} }, 'root', 1)],
+      { actorId: 'user-1', timestamp: 1000 },
+    );
+
+    const log = history.getChangeLog();
+    expect(log).toHaveLength(1);
+    expect(log[0]).toMatchObject({ opType: 'insertBlock', id: 'p2', actorId: 'user-1', timestamp: 1000 });
+    expect(log[0].before).toBeUndefined();
+    expect(log[0].after).toBeUndefined();
+  });
+
+  it('caps the log at maxChangeLogSize, dropping the oldest entries first', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store, { trackChanges: true, maxChangeLogSize: 2 });
+
+    history.perform(updateRun('r1', { value: 'h' }), { timestamp: 1000 });
+    history.perform(updateRun('r1', { value: 'he' }), { timestamp: 1100 });
+    history.perform(updateRun('r1', { value: 'hel' }), { timestamp: 1200 });
+
+    const log = history.getChangeLog();
+    expect(log).toHaveLength(2);
+    expect(log.map((e) => e.timestamp)).toEqual([1100, 1200]); // oldest (1000) dropped
+  });
+
+  it('is independent of undo/redo — undoing an edit does not remove or rewrite its log entry', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store, { trackChanges: true });
+
+    history.perform(updateRun('r1', { value: 'hello' }), { timestamp: 1000 });
+    history.undo();
+
+    expect(history.getChangeLog()).toHaveLength(1); // the original edit is still on record
+    expect(store.getRun('r1').value).toBe('');
+  });
+});
+
+describe('History.getPendingSelection (caret restore after undo/redo)', () => {
+  it('undo of a single append-at-end edit points back at the end of the old value', () => {
+    const store = new EditorStore(makeDoc()); // r1 starts as ''
+    const history = new History(store);
+
+    history.perform(updateRun('r1', { value: 'hello' }), { timestamp: 1000 });
+    history.undo();
+    expect(store.getRun('r1').value).toBe('');
+    expect(history.getPendingSelection()).toEqual({ runId: 'r1', offset: 0 });
+  });
+
+  it('redo of the same edit points at the end of the new value', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store);
+
+    history.perform(updateRun('r1', { value: 'hello' }), { timestamp: 1000 });
+    history.undo();
+    history.redo();
+    expect(history.getPendingSelection()).toEqual({ runId: 'r1', offset: 5 });
+  });
+
+  it('a coalesced typing burst resolves to one clean before/after diff across the whole batch', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store);
+
+    history.perform(updateRun('r1', { value: 'h' }), { timestamp: 1000 });
+    history.perform(updateRun('r1', { value: 'he' }), { timestamp: 1100 });
+    history.perform(updateRun('r1', { value: 'hel' }), { timestamp: 1200 });
+
+    history.undo(); // unwinds the whole burst as one step
+    expect(store.getRun('r1').value).toBe('');
+    expect(history.getPendingSelection()).toEqual({ runId: 'r1', offset: 0 });
+
+    history.redo();
+    expect(history.getPendingSelection()).toEqual({ runId: 'r1', offset: 3 }); // end of "hel"
+  });
+
+  it('an edit in the middle of existing text resolves to the actual edit point, not the end of the run', () => {
+    const store = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'hello', marks: {} }],
+    });
+    const history = new History(store);
+
+    history.perform(updateRun('r1', { value: 'helXlo' }), { timestamp: 1000 }); // inserted "X" at offset 3
+    history.undo();
+    expect(store.getRun('r1').value).toBe('hello');
+    expect(history.getPendingSelection()).toEqual({ runId: 'r1', offset: 3 });
+
+    history.redo();
+    expect(history.getPendingSelection()).toEqual({ runId: 'r1', offset: 4 }); // right after the inserted "X"
+  });
+
+  it('is null for a structural (non-text-run) undo/redo step', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store);
+
+    history.performBatch(
+      [insertBlock({ id: 'p2', type: 'paragraph', parentId: 'root', contentIds: [], props: {} }, 'root', 1)],
+      { timestamp: 1000 },
+    );
+    history.undo();
+    expect(history.getPendingSelection()).toBeNull();
+
+    history.redo();
+    expect(history.getPendingSelection()).toBeNull();
+  });
+});
+
 describe('History audit log', () => {
   it('records actorId and timestamp for every operation, independent of undo/redo', () => {
     const store = new EditorStore(makeDoc());

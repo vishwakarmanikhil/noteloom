@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { useEditorContext } from './EditorProvider.jsx';
+import { restoreSelectionAfterHistoryChange } from './restoreHistorySelection.js';
 
 const STABLE_STATE = { canUndo: false, canRedo: false };
 
@@ -25,8 +26,16 @@ export function useHistory() {
 
   return {
     ...state,
-    undo: () => history.undo(),
-    redo: () => history.redo(),
+    undo: () => {
+      const changed = history.undo();
+      if (changed) restoreSelectionAfterHistoryChange(history);
+      return changed;
+    },
+    redo: () => {
+      const changed = history.redo();
+      if (changed) restoreSelectionAfterHistoryChange(history);
+      return changed;
+    },
     getHistoryLog: () => history.getHistoryLog(),
   };
 }
