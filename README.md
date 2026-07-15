@@ -149,7 +149,45 @@ import { DocumentExportButton } from 'noteloom';
 <DocumentExportButton label="View source" />
 ```
 
-It opens a modal with JSON/HTML/Text tabs (reading live from the store every time it opens) and a Copy button — useful for debugging, or as a starting point for a real "export" feature.
+It opens a modal with JSON/Simple JSON/HTML/Text tabs (reading live from the store every time it opens) and a Copy button — useful for debugging, or as a starting point for a real "export" feature.
+
+## A simpler JSON shape for storage/API/CRUD use
+
+`exportDocumentJSON()` above returns the *internal engine format* — the same normalized, id-referenced graph `EditorStore` operates on (blocks reference other blocks by id; text lives in a separate `runs` collection, not embedded inline). That shape is what makes per-run reactivity, O(1) structural edits, and real nesting (toggle lists, tables, inline atomic chips) work — it's not going to look like a simple flat document, on purpose.
+
+If you just want something simpler to store, send over an API, or hand-edit — self-contained blocks in an array, `children` for nesting, no id-references to resolve — use the second, optional export/import pair instead:
+
+```js
+import { exportDocumentSimpleJSON, importDocumentSimpleJSON } from 'noteloom';
+
+const json = exportDocumentSimpleJSON(store, registry, inlineRegistry);
+// {
+//   "version": 1,
+//   "blocks": [
+//     { "id": "p1", "type": "paragraph", "data": { "text": "Hello <strong>world</strong>" } },
+//     { "id": "h1", "type": "heading", "data": { "text": "Key features", "level": 3 } },
+//     {
+//       "id": "li1", "type": "listItem",
+//       "data": { "text": "Nested item", "ordered": false, "checked": null },
+//       "children": [ /* nested listItem blocks, same shape */ ]
+//     },
+//     {
+//       "id": "t1", "type": "table",
+//       "data": { "columns": [{ "id": "c1", "label": "Name" }], "rows": [["Cell text"]] }
+//     }
+//   ]
+// }
+
+// ...later, or on a different machine/process:
+const doc = importDocumentSimpleJSON(json, registry, inlineRegistry); // -> { rootId, blocks, runs }
+const store2 = new EditorStore(doc);
+```
+
+Rich text (`data.text`) is an HTML string — the exact same per-run serialization every block type's own clipboard-copy `toHTML` already produces, so marks (bold/italic/underline/strike/code/sub/superscript/color/highlight/link) and atomic inline chips (checkbox/date/select/mention) round-trip through it the same way copy/paste already does. `table` is flattened specially (`data.columns` + `data.rows`, a 2D array) rather than exposing the internal table/row/cell block chain — the single biggest simplification versus the internal shape. Block/run ids are preserved on both export and import (useful for referencing/updating a specific block from an external system).
+
+One existing, by-design limitation carried over from clipboard paste: an atomic inline type's *core* value round-trips (a checkbox's checked state + label, a date's ISO value, a select's chosen value + label) but its full `options` list does not — only the currently-selected option survives, the same as pasting one of these chips into another instance of the editor today.
+
+This is purely an additive, alternate *interchange* format — the internal engine format above is unaffected either way, and this is not a replacement for it.
 
 ## Right-to-left / multi-language text
 

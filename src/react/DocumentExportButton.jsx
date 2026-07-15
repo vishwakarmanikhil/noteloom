@@ -2,10 +2,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { Modal } from './Modal.jsx';
 import { useEditorStore, useBlockRegistry, useInlineRegistry } from './EditorProvider.jsx';
 import { exportDocumentJSON, exportDocumentHTML, exportDocumentText } from '../clipboard/exportDocument.js';
+import { exportDocumentSimpleJSON } from '../clipboard/simpleFormat.js';
 import { CodeIcon } from './icons.jsx';
 
 const FORMATS = [
   { value: 'json', label: 'JSON' },
+  { value: 'simpleJson', label: 'Simple JSON' },
   { value: 'html', label: 'HTML' },
   { value: 'text', label: 'Text' },
 ];
@@ -16,13 +18,18 @@ const FORMATS = [
  * a way to inspect the live document as JSON, HTML, or plain text, without
  * having to hand-roll the export/modal/copy plumbing themselves.
  *
- * The three formats aren't three different features — they're the same
+ * These formats aren't different features — JSON/HTML/Text are the same
  * export pulled through the three existing serialization paths every
  * other document-reading feature (clipboard, in particular) already goes
- * through (see clipboard/exportDocument.js), just packaged behind one
- * button so each host app doesn't need to wire its own. A host that wants
- * the raw strings without any UI can call exportDocumentJSON/HTML/Text
- * directly instead of using this component at all.
+ * through (see clipboard/exportDocument.js). "Simple JSON" is a separate,
+ * optional, flatter shape (see clipboard/simpleFormat.js) — self-contained
+ * blocks with `children` for nesting instead of the internal engine's own
+ * id-referenced graph — meant for storage/API/CRUD use where "JSON" tab's
+ * raw internal shape is more structure than a host actually wants to work
+ * with directly. All four are just packaged behind one button so each host
+ * app doesn't need to wire its own; a host that wants the raw strings
+ * without any UI can call exportDocumentJSON/exportDocumentSimpleJSON/HTML/
+ * Text directly instead of using this component at all.
  *
  * Recomputes the export fresh every time the modal opens (not on every
  * keystroke while it's closed) — cheap enough for real documents, and
@@ -46,6 +53,7 @@ export function DocumentExportButton({ label = 'View source', className = '' }) 
   const content = useMemo(() => {
     if (!isOpen) return '';
     if (format === 'json') return exportDocumentJSON(store);
+    if (format === 'simpleJson') return exportDocumentSimpleJSON(store, registry, inlineRegistry);
     if (format === 'html') return exportDocumentHTML(store, registry, inlineRegistry);
     return exportDocumentText(store, registry, inlineRegistry);
   }, [isOpen, format, store, registry, inlineRegistry]);

@@ -86,6 +86,7 @@ export { serializeBlockRange, remapSubtreeIds } from './clipboard/serialize.js';
 export { deserializeClipboard } from './clipboard/deserialize.js';
 export { walkDomToBlocks, textToParagraphs } from './clipboard/domWalk.js';
 export { exportDocumentJSON, exportDocumentHTML, exportDocumentText } from './clipboard/exportDocument.js';
+export { exportDocumentSimpleJSON, importDocumentSimpleJSON } from './clipboard/simpleFormat.js';
 export { DocumentExportButton } from './react/DocumentExportButton.jsx';
 
 export { SlashMenu } from './commands/SlashMenu.jsx';

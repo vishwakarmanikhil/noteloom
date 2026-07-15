@@ -43,6 +43,11 @@ export function runToHTML(run, ctx) {
   return html;
 }
 
+/** Serializes a whole ordered run list to one HTML string — every leaf block's own toHTML already inlines exactly this. */
+export function runsToHTML(runs, ctx) {
+  return (runs ?? []).map((run) => runToHTML(run, ctx)).join('');
+}
+
 export function runToPlainText(run, ctx) {
   if (!run) return '';
   if (run.type !== 'text') {
