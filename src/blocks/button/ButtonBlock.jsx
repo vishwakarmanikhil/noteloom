@@ -8,6 +8,7 @@ import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
 import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusAfterMerge } from '../shared/focusAfterMerge.js';
 import { focusAdjacentBlock } from '../shared/navigationCommands.js';
+import { resolveBlockDir } from '../shared/resolveBlockDir.js';
 import { ButtonEditModal } from './ButtonEditModal.jsx';
 
 const DEFAULT_COLOR = '#2b6fd6';
@@ -69,14 +70,16 @@ export function ButtonBlock({ id }) {
   for (const { key, value } of customAttrs) {
     if (key.trim()) dataAttrs[`data-${key.trim()}`] = value;
   }
+  const dir = resolveBlockDir(store, block);
 
   return (
-    <div className={className} data-block-id={id}>
+    <div className={className} data-block-id={id} dir={dir}>
       <div className="be-button-block-pill" style={{ backgroundColor: color }} {...dataAttrs}>
         <span className="be-button-block-label" data-empty={isEmpty ? '' : undefined} data-placeholder="Button">
           <EditableBlockContent
             blockId={id}
             runIds={block.contentIds}
+            dir={dir}
             onEnter={handleEnter}
             onBackspaceAtStart={handleBackspaceAtStart}
             onArrowUp={handleArrowUp}

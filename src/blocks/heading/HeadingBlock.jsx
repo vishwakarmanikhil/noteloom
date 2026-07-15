@@ -8,6 +8,7 @@ import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
 import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusAfterMerge } from '../shared/focusAfterMerge.js';
 import { focusAdjacentBlock } from '../shared/navigationCommands.js';
+import { resolveBlockDir } from '../shared/resolveBlockDir.js';
 
 export function HeadingBlock({ id }) {
   const store = useEditorStore();
@@ -37,6 +38,7 @@ export function HeadingBlock({ id }) {
   if (!block) return null;
   const Tag = `h${level}`;
   const isEmpty = isRunsEmpty(store, block.contentIds);
+  const dir = resolveBlockDir(store, block);
 
   return (
     <Tag
@@ -44,10 +46,12 @@ export function HeadingBlock({ id }) {
       data-block-id={id}
       data-empty={isEmpty ? '' : undefined}
       data-placeholder={`Heading ${level}`}
+      dir={dir}
     >
       <EditableBlockContent
         blockId={id}
         runIds={block.contentIds}
+        dir={dir}
         onEnter={handleEnter}
         onBackspaceAtStart={handleBackspaceAtStart}
         onArrowUp={handleArrowUp}

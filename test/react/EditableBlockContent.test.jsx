@@ -517,6 +517,99 @@ describe('EditableBlockContent: beforeinput over a selection spanning a chip (re
   });
 });
 
+describe('EditableBlockContent: typing inside an atomic run\'s own nested control does not delete the chip (regression)', () => {
+  // Real bug report: place the caret inside the checkbox chip's own label
+  // <input> and start typing — the chip vanished from the DOM and the
+  // typed character appeared in its place. Cause: clicking to focus a
+  // nested real control inside a contenteditable="false" host commonly
+  // leaves the *ambient* Document Selection as a non-collapsed "select
+  // this atomic node as a unit" range over the chip (the same browser
+  // quirk covered by the "whole unit" Backspace/Delete tests above) — even
+  // though the user's actual caret is now inside the nested <input>'s own
+  // separate internal selection, which window.getSelection() knows
+  // nothing about. The native `beforeinput` fired by typing in that
+  // nested <input> still bubbles up through this block's contentEditable
+  // container, and without a target check, handleBeforeInput's fallback
+  // to that stale whole-node selection reads it as "this range touches
+  // the chip" and deletes it — exactly like the legitimate "type over a
+  // selected chip" case a few tests up, just triggered by an unrelated
+  // control's own private editing.
+  function makeStoreWithCheckboxChip() {
+    return new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1', 'chip'], props: {} },
+      ],
+      runs: [
+        { id: 'r1', type: 'text', value: 'Task: ', marks: {} },
+        { id: 'chip', type: 'checkbox', value: '', marks: {}, data: { checked: false, label: 'Confirmed' } },
+      ],
+    });
+  }
+
+  function selectWholeNode(editable, node) {
+    const index = Array.prototype.indexOf.call(editable.childNodes, node);
+    const range = document.createRange();
+    range.setStart(editable, index);
+    range.setEnd(editable, index + 1);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  it('typing into the checkbox label input leaves the chip untouched, even with a stale whole-node selection over it', () => {
+    const store = makeStoreWithCheckboxChip();
+    const registry = createInlineRegistry();
+    registerBuiltInInlineTypes(registry);
+    const { container } = render(
+      <EditorProvider store={store} registry={{}} inlineRegistry={registry}>
+        <EditableBlockContent blockId="p1" runIds={store.getBlock('p1').contentIds} />
+      </EditorProvider>,
+    );
+    const editable = container.querySelector('[contenteditable]');
+    const chipNode = container.querySelector('[data-run-id="chip"]');
+    const labelInput = chipNode.querySelector('.be-inline-checkbox-label');
+
+    selectWholeNode(editable, chipNode); // the browser-quirk stale selection
+
+    fireEvent(
+      labelInput,
+      new window.InputEvent('beforeinput', { inputType: 'insertText', data: 'X', bubbles: true, cancelable: true }),
+    );
+
+    expect(store.getRun('chip')).toBeDefined();
+    expect(store.getRun('chip').type).toBe('checkbox');
+    expect(store.getBlock('p1').contentIds).toEqual(['r1', 'chip']);
+  });
+
+  it('...but genuinely typing a replacement character while the chip itself is whole-node-selected still replaces it (not over-guarded)', () => {
+    const store = makeStoreWithCheckboxChip();
+    const registry = createInlineRegistry();
+    registerBuiltInInlineTypes(registry);
+    const { container } = render(
+      <EditorProvider store={store} registry={{}} inlineRegistry={registry}>
+        <EditableBlockContent blockId="p1" runIds={store.getBlock('p1').contentIds} />
+      </EditorProvider>,
+    );
+    const editable = container.querySelector('[contenteditable]');
+    const chipNode = container.querySelector('[data-run-id="chip"]');
+
+    selectWholeNode(editable, chipNode);
+
+    // Dispatched on the editable container itself (not from inside the
+    // chip's own nested control) — this is the legitimate case the guard
+    // must not swallow.
+    fireEvent(
+      editable,
+      new window.InputEvent('beforeinput', { inputType: 'insertText', data: 'X', bubbles: true, cancelable: true }),
+    );
+
+    expect(store.getRun('chip')).toBeUndefined();
+    expect(store.getBlock('p1').contentIds.map((id) => store.getRun(id).value).join('')).toBe('Task: X');
+  });
+});
+
 describe('EditableBlockContent: never leaves a block with zero runs (regression)', () => {
   // A block whose contentEditable region has zero children isn't a valid
   // caret anchor in most browsers — clicking/typing into it lands the

@@ -9,8 +9,20 @@ import { BlockRenderer } from './BlockRenderer.jsx';
 import { insertSiblingAfterAndFocus } from '../blocks/shared/blockCommands.js';
 import { createTextLeafBlock } from '../blocks/shared/leafBlockFactory.js';
 import { duplicateBlock, moveBlockUp, moveBlockDown, deleteBlockAndFocusSibling } from '../blocks/shared/blockActions.js';
+import { resolveBlockDir } from '../blocks/shared/resolveBlockDir.js';
 import { updateBlockProps } from '../store/operations.js';
-import { PlusIcon, GripVerticalIcon, CopyIcon, ArrowUpIcon, ArrowDownIcon, TrashIcon, EyeIcon, EyeOffIcon } from './icons.jsx';
+import {
+  PlusIcon,
+  GripVerticalIcon,
+  CopyIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  TrashIcon,
+  EyeIcon,
+  EyeOffIcon,
+  AlignLeftIcon,
+  AlignRightIcon,
+} from './icons.jsx';
 
 /**
  * Wraps ONE top-level block with a hover-revealed left gutter — a "+" to
@@ -97,12 +109,25 @@ export function BlockGutterRow({ id }) {
     closeMenu();
   }, [store, id, isHidden, closeMenu]);
 
+  // Explicitly overrides resolveBlockDir's own 'auto'/document-default
+  // resolution for just this block — for the common case (a document
+  // that's uniformly one direction) the document-level default this menu
+  // doesn't touch is all that's needed; this exists for the block that's
+  // the odd one out (e.g. a single quoted line in the other language).
+  const isRtl = resolveBlockDir(store, block) === 'rtl';
+  const handleToggleDir = useCallback(() => {
+    store.applyOperation(updateBlockProps(id, { dir: isRtl ? 'ltr' : 'rtl' }));
+    announce(isRtl ? 'Block set to left-to-right' : 'Block set to right-to-left');
+    closeMenu();
+  }, [store, id, isRtl, closeMenu]);
+
   if (!block) return null;
 
   return (
     <div
       className={`be-block-row${isHidden ? ' be-block-row-hidden' : ''}${isRangeSelected ? ' be-block-row-range-selected' : ''}`}
       data-block-row-id={id}
+      dir={resolveBlockDir(store, block)}
     >
       <div className={`be-block-gutter${isMenuOpen ? ' be-block-gutter-active' : ''}`} contentEditable={false}>
         <button type="button" className="be-block-gutter-btn" onClick={handleAdd} aria-label="Add block below">
@@ -145,6 +170,10 @@ export function BlockGutterRow({ id }) {
             <button type="button" role="menuitem" className="be-block-gutter-menu-item" onClick={handleToggleHidden}>
               {isHidden ? <EyeIcon size={15} /> : <EyeOffIcon size={15} />}
               {isHidden ? 'Show in preview' : 'Hide in preview'}
+            </button>
+            <button type="button" role="menuitem" className="be-block-gutter-menu-item" onClick={handleToggleDir}>
+              {isRtl ? <AlignLeftIcon size={15} /> : <AlignRightIcon size={15} />}
+              {isRtl ? 'Switch to left-to-right' : 'Switch to right-to-left'}
             </button>
             <button
               type="button"

@@ -10,6 +10,7 @@ import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusAfterMerge } from '../shared/focusAfterMerge.js';
 import { updateBlockProps, insertBlock } from '../../store/operations.js';
 import { focusAdjacentBlock } from '../shared/navigationCommands.js';
+import { resolveBlockDir } from '../shared/resolveBlockDir.js';
 import { focusRunEnd } from '../../react/focusRun.js';
 import { ChevronRightIcon, ChevronDownIcon } from '../../react/icons.jsx';
 
@@ -78,9 +79,10 @@ export function ToggleHeadingBlock({ id }) {
   const { level = 2, collapsed, titleRunIds = [] } = block.props;
   const hasNestedChildren = block.contentIds.length > 0;
   const Tag = `h${level}`;
+  const dir = resolveBlockDir(store, block);
 
   return (
-    <div className={className} data-block-id={id}>
+    <div className={className} data-block-id={id} dir={dir}>
       <div className="be-toggle-heading-row">
         <button
           type="button"
@@ -99,6 +101,7 @@ export function ToggleHeadingBlock({ id }) {
           <EditableBlockContent
             blockId={id}
             runIds={titleRunIds}
+            dir={dir}
             onEnter={handleEnter}
             onBackspaceAtStart={handleBackspaceAtStart}
             onArrowUp={handleArrowUp}

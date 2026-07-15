@@ -3,6 +3,7 @@ import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { useBlock } from '../../react/useBlock.js';
 import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
 import { moveToAdjacentCell } from './tableNavigation.js';
+import { resolveBlockDir } from '../shared/resolveBlockDir.js';
 
 // Deliberately near-identical to ParagraphBlock: a cell is a leaf block
 // whose contentIds are run ids, exactly like a paragraph — it gets
@@ -25,12 +26,14 @@ export function TableCellBlock({ id }) {
   const className = useBlockClassName('be-table-cell', block);
 
   if (!block) return null;
+  const dir = resolveBlockDir(store, block);
 
   return (
-    <td className={className} data-block-id={id}>
+    <td className={className} data-block-id={id} dir={dir}>
       <EditableBlockContent
         blockId={id}
         runIds={block.contentIds}
+        dir={dir}
         onTab={handleTab}
         onShiftTab={handleShiftTab}
         onArrowUp={handleArrowUp}

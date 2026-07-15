@@ -435,6 +435,7 @@ function getOrCreateHost(hostsMap, store, id) {
 export function EditableBlockContent({
   blockId,
   runIds,
+  dir = 'auto',
   onEnter,
   onBackspaceAtStart,
   onDeleteAtEnd,
@@ -584,6 +585,26 @@ export function EditableBlockContent({
   const handleBeforeInput = useCallback(
     (event) => {
       if (isComposingRef.current) return;
+
+      // A native `beforeinput` (or `input`, elsewhere) fired by a real form
+      // control nested inside an atomic run's own host (the checkbox
+      // label's <input>, a date chip's <input type="date">, ...) still
+      // bubbles up through this contenteditable=true container, even
+      // though that host is contenteditable="false" and typing into it has
+      // nothing to do with the surrounding text flow. Left unguarded, the
+      // fallback to window.getSelection() below can pick up a *stale*
+      // range still pointing at that atomic run's position from before
+      // focus moved into its nested control, get misread as "this range
+      // touches an atomic run," and rewrite it clean out of the block —
+      // the exact "typing in the checkbox's label deletes the checkbox"
+      // bug this guard closes. That nested control owns its own value via
+      // its own onChange; this container-level pipeline must stay out of
+      // it entirely.
+      if (event.target instanceof Node) {
+        const el = event.target.nodeType === 1 ? event.target : event.target.parentElement;
+        if (el?.closest?.('[contenteditable="false"]')) return;
+      }
+
       const inputType = event.inputType ?? '';
       const isDelete = inputType.startsWith('delete');
       const isReplaceTyped = inputType === 'insertText' || inputType === 'insertReplacementText';
@@ -773,6 +794,7 @@ export function EditableBlockContent({
       <span
         ref={containerRef}
         className="be-editable"
+        dir={dir}
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}

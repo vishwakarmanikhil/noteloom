@@ -76,7 +76,14 @@ describe('BlockGutterRow: more-options menu', () => {
     const menu = document.querySelector('.be-block-gutter-menu');
     expect(menu).not.toBeNull();
     const items = [...menu.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
-    expect(items).toEqual(['Duplicate', 'Move up', 'Move down', 'Hide in preview', 'Delete']);
+    expect(items).toEqual([
+      'Duplicate',
+      'Move up',
+      'Move down',
+      'Hide in preview',
+      'Switch to right-to-left',
+      'Delete',
+    ]);
   });
 
   it('Duplicate clones the block right after itself', () => {
@@ -171,6 +178,38 @@ describe('BlockGutterRow: more-options menu is keyboard-operable', () => {
     fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Duplicate'));
 
     expect(document.getElementById('be-live-region')).not.toBeNull();
+  });
+});
+
+describe('BlockGutterRow: text-direction toggle', () => {
+  it('"Switch to right-to-left" sets props.dir on the block, flips the row\'s dir attribute, and the label flips back', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderDoc(store);
+
+    const row = container.querySelector('[data-block-row-id="p2"]');
+    expect(row.getAttribute('dir')).toBe('auto'); // no override yet: resolveBlockDir's default
+
+    fireEvent.click(row.querySelector('[aria-label="More options"]'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+        (el) => el.textContent.trim() === 'Switch to right-to-left',
+      ),
+    );
+
+    expect(store.getBlock('p2').props.dir).toBe('rtl');
+    expect(row.getAttribute('dir')).toBe('rtl');
+
+    fireEvent.click(row.querySelector('[aria-label="More options"]'));
+    const items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    expect(items).toContain('Switch to left-to-right');
+
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+        (el) => el.textContent.trim() === 'Switch to left-to-right',
+      ),
+    );
+    expect(store.getBlock('p2').props.dir).toBe('ltr');
+    expect(row.getAttribute('dir')).toBe('ltr');
   });
 });
 

@@ -8,6 +8,7 @@ import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
 import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusAfterMerge } from '../shared/focusAfterMerge.js';
 import { focusAdjacentBlock } from '../shared/navigationCommands.js';
+import { resolveBlockDir } from '../shared/resolveBlockDir.js';
 
 /**
  * A leaf block, exactly like ParagraphBlock/HeadingBlock (contentIds are
@@ -38,6 +39,7 @@ export function BlockquoteBlock({ id }) {
 
   if (!block) return null;
   const isEmpty = isRunsEmpty(store, block.contentIds);
+  const dir = resolveBlockDir(store, block);
 
   return (
     <blockquote
@@ -45,10 +47,12 @@ export function BlockquoteBlock({ id }) {
       data-block-id={id}
       data-empty={isEmpty ? '' : undefined}
       data-placeholder="Empty quote"
+      dir={dir}
     >
       <EditableBlockContent
         blockId={id}
         runIds={block.contentIds}
+        dir={dir}
         onEnter={handleEnter}
         onBackspaceAtStart={handleBackspaceAtStart}
         onArrowUp={handleArrowUp}

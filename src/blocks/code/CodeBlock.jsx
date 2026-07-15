@@ -99,11 +99,21 @@ export function CodeBlock({ id }) {
           <TrashIcon size={14} />
         </button>
       </div>
-      <pre className="be-code-block-pre">
+      {/*
+        Deliberately always dir="ltr", never resolveBlockDir — code syntax
+        (brackets, operators, punctuation) is structurally LTR regardless of
+        what language a comment/string literal happens to be written in;
+        letting it inherit an RTL document default would scramble the
+        visual order of the code itself, not just the prose inside it. Every
+        real code editor (VS Code included) forces LTR for code for the
+        same reason.
+      */}
+      <pre className="be-code-block-pre" dir="ltr">
         <code data-empty={isEmpty ? '' : undefined} data-placeholder="Empty code block">
           <EditableBlockContent
             blockId={id}
             runIds={block.contentIds}
+            dir="ltr"
             onEnter={handleEnter}
             onTab={handleTab}
             onBackspaceAtStart={handleBackspaceAtStart}

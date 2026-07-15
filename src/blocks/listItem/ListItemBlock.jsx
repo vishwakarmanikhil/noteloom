@@ -16,6 +16,7 @@ import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusAfterMerge } from '../shared/focusAfterMerge.js';
 import { updateBlockProps, insertBlock } from '../../store/operations.js';
 import { focusAdjacentBlock } from '../shared/navigationCommands.js';
+import { resolveBlockDir } from '../shared/resolveBlockDir.js';
 import { focusRunEnd } from '../../react/focusRun.js';
 
 function applyOps(store, ops) {
@@ -147,9 +148,10 @@ export function ListItemBlock({ id }) {
     .map((run) => run.value)
     .join('')
     .trim();
+  const dir = resolveBlockDir(store, block);
 
   return (
-    <div className={className} data-block-id={id}>
+    <div className={className} data-block-id={id} dir={dir}>
       <div className="be-list-item-row">
         {isTodo ? (
           <input
@@ -195,6 +197,7 @@ export function ListItemBlock({ id }) {
           <EditableBlockContent
             blockId={id}
             runIds={titleRunIds}
+            dir={dir}
             onEnter={handleEnter}
             onTab={handleTab}
             onShiftTab={handleShiftTab}

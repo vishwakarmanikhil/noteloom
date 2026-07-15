@@ -9,6 +9,7 @@ import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusAfterMerge } from '../shared/focusAfterMerge.js';
 import { focusRunEnd } from '../../react/focusRun.js';
 import { focusAdjacentBlock } from '../shared/navigationCommands.js';
+import { resolveBlockDir } from '../shared/resolveBlockDir.js';
 import { applyMarkdownShortcut } from './markdownShortcuts.js';
 
 // Container types a nested paragraph can "exit" out of on an empty last
@@ -68,6 +69,7 @@ export function ParagraphBlock({ id }) {
 
   if (!block) return null;
   const isEmpty = isRunsEmpty(store, block.contentIds);
+  const dir = resolveBlockDir(store, block);
 
   return (
     <div
@@ -75,10 +77,12 @@ export function ParagraphBlock({ id }) {
       data-block-id={id}
       data-empty={isEmpty ? '' : undefined}
       data-placeholder="Type '/' for commands"
+      dir={dir}
     >
       <EditableBlockContent
         blockId={id}
         runIds={block.contentIds}
+        dir={dir}
         onEnter={handleEnter}
         onBackspaceAtStart={handleBackspaceAtStart}
         onArrowUp={handleArrowUp}

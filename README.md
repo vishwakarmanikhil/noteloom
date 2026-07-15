@@ -151,6 +151,55 @@ import { DocumentExportButton } from 'noteloom';
 
 It opens a modal with JSON/HTML/Text tabs (reading live from the store every time it opens) and a Copy button — useful for debugging, or as a starting point for a real "export" feature.
 
+## Right-to-left / multi-language text
+
+Every block defaults to `dir="auto"` — the browser's own Unicode bidi algorithm detects direction per block from its first strong character, so a document mixing LTR and RTL blocks (an English heading over an Arabic paragraph, say) just works with zero configuration. For the cases `auto` can't infer on its own (most commonly an empty block, which has no text yet to detect a direction from), set an explicit override:
+
+```js
+import { updateBlockProps } from 'noteloom';
+
+// Document-wide default:
+store.applyOperation(updateBlockProps(store.getRootId(), { dir: 'rtl' }));
+// Or just one block:
+store.applyOperation(updateBlockProps(blockId, { dir: 'rtl' }));
+```
+
+A block's own `dir` wins over the document's; the block gutter menu also has a "Switch to right-to-left"/"left-to-right" item that sets this per-block. Code blocks are always `dir="ltr"` regardless of the surrounding document's default — code syntax (brackets, operators) is structurally LTR no matter what language a comment or string literal happens to be written in.
+
+This pass covers the reading/typing/gutter-position direction itself; a full logical-properties (`margin-inline-start` etc.) audit of every pixel value in `style.css` is deliberately out of scope for now — the highest-impact pieces (list/checkbox marker position, blockquote border side, block gutter position) already flip correctly.
+
+## Printing & PDF
+
+`style.css` includes a built-in `@media print` stylesheet: every piece of editing chrome (the block gutter, all portaled menus, the floating toolbar, resize handles, the mobile action bar, etc.) is hidden automatically, and a block hidden via "Hide in preview" stays hidden in the printout too, regardless of whether the app happens to be toggled into preview mode at the moment you print — printing always behaves like preview mode.
+
+There's no bundled PDF-generation library (that would need a real dependency like jsPDF/pdfmake, conflicting with staying zero-runtime-dependency) — the browser's own print-to-PDF is the intended path:
+
+```js
+window.print(); // Ctrl+P / Cmd+P works too — "Save as PDF" in the print dialog is your PDF export
+```
+
+This only cleans up the *editor's* own chrome. A host app's own outer UI (nav bar, sidebar, its own toolbar) needs its own `@media print` rules the same way — see `examples/basic/src/style.css` for a worked example, since that chrome lives entirely outside this package.
+
+## Voice typing
+
+`useVoiceTyping()` wraps the browser's native Web Speech API (`SpeechRecognition`) for continuous dictation mixed with spoken structural commands — say "heading one", "new paragraph", "bulleted list", "quote", "undo", etc. while dictating, and the current block converts (or a new one is inserted) instead of those words being typed as text:
+
+```jsx
+import { useVoiceTyping } from 'noteloom';
+
+function MicButton() {
+  const voice = useVoiceTyping();
+  if (!voice.isSupported) return null; // e.g. Firefox — no bundled fallback, degrades to nothing
+  return (
+    <button onClick={() => (voice.isListening ? voice.stop() : voice.start())}>
+      {voice.isListening ? 'Stop dictation' : 'Start dictation'}
+    </button>
+  );
+}
+```
+
+No speech-to-text SDK is bundled (same zero-runtime-dependency reasoning as PDF export above) — this is built entirely on the browser's own `SpeechRecognition`/`webkitSpeechRecognition`, so `isSupported` is `false` wherever that API doesn't exist. A command is only recognized when an entire *finalized* spoken utterance (a natural pause before/after, as reported by the Speech API itself) matches a known phrase exactly — see `src/voice/voiceCommands.js` for the full table — so a command word merely mentioned mid-sentence while dictating prose is never misread as a command.
+
 ## Mobile / touch support
 
 Typing "/"/"@" still works on a phone keyboard, but it's not a reliable or discoverable primary path there (autocorrect, awkward key access, nothing to discover it by) — so on a coarse (touch) pointer, mount `MobileActionBar` alongside your other trigger hooks and it takes over as the touch-first equivalent, pinned above the on-screen keyboard:
@@ -322,4 +371,6 @@ npm run build   # library build (dist/, ESM + CJS)
 - The library doesn't render your editor's own root/surface element (that's host-rendered — see `examples/basic/src/App.jsx`'s `EditorSurface`), so it can't add `role="document"`/`aria-label` there itself; the example app demonstrates doing this on your own surface element, which is worth copying into your own app.
 - Cross-block mark toggling (bold/italic/underline over a selection spanning multiple blocks) applies as one store operation per block, not a single atomic undo step.
 - `select`'s option-adding UI and any `createSelectFieldType`-based type's options (e.g. an "Assignee" @-mention) are meant as a starting point — a real app will want to wire its own people/options source.
-- Automated tests run under jsdom; there is no automated real-browser test suite. If you hit an edge case jsdom can't reproduce (anything involving actual native `contentEditable` browser quirks), please file an issue with the exact browser/OS and steps.
+- RTL support covers direction resolution (`dir="auto"` + per-block/document override) and the highest-impact visual pieces (list markers, blockquote border, block gutter position) — a full logical-properties rewrite of every hardcoded pixel value in `style.css` is a bigger follow-up, not yet done.
+- Voice typing (`useVoiceTyping`) only acts on *finalized* speech results, not interim/in-progress ones, and command detection requires a spoken command to be its own complete utterance — there's no explicit "command mode" trigger (push-to-command, wake phrase) yet, just pause-based auto-detection.
+- Automated tests run under jsdom; there is no automated real-browser test suite. If you hit an edge case jsdom can't reproduce (anything involving actual native `contentEditable` browser quirks, or the real Web Speech API), please file an issue with the exact browser/OS and steps.

@@ -155,6 +155,13 @@
   outline: none;
 }
 
+.be-blockquote[dir='rtl'] {
+  padding-left: 0;
+  padding-right: 0.9em;
+  border-left: none;
+  border-right: 3px solid var(--noteloom-border);
+}
+
 /* --- callout --- */
 
 .be-callout {
@@ -1104,6 +1111,15 @@ tr.be-table-row:hover .be-table-delete-row {
   user-select: none; /* it's a drag handle (see useBlockRangeDrag) — never let its own space become selectable text */
 }
 
+/* `left`/`right` are physical, not logical, properties — unlike the list
+   marker's flexbox position (which flips for free via dir inheritance),
+   this absolute offset needs an explicit RTL override to sit on the
+   correct side of the block. */
+[dir='rtl'] .be-block-gutter {
+  left: auto;
+  right: -56px;
+}
+
 .be-block-row:hover .be-block-gutter,
 .be-block-gutter-active {
   opacity: 1;
@@ -2040,4 +2056,150 @@ tr.be-table-row:hover .be-table-delete-row {
 .be-link-hover-card-btn:hover {
   background: var(--noteloom-bg-hover);
   color: var(--noteloom-text);
+}
+
+/* --- voice typing: caret-anchored listening/processing indicator --- */
+
+.be-voice-indicator {
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  padding: 4px 9px;
+  box-shadow: var(--noteloom-shadow);
+  font-size: 0.78rem;
+  color: var(--noteloom-text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: be-voice-indicator-in 0.12s ease-out;
+}
+
+@keyframes be-voice-indicator-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+}
+
+.be-voice-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--noteloom-danger, #dc2626);
+  flex: none;
+  animation: be-voice-indicator-pulse 1.4s ease-in-out infinite;
+}
+
+.be-voice-indicator-processing .be-voice-indicator-dot {
+  background: var(--noteloom-accent);
+  animation-duration: 0.6s;
+}
+
+@keyframes be-voice-indicator-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 0 4px transparent;
+  }
+}
+
+/* --- print --- */
+/*
+ * Printing (or "Save as PDF" via the browser's own print dialog — this
+ * package deliberately doesn't bundle a PDF-generation library, which
+ * would conflict with staying zero-runtime-dependency) always renders a
+ * clean, chrome-free document: every piece of editing-only UI is hidden
+ * here, regardless of whether the app happens to be in preview mode at
+ * the moment of printing. `.be-block-row-hidden` is included on purpose —
+ * a block hidden via "Hide in preview" stays in the DOM (just dimmed) in
+ * edit mode, so without this rule printing while NOT toggled into preview
+ * mode would print blocks the user explicitly marked as hidden. A host
+ * app's own outer chrome (nav bars, its own toolbar) needs its own print
+ * rules the same way — see examples/basic's own style.css for a worked
+ * example, since that chrome lives outside this package entirely.
+ */
+@media print {
+  .be-block-gutter,
+  .be-block-gutter-menu,
+  .be-block-gutter-menu-item,
+  .be-block-range-menu,
+  .be-block-range-menu-item,
+  .be-block-row-hidden,
+  .be-slash-menu,
+  #be-emoji-menu,
+  #be-at-menu,
+  .be-floating-toolbar,
+  .be-link-hover-card,
+  .be-voice-indicator,
+  .be-table-header-menu-trigger,
+  .be-table-header-menu,
+  .be-table-col-resize-handle,
+  .be-table-delete-row,
+  .be-table-add-row,
+  .be-embed-toolbar,
+  .be-embed-remove,
+  .be-embed-resize-handle,
+  .be-embed-dropzone,
+  .be-embed-upload-btn,
+  .be-embed-url-row,
+  .be-callout-color-wrap,
+  .be-modal-overlay,
+  .be-mobile-action-bar,
+  .be-mobile-picker-list,
+  .be-export-trigger,
+  .be-export-tabs,
+  .be-trailing-space,
+  .be-select-popover {
+    display: none !important;
+  }
+
+  /* .be-block-row-range-selected and .be-block-selected mark real content
+     (the row/block itself, not a standalone chrome element) with a
+     highlight background/outline — reset just that styling rather than
+     hiding the element the way the chrome above is hidden, or printing
+     mid-drag-selection would print blank space instead of the block's own
+     content. */
+  .be-block-row-range-selected {
+    background: none !important;
+  }
+
+  .be-block-selected {
+    outline: none !important;
+  }
+
+  /* No background colors/shadows on paper, and text that's always legible
+     regardless of the screen theme the page happened to be rendered in
+     (dark mode's near-white text would otherwise print as barely-there). */
+  .be-editable,
+  .be-paragraph,
+  .be-heading,
+  .be-list-item,
+  .be-blockquote,
+  .be-code-block,
+  .be-callout,
+  .be-table-cell {
+    background: none !important;
+    box-shadow: none !important;
+    color: #000 !important;
+  }
+
+  /* Don't split a table/code block/callout/image awkwardly across a page
+     boundary when it would otherwise fit on one page. */
+  .be-table,
+  .be-code-block,
+  .be-callout,
+  .be-embed-image {
+    break-inside: avoid;
+  }
 }
