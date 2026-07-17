@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ChevronDownIcon } from './icons.jsx';
 import { useOutsideClickAndEscape } from './useOutsideClickAndEscape.js';
 import { useVirtualKeyboardInset } from './useVirtualKeyboardInset.js';
+import { useHorizontalAutoAdjustedLeft } from './usePopoverEdgeClamp.js';
 
 // Rough worst-case popover height (max-height in .be-select-options's own
 // CSS is 220px, plus the search input and padding) — only used to decide
@@ -146,6 +147,7 @@ export function Select({
   const close = useCallback(() => setIsOpen(false), []);
 
   useOutsideClickAndEscape(outsideRefs, isOpen, close);
+  const adjustedLeft = useHorizontalAutoAdjustedLeft(popoverRef, isOpen, rect?.left);
 
   const open = useCallback(() => {
     setRect(buttonRef.current?.getBoundingClientRect() ?? null);
@@ -226,13 +228,14 @@ export function Select({
       </button>
       {isOpen &&
         rect &&
+        adjustedLeft != null &&
         createPortal(
           <div
             ref={popoverRef}
             className="be-select-popover"
             style={{
               position: 'fixed',
-              left: rect.left,
+              left: adjustedLeft,
               minWidth: rect.width,
               // Flips above the trigger instead of below it once there isn't
               // enough room left before the keyboard (or screen bottom) —

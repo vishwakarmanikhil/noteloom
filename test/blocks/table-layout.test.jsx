@@ -376,6 +376,46 @@ describe('table header menu: portaled to document.body (regression: was clipped 
   });
 });
 
+describe('table header menu: stays inside the viewport (autoAdjustOverflow)', () => {
+  const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+  const originalInnerWidth = window.innerWidth;
+
+  it('a wide menu anchored (right-edge-aligned, translateX(-100%)) near the left edge of a narrow viewport does not render off-screen to the left', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 300, configurable: true });
+    // The header cell's own right edge sits at x=100 — a naive
+    // translateX(-100%) menu wider than 100px would render with a negative
+    // left edge (off-screen) without the clamp.
+    HTMLElement.prototype.getBoundingClientRect = function () {
+      if (this.classList?.contains('be-table-header-cell')) {
+        return { left: 0, right: 100, top: 0, bottom: 20, width: 100, height: 20 };
+      }
+      if (this.classList?.contains('be-table-header-menu')) {
+        return { left: -80, right: 100, top: 20, bottom: 200, width: 180, height: 180 };
+      }
+      return { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 };
+    };
+
+    try {
+      const store = new EditorStore(emptyDoc());
+      insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+      const registry = createBlockRegistry();
+      registerBuiltInBlocks(registry);
+      const { container } = renderDoc(store, registry);
+
+      fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+      const menu = document.querySelector('.be-table-header-menu');
+      // The rendered `left` pairs with `transform: translateX(-100%)`, so the
+      // box's actual left edge is `left - width` — clamp math must keep
+      // THAT edge on-screen, not just the raw `left` coordinate itself.
+      const left = parseFloat(menu.style.left);
+      expect(left - 180).toBeGreaterThanOrEqual(0);
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+      Object.defineProperty(window, 'innerWidth', { value: originalInnerWidth, configurable: true });
+    }
+  });
+});
+
 describe('table select column: shared options, managed from the column header (not per cell)', () => {
   it('every cell in the column shares the same dropdown choices, and adding one option updates all cells at once', () => {
     const store = new EditorStore(emptyDoc());

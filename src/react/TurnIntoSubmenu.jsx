@@ -32,6 +32,12 @@ import { ChevronRightIcon } from './icons.jsx';
  * component and its submenu *before* the follow-up `click` event that would
  * have actually fired `onSelect` ever reaches the browser, so selecting a
  * target silently did nothing.
+ *
+ * ArrowRight on the trigger opens the submenu (focusing its first item, via
+ * useMenuKeyboardNav's own on-open behavior); ArrowLeft anywhere inside the
+ * submenu closes it and returns focus to the trigger (via that same hook's
+ * on-close behavior) — the standard nested-menu convention (Notion, most
+ * native OS menus) alongside Escape/outside-click, which already worked.
  */
 export function TurnIntoSubmenu({ onSelect, onClose, containerRef, menuClassName = 'be-block-gutter-menu', itemClassName = 'be-block-gutter-menu-item' }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -70,6 +76,26 @@ export function TurnIntoSubmenu({ onSelect, onClose, containerRef, menuClassName
     [onSelect, close],
   );
 
+  const handleTriggerKeyDown = useCallback(
+    (event) => {
+      if (event.key === 'ArrowRight' && !isOpen) {
+        event.preventDefault();
+        open();
+      }
+    },
+    [isOpen, open],
+  );
+
+  const handleSubmenuKeyDown = useCallback(
+    (event) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        close();
+      }
+    },
+    [close],
+  );
+
   return (
     <>
       <button
@@ -80,6 +106,7 @@ export function TurnIntoSubmenu({ onSelect, onClose, containerRef, menuClassName
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={() => (isOpen ? close() : open())}
+        onKeyDown={handleTriggerKeyDown}
       >
         <ChevronRightIcon size={15} /> Turn into
       </button>
@@ -92,6 +119,7 @@ export function TurnIntoSubmenu({ onSelect, onClose, containerRef, menuClassName
             aria-label="Turn into"
             className={menuClassName}
             style={{ position: 'fixed', top: position.top, left: position.left }}
+            onKeyDown={handleSubmenuKeyDown}
           >
             {TEXT_FAMILY_TARGETS.map((target, i) => {
               const Icon = target.icon;

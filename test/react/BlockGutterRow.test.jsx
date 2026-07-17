@@ -314,6 +314,31 @@ describe('BlockGutterRow: Turn into', () => {
     expect(store.getRun(store.getBlock(newBlockId).contentIds[0]).value).toBe('two');
     expect(document.getElementById('be-live-region')).not.toBeNull();
   });
+
+  it('ArrowRight on the focused "Turn into" item opens the submenu and focuses its first option; ArrowLeft closes it and returns focus to the trigger', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderDoc(store);
+
+    const row = container.querySelector('[data-block-row-id="p2"]');
+    fireEvent.click(row.querySelector('[aria-label="More options"]'));
+    const turnIntoTrigger = [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+      (el) => el.textContent.trim() === 'Turn into',
+    );
+    turnIntoTrigger.focus();
+    expect(document.querySelector('.be-block-gutter-menu[aria-label="Turn into"]')).toBeNull();
+
+    fireEvent.keyDown(turnIntoTrigger, { key: 'ArrowRight' });
+    const submenu = document.querySelector('.be-block-gutter-menu[aria-label="Turn into"]');
+    expect(submenu).not.toBeNull();
+    const firstOption = submenu.querySelector('.be-block-gutter-menu-item');
+    expect(document.activeElement).toBe(firstOption);
+
+    fireEvent.keyDown(submenu, { key: 'ArrowLeft' });
+    expect(document.querySelector('.be-block-gutter-menu[aria-label="Turn into"]')).toBeNull();
+    expect(document.activeElement).toBe(turnIntoTrigger);
+    // the outer menu itself stays open — only the submenu closed
+    expect(document.querySelector('.be-block-gutter-menu[aria-label="Block options"]')).not.toBeNull();
+  });
 });
 
 function PreviewToggleHarness({ parentId }) {

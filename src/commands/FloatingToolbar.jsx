@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTextFormattingActions } from './useTextFormattingActions.js';
 import { useCoarsePointer } from '../react/useCoarsePointer.js';
 import { LinkEditModal } from '../react/LinkEditModal.jsx';
+import { useAutoAdjustedCenteredLeft } from '../react/usePopoverEdgeClamp.js';
 import { BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, LinkIcon } from '../react/icons.jsx';
 
 const BOOLEAN_BUTTONS = [
@@ -87,18 +88,24 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
     setOpenPicker(null);
   }, [rect, kind]);
 
+  const centerLeft = useAutoAdjustedCenteredLeft(
+    rootRef,
+    Boolean(isOpen && rect),
+    rect ? rect.left + rect.width / 2 : null,
+  );
+
   if (isCoarsePointer) return null;
   if ((!isOpen || !rect) && !isLinkModalOpen) return null;
 
   return (
     <>
-    {isOpen && rect && (
+    {isOpen && rect && centerLeft != null && (
     <div
       ref={rootRef}
       className="be-floating-toolbar"
       role="toolbar"
       aria-label="Text formatting"
-      style={{ position: 'fixed', top: rect.top - 44, left: rect.left + rect.width / 2, transform: 'translateX(-50%)' }}
+      style={{ position: 'fixed', top: rect.top - 44, left: centerLeft, transform: 'translateX(-50%)' }}
       onMouseDown={(event) => event.preventDefault()}
     >
       {BOOLEAN_BUTTONS.map(({ markName, Icon, title }) => (

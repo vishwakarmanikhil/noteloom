@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useCaretRect } from './useCaretRect.js';
+import { useAutoAdjustedCenteredLeft } from './usePopoverEdgeClamp.js';
 import { MicIcon } from './icons.jsx';
 
 /**
@@ -20,16 +22,24 @@ import { MicIcon } from './icons.jsx';
 export function VoiceListeningIndicator({ voice }) {
   const isActive = Boolean(voice?.isListening);
   const rect = useCaretRect(isActive);
+  const badgeRef = useRef(null);
+  // Only the horizontal axis is clamped — the badge sits right above the
+  // caret (`translateY(-100%)`), which stays within the viewport in
+  // practice since the caret itself must be visible to type into; the
+  // centered horizontal offset is the one that can push it off-screen near
+  // the left/right edge of a narrow viewport.
+  const centerLeft = useAutoAdjustedCenteredLeft(badgeRef, Boolean(isActive && rect), rect?.left);
 
-  if (!isActive || !rect) return null;
+  if (!isActive || !rect || centerLeft == null) return null;
 
   const isProcessing = voice.status === 'processing';
 
   return createPortal(
     <div
+      ref={badgeRef}
       className={`be-voice-indicator${isProcessing ? ' be-voice-indicator-processing' : ''}`}
       contentEditable={false}
-      style={{ position: 'fixed', top: rect.top - 8, left: rect.left, transform: 'translate(-50%, -100%)' }}
+      style={{ position: 'fixed', top: rect.top - 8, left: centerLeft, transform: 'translate(-50%, -100%)' }}
     >
       <span className="be-voice-indicator-dot" />
       <MicIcon size={12} />

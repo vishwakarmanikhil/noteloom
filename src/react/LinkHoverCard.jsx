@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { updateRun } from '../store/operations.js';
 import { LinkEditModal } from './LinkEditModal.jsx';
+import { useAutoAdjustedPosition } from './useAutoAdjustedPosition.js';
 import { PencilIcon, XIcon } from './icons.jsx';
 
 /**
@@ -103,16 +104,23 @@ export function LinkHoverCard({ containerRef, store }) {
 
   const run = hovered && store.getRun(hovered.runId);
   const link = run?.marks?.link;
+  const isCardOpen = Boolean(hovered && link && !isModalOpen);
+  const position = useAutoAdjustedPosition(
+    cardRef,
+    isCardOpen,
+    hovered ? hovered.rect.bottom + 6 : null,
+    hovered ? hovered.rect.left : null,
+  );
 
   return (
     <>
-      {hovered && link && !isModalOpen
+      {isCardOpen && position
         ? createPortal(
             <div
               ref={cardRef}
               className="be-link-hover-card"
               contentEditable={false}
-              style={{ position: 'fixed', top: hovered.rect.bottom + 6, left: hovered.rect.left }}
+              style={{ position: 'fixed', top: position.top, left: position.left }}
               onMouseEnter={clearHideTimer}
               onMouseLeave={scheduleHide}
             >

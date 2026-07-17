@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useEditorStore, useInlineRegistry } from '../../react/EditorProvider.jsx';
 import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.js';
 import { useMenuKeyboardNav } from '../../react/useMenuKeyboardNav.js';
+import { useAutoAdjustedRightLeft } from '../../react/usePopoverEdgeClamp.js';
 import { insertColumnAfter, deleteColumn, renameColumn, setColumnType, setColumnOptions, setColumnWidth } from './tableEditCommands.js';
 import { COLUMN_TYPES, MIN_COLUMN_WIDTH } from './tableColumns.js';
 import { genId } from '../../utils/idGen.js';
@@ -131,6 +132,7 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
   const closeMenu = useCallback(() => setIsMenuOpen(false), []);
   useOutsideClickAndEscape(outsideRefs, isMenuOpen, closeMenu);
   useMenuKeyboardNav(menuRef, isMenuOpen, closeMenu, triggerRef);
+  const rightLeft = useAutoAdjustedRightLeft(menuRef, isMenuOpen, rect?.right);
 
   const openMenu = useCallback(() => {
     // Anchor to the whole header cell, not the small vertically-centered
@@ -224,13 +226,14 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
       />
       {isMenuOpen &&
         rect &&
+        rightLeft != null &&
         createPortal(
           <div
             ref={menuRef}
             role="menu"
             aria-label={`Column ${colIndex + 1} options`}
             className="be-table-header-menu"
-            style={{ position: 'fixed', top: rect.bottom + 4, left: rect.right, transform: 'translateX(-100%)' }}
+            style={{ position: 'fixed', top: rect.bottom + 4, left: rightLeft, transform: 'translateX(-100%)' }}
           >
             <div className="be-table-header-menu-type">
               <span id={`be-table-col-type-${column.id}`}>Type</span>

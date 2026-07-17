@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useVirtualKeyboardInset } from '../react/useVirtualKeyboardInset.js';
+import { useHorizontalAutoAdjustedLeft } from '../react/usePopoverEdgeClamp.js';
 
 // Rough worst-case menu height (max-height in .be-slash-menu's own CSS is
 // 320px, plus a little padding) — used only to decide *which side* of the
@@ -56,7 +57,9 @@ export function SlashMenu({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeItemRef = useRef(null);
+  const menuRef = useRef(null);
   const keyboardInset = useVirtualKeyboardInset();
+  const adjustedLeft = useHorizontalAutoAdjustedLeft(menuRef, isOpen && commands.length > 0 && Boolean(rect), rect?.left);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -102,7 +105,7 @@ export function SlashMenu({
   const activeOptionId = activeCommand ? `${menuId}-option-${activeIndex}` : null;
   useActiveDescendantWiring(isOpen, runId, activeOptionId, menuId);
 
-  if (!isOpen || commands.length === 0 || !rect) return null;
+  if (!isOpen || commands.length === 0 || !rect || adjustedLeft == null) return null;
 
   // Flip to open above the caret instead of below it once there isn't
   // enough room left under it before the keyboard (or the bottom of the
@@ -116,11 +119,12 @@ export function SlashMenu({
 
   return (
     <div
+      ref={menuRef}
       id={menuId}
       role="listbox"
       aria-label={ariaLabel}
       className="be-slash-menu"
-      style={{ position: 'fixed', left: rect.left, zIndex: 1000, ...positionStyle }}
+      style={{ position: 'fixed', left: adjustedLeft, zIndex: 1000, ...positionStyle }}
     >
       {commands.map((command, i) => {
         const Icon = command.icon;

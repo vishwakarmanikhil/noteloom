@@ -313,3 +313,35 @@ describe('Select: onManageOptions footer', () => {
     expect(document.querySelector('.be-select-manage-options')).toBeNull();
   });
 });
+
+describe('Select: popover stays inside the viewport (autoAdjustOverflow)', () => {
+  const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+  const originalInnerWidth = window.innerWidth;
+
+  beforeEach(() => {
+    Object.defineProperty(window, 'innerWidth', { value: 400, configurable: true });
+    HTMLElement.prototype.getBoundingClientRect = function () {
+      if (this.classList?.contains('be-select-trigger')) {
+        return { left: 380, right: 400, top: 0, bottom: 20, width: 20, height: 20 };
+      }
+      if (this.classList?.contains('be-select-popover')) {
+        return { left: 380, right: 580, top: 20, bottom: 200, width: 200, height: 180 };
+      }
+      return { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 };
+    };
+  });
+  afterEach(() => {
+    HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    Object.defineProperty(window, 'innerWidth', { value: originalInnerWidth, configurable: true });
+  });
+
+  it('shifts the popover left so a 200px-wide popover anchored near the right edge stays fully on-screen', () => {
+    const { container } = render(<Select value="" options={OPTIONS} onChange={() => {}} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+
+    const popover = document.querySelector('.be-select-popover');
+    const left = parseFloat(popover.style.left);
+    expect(left).toBeLessThanOrEqual(400 - 200); // fits within the 400px-wide viewport
+    expect(left).toBeGreaterThanOrEqual(0);
+  });
+});
