@@ -66,7 +66,7 @@ describe('BlockGutterRow: "+" button inserts a new paragraph right after the blo
 });
 
 describe('BlockGutterRow: more-options menu', () => {
-  it('opens a portaled menu with Duplicate/Move up/Move down/Hide/Delete', () => {
+  it('opens a portaled menu with Duplicate/Move up/Move down/Hide/Switch direction/Turn into/Delete', () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderDoc(store);
 
@@ -82,6 +82,7 @@ describe('BlockGutterRow: more-options menu', () => {
       'Move down',
       'Hide in preview',
       'Switch to right-to-left',
+      'Turn into',
       'Delete',
     ]);
   });
@@ -245,6 +246,73 @@ describe('BlockGutterRow: Hide/Show toggle + preview mode', () => {
     fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Hide in preview'));
 
     expect(store.getBlock('p1').props.hidden).toBe(true);
+  });
+});
+
+describe('BlockGutterRow: Turn into', () => {
+  function makeDocWithDivider() {
+    return {
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'divider1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+        { id: 'divider1', type: 'divider', parentId: 'root', contentIds: [], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'hello', marks: {} }],
+    };
+  }
+
+  it('only appears for text-family blocks, not structural ones (e.g. divider)', () => {
+    const store = new EditorStore(makeDocWithDivider());
+    const { container } = renderDoc(store);
+
+    const paragraphRow = container.querySelector('[data-block-row-id="p1"]');
+    fireEvent.click(paragraphRow.querySelector('[aria-label="More options"]'));
+    let items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    expect(items).toContain('Turn into');
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    const dividerRow = container.querySelector('[data-block-row-id="divider1"]');
+    fireEvent.click(dividerRow.querySelector('[aria-label="More options"]'));
+    items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    expect(items).not.toContain('Turn into');
+  });
+
+  it('opens a nested submenu listing every text-family target; selecting one converts the block and announces', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderDoc(store);
+
+    const row = container.querySelector('[data-block-row-id="p2"]');
+    fireEvent.click(row.querySelector('[aria-label="More options"]'));
+    const turnIntoTrigger = [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+      (el) => el.textContent.trim() === 'Turn into',
+    );
+    fireEvent.click(turnIntoTrigger);
+
+    const menus = document.querySelectorAll('.be-block-gutter-menu');
+    expect(menus.length).toBe(2); // the outer menu + the turn-into submenu
+    const submenu = menus[1];
+    const submenuItems = [...submenu.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    expect(submenuItems.some((t) => t.endsWith('Heading 1'))).toBe(true);
+    expect(submenuItems.some((t) => t.endsWith('Bulleted list'))).toBe(true);
+    expect(submenuItems.some((t) => t.endsWith('Code'))).toBe(true);
+
+    const headingOption = [...submenu.querySelectorAll('.be-block-gutter-menu-item')].find((el) =>
+      el.textContent.trim().endsWith('Heading 2'),
+    );
+    // A real click always starts with mousedown — fireEvent.click alone
+    // skips it, which would have hidden the exact bug this guards against:
+    // the OUTER menu's own outside-click handler treating a mousedown
+    // inside this submenu portal as "outside", closing (unmounting)
+    // everything before the click itself ever landed.
+    fireEvent.mouseDown(headingOption);
+    fireEvent.click(headingOption);
+
+    const newBlockId = store.getBlock('root').contentIds[1];
+    expect(store.getBlock(newBlockId).type).toBe('heading');
+    expect(store.getBlock(newBlockId).props.level).toBe(2);
+    expect(store.getRun(store.getBlock(newBlockId).contentIds[0]).value).toBe('two');
+    expect(document.getElementById('be-live-region')).not.toBeNull();
   });
 });
 

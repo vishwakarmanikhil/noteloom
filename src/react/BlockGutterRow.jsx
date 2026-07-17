@@ -1,15 +1,18 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useEditorStore, useBlockRangeSelection } from './EditorProvider.jsx';
+import { useEditorStore, useBlockRegistry, useBlockRangeSelection } from './EditorProvider.jsx';
 import { useBlock } from './useBlock.js';
 import { useOutsideClickAndEscape } from './useOutsideClickAndEscape.js';
 import { useMenuKeyboardNav } from './useMenuKeyboardNav.js';
+import { useAutoAdjustedPosition } from './useAutoAdjustedPosition.js';
 import { announce } from './liveAnnouncer.js';
 import { BlockRenderer } from './BlockRenderer.jsx';
+import { TurnIntoSubmenu } from './TurnIntoSubmenu.jsx';
 import { insertSiblingAfterAndFocus } from '../blocks/shared/blockCommands.js';
 import { createTextLeafBlock } from '../blocks/shared/leafBlockFactory.js';
 import { duplicateBlock, moveBlockUp, moveBlockDown, deleteBlockAndFocusSibling } from '../blocks/shared/blockActions.js';
 import { resolveBlockDir } from '../blocks/shared/resolveBlockDir.js';
+import { isTurnIntoEligible, turnBlockInto } from '../blocks/shared/turnInto.js';
 import { updateBlockProps } from '../store/operations.js';
 import {
   PlusIcon,
@@ -56,14 +59,26 @@ import {
  * blank page margin on either side of the content column too, not just
  * this row's own narrow gutter.
  */
+function applyOps(store, ops) {
+  if (typeof store.performBatch === 'function') store.performBatch(ops);
+  else for (const op of ops) store.applyOperation(op);
+}
+
 export function BlockGutterRow({ id }) {
   const store = useEditorStore();
+  const registry = useBlockRegistry();
   const block = useBlock(id);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [rect, setRect] = useState(null);
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
-  const outsideRefs = useMemo(() => [triggerRef, menuRef], []);
+  const turnIntoMenuRef = useRef(null);
+  // The Turn into item's own submenu is a SEPARATE portal (a DOM sibling of
+  // this menu, not a descendant, even though it's a React child of it) — it
+  // must be included here or a click inside it reads as "outside this menu"
+  // and closes (unmounts) everything before the submenu's own click handler
+  // ever fires. See TurnIntoSubmenu's own doc comment for the full story.
+  const outsideRefs = useMemo(() => [triggerRef, menuRef, turnIntoMenuRef], []);
   const [selectedBlockRange] = useBlockRangeSelection();
   const isRangeSelected = selectedBlockRange.includes(id);
 
@@ -75,6 +90,8 @@ export function BlockGutterRow({ id }) {
     setRect(triggerRef.current?.getBoundingClientRect() ?? null);
     setIsMenuOpen(true);
   }, []);
+
+  const position = useAutoAdjustedPosition(menuRef, isMenuOpen, rect?.bottom != null ? rect.bottom + 4 : null, rect?.left);
 
   const handleAdd = useCallback(() => {
     insertSiblingAfterAndFocus(store, id, createTextLeafBlock('paragraph'));
@@ -121,6 +138,16 @@ export function BlockGutterRow({ id }) {
     closeMenu();
   }, [store, id, isRtl, closeMenu]);
 
+  const handleTurnInto = useCallback(
+    (target) => {
+      const { ops } = turnBlockInto(store, registry, id, target);
+      applyOps(store, ops);
+      announce(`Turned into ${target.label}`);
+      closeMenu();
+    },
+    [store, registry, id, closeMenu],
+  );
+
   if (!block) return null;
 
   return (
@@ -149,14 +176,14 @@ export function BlockGutterRow({ id }) {
         <BlockRenderer id={id} />
       </div>
       {isMenuOpen &&
-        rect &&
+        position &&
         createPortal(
           <div
             ref={menuRef}
             role="menu"
             aria-label="Block options"
             className="be-block-gutter-menu"
-            style={{ position: 'fixed', top: rect.bottom + 4, left: rect.left }}
+            style={{ position: 'fixed', top: position.top, left: position.left }}
           >
             <button type="button" role="menuitem" className="be-block-gutter-menu-item" onClick={handleDuplicate}>
               <CopyIcon size={15} /> Duplicate
@@ -175,6 +202,9 @@ export function BlockGutterRow({ id }) {
               {isRtl ? <AlignLeftIcon size={15} /> : <AlignRightIcon size={15} />}
               {isRtl ? 'Switch to left-to-right' : 'Switch to right-to-left'}
             </button>
+            {isTurnIntoEligible(block.type) && (
+              <TurnIntoSubmenu onSelect={handleTurnInto} onClose={() => {}} containerRef={turnIntoMenuRef} />
+            )}
             <button
               type="button"
               role="menuitem"

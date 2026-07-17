@@ -1,4 +1,5 @@
 import { removeBlock, moveBlock, updateBlockProps } from '../../store/operations.js';
+import { isTurnIntoEligible, turnBlockInto } from './turnInto.js';
 
 function applyOps(store, ops) {
   if (typeof store.performBatch === 'function') store.performBatch(ops);
@@ -66,6 +67,28 @@ export function isEntireBlockRangeHidden(store, blockIds) {
 export function setBlockRangeHidden(store, blockIds, hidden) {
   if (blockIds.length === 0) return;
   applyOps(store, blockIds.map((id) => updateBlockProps(id, { hidden })));
+}
+
+/**
+ * Converts every *eligible* (see `isTurnIntoEligible`) block in the range to
+ * `target` ({ type, props }), as ONE atomic undo step for the whole range —
+ * ineligible blocks (table, embed, divider, ...) are silently left
+ * untouched rather than erroring, matching the same "skip, don't fail"
+ * behavior every reference editor's own multi-select conversion has.
+ *
+ * Every block's own `ops` are computed by `turnBlockInto` up front, against
+ * the store's state as it stood *before* any of this range's conversions
+ * were applied — each conversion replaces one block with one new block at
+ * the exact same slot, which never shifts any sibling's index, so it's
+ * safe to compute every block's ops first (in document order) and apply
+ * the full concatenated batch only once at the end, rather than
+ * interleaving compute-then-apply per block.
+ */
+export function convertBlockRangeType(store, registry, blockIds, target) {
+  const eligibleIds = blockIds.filter((id) => isTurnIntoEligible(store.getBlock(id)?.type));
+  if (eligibleIds.length === 0) return;
+  const allOps = eligibleIds.flatMap((id) => turnBlockInto(store, registry, id, target).ops);
+  applyOps(store, allOps);
 }
 
 /**

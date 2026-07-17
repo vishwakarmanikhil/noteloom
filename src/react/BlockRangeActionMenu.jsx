@@ -3,13 +3,17 @@ import { createPortal } from 'react-dom';
 import { useEditorStore, useBlockRegistry, useInlineRegistry, useBlockRangeSelection } from './EditorProvider.jsx';
 import { copyBlockRangeToClipboard } from '../clipboard/copyBlockRange.js';
 import { useMenuKeyboardNav } from './useMenuKeyboardNav.js';
+import { useAutoAdjustedPosition } from './useAutoAdjustedPosition.js';
 import { announce } from './liveAnnouncer.js';
+import { TurnIntoSubmenu } from './TurnIntoSubmenu.jsx';
+import { isTurnIntoEligible } from '../blocks/shared/turnInto.js';
 import {
   deleteBlockRange,
   moveBlockRangeUp,
   moveBlockRangeDown,
   isEntireBlockRangeHidden,
   setBlockRangeHidden,
+  convertBlockRangeType,
 } from '../blocks/shared/blockRangeActions.js';
 import { CopyIcon, ScissorsIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, EyeIcon, EyeOffIcon } from './icons.jsx';
 
@@ -41,8 +45,10 @@ export function BlockRangeActionMenu() {
   const [selectedBlockRange, setSelectedBlockRange] = useBlockRangeSelection();
   const [rect, setRect] = useState(null);
   const menuRef = useRef(null);
+  const turnIntoMenuRef = useRef(null);
 
   const isOpen = selectedBlockRange.length > 0;
+  const position = useAutoAdjustedPosition(menuRef, isOpen, rect?.bottom != null ? rect.bottom + 4 : null, rect?.left);
   const clear = useCallback(() => setSelectedBlockRange([]), [setSelectedBlockRange]);
   // No single "trigger button" here (the menu appears after a drag gesture,
   // not a click) — passed as undefined, which the hook handles fine; this
@@ -81,6 +87,12 @@ export function BlockRangeActionMenu() {
 
     const handlePointerDown = (event) => {
       if (menuRef.current?.contains(event.target)) return;
+      // The Turn into item's own submenu is a separate portal (a DOM sibling
+      // of this menu, not a descendant) — without this, a click inside it
+      // reads as "outside", clearing the selection and unmounting the
+      // submenu before its own click handler ever fires. See
+      // TurnIntoSubmenu's doc comment for the full story.
+      if (turnIntoMenuRef.current?.contains(event.target)) return;
       if (event.target.closest?.('.be-block-gutter')) return; // let that gutter's own drag-start take over
       clear();
     };
@@ -156,7 +168,18 @@ export function BlockRangeActionMenu() {
     clear();
   }, [store, selectedBlockRange, isHidden, clear]);
 
-  if (!isOpen || !rect) return null;
+  const hasEligibleBlock = selectedBlockRange.some((id) => isTurnIntoEligible(store.getBlock(id)?.type));
+  const handleTurnInto = useCallback(
+    (target) => {
+      const count = selectedBlockRange.length;
+      convertBlockRangeType(store, registry, selectedBlockRange, target);
+      announce(`${count} ${blockWord(count)} turned into ${target.label}`);
+      clear();
+    },
+    [store, registry, selectedBlockRange, clear],
+  );
+
+  if (!isOpen || !position) return null;
 
   return createPortal(
     <div
@@ -164,7 +187,7 @@ export function BlockRangeActionMenu() {
       role="menu"
       aria-label="Selected blocks options"
       className="be-block-range-menu"
-      style={{ position: 'fixed', top: rect.bottom + 4, left: rect.left }}
+      style={{ position: 'fixed', top: position.top, left: position.left }}
     >
       <button type="button" role="menuitem" className="be-block-range-menu-item" onClick={handleCopy}>
         <CopyIcon size={15} /> Copy
@@ -182,6 +205,15 @@ export function BlockRangeActionMenu() {
         {isHidden ? <EyeIcon size={15} /> : <EyeOffIcon size={15} />}
         {isHidden ? 'Show in preview' : 'Hide in preview'}
       </button>
+      {hasEligibleBlock && (
+        <TurnIntoSubmenu
+          onSelect={handleTurnInto}
+          onClose={() => {}}
+          containerRef={turnIntoMenuRef}
+          menuClassName="be-block-range-menu"
+          itemClassName="be-block-range-menu-item"
+        />
+      )}
       <button type="button" role="menuitem" className="be-block-range-menu-item be-block-range-menu-item-danger" onClick={handleDelete}>
         <TrashIcon size={15} /> Delete
       </button>

@@ -64,14 +64,70 @@ describe('BlockRangeActionMenu: visibility', () => {
     expect(document.querySelector('.be-block-range-menu')).toBeNull();
   });
 
-  it('opens with all five actions once a range is selected', () => {
+  it('opens with all actions once a range is selected', () => {
     const store = new EditorStore(makeDoc());
     renderHarness(store, ['p2', 'p3']);
 
     const menu = document.querySelector('.be-block-range-menu');
     expect(menu).not.toBeNull();
     const labels = [...menu.querySelectorAll('.be-block-range-menu-item')].map((el) => el.textContent.trim());
-    expect(labels).toEqual(['Copy', 'Cut', 'Move up', 'Move down', 'Hide in preview', 'Delete']);
+    expect(labels).toEqual(['Copy', 'Cut', 'Move up', 'Move down', 'Hide in preview', 'Turn into', 'Delete']);
+  });
+});
+
+describe('BlockRangeActionMenu: Turn into', () => {
+  function makeDocWithDivider() {
+    return {
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'p2', 'divider1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+        { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: ['r2'], props: {} },
+        { id: 'divider1', type: 'divider', parentId: 'root', contentIds: [], props: {} },
+      ],
+      runs: [
+        { id: 'r1', type: 'text', value: 'one', marks: {} },
+        { id: 'r2', type: 'text', value: 'two', marks: {} },
+      ],
+    };
+  }
+
+  it('is hidden when no block in the range is eligible', () => {
+    const store = new EditorStore(makeDocWithDivider());
+    renderHarness(store, ['divider1']);
+
+    const labels = [...document.querySelectorAll('.be-block-range-menu-item')].map((el) => el.textContent.trim());
+    expect(labels).not.toContain('Turn into');
+  });
+
+  it('converts every eligible block in a mixed range, skipping structural ones, as one undo step', () => {
+    const store = new History(new EditorStore(makeDocWithDivider()));
+    renderHarness(store, ['p1', 'p2', 'divider1']);
+
+    const turnIntoTrigger = [...document.querySelectorAll('.be-block-range-menu-item')].find(
+      (el) => el.textContent.trim() === 'Turn into',
+    );
+    fireEvent.click(turnIntoTrigger);
+
+    const submenu = [...document.querySelectorAll('.be-block-range-menu')][1];
+    const quoteOption = [...submenu.querySelectorAll('.be-block-range-menu-item')].find((el) =>
+      el.textContent.trim().endsWith('Quote'),
+    );
+    // A real click starts with mousedown — this menu clears the selection
+    // on ANY mousedown outside its own refs, so skipping this step would
+    // hide the bug where a submenu click was wrongly treated as "outside".
+    fireEvent.mouseDown(quoteOption);
+    fireEvent.click(quoteOption);
+
+    const rootIds = store.getBlock('root').contentIds;
+    expect(store.getBlock(rootIds[0]).type).toBe('blockquote');
+    expect(store.getBlock(rootIds[1]).type).toBe('blockquote');
+    expect(store.getBlock(rootIds[2]).type).toBe('divider'); // untouched
+    expect(document.querySelector('.be-block-range-menu')).toBeNull(); // both menus close, selection clears
+
+    store.undo();
+    expect(store.getBlock('root').contentIds).toEqual(['p1', 'p2', 'divider1']);
+    expect(store.getBlock('p1').type).toBe('paragraph');
   });
 });
 
