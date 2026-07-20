@@ -71,7 +71,30 @@ function marksToStyle(marks = {}) {
  * after the very first keystroke. Comparing stripped text means ordinary
  * typing — where the DOM already holds the right characters plus a leftover
  * placeholder byte — is a true no-op, so the caret is never touched.
+ *
+ * The rewrite itself (`setHostText` below) still has to happen on the
+ * *opposite* transition — real content backspaced down to nothing — since a
+ * host with zero children isn't a valid caret anchor either. But that write
+ * mutates the existing Text node's own `.nodeValue` in place instead of
+ * going through `host.textContent = ...` whenever a reusable node is
+ * already there: a Range/Selection stays anchored to a Text node across a
+ * `.nodeValue` change (same node, new data), but `textContent =` always
+ * discards the old node and creates a new one, silently collapsing any
+ * Selection that pointed into it. Continuously holding Backspace across a
+ * whole run hits exactly this transition once, right as the run empties
+ * out — on desktop a collapsed Selection is barely noticeable, but a mobile
+ * on-screen keyboard treats the same momentary loss as "the field lost
+ * focus" and dismisses itself, which is what this specifically fixes.
  */
+function setHostText(host, displayValue) {
+  const onlyChild = host.childNodes.length === 1 ? host.firstChild : null;
+  if (onlyChild && onlyChild.nodeType === 3) {
+    if (onlyChild.nodeValue !== displayValue) onlyChild.nodeValue = displayValue;
+  } else {
+    host.textContent = displayValue;
+  }
+}
+
 function TextRunSpan({ id, host, onValueSynced }) {
   const run = useRun(id);
 
@@ -81,7 +104,7 @@ function TextRunSpan({ id, host, onValueSynced }) {
     const currentLogicalText = stripEmptyRunPlaceholder(host.textContent);
     const needsRewrite = currentLogicalText !== value || (value === '' && host.textContent === '');
     if (needsRewrite) {
-      host.textContent = value === '' ? EMPTY_RUN_PLACEHOLDER : value;
+      setHostText(host, value === '' ? EMPTY_RUN_PLACEHOLDER : value);
     }
 
     const style = marksToStyle(run.marks);

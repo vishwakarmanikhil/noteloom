@@ -113,6 +113,42 @@ describe('EditableBlockContent: empty-run placeholder (regression)', () => {
     // it — no corrective rewrite, since it already matches "k" once stripped.
     expect(container.querySelector('[data-run-id="r1"]').textContent).toBe(`${EMPTY_RUN_PLACEHOLDER}k`);
   });
+
+  it('emptying a run via backspace mutates the existing Text node in place instead of replacing it (mobile caret/keyboard-loss regression)', () => {
+    // Continuously holding Backspace on mobile was losing the caret and
+    // dismissing the on-screen keyboard right around the point a run's text
+    // ran out — traced to the exact-empty-transition branch below always
+    // going through `host.textContent = ...`, which unconditionally
+    // destroys and recreates the underlying Text node. That silently
+    // collapses any Selection/Range still anchored to it. Desktop tolerates
+    // a collapsed Selection; a mobile IME treats the same loss as "this
+    // field lost focus" and hides the keyboard. The fix reuses the existing
+    // Text node (mutating `.nodeValue` in place) whenever one is already
+    // there, which never invalidates a Range pointing into it.
+    const store = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'h', marks: {} }],
+    });
+    const { container } = renderBlock(store);
+    const editable = container.querySelector('[contenteditable]');
+    const runSpan = container.querySelector('[data-run-id="r1"]');
+    const textNode = runSpan.firstChild;
+    expect(textNode.nodeType).toBe(3);
+
+    // Simulates the browser's own native backspace: it shrinks the SAME
+    // text node's data down to empty — real contentEditable deletion
+    // mutates the node in place, it doesn't remove/replace it.
+    textNode.nodeValue = '';
+    fireEvent.input(editable);
+
+    expect(runSpan.firstChild).toBe(textNode); // same node identity, not replaced
+    expect(runSpan.textContent).toBe(EMPTY_RUN_PLACEHOLDER);
+    expect(store.getRun('r1').value).toBe('');
+  });
 });
 
 describe('EditableBlockContent: fast path (in-place text edit)', () => {
