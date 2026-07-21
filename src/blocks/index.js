@@ -10,6 +10,7 @@ import { codeBlockType } from './code/index.js';
 import { toggleHeadingBlockType } from './toggleHeading/index.js';
 import { buttonBlockType } from './button/index.js';
 import { embedBlockType } from './embed/index.js';
+import { canvasBlockType } from './canvas/index.js';
 
 /** Registers every built-in block type on the given registry. */
 export function registerBuiltInBlocks(registry) {
@@ -26,6 +27,7 @@ export function registerBuiltInBlocks(registry) {
     toggleHeading: toggleHeadingBlockType,
     button: buttonBlockType,
     embed: embedBlockType,
+    canvas: canvasBlockType,
   });
 }
 
@@ -79,4 +81,5 @@ export {
   toggleHeadingBlockType,
   buttonBlockType,
   embedBlockType,
+  canvasBlockType,
 };

@@ -753,6 +753,311 @@
   font-weight: 500;
 }
 
+/* --- canvas (freehand drawing) --- */
+
+.be-canvas {
+  position: relative;
+  display: inline-block;
+  margin: 0.6em 0;
+  line-height: 0; /* avoids extra inline-block whitespace gap below the <svg> */
+}
+
+.be-canvas-surface {
+  display: block;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-lg);
+  background: var(--noteloom-bg);
+  max-width: 100%;
+  touch-action: none; /* the surface owns its own pointer gestures (drawing/panning), not the browser's default scroll/zoom */
+}
+
+.be-canvas-toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100% - 16px);
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: var(--noteloom-radius-md);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.be-canvas:hover .be-canvas-toolbar,
+.be-canvas-toolbar:focus-within {
+  opacity: 1;
+}
+
+.be-canvas-toolbar-btn {
+  border: none;
+  background: transparent;
+  width: 26px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+}
+
+.be-canvas-toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.be-canvas-toolbar-btn-active {
+  background: var(--noteloom-accent);
+  color: #fff;
+}
+
+.be-canvas-toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.be-canvas-toolbar-btn:disabled:hover {
+  background: transparent;
+}
+
+.be-canvas-zoom-label {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  min-width: 2.8em;
+  padding: 0 2px;
+  cursor: pointer;
+  border-radius: var(--noteloom-radius-sm);
+}
+
+.be-canvas-zoom-label:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.be-canvas-toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.24);
+  margin: 0 2px;
+}
+
+.be-canvas-toolbar-swatch {
+  border: 2px solid transparent;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+}
+
+.be-canvas-toolbar-swatch-active {
+  border-color: #fff;
+}
+
+.be-canvas-picker-wrap {
+  position: relative;
+}
+
+.be-canvas-picker {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  border-radius: var(--noteloom-radius-md);
+  z-index: 3;
+}
+
+.be-canvas-shape-picker {
+  flex-wrap: wrap;
+  max-width: 132px;
+}
+
+.be-canvas-color-trigger-dot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.be-canvas-fill-trigger-dot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.be-canvas-fill-trigger-dot-none,
+.be-canvas-fill-swatch-none {
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.5) 0% 25%, transparent 0% 50%) 50% / 8px 8px;
+}
+
+.be-canvas-custom-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px dashed rgba(255, 255, 255, 0.6);
+  display: inline-flex;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.be-canvas-custom-swatch input[type='color'] {
+  width: 150%;
+  height: 150%;
+  margin: -25%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+}
+
+/* Live size-preview popover: dot grows/shrinks together with the slider as it's dragged. */
+.be-canvas-size-picker {
+  min-width: 160px;
+}
+
+.be-canvas-size-trigger-dot {
+  display: block;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.be-canvas-size-preview {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.be-canvas-size-preview-dot {
+  display: block;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.be-canvas-size-slider {
+  flex: 1;
+  min-width: 80px;
+}
+
+.be-canvas-font-size-trigger {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.be-canvas-font-size-preview-letter {
+  display: block;
+  line-height: 1;
+  color: #fff;
+  font-weight: 600;
+}
+
+.be-canvas-size-value {
+  flex-shrink: 0;
+  min-width: 2.5em;
+  text-align: right;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.be-canvas[data-tool='eraser'] .be-canvas-surface {
+  cursor: cell;
+}
+
+.be-canvas[data-tool='select'] .be-canvas-surface {
+  cursor: default;
+}
+
+.be-canvas-selection-box {
+  stroke: var(--noteloom-accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.be-canvas-selection-handle {
+  fill: #fff;
+  stroke: var(--noteloom-accent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.be-canvas-rotate-handle {
+  fill: var(--noteloom-accent);
+  stroke: #fff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.be-canvas-marquee {
+  fill: color-mix(in srgb, var(--noteloom-accent) 12%, transparent);
+  stroke: var(--noteloom-accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.be-canvas-grid-background {
+  pointer-events: none;
+}
+
+.be-canvas-grid-dot {
+  fill: rgba(255, 255, 255, 0.18);
+}
+
+.be-canvas-text-editor {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 1px dashed var(--noteloom-accent);
+  outline: none;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.3;
+  font-family: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.be-canvas-resize-handle {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  border-radius: 2px;
+  border: 1px solid #fff;
+  background: var(--noteloom-accent);
+}
+
 /* --- table --- */
 
 .be-table-scroll {
@@ -2153,6 +2458,8 @@ tr.be-table-row:hover .be-table-delete-row {
   .be-embed-dropzone,
   .be-embed-upload-btn,
   .be-embed-url-row,
+  .be-canvas-toolbar,
+  .be-canvas-resize-handle,
   .be-callout-color-wrap,
   .be-modal-overlay,
   .be-mobile-action-bar,

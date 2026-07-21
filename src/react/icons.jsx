@@ -116,6 +116,15 @@ export function PencilIcon(props) {
   );
 }
 
+/** A freehand squiggle — the "Canvas" slash-command icon, distinct from PencilIcon (used elsewhere for text/link editing) since this represents drawing, not editing text. */
+export function ScribbleIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M3 17c2-4 4-4 6 0s4 4 6 0 4-4 6 0" />
+    </Icon>
+  );
+}
+
 export function LinkIcon(props) {
   return (
     <Icon {...props}>
@@ -217,6 +226,96 @@ export function ArrowDownIcon(props) {
     <Icon {...props}>
       <line x1="12" y1="5" x2="12" y2="19" />
       <polyline points="19 12 12 19 5 12" />
+    </Icon>
+  );
+}
+
+export function SquareIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="1" />
+    </Icon>
+  );
+}
+
+export function CircleIcon(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="8" />
+    </Icon>
+  );
+}
+
+export function ArrowDiagonalIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="6" y1="18" x2="18" y2="6" />
+      <polyline points="9 6 18 6 18 15" />
+    </Icon>
+  );
+}
+
+export function DiamondIcon(props) {
+  return (
+    <Icon {...props}>
+      <polygon points="12 3 21 12 12 21 3 12" />
+    </Icon>
+  );
+}
+
+export function TriangleIcon(props) {
+  return (
+    <Icon {...props}>
+      <polygon points="12 4 20 20 4 20" />
+    </Icon>
+  );
+}
+
+export function StarIcon(props) {
+  return (
+    <Icon {...props}>
+      <polygon points="12 3 14.7 9.4 21.5 9.9 16.3 14.4 17.9 21 12 17.4 6.1 21 7.7 14.4 2.5 9.9 9.3 9.4" />
+    </Icon>
+  );
+}
+
+export function CursorIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M5 3l14 8-6 2-2 6-6-16z" />
+    </Icon>
+  );
+}
+
+export function EraserIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M19 20H9l-6-6a1.5 1.5 0 0 1 0-2l9-9a1.5 1.5 0 0 1 2 0l7 7a1.5 1.5 0 0 1 0 2l-7 7" />
+      <path d="M6.5 12.5 13 19" />
+    </Icon>
+  );
+}
+
+export function DownloadIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3v12" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M4 19h16" />
+    </Icon>
+  );
+}
+
+export function MagnetIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M6 15V9a6 6 0 0 1 12 0v6" />
+      <path d="M6 15a3 3 0 0 0 6 0v-4" />
+      <path d="M18 15a3 3 0 0 1-6 0v-4" />
+      <line x1="3" y1="9" x2="6" y2="9" />
+      <line x1="3" y1="15" x2="6" y2="15" />
+      <line x1="18" y1="9" x2="21" y2="9" />
+      <line x1="18" y1="15" x2="21" y2="15" />
     </Icon>
   );
 }
