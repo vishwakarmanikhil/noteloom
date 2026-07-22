@@ -101,6 +101,18 @@
 }
 
 .be-editable {
+  /* Block-level and full-width so the whole line (including the blank
+     trailing space after short text, and an empty line's full height) is
+     part of the actual contentEditable hit-test box. Left inline/sized to
+     content, a click on that blank area lands on the non-editable wrapper
+     div instead of this element: the browser's native "nothing focused
+     yet" resolution still finds it on a first click, but re-clicking the
+     same dead-zone point while this element already holds the selection
+     collapses/clears it instead, since there's nothing here to re-anchor
+     the caret onto. */
+  display: block;
+  width: 100%;
+  min-height: 1em;
   outline: none;
 }
 
