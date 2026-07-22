@@ -1,0 +1,14 @@
+/* Retheme via the CSS custom properties the default theme reads from --
+   see README's "Styling" section for the full variable list (src/style.css). */
+.my-editor {
+  --noteloom-accent: #16a34a;
+  --noteloom-radius-md: 4px;
+  --noteloom-font: Georgia, 'Times New Roman', serif;
+}
+
+/* getBlockClassName (see App.jsx) adds this class to every heading's own
+   root element, alongside the fixed `be-heading` base class. */
+.my-heading {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

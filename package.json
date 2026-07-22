@@ -53,7 +53,10 @@
   },
   "scripts": {
     "dev": "vite --config examples/basic/vite.config.js",
-    "dev:quickstart": "vite --config examples/quickstart/vite.config.js",
+    "dev:quickstart": "vite --config examples/01-quickstart/vite.config.js",
+    "dev:custom-block": "vite --config examples/02-custom-block/vite.config.js",
+    "dev:custom-field-type": "vite --config examples/03-custom-field-type/vite.config.js",
+    "dev:styling": "vite --config examples/04-styling/vite.config.js",
     "dev:collab": "vite --config examples/collab/vite.config.js",
     "dev:lan-collab": "vite --config examples/lan-collab/vite.config.js",
     "dev:offline-persist": "vite --config examples/offline-persist/vite.config.js",

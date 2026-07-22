@@ -17,15 +17,20 @@ That's it — no build step is needed to run the tests.
 ## Running things
 
 ```bash
-npm run dev                  # examples/basic — the general-purpose demo, built from the granular API
-npm run dev:quickstart       # examples/quickstart — the same editor built from useEditor()/<NoteloomEditor>
-npm run dev:collab           # examples/collab — real-time collaboration (BroadcastChannel signaling, open two tabs)
-npm run dev:lan-collab       # examples/lan-collab — collaboration over a WebSocket relay (see tools/lan-relay-server/)
-npm run dev:offline-persist  # examples/offline-persist — IndexedDB persistence + PWA
-npm test                     # vitest (jsdom + @testing-library/react)
-npm run typecheck            # tsc --noEmit against src/index.d.ts
-npm run build                # library build -> dist/ (ESM + CJS + index.d.ts + style.css)
+npm run dev                     # examples/basic — the general-purpose demo, built from the granular API
+npm run dev:quickstart          # examples/01-quickstart — useEditor()/<NoteloomEditor>
+npm run dev:custom-block        # examples/02-custom-block — + a custom block type
+npm run dev:custom-field-type   # examples/03-custom-field-type — + a custom dropdown/mention field type
+npm run dev:styling             # examples/04-styling — + retheming
+npm run dev:collab              # examples/collab — real-time collaboration (BroadcastChannel signaling, open two tabs)
+npm run dev:lan-collab          # examples/lan-collab — collaboration over a WebSocket relay (see tools/lan-relay-server/)
+npm run dev:offline-persist     # examples/offline-persist — IndexedDB persistence + PWA
+npm test                        # vitest (jsdom + @testing-library/react)
+npm run typecheck               # tsc --noEmit against src/index.d.ts
+npm run build                   # library build -> dist/ (ESM + CJS + index.d.ts + style.css)
 ```
+
+See `examples/README.md` for what each example teaches, in order.
 
 If you're working on the collaboration/sync layer (`src/sync/`, `src/crdt/`), the relevant examples under `examples/` are the fastest way to see a change actually working — prefer driving one of them over reasoning from the code alone, especially for anything touching WebRTC, since a lot of real bugs in this codebase were only caught by opening two real browser tabs.
 
