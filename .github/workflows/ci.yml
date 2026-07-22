@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Verifies the "engines": ">=18" claim in package.json actually
+        # holds, not just on whatever version happens to be installed
+        # locally -- matches the newest LTS (20) too since that's the
+        # publish workflow's own runtime, plus the latest release (22).
+        node-version: [18, 20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
