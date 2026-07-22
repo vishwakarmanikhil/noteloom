@@ -73,12 +73,10 @@ You don't need to import any CSS. The moment `<EditorProvider>` mounts, it injec
 
 Dark mode follows `prefers-color-scheme` automatically; to control it explicitly instead (e.g. a manual light/dark toggle), set `data-theme="dark"` or `data-theme="light"` on any ancestor (typically `<html>`) — see the full variable list in `src/style.css`.
 
-**Scope overrides to one editor instance**, or add your own class for full custom CSS, via `<EditorProvider>`'s `className`/`style` props — passing either wraps `children` in one `<div className="be-root ...">`:
+**Scope overrides to one editor instance**, or add your own class for full custom CSS, via `className`/`style` — passing either wraps the editor surface in one `<div className="be-root ...">`:
 
 ```jsx
-<EditorProvider store={store} registry={registry} className="my-editor" style={{ '--noteloom-accent': '#16a34a' }}>
-  ...
-</EditorProvider>
+<NoteloomEditor editor={editor} className="my-editor" style={{ '--noteloom-accent': '#16a34a' }} />
 ```
 
 No wrapper `<div>` is added unless you pass one of these props, so existing usage is unaffected either way.
@@ -86,7 +84,7 @@ No wrapper `<div>` is added unless you pass one of these props, so existing usag
 **Opt out entirely** with `theme="none"` — nothing gets injected, and you take full responsibility for styling every `.be-*` class yourself (or import `noteloom/style.css` manually if you just want control over *when* it loads, e.g. before your own overrides in a specific `<link>` order):
 
 ```jsx
-<EditorProvider store={store} registry={registry} theme="none">
+<NoteloomEditor editor={editor} theme="none" />
 ```
 
 `examples/basic/src/style.css` shows the extra page-level chrome (fonts, page width, the demo's own toolbar buttons) a host app typically adds around the editor — none of that is part of the default theme itself.
@@ -94,21 +92,19 @@ No wrapper `<div>` is added unless you pass one of these props, so existing usag
 **Customize individual blocks**, not just the root, via `getBlockClassName`:
 
 ```jsx
-<EditorProvider
-  store={store}
-  registry={registry}
-  getBlockClassName={(block) => (block.type === 'callout' ? 'my-callout' : undefined)}
->
+<NoteloomEditor editor={editor} getBlockClassName={(block) => (block.type === 'callout' ? 'my-callout' : undefined)} />
 ```
 
 Whatever string you return is appended onto that block's own root element's class list (`be-paragraph my-callout`, alongside the fixed base class) — `block` is the real block object (`type`, `id`, `props`), so you can target a type, a specific id, or a prop value (e.g. every red callout) as precisely as you like.
 
 ## Exporting the document (JSON / HTML / plain text)
 
+Works against the `store`/`registry`/`inlineRegistry` from `useEditor()` (`const { store, registry, inlineRegistry } = editor;`), or your own hand-built ones — these functions don't care which:
+
 ```js
 import { exportDocumentJSON, exportDocumentHTML, exportDocumentText } from 'noteloom';
 
-exportDocumentJSON(store); // { rootId, blocks, runs } — feed straight back into `new EditorStore(...)`
+exportDocumentJSON(store); // { rootId, blocks, runs } — feed straight back into `useEditor({ doc })`
 exportDocumentHTML(store, registry, inlineRegistry);
 exportDocumentText(store, registry, inlineRegistry);
 ```
@@ -152,7 +148,7 @@ const json = exportDocumentSimpleJSON(store, registry, inlineRegistry);
 
 // ...later, or on a different machine/process:
 const doc = importDocumentSimpleJSON(json, registry, inlineRegistry); // -> { rootId, blocks, runs }
-const store2 = new EditorStore(doc);
+const editor2 = useEditor({ doc }); // or `new EditorStore(doc)` directly outside React
 ```
 
 Rich text (`data.text`) is an HTML string — the exact same per-run serialization every block type's own clipboard-copy `toHTML` already produces, so marks (bold/italic/underline/strike/code/sub/superscript/color/highlight/link) and atomic inline chips (checkbox/date/select/mention) round-trip through it the same way copy/paste already does. `table` is flattened specially (`data.columns` + `data.rows`, a 2D array) rather than exposing the internal table/row/cell block chain — the single biggest simplification versus the internal shape. Block/run ids are preserved on both export and import (useful for referencing/updating a specific block from an external system).
@@ -232,19 +228,15 @@ See `examples/basic` for a complete working app built this way (run `npm run dev
 
 For a fully offline editor — no server, no internet required — documents can auto-save to IndexedDB (native browser API, no added dependency) and reload themselves on the next visit:
 
-```js
-import { EditorStore, History, EditorProvider, usePersistedDocument } from 'noteloom';
+```jsx
+import { useEditor, NoteloomEditor, usePersistedDocument } from 'noteloom';
 
 function App() {
-  const store = useMemo(() => new History(new EditorStore(myStarterDoc)), []);
-  const { isLoaded } = usePersistedDocument({ store, docId: 'my-document-id' });
+  const editor = useEditor({ doc: myStarterDoc });
+  const { isLoaded } = usePersistedDocument({ store: editor.store, docId: 'my-document-id' });
 
   if (!isLoaded) return <p>Loading…</p>;
-  return (
-    <EditorProvider store={store} /* ...registry, inlineRegistry... */ history={store}>
-      {/* ...BlockChildren etc... */}
-    </EditorProvider>
-  );
+  return <NoteloomEditor editor={editor} />;
 }
 ```
 
@@ -284,6 +276,7 @@ Every block defaults to `dir="auto"` — the browser's own Unicode bidi algorith
 ```js
 import { operations } from 'noteloom';
 
+// `store` is `editor.store` from useEditor() (or any EditorStore/History).
 // Document-wide default:
 store.applyOperation(operations.updateBlockProps(store.getRootId(), { dir: 'rtl' }));
 // Or just one block:
@@ -492,6 +485,8 @@ User-created types are persisted in the document's own `fieldTypes` collection (
 
 ## Registering your own block/inline types
 
+`registry` is `editor.registry` from `useEditor()` (call this inside the `registerBlocks` callback shown above, or on a hand-built registry — both work the same):
+
 ```js
 registry.register('myBlock', {
   component: MyBlockComponent, // receives only { id }
@@ -515,20 +510,26 @@ registry.register('myBlock', {
 
 Real-time multi-peer editing, built as a custom **block-tree CRDT** — not a generic text-CRDT library bolted on — so it stays true to the zero-runtime-dependency design. Peers connect directly over WebRTC; you bring your own signaling (a WebSocket relay, Firebase/Supabase realtime, or anything else that can pass small JSON messages between two peers) to bootstrap the connection.
 
-```js
-import { EditorStore, History, CollabSession } from 'noteloom';
+```jsx
+import { useEditor, NoteloomEditor, CollabSession } from 'noteloom';
+import { useEffect } from 'react';
 
-const store = new History(new EditorStore(myDoc));
+function App() {
+  const editor = useEditor({ doc: myDoc });
 
-// `signaling` is any object shaped like SignalingChannel (src/sync/signaling.js):
-// { localPeerId, send(toPeerId, message), onMessage(cb) }
-const session = new CollabSession({ history: store, signaling });
+  useEffect(() => {
+    // `signaling` is any object shaped like SignalingChannel (src/sync/signaling.js):
+    // { localPeerId, send(toPeerId, message), onMessage(cb) }
+    const session = new CollabSession({ history: editor.store, signaling });
+    session.connect(remotePeerId, { initiator: true }); // `initiator: true` on exactly one side of each pair
+    return () => session.destroy();
+  }, []);
 
-// `initiator: true` on exactly one side of each pair
-session.connect(remotePeerId, { initiator: true });
+  return <NoteloomEditor editor={editor} />;
+}
 ```
 
-From then on, every edit made via `store`/`history` (typing, inserting/moving/deleting blocks, "Turn into" type conversions) is automatically broadcast to connected peers, and incoming changes merge in live.
+From then on, every edit made via `editor.store` (typing, inserting/moving/deleting blocks, "Turn into" type conversions) is automatically broadcast to connected peers, and incoming changes merge in live.
 
 ### Signaling options
 
@@ -545,7 +546,7 @@ From then on, every edit made via `store`/`history` (typing, inserting/moving/de
     roomId: 'my-document-id',      // anyone using the same roomId ends up in the same room
     peerId: crypto.randomUUID(),
   });
-  const session = new CollabSession({ history, signaling });
+  const session = new CollabSession({ history: editor.store, signaling });
 
   signaling.onPeerDiscovered((remotePeerId) => {
     const initiator = signaling.localPeerId > remotePeerId; // deterministic tie-break
@@ -585,10 +586,10 @@ What presence *contains* is entirely up to you — a cursor position, a display 
 Deleted blocks/runs are kept as "tombstones" rather than actually removed — necessary so a concurrent operation that references a since-deleted item (an insert anchored to it, say) can still resolve correctly no matter when it arrives. Left alone, this grows without bound over a long enough session. To actually reclaim that memory:
 
 ```js
-import { EditorStore, createPeriodicTombstoneGC } from 'noteloom';
+import { useEditor, createPeriodicTombstoneGC } from 'noteloom';
 
-const store = new EditorStore(myDoc);
-const gc = createPeriodicTombstoneGC({ store, intervalMs: 60 * 60 * 1000, maxAgeMs: 24 * 60 * 60 * 1000 }); // hourly sweep, 24h retention (both defaults, shown explicitly)
+const editor = useEditor({ doc: myDoc });
+const gc = createPeriodicTombstoneGC({ store: editor.store, intervalMs: 60 * 60 * 1000, maxAgeMs: 24 * 60 * 60 * 1000 }); // hourly sweep, 24h retention (both defaults, shown explicitly)
 
 // later, when the store is no longer in use:
 gc.stop();
@@ -610,15 +611,17 @@ Or call `store.pruneTombstones({ maxAgeMs })` yourself on whatever schedule you 
 
 ```bash
 npm install
-npm run dev     # examples/basic dev server
-npm test        # vitest (jsdom + @testing-library/react)
-npm run build   # library build (dist/, ESM + CJS)
+npm run dev:quickstart  # examples/quickstart — useEditor()/<NoteloomEditor>
+npm run dev              # examples/basic — the same editor built from the granular API
+npm test                 # vitest (jsdom + @testing-library/react)
+npm run typecheck        # tsc --noEmit against src/index.d.ts
+npm run build            # library build (dist/, ESM + CJS + index.d.ts)
 ```
 
 ## Known limitations
 
 - No accessibility affordance exists for grouping sibling list items under a shared `role="list"` container (each list item is an independent block, not wrapped in one) — adding `role="listitem"` without that ancestor would be worse than no role at all, so it's deliberately left out pending a bigger structural change.
-- The library doesn't render your editor's own root/surface element (that's host-rendered — see `examples/basic/src/App.jsx`'s `EditorSurface`), so it can't add `role="document"`/`aria-label` there itself; the example app demonstrates doing this on your own surface element, which is worth copying into your own app.
+- `<NoteloomEditor>` renders `role="document"`/`aria-label` on its own surface element; if you build the surface yourself via the granular API (no library-rendered root element there — see `examples/basic/src/App.jsx`'s `EditorSurface`), add those attributes yourself the same way.
 - Cross-block mark toggling (bold/italic/underline over a selection spanning multiple blocks) applies as one store operation per block, not a single atomic undo step.
 - `select`'s option-adding UI and any `createSelectFieldType`-based type's options (e.g. an "Assignee" @-mention) are meant as a starting point — a real app will want to wire its own people/options source.
 - RTL support covers direction resolution (`dir="auto"` + per-block/document override) and the highest-impact visual pieces (list markers, blockquote border, block gutter position) — a full logical-properties rewrite of every hardcoded pixel value in `style.css` is a bigger follow-up, not yet done.

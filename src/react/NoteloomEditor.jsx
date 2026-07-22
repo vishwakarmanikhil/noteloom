@@ -78,19 +78,28 @@ function EditorSurface({ store, rootId }) {
  *   const editor = useEditor();
  *   return <NoteloomEditor editor={editor} />;
  *
- * `className`/`style` scope the optional default theme to this instance
- * (see EditorProvider); `children` renders inside the provider alongside
+ * `className`/`style`/`theme`/`getBlockClassName` forward straight to
+ * EditorProvider (see its own doc comment); `children` renders inside the provider alongside
  * the editor surface, for a toolbar or other chrome that needs store
  * access via the usual hooks (useEditorStore, useHistory, ...). Anything
  * this doesn't cover (a custom toolbar, mobile chrome, voice typing, field
  * type management) is still just EditorProvider + the granular hooks/
  * components underneath, unchanged and fully available.
  */
-export function NoteloomEditor({ editor, className, style, theme, children }) {
+export function NoteloomEditor({ editor, className, style, theme, getBlockClassName, children }) {
   const { store, registry, inlineRegistry } = editor;
   const rootId = store.getRootId();
   return (
-    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store} className={className} style={style} theme={theme}>
+    <EditorProvider
+      store={store}
+      registry={registry}
+      inlineRegistry={inlineRegistry}
+      history={store}
+      className={className}
+      style={style}
+      theme={theme}
+      getBlockClassName={getBlockClassName}
+    >
       <EditorSurface store={store} rootId={rootId} />
       {children}
     </EditorProvider>

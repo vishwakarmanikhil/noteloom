@@ -88,4 +88,24 @@ describe('NoteloomEditor', () => {
     const items = container.querySelectorAll('.be-slash-menu-item');
     expect(items.length).toBeGreaterThan(1);
   });
+
+  it('forwards className/style/getBlockClassName to EditorProvider', () => {
+    function StyledWrapper() {
+      const editor = useEditor();
+      return (
+        <NoteloomEditor
+          editor={editor}
+          className="my-editor"
+          style={{ '--noteloom-accent': '#16a34a' }}
+          getBlockClassName={(block) => (block.type === 'paragraph' ? 'my-paragraph' : undefined)}
+        />
+      );
+    }
+    const { container } = render(<StyledWrapper />);
+
+    const root = container.querySelector('.my-editor');
+    expect(root).toBeTruthy();
+    expect(root.style.getPropertyValue('--noteloom-accent')).toBe('#16a34a');
+    expect(container.querySelector('.be-paragraph.my-paragraph')).toBeTruthy();
+  });
 });

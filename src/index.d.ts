@@ -612,6 +612,7 @@ export interface NoteloomEditorProps {
   className?: string;
   style?: CSSProperties;
   theme?: 'default' | 'none';
+  getBlockClassName?: (block: Block) => string | undefined;
   children?: ReactNode;
 }
 
