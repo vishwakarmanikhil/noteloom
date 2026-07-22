@@ -2,6 +2,19 @@ export { EditorStore } from './store/EditorStore.js';
 export { History } from './store/history.js';
 export * as operations from './store/operations.js';
 
+// Collaborative-editing merge primitives (Phase A: pure, in-memory CRDT
+// core — not yet wired into EditorStore/History or any transport).
+export { HLC, genPeerId } from './crdt/clock.js';
+export { ListCrdtState } from './crdt/listCrdt.js';
+export { FieldClockRegistry } from './crdt/fieldRegistry.js';
+
+// WebRTC transport for live collaboration — carries the same envelopes
+// EditorStore.applyRemoteOperation already knows how to merge. Bring your
+// own SignalingChannel (see sync/signaling.js) to exchange connection setup.
+export { CollabSession } from './sync/CollabSession.js';
+export { PeerConnection } from './sync/peerConnection.js';
+export { MESSAGE_TYPE, encodeMessage, decodeMessage } from './sync/syncProtocol.js';
+
 export { BlockRegistry, createBlockRegistry } from './registry/blockRegistry.js';
 export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.js';
 

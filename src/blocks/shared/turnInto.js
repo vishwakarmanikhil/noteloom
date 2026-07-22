@@ -66,8 +66,23 @@ export function isTurnIntoEligible(type) {
   return TEXT_FAMILY_TYPES.has(type);
 }
 
-function getOwnRunIds(block) {
-  return block?.props?.titleRunIds ?? block?.contentIds ?? [];
+/**
+ * A block's own inline text run ids -- `props.titleRunIds` for a container
+ * that has them (listItem, toggleHeading), or `contentIds` for a leaf
+ * (paragraph, heading, blockquote, code), since a leaf's contentIds *are*
+ * its runs. A container WITHOUT titleRunIds (callout) owns no text runs of
+ * its own at all -- its contentIds are child blocks (e.g. a nested
+ * paragraph that holds the actual text), not runs -- so it must report no
+ * own runIds rather than have its children's block ids misread as run ids.
+ * Requires `registry` to tell "leaf whose contentIds are runs" apart from
+ * "container whose contentIds are children"; without one, only a leaf
+ * shape is assumed (matches this function's own two other callers, which
+ * only ever operate on a fresh, childless, single-run paragraph).
+ */
+function getOwnRunIds(block, registry) {
+  if (block?.props && 'titleRunIds' in block.props) return block.props.titleRunIds;
+  if (registry && !registry.isLeaf(block?.type)) return [];
+  return block?.contentIds ?? [];
 }
 
 /**
@@ -88,7 +103,7 @@ function getOwnRunIds(block) {
  */
 export function turnBlockInto(store, registry, blockId, target) {
   const block = store.getBlock(blockId);
-  const runIds = getOwnRunIds(block);
+  const runIds = getOwnRunIds(block, registry);
 
   const ops = [];
   if (target.type === 'code') {

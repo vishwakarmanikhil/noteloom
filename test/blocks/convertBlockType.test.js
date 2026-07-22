@@ -43,8 +43,10 @@ describe('convertBlockType: childless case is unchanged (regression lock)', () =
     expect(storeB.getBlock(idB).props.level).toBe(2);
     expect(storeA.getRun('r1').value).toBe('hello');
     expect(storeB.getRun('r1').value).toBe('hello');
-    expect(storeA.getBlock('p1')).toBeUndefined();
-    expect(storeB.getBlock('p1')).toBeUndefined();
+    // Conversion is in-place: the block keeps its original id rather than
+    // being deleted and replaced by a new one.
+    expect(idA).toBe('p1');
+    expect(idB).toBe('p1');
     expect(storeA.getBlock('root').contentIds).toEqual([idA]);
     expect(storeB.getBlock('root').contentIds).toEqual([idB]);
   });
@@ -93,16 +95,16 @@ describe('convertBlockType: children preservation (the bug this fixes)', () => {
     };
   }
 
-  it('WITHOUT a registry (old behavior, still reachable if a caller omits it): children are lost — documents the exact bug being fixed', () => {
+  it('WITHOUT a registry (old behavior, still reachable if a caller omits it): children become unreachable — documents the exact bug being fixed', () => {
     const store = new EditorStore(makeToggleHeadingDoc());
     const { ops, newBlockId } = convertBlockType(store, 'tg1', 'heading', { level: 2 }, ['rTitle']);
     applyOps(store, ops);
 
     expect(store.getBlock(newBlockId).type).toBe('heading');
-    // The old bug: children are gone, not just unreachable from the UI —
-    // actually deleted, since removeBlock cascades.
-    expect(store.getBlock('child1')).toBeUndefined();
-    expect(store.getBlock('child2')).toBeUndefined();
+    // The old bug: children are no longer reachable from the document tree
+    // (their old parent's contentIds was overwritten without moving them).
+    expect(store.getBlock(newBlockId).contentIds).not.toContain('child1');
+    expect(store.getBlock(newBlockId).contentIds).not.toContain('child2');
   });
 
   it('container -> container (toggleHeading -> listItem-with-toggle-shape is not real; use listItem -> toggleHeading) reparents children onto the new block', () => {

@@ -45,8 +45,8 @@ describe('markdown shortcuts: real keystroke-by-keystroke typing converts a plai
     expect(store.getBlock('p1').type).toBe('paragraph'); // not yet — trigger space hasn't landed
 
     typeChar(editable, ' ');
-    expect(store.getBlock('p1')).toBeUndefined();
     const newId = store.getBlock('root').contentIds[0];
+    expect(newId).toBe('p1'); // conversion is in-place, same id — not deleted and replaced
     expect(store.getBlock(newId).type).toBe('listItem');
     expect(store.getBlock(newId).props.ordered).toBe(false);
   });

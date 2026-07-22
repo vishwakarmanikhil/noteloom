@@ -107,4 +107,56 @@ describe('turnBlockInto', () => {
     expect(block1.props.titleRunIds).toEqual(['r1']);
     expect(block2.props.titleRunIds).toEqual(['r2']); // not overwritten by the second conversion
   });
+
+  describe('converting a callout (a container with no titleRunIds of its own)', () => {
+    // A callout owns no text runs directly -- its contentIds are child
+    // blocks (e.g. a nested paragraph holding the real text). Regression
+    // coverage for a bug where those child block ids were misread as run
+    // ids and either corrupted the target's titleRunIds or got duplicated
+    // into the target's contentIds as if they were text runs.
+    function makeCalloutDoc() {
+      return {
+        rootId: 'root',
+        blocks: [
+          { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
+          { id: 'c1', type: 'callout', parentId: 'root', contentIds: ['child1'], props: { icon: '💡' } },
+          { id: 'child1', type: 'paragraph', parentId: 'c1', contentIds: ['r1'], props: {} },
+        ],
+        runs: [{ id: 'r1', type: 'text', value: 'Note text', marks: {} }],
+      };
+    }
+
+    it('callout -> listItem: titleRunIds ends up empty (not the child block id), children are preserved as nested list items', () => {
+      const store = new EditorStore(makeCalloutDoc());
+      const registry = makeRegistry();
+      const bulletTarget = TEXT_FAMILY_TARGETS.find((t) => t.type === 'listItem' && t.props.ordered === false && !('checked' in t.props) && !('collapsed' in t.props));
+
+      const { ops, newBlockId } = turnBlockInto(store, registry, 'c1', bulletTarget);
+      applyOps(store, ops);
+
+      const newBlock = store.getBlock(newBlockId);
+      expect(newBlock.type).toBe('listItem');
+      expect(newBlock.props.titleRunIds).toEqual([]); // not ['child1'] — no own text to carry over
+      expect(newBlock.contentIds).toEqual(['child1']); // child preserved as a nested list item
+      expect(store.getBlock('child1').parentId).toBe(newBlockId);
+      expect(store.getRun('r1').value).toBe('Note text'); // untouched, still owned by child1
+    });
+
+    it('callout -> paragraph (leaf target): contentIds ends up empty (not the child block id), child is promoted to a sibling', () => {
+      const store = new EditorStore(makeCalloutDoc());
+      const registry = makeRegistry();
+      const paragraphTarget = TEXT_FAMILY_TARGETS.find((t) => t.type === 'paragraph');
+
+      const { ops, newBlockId } = turnBlockInto(store, registry, 'c1', paragraphTarget);
+      applyOps(store, ops);
+
+      const newBlock = store.getBlock(newBlockId);
+      expect(newBlock.type).toBe('paragraph');
+      expect(newBlock.contentIds).toEqual([]); // not ['child1'] — no own text to carry over
+      const rootContentIds = store.getBlock('root').contentIds;
+      expect(rootContentIds).toEqual([newBlockId, 'child1']); // child promoted to a sibling, not lost
+      expect(store.getBlock('child1').parentId).toBe('root');
+      expect(store.getRun('r1').value).toBe('Note text');
+    });
+  });
 });

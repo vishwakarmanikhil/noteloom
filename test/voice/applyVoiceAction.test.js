@@ -43,7 +43,7 @@ describe('applyVoiceAction: convertBlock', () => {
     expect(newBlock.type).toBe('heading');
     expect(newBlock.props.level).toBe(1);
     expect(store.getRun(newBlock.contentIds[0]).value).toBe('hello world'); // dictated text survived
-    expect(store.getBlock('p1')).toBeUndefined(); // old block gone, not left behind
+    expect(newBlockId).toBe('p1'); // conversion is in-place, same id — not deleted and replaced
   });
 
   it('converts to a listItem shape (titleRunIds), same as a markdown shortcut would', () => {

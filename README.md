@@ -418,6 +418,39 @@ registry.register('myBlock', {
 - Embed images have a real, separately-authored `alt` text field (a toolbar button opens a small dialog to set it) — `alt` is never silently filled in from the uploaded file's raw filename or a pasted URL string, since neither is meaningful alt text.
 - Table header cells have `scope="col"`, and the column-resize/embed-resize sliders both expose `aria-valuemin/valuemax/valuenow`.
 
+## Live collaboration (experimental)
+
+Real-time multi-peer editing, built as a custom **block-tree CRDT** — not a generic text-CRDT library bolted on — so it stays true to the zero-runtime-dependency design. Peers connect directly over WebRTC; you bring your own signaling (a WebSocket relay, Firebase/Supabase realtime, or anything else that can pass small JSON messages between two peers) to bootstrap the connection.
+
+```js
+import { EditorStore, History, CollabSession } from 'noteloom';
+
+const store = new History(new EditorStore(myDoc));
+
+// `signaling` is any object shaped like SignalingChannel (src/sync/signaling.js):
+// { localPeerId, send(toPeerId, message), onMessage(cb) }
+const session = new CollabSession({ history: store, signaling });
+
+// `initiator: true` on exactly one side of each pair
+session.connect(remotePeerId, { initiator: true });
+```
+
+From then on, every edit made via `store`/`history` (typing, inserting/moving/deleting blocks, "Turn into" type conversions) is automatically broadcast to connected peers, and incoming changes merge in live. A runnable example, using the browser's native `BroadcastChannel` as a zero-server signaling backend for a same-machine two-tab demo, is in `examples/collab/` — run `npm run dev:collab` and open the URL in two tabs.
+
+**How conflicts resolve:**
+- Concurrent inserts (even at the same position) — both survive, converging to the same order on every peer.
+- Concurrent delete vs. edit of the same block — the delete wins.
+- Concurrent type-conversion of the same block ("Turn into") — one type wins deterministically (the same one, on every peer), not two duplicate blocks.
+- Concurrent edits to a run's text — whole-value last-write-wins (the newer edit replaces the older one entirely; character-level interleaving, like Google Docs, is not implemented).
+
+**Known limitations — read before relying on this in production:**
+- **Undo is local-only, and can overwrite a peer's edit to the same run.** Your undo/redo never touches a peer's changes directly — but because text merges as *whole-value* LWW (see above), undoing your own past edit to a run replays an old full-string snapshot, which will clobber anything a peer has since typed into that same run. Avoid undoing text you know a peer may have touched; a true fix requires character-level text merging, which is a deliberately larger, not-yet-built change.
+- **Deleted content is never garbage-collected.** Tombstones for deleted blocks are kept forever (needed so a late-arriving concurrent operation can still resolve correctly) — long collaborative sessions with heavy insert/delete churn grow unbounded memory over time.
+- **A peer joining with their own existing (different) document does not merge with yours.** `CollabSession` only adopts a peer's document wholesale when your own side is still empty — the common "open a shared link and get the document" flow. Reconciling two independently-created, already-diverged documents on first contact is a fundamentally harder problem (no shared id space) and isn't attempted.
+- **Reconnecting after a dropped connection re-syncs the full document**, not just what was missed — simple and correct, at the cost of O(document size) traffic per reconnect.
+- Only structural block changes and field edits (props, type, run text) are collaboration-aware. A few coarse "resync" operations (`setBlockContentIds`, `replaceRunSpan`, `setBlockRuns` — used for DOM-reconciliation escape hatches like paste-into-contentEditable or IME composition) remain local-only for now.
+- Large single messages (e.g. an embedded video/file's `data:` URL, or a full-document `syncResponse` for a big document) are transparently fragmented, flow-controlled against the data channel's own backpressure, and reassembled under the hood — you don't need to do anything for this, but very large embeds mean more individual send calls and somewhat higher latency to fully arrive.
+
 ## Development
 
 ```bash

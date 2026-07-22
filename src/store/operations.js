@@ -2,6 +2,7 @@ export const OP = {
   INSERT_BLOCK: 'insertBlock',
   REMOVE_BLOCK: 'removeBlock',
   MOVE_BLOCK: 'moveBlock',
+  CHANGE_BLOCK_TYPE: 'changeBlockType',
   UPDATE_BLOCK_PROPS: 'updateBlockProps',
   UPDATE_RUN: 'updateRun',
   SET_BLOCK_CONTENT_IDS: 'setBlockContentIds',
@@ -26,6 +27,20 @@ export function moveBlock(id, toParentId, toIndex) {
 
 export function updateBlockProps(id, patch) {
   return { type: OP.UPDATE_BLOCK_PROPS, id, patch };
+}
+
+/**
+ * Changes a block's own `type` and wholesale-replaces its `props`, keeping
+ * its id (and therefore its parentId/contentIds/subscribers) exactly as
+ * they are — the in-place counterpart to "delete the old block, insert a
+ * new one of a different type." Keeping the id stable is what lets a CRDT
+ * merge concurrent type-conversions of the same block as one field-level
+ * conflict (last-write-wins) instead of two unrelated structural edits.
+ * `blockType` (not `type`) to avoid colliding with the operation envelope's
+ * own `type` key.
+ */
+export function changeBlockType(id, blockType, props) {
+  return { type: OP.CHANGE_BLOCK_TYPE, id, blockType, props };
 }
 
 export function updateRun(id, patch) {

@@ -52,8 +52,8 @@ describe('applyMarkdownShortcut', () => {
     const handled = applyMarkdownShortcut(store, 'p1', [store.getRun('r1')]);
 
     expect(handled).toBe(true);
-    expect(store.getBlock('p1')).toBeUndefined(); // old paragraph shell is gone
     const newId = store.getBlock('root').contentIds[0];
+    expect(newId).toBe('p1'); // conversion is in-place, same id — not deleted and replaced
     const newBlock = store.getBlock(newId);
     expect(newBlock.type).toBe('heading');
     expect(newBlock.props.level).toBe(1);
