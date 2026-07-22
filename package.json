@@ -48,6 +48,7 @@
     "dev": "vite --config examples/basic/vite.config.js",
     "dev:collab": "vite --config examples/collab/vite.config.js",
     "dev:lan-collab": "vite --config examples/lan-collab/vite.config.js",
+    "dev:offline-persist": "vite --config examples/offline-persist/vite.config.js",
     "build": "vite build && node -e \"require('fs').copyFileSync('src/style.css','dist/style.css')\"",
     "test": "vitest run",
     "prepublishOnly": "npm test && npm run build"
@@ -60,6 +61,7 @@
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^25.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

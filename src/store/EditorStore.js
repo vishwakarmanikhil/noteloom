@@ -42,6 +42,7 @@ export class EditorStore {
     this.fieldTypes = new Map((doc?.fieldTypes ?? []).map((f) => [f.id, f]));
     this._fieldTypesSnapshot = null; // invalidated (set to null) on every fieldTypes mutation — see getFieldTypes
     this._listeners = new Map(); // id -> Set<() => void>
+    this._globalListeners = new Set(); // fired on every mutation regardless of which id(s) changed -- see subscribeAll
 
     // Collaborative-editing merge state. Not yet reachable from any remote
     // transport (that's a later phase) -- for now this only tracks logical
@@ -108,12 +109,29 @@ export class EditorStore {
     };
   }
 
+  /**
+   * Fires on every mutation, local or remote (applyOperation and
+   * applyRemoteOperation both funnel through _notify), regardless of
+   * which specific id(s) changed — unlike subscribe(id, ...), which is
+   * scoped to one id for render-isolation purposes. Meant for
+   * whole-document concerns like auto-persistence, not for UI rendering
+   * (a component re-rendering on every edit anywhere defeats the point of
+   * per-id subscriptions).
+   */
+  subscribeAll(listener) {
+    this._globalListeners.add(listener);
+    return () => this._globalListeners.delete(listener);
+  }
+
   _notify(touchedIds) {
     for (const id of touchedIds) {
       const set = this._listeners.get(id);
       if (!set) continue;
       // copy before iterating: a listener may unsubscribe during notification
       for (const listener of [...set]) listener();
+    }
+    if (this._globalListeners.size > 0) {
+      for (const listener of [...this._globalListeners]) listener();
     }
   }
 

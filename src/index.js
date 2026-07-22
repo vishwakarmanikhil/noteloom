@@ -16,6 +16,17 @@ export { PeerConnection } from './sync/peerConnection.js';
 export { MESSAGE_TYPE, encodeMessage, decodeMessage } from './sync/syncProtocol.js';
 export { createWebSocketSignaling } from './sync/websocketSignaling.js';
 
+// Local (offline) persistence — IndexedDB-backed, native browser API, no
+// added dependency. Works standalone (a single offline user) or alongside
+// CollabSession (a collaborated-on document also gets saved locally).
+export {
+  savePersistedDocument,
+  loadPersistedDocument,
+  deletePersistedDocument,
+  listPersistedDocumentIds,
+} from './persistence/indexedDbPersistence.js';
+export { createAutoPersistence } from './persistence/autoPersist.js';
+
 export { BlockRegistry, createBlockRegistry } from './registry/blockRegistry.js';
 export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.js';
 
@@ -71,6 +82,7 @@ export { injectDefaultStyles } from './react/injectDefaultStyles.js';
 export { useBlock, useRun } from './react/useBlock.js';
 export { useFieldTypes } from './react/useFieldTypes.js';
 export { useHistory } from './react/useHistory.js';
+export { usePersistedDocument } from './react/usePersistedDocument.js';
 export { useVoiceTyping } from './react/useVoiceTyping.js';
 export { VoicePermissionModal } from './react/VoicePermissionModal.jsx';
 export { VoiceListeningIndicator } from './react/VoiceListeningIndicator.jsx';

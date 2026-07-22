@@ -200,6 +200,34 @@ One existing, by-design limitation carried over from clipboard paste: an atomic 
 
 This is purely an additive, alternate *interchange* format — the internal engine format above is unaffected either way, and this is not a replacement for it.
 
+## Offline persistence
+
+For a fully offline editor — no server, no internet required — documents can auto-save to IndexedDB (native browser API, no added dependency) and reload themselves on the next visit:
+
+```js
+import { EditorStore, History, EditorProvider, usePersistedDocument } from 'noteloom';
+
+function App() {
+  const store = useMemo(() => new History(new EditorStore(myStarterDoc)), []);
+  const { isLoaded } = usePersistedDocument({ store, docId: 'my-document-id' });
+
+  if (!isLoaded) return <p>Loading…</p>;
+  return (
+    <EditorProvider store={store} /* ...registry, inlineRegistry... */ history={store}>
+      {/* ...BlockChildren etc... */}
+    </EditorProvider>
+  );
+}
+```
+
+On mount, this loads whatever was last saved under `docId` (if anything) and replaces the store's content with it; every edit after that — typing, structural changes, even changes arriving from a collaborating peer via `CollabSession` — is auto-saved back, debounced (default 500ms of quiet) so a full-document write doesn't fire on every keystroke. Different `docId`s are stored independently, so one browser can hold many separate documents (e.g. keyed by page/route). A runnable example is in `examples/offline-persist/` — run `npm run dev:offline-persist`, type something, then reload the page or close and reopen the tab.
+
+Lower-level pieces, if `usePersistedDocument`'s all-in-one behavior doesn't fit (a non-React host app, custom load/save timing, etc.):
+- `savePersistedDocument(docId, doc)` / `loadPersistedDocument(docId)` / `deletePersistedDocument(docId)` / `listPersistedDocumentIds()` — the raw IndexedDB operations `usePersistedDocument` is built on.
+- `createAutoPersistence({ store, docId, debounceMs, onError })` — just the debounced auto-save half, if you want to handle the initial load yourself. Returns `{ stop, flush }`.
+
+This is standalone — works with a solo, non-collaborating store just as well as one wired to `CollabSession` (a collaborated-on document also gets saved locally, so it survives even after every peer disconnects). Note this only makes the *editing* work offline; if the app itself is loaded from a dev server or web host, opening it for the very first time (or after clearing cache) still needs that host to be reachable once — that's a separate concern (a service worker / PWA setup), not something this handles.
+
 ## Right-to-left / multi-language text
 
 Every block defaults to `dir="auto"` — the browser's own Unicode bidi algorithm detects direction per block from its first strong character, so a document mixing LTR and RTL blocks (an English heading over an Arabic paragraph, say) just works with zero configuration. For the cases `auto` can't infer on its own (most commonly an empty block, which has no text yet to detect a direction from), set an explicit override:

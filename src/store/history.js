@@ -218,6 +218,10 @@ export class History {
     return this.store.subscribe(id, listener);
   }
 
+  subscribeAll(listener) {
+    return this.store.subscribeAll(listener);
+  }
+
   toJSON() {
     return this.store.toJSON();
   }

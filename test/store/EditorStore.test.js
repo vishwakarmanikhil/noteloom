@@ -233,3 +233,45 @@ describe('EditorStore serialization', () => {
     expect(restored.getRootId()).toBe('root');
   });
 });
+
+describe('EditorStore.subscribeAll', () => {
+  it('fires once per applyOperation call, regardless of which id(s) were touched', () => {
+    const store = new EditorStore(makeDoc());
+    let calls = 0;
+    store.subscribeAll(() => {
+      calls += 1;
+    });
+
+    store.applyOperation(updateRun('r1', { value: 'changed' }));
+    expect(calls).toBe(1);
+
+    store.applyOperation(updateBlockProps('p1', { foo: 'bar' }));
+    expect(calls).toBe(2);
+  });
+
+  it('fires for remote operations too, not just local ones', () => {
+    const store = new EditorStore(makeDoc());
+    const remoteStore = new EditorStore(makeDoc());
+    let calls = 0;
+    store.subscribeAll(() => {
+      calls += 1;
+    });
+
+    remoteStore.applyOperation(updateRun('r1', { value: 'from remote' }));
+    store.applyRemoteOperation(remoteStore.getLastEnvelope());
+    expect(calls).toBe(1);
+  });
+
+  it('the returned unsubscribe function stops further notifications', () => {
+    const store = new EditorStore(makeDoc());
+    let calls = 0;
+    const unsubscribe = store.subscribeAll(() => {
+      calls += 1;
+    });
+
+    store.applyOperation(updateRun('r1', { value: 'one' }));
+    unsubscribe();
+    store.applyOperation(updateRun('r1', { value: 'two' }));
+    expect(calls).toBe(1);
+  });
+});
