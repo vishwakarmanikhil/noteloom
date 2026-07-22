@@ -1,0 +1,79 @@
+/*
+ * Page-level chrome for this demo app only — fonts, page width, and the
+ * demo's own Toolbar buttons (Undo/Redo/+ Field type/Preview). None of
+ * this is part of the editor's own default theme: that auto-injects
+ * itself (see src/react/injectDefaultStyles.js) the moment <EditorProvider>
+ * mounts, so every `.be-*` component class below is deliberately absent
+ * here — retheme those via the `--noteloom-*` CSS custom properties (see
+ * src/style.css) or plain class overrides instead of editing this file.
+ */
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #fff;
+}
+
+#root {
+  padding: 4rem 2rem;
+}
+
+.be-surface {
+  max-width: 700px;
+  margin: 2em auto;
+  padding: 0 1em;
+  position: relative;
+}
+
+.be-toolbar {
+  display: flex;
+  gap: 0.25em;
+  margin-bottom: 1.5em;
+}
+
+.be-toolbar button {
+  border: 1px solid var(--noteloom-border, #e2e8f0);
+  background: var(--noteloom-bg, #fff);
+  border-radius: var(--noteloom-radius-sm, 6px);
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--noteloom-text, #0f172a);
+}
+
+.be-toolbar button:hover:not(:disabled) {
+  background: var(--noteloom-bg-hover, #f1f5f9);
+}
+
+.be-toolbar button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.be-toolbar-btn-active {
+  background: var(--noteloom-accent, #6366f1) !important;
+  border-color: var(--noteloom-accent, #6366f1) !important;
+  color: #fff !important;
+}
+
+.be-voice-commands-list {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/*
+ * The library's own style.css hides every *editor* chrome element for
+ * print (see its @media print block) — but this demo's own Toolbar lives
+ * entirely outside the library (plain host-app markup), so it needs this
+ * same treatment written here instead. Any host app wrapping the editor
+ * in its own nav bar/toolbar/sidebar needs an equivalent rule for its own
+ * chrome; the library has no way to reach outside itself and do this for
+ * you.
+ */
+@media print {
+  .be-toolbar {
+    display: none !important;
+  }
+}
