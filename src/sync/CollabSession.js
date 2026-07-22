@@ -1,5 +1,7 @@
-import { MESSAGE_TYPE, encodeMessage, decodeMessage, helloMessage, opMessage, syncRequestMessage, syncResponseMessage } from './syncProtocol.js';
+import { MESSAGE_TYPE, encodeMessage, decodeMessage, helloMessage, opMessage, syncRequestMessage, syncResponseMessage, presenceMessage } from './syncProtocol.js';
 import { PeerConnection } from './peerConnection.js';
+
+const DEFAULT_PRESENCE_THROTTLE_MS = 100;
 
 /**
  * Wires a History-wrapped EditorStore up to one or more WebRTC peers.
@@ -18,14 +20,31 @@ import { PeerConnection } from './peerConnection.js';
  * at the cost of O(document size) traffic per (re)connect. Swapping in an
  * op-log-since-clock resync later is a pure optimization, not a
  * correctness fix, so it's deliberately not attempted here.
+ *
+ * Also carries ephemeral presence (cursor/selection position, name,
+ * color, ...) alongside the document sync — see setLocalPresence/
+ * getPresence/onPresenceChange. Presence is entirely separate from the
+ * document CRDT: never persisted, never subject to merge conflicts, just
+ * "whatever the last message said," rebroadcast to a newly-joining peer
+ * on connect and cleared the moment a peer disconnects.
  */
 export class CollabSession {
-  constructor({ history, signaling }) {
+  constructor({ history, signaling, presenceThrottleMs = DEFAULT_PRESENCE_THROTTLE_MS }) {
     this._history = history;
     this._store = history.store;
     this._signaling = signaling;
     this._peers = new Map(); // remotePeerId -> PeerConnection
     this._unsubscribeLocal = this._attachLocalBroadcast();
+
+    // Ephemeral presence (cursor position, name, color, ...) -- never
+    // part of the document CRDT, never persisted, opaque to this class
+    // (see presenceMessage's own doc comment for why).
+    this._localPresence = null;
+    this._remotePresence = new Map(); // remotePeerId -> data
+    this._presenceListeners = new Set();
+    this._presenceThrottleMs = presenceThrottleMs;
+    this._presenceThrottleTimer = null;
+    this._presenceDirty = false;
   }
 
   /**
@@ -95,6 +114,13 @@ export class CollabSession {
     peer.onOpen(() => {
       peer.send(encodeMessage(helloMessage(this._signaling.localPeerId)));
       peer.send(encodeMessage(syncRequestMessage()));
+      // A peer connecting after we already have presence set (we've been
+      // in the room a while, they're just joining) has no way to know it
+      // otherwise -- our next actual move would tell them eventually, but
+      // there's no reason to make them wait for that.
+      if (this._localPresence !== null) {
+        peer.send(encodeMessage(presenceMessage(this._signaling.localPeerId, this._localPresence)));
+      }
     });
     peer.onMessage((raw) => this._handleMessage(peer, raw));
     peer.onClose(() => {
@@ -104,9 +130,51 @@ export class CollabSession {
       // starts with syncRequest/syncResponse, so there's no dependency on
       // resuming from wherever the dropped connection left off.
       this._peers.delete(remotePeerId);
+      if (this._remotePresence.delete(remotePeerId)) this._notifyPresenceListeners();
     });
     this._peers.set(remotePeerId, peer);
     return peer;
+  }
+
+  /**
+   * Updates this peer's own presence data and broadcasts it to everyone
+   * connected, throttled (leading + trailing edge, default 100ms) so a
+   * continuous stream of updates (mouse-driven selection changes, say)
+   * doesn't send a message per pixel of movement — the first call in a
+   * quiet period goes out immediately, further calls within the throttle
+   * window coalesce into one trailing send of the latest value.
+   */
+  setLocalPresence(data) {
+    this._localPresence = data;
+    this._presenceDirty = true;
+    if (this._presenceThrottleTimer) return;
+
+    this._flushLocalPresence();
+    this._presenceThrottleTimer = setTimeout(() => {
+      this._presenceThrottleTimer = null;
+      if (this._presenceDirty) this._flushLocalPresence();
+    }, this._presenceThrottleMs);
+  }
+
+  _flushLocalPresence() {
+    this._presenceDirty = false;
+    this._broadcast(presenceMessage(this._signaling.localPeerId, this._localPresence));
+  }
+
+  /** A snapshot Map of every OTHER currently-known peer's presence data (never includes this peer's own — the caller already has that). */
+  getPresence() {
+    return new Map(this._remotePresence);
+  }
+
+  /** Fires whenever any peer's presence data changes, or a peer disconnects (removing their entry). Returns an unsubscribe function. */
+  onPresenceChange(cb) {
+    this._presenceListeners.add(cb);
+    return () => this._presenceListeners.delete(cb);
+  }
+
+  _notifyPresenceListeners() {
+    const snapshot = this.getPresence();
+    for (const cb of this._presenceListeners) cb(snapshot);
   }
 
   _handleMessage(peer, raw) {
@@ -133,8 +201,11 @@ export class CollabSession {
       peer.send(encodeMessage(syncResponseMessage(this._store.toJSON())));
     } else if (message.type === MESSAGE_TYPE.SYNC_RESPONSE) {
       this._adoptSnapshotIfEmpty(message.doc);
+    } else if (message.type === MESSAGE_TYPE.PRESENCE) {
+      this._remotePresence.set(message.peerId, message.data);
+      this._notifyPresenceListeners();
     }
-    // HELLO carries no required action yet -- reserved for future presence/awareness use.
+    // HELLO carries no required action yet -- reserved for future use.
   }
 
   /**
@@ -166,7 +237,10 @@ export class CollabSession {
 
   destroy() {
     this._unsubscribeLocal();
+    if (this._presenceThrottleTimer) clearTimeout(this._presenceThrottleTimer);
     for (const peer of this._peers.values()) peer.close();
     this._peers.clear();
+    this._remotePresence.clear();
+    this._presenceListeners.clear();
   }
 }

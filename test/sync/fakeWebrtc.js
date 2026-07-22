@@ -62,6 +62,13 @@ class FakeDataChannel {
     if (this.readyState === 'closed') return;
     this.readyState = 'closed';
     this.onclose?.();
+    // A real data channel closing is observed by BOTH ends once the
+    // underlying connection tears down -- propagate to the linked peer's
+    // channel too, so tests can exercise "the other side noticed I
+    // disconnected", not just "I noticed I closed my own connection".
+    if (this._peer && this._peer.readyState !== 'closed') {
+      queueMicrotask(() => this._peer?.close());
+    }
   }
 }
 

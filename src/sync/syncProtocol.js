@@ -3,6 +3,7 @@ export const MESSAGE_TYPE = {
   OP: 'op',
   SYNC_REQUEST: 'syncRequest',
   SYNC_RESPONSE: 'syncResponse',
+  PRESENCE: 'presence',
 };
 
 export function encodeMessage(message) {
@@ -33,4 +34,16 @@ export function syncRequestMessage() {
 /** A full document snapshot, as produced by `EditorStore.toJSON()`. */
 export function syncResponseMessage(doc) {
   return { type: MESSAGE_TYPE.SYNC_RESPONSE, doc };
+}
+
+/**
+ * Ephemeral "here's where I am" broadcast — a cursor/selection position,
+ * a display name, a color, whatever the host app wants peers to see.
+ * `data` is opaque to the transport layer (CollabSession only relays it,
+ * never inspects or interprets it) — deliberately, since what presence
+ * *means* is entirely a host-app concern, not something this package has
+ * an opinion on. Never persisted, never part of the document CRDT.
+ */
+export function presenceMessage(peerId, data) {
+  return { type: MESSAGE_TYPE.PRESENCE, peerId, data };
 }

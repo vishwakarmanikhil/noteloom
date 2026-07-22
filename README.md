@@ -11,7 +11,7 @@ A React-first, block-based rich text editor with **zero runtime dependencies** �
 
 ## ✨ Highlights
 
-- **12 built-in block types** — paragraph, heading, list (bulleted/numbered/to-do/toggle), table, multi-column layout, divider, callout, blockquote, code, toggle heading, button, embed, and a freehand **canvas** (draw/sketch/shapes/arrows/text — [see below](#drawing--sketching-the-canvas-block)).
+- **11 built-in block types** — paragraph, heading, list (bulleted/numbered/to-do/toggle), table, multi-column layout, divider, callout, blockquote, code, toggle heading, button, and embed.
 - **Inline widgets mid-sentence** — select dropdowns, dates, checkboxes, and `@mentions`, spliced directly into running text, not forced onto their own line.
 - **A real default theme**, injected automatically, fully retheme-able via CSS custom properties, or opt out entirely and bring your own.
 - **Mobile/touch-first UI** — a bottom action bar, tap-friendly block picker, and touch-aware popovers, not just a desktop UI that technically renders on a phone.
@@ -326,20 +326,7 @@ Trigger-menu and `Select` popovers reposition above the caret instead of below i
 
 ## Built-in block types
 
-`paragraph`, `heading` (h1–h3), `listItem` (bulleted, numbered, to-do, and toggle — with Notion-style Tab/Shift+Tab nesting and Enter conventions), `table` (with row/column insert/delete), `layout` (multi-column), `divider`, `callout`, `blockquote`, `code`, `toggleHeading`, `button`, `embed` (image/video/audio/file), and `canvas` (see next section).
-
-### Drawing & sketching: the canvas block
-
-A freehand drawing surface, insertable via `/canvas` (or the icon in the slash menu) — pen, eraser, resizable text, and rectangle/ellipse/arrow shapes, each with their own color/fill pickers, all in a fixed-size box you can resize like an embed. Exports to a self-contained inline `<svg>` (see `exportSvg.js`) as part of the document's normal HTML export, so it round-trips through copy/paste and `exportDocumentHTML` without a canvas-to-image conversion step.
-
-```js
-import { createBlockRegistry, registerBlocks, canvasBlockType } from 'noteloom';
-
-const registry = createBlockRegistry();
-registerBlocks(registry, { canvas: canvasBlockType /* , ...other blocks */ });
-```
-
-Strokes/shapes are authored in a fixed 0–1000 normalized coordinate space, independent of the block's own rendered pixel size — resizing the canvas never has to rescale the drawing data itself. There's no OCR/description generation, so a canvas has no plain-text representation (`toPlainText` returns `''`, matching a divider's decorative nature) and, in this first version, pasted/foreign SVG markup doesn't reverse-parse back into editable stroke data — a canvas block can only be created via its own slash command.
+`paragraph`, `heading` (h1–h3), `listItem` (bulleted, numbered, to-do, and toggle — with Notion-style Tab/Shift+Tab nesting and Enter conventions), `table` (with row/column insert/delete), `layout` (multi-column), `divider`, `callout`, `blockquote`, `code`, `toggleHeading`, `button`, and `embed` (image/video/audio/file).
 
 ## Picking only the blocks you want
 
@@ -510,6 +497,25 @@ From then on, every edit made via `store`/`history` (typing, inserting/moving/de
   ```
 
   A minimal reference relay server (Node, `ws`-based, ~80 lines, **not** part of the npm package) lives in `tools/lan-relay-server/` — see its README for how to run it and the wire protocol. A full runnable example wiring it up is in `examples/lan-collab/` — run `npm run dev:lan-collab` (after starting the relay), open the URL in two tabs, and it works with zero internet connectivity as long as both tabs can reach the relay.
+
+### Presence / awareness (live cursors, who's online)
+
+`CollabSession` also carries ephemeral "here's where I am" data alongside the document sync — entirely separate from the document CRDT (never persisted, never merge-conflicted, just "whatever the last message said"):
+
+```js
+import { usePresence } from 'noteloom';
+
+// broadcast your own position (throttled automatically, ~100ms by default)
+session.setLocalPresence({ runId: caret.runId, offset: caret.offset, name: 'Alex' });
+
+// react to everyone else's, reactively
+function PeerCursors({ session }) {
+  const presence = usePresence(session); // Map<peerId, data>, re-renders on change
+  return [...presence.entries()].map(([peerId, data]) => /* render however you like */);
+}
+```
+
+What presence *contains* is entirely up to you — a cursor position, a display name, a color, a "currently viewing" flag — `CollabSession` only relays the data, it never inspects or interprets it. A peer's entry disappears from `usePresence`'s map the instant they disconnect, and a newly-joining peer receives everyone's already-set presence immediately rather than waiting for their next move. `examples/collab/` renders this as live colored carets with peer-id labels, resolving `{runId, offset}` to an on-screen position the same way the editor's own selection code does (via the `[data-run-id]` DOM convention) — see `PeerCursors` in its `App.jsx` for the full (host-app-level, not package-level) rendering logic.
 
 **How conflicts resolve:**
 - Concurrent inserts (even at the same position) — both survive, converging to the same order on every peer.

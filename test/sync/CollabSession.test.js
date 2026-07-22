@@ -163,4 +163,114 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
     sessionA.destroy();
     sessionB.destroy();
   });
+
+  describe('presence', () => {
+    it('setLocalPresence on A shows up in B\'s getPresence(), keyed by A\'s peer id', async () => {
+      const historyA = new History(new EditorStore(makeDoc()));
+      const historyB = new History(new EditorStore(makeDoc()));
+      const { sessionA, sessionB } = await connectPair(historyA, historyB);
+
+      sessionA.setLocalPresence({ blockId: 'p1', offset: 3 });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(sessionB.getPresence()).toEqual(new Map([['peer-a', { blockId: 'p1', offset: 3 }]]));
+      expect(sessionA.getPresence().size).toBe(0); // getPresence() never includes your own
+
+      sessionA.destroy();
+      sessionB.destroy();
+    });
+
+    it('onPresenceChange fires with a snapshot whenever a peer\'s presence updates', async () => {
+      const historyA = new History(new EditorStore(makeDoc()));
+      const historyB = new History(new EditorStore(makeDoc()));
+      const { sessionA, sessionB } = await connectPair(historyA, historyB);
+
+      const snapshots = [];
+      sessionB.onPresenceChange((presence) => snapshots.push(presence));
+
+      sessionA.setLocalPresence({ blockId: 'p1', offset: 1 });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(snapshots.length).toBeGreaterThan(0);
+      expect(snapshots[snapshots.length - 1].get('peer-a')).toEqual({ blockId: 'p1', offset: 1 });
+
+      sessionA.destroy();
+      sessionB.destroy();
+    });
+
+    it('rapid setLocalPresence calls within the throttle window collapse into one trailing broadcast of the latest value', async () => {
+      const historyA = new History(new EditorStore(makeDoc()));
+      const historyB = new History(new EditorStore(makeDoc()));
+      const network = makeFakeSignalingNetwork();
+      const sessionA = new CollabSession({ history: historyA, signaling: network.makeChannelFor('peer-a'), presenceThrottleMs: 1000 });
+      const sessionB = new CollabSession({ history: historyB, signaling: network.makeChannelFor('peer-b') });
+      const peerA = sessionA.connect('peer-b', { initiator: true });
+      const peerB = sessionB.connect('peer-a', { initiator: false });
+      await Promise.all([waitForOpen(peerA), waitForOpen(peerB)]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const updates = [];
+      sessionB.onPresenceChange((presence) => updates.push(presence.get('peer-a')));
+
+      sessionA.setLocalPresence({ offset: 1 }); // leading edge -- sent immediately
+      sessionA.setLocalPresence({ offset: 2 }); // coalesced
+      sessionA.setLocalPresence({ offset: 3 }); // coalesced -- this is the "latest" value
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(updates.length).toBe(1);
+      expect(updates[0]).toEqual({ offset: 1 });
+
+      await new Promise((resolve) => setTimeout(resolve, 1100)); // past the throttle window -- trailing edge fires
+      expect(updates.length).toBe(2);
+      expect(updates[1]).toEqual({ offset: 3 });
+
+      sessionA.destroy();
+      sessionB.destroy();
+    });
+
+    it('a newly-joining peer receives the already-set presence of the peer already in the room, without waiting for their next move', async () => {
+      const historyA = new History(new EditorStore(makeDoc()));
+      const historyB = new History(new EditorStore(emptyDoc()));
+
+      const network = makeFakeSignalingNetwork();
+      const sessionA = new CollabSession({ history: historyA, signaling: network.makeChannelFor('peer-a') });
+      sessionA.setLocalPresence({ blockId: 'p1', offset: 0 }); // set BEFORE B ever connects
+
+      const sessionB = new CollabSession({ history: historyB, signaling: network.makeChannelFor('peer-b') });
+      const peerA = sessionA.connect('peer-b', { initiator: true });
+      const peerB = sessionB.connect('peer-a', { initiator: false });
+      await Promise.all([waitForOpen(peerA), waitForOpen(peerB)]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(sessionB.getPresence().get('peer-a')).toEqual({ blockId: 'p1', offset: 0 });
+
+      sessionA.destroy();
+      sessionB.destroy();
+    });
+
+    it('a peer\'s presence is removed the moment they disconnect', async () => {
+      const historyA = new History(new EditorStore(makeDoc()));
+      const historyB = new History(new EditorStore(makeDoc()));
+      const { sessionA, sessionB } = await connectPair(historyA, historyB);
+
+      sessionA.setLocalPresence({ blockId: 'p1', offset: 5 });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(sessionB.getPresence().has('peer-a')).toBe(true);
+
+      let lastSnapshot = null;
+      sessionB.onPresenceChange((presence) => {
+        lastSnapshot = presence;
+      });
+
+      sessionA.destroy(); // closes the connection
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(sessionB.getPresence().has('peer-a')).toBe(false);
+      expect(lastSnapshot?.has('peer-a')).toBe(false);
+
+      sessionB.destroy();
+    });
+  });
 });
