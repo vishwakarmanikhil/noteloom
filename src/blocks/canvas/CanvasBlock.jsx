@@ -157,6 +157,18 @@ function pointBox(x, y, r) {
   return { minX: x - r, minY: y - r, maxX: x + r, maxY: y + r };
 }
 
+/** The average client position of every currently-down touch pointer — the anchor point a two-finger pan drag tracks (see touchPanRef in CanvasBlock). */
+function touchCentroid(pointsMap) {
+  let sumX = 0;
+  let sumY = 0;
+  for (const point of pointsMap.values()) {
+    sumX += point.x;
+    sumY += point.y;
+  }
+  const count = pointsMap.size || 1;
+  return { x: sumX / count, y: sumY / count };
+}
+
 /**
  * Whether `(x, y)` falls within `tolerance` of the ACTUAL stroke path — its
  * real polyline segments (or, for a single-point "dot" stroke, that one
@@ -616,11 +628,14 @@ function ShapeElement({ shape, opacity = 1 }) {
  * same reasoning as why no block in this codebase persists a scroll
  * position. Applied purely via the `<svg>`'s own `viewBox` attribute, so
  * stroke coordinates themselves are never touched by panning/zooming.
- * Zoom is Ctrl/Cmd+wheel (plain wheel still scrolls the surrounding page
- * normally, since this is one block embedded in a scrollable document, not
- * a full-screen app); pan is a middle-mouse-button drag (a plain, always-
- * available gesture that doesn't depend on which tool is currently active
- * or on keyboard focus, unlike a space-bar-held convention would).
+ * Zoom is Ctrl/Cmd+wheel — also how a trackpad OR touchscreen pinch
+ * gesture reports itself. Pan is: a middle-mouse-button drag (a plain,
+ * always-available gesture that doesn't depend on which tool is currently
+ * active or on keyboard focus, unlike a space-bar-held convention would);
+ * a plain (non-ctrl) wheel, i.e. a trackpad's two-finger scroll; or two
+ * fingers dragging on a touchscreen (see touchPanRef/cancelActiveSingleGesture) —
+ * the latter takes over from whatever the first finger alone had already
+ * started (drawing, erasing, ...) the instant a second finger touches down.
  */
 export function CanvasBlock({ id }) {
   const store = useEditorStore();
@@ -789,6 +804,20 @@ export function CanvasBlock({ id }) {
   const [view, setView] = useState({ x: 0, y: 0, zoom: 1 });
   const viewSize = VIEW_SIZE / view.zoom;
   const panRef = useRef(null); // { startClientX, startClientY, startViewX, startViewY } | null
+  // Two-finger touch pan: every currently-down TOUCH pointer, keyed by its
+  // own pointerId -> last known client position — tracked so a second
+  // finger landing mid-gesture can compute the two-touch centroid right
+  // away, and so a still-down finger's position stays current while the
+  // OTHER finger is the one moving. `touchPanRef` (set once 2+ fingers are
+  // down) mirrors `panRef` above almost exactly — same view-delta math,
+  // just anchored to the two-touch centroid instead of one mouse position
+  // — so a two-finger drag pans the exact same `view` state the middle-
+  // mouse-drag pan and Ctrl/Cmd+wheel zoom already share. Pinch-zoom itself
+  // stays entirely on the existing `handleWheel` path (trackpad AND
+  // touchscreen pinch both reach it as a synthesized ctrl+wheel event) —
+  // this only adds the PAN gesture that path has no way to express.
+  const touchPointsRef = useRef(new Map()); // pointerId -> { x, y } (client coords)
+  const touchPanRef = useRef(null); // { startCenterX, startCenterY, startViewX, startViewY } | null
 
   // Resize (Phase 4): existing strokes never need rescaling here — they're
   // authored in the fixed 0..1000 normalized space (see VIEW_SIZE above),
@@ -1201,6 +1230,45 @@ export function CanvasBlock({ id }) {
     store.applyOperation(updateBlockProps(id, { shapes: nextShapes }));
   }, [store, id, block]);
 
+  /**
+   * Discards whichever single-pointer gesture (draw/erase/shape-draft/move/
+   * marquee/resize) the given (first) touch pointer had already started,
+   * without committing it — called the instant a SECOND finger touches
+   * down mid-gesture, so touch transitions straight into a two-finger pan
+   * instead of also leaving behind a stray in-progress stroke/drag from
+   * the first finger alone.
+   */
+  const cancelActiveSingleGesture = useCallback(
+    (pointerId) => {
+      const svg = svgRef.current;
+      if (svg?.hasPointerCapture?.(pointerId)) svg.releasePointerCapture(pointerId);
+      if (shapeDraftRef.current) {
+        stopShapeDraft();
+        return;
+      }
+      if (moveDraftRef.current) {
+        stopMove();
+        return;
+      }
+      if (marqueeDraftRef.current) {
+        stopMarquee();
+        return;
+      }
+      if (resizeDraftRef.current) {
+        stopResize();
+        return;
+      }
+      if (drawingRef.current) {
+        stopDrawing();
+        return;
+      }
+      if (erasingRef.current) {
+        stopErasing();
+      }
+    },
+    [stopShapeDraft, stopMove, stopMarquee, stopResize, stopDrawing, stopErasing],
+  );
+
   // Delete/Backspace removes the selection; arrow keys nudge it by
   // NUDGE_STEP (Shift+arrow by NUDGE_STEP_LARGE); Enter re-opens the
   // text-edit overlay for a selected text shape; Ctrl/Cmd+C/V copy/paste
@@ -1295,20 +1363,34 @@ export function CanvasBlock({ id }) {
 
   const currentView = { x: view.x, y: view.y, size: viewSize };
 
-  const handleWheel = useCallback((event) => {
-    if (!event.ctrlKey && !event.metaKey) return; // plain wheel scrolls the surrounding page normally; Ctrl/Cmd+wheel (or trackpad pinch, which reports as this) zooms the canvas instead
-    event.preventDefault();
-    const svg = svgRef.current;
-    if (!svg) return;
-    setView((prev) => {
-      const zoomFactor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
-      const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev.zoom * zoomFactor));
-      const nextSize = VIEW_SIZE / nextZoom;
-      // keep the point under the cursor fixed on screen as the zoom changes
-      const { x, y } = zoomAnchoredView(event, svg, { x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom }, nextSize);
-      return { x, y, zoom: nextZoom };
-    });
-  }, []);
+  const handleWheel = useCallback(
+    (event) => {
+      const svg = svgRef.current;
+      if (!svg) return;
+      event.preventDefault();
+      if (event.ctrlKey || event.metaKey) {
+        // Ctrl/Cmd+wheel — also how a trackpad OR touchscreen pinch gesture
+        // reports itself — zooms the canvas.
+        setView((prev) => {
+          const zoomFactor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+          const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev.zoom * zoomFactor));
+          const nextSize = VIEW_SIZE / nextZoom;
+          // keep the point under the cursor fixed on screen as the zoom changes
+          const { x, y } = zoomAnchoredView(event, svg, { x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom }, nextSize);
+          return { x, y, zoom: nextZoom };
+        });
+        return;
+      }
+      // A plain wheel (no ctrl/meta) is most commonly a trackpad's
+      // two-finger scroll gesture (deltaX/deltaY) — pan the canvas view
+      // with it instead of letting it scroll the surrounding page, the
+      // same "this block owns wheel input" choice the zoom branch above
+      // already makes.
+      const scale = localPixelScale(svg, viewSize);
+      setView((prev) => ({ ...prev, x: prev.x + event.deltaX / scale, y: prev.y + event.deltaY / scale }));
+    },
+    [viewSize],
+  );
 
   // React registers `wheel` (like `touchstart`/`touchmove`) as a PASSIVE
   // listener at the root by default, a deliberate perf decision so
@@ -1432,6 +1514,25 @@ export function CanvasBlock({ id }) {
     (event) => {
       const svg = svgRef.current;
       if (!svg) return;
+
+      if (event.pointerType === 'touch') {
+        touchPointsRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (touchPointsRef.current.size >= 2) {
+          // A second finger landing mid-gesture: switch straight into a
+          // two-finger pan, discarding whatever the first finger alone had
+          // already started (see cancelActiveSingleGesture).
+          event.preventDefault();
+          svg.setPointerCapture?.(event.pointerId);
+          if (!touchPanRef.current) {
+            for (const pointerId of touchPointsRef.current.keys()) {
+              if (pointerId !== event.pointerId) cancelActiveSingleGesture(pointerId);
+            }
+            const center = touchCentroid(touchPointsRef.current);
+            touchPanRef.current = { startCenterX: center.x, startCenterY: center.y, startViewX: view.x, startViewY: view.y };
+          }
+          return;
+        }
+      }
 
       if (textEditDraft) {
         // A pointerdown landing on the textarea ITSELF (repositioning the
@@ -1594,6 +1695,7 @@ export function CanvasBlock({ id }) {
       selectedIds,
       startNewTextEdit,
       textEditDraft,
+      cancelActiveSingleGesture,
     ],
   );
 
@@ -1602,13 +1704,39 @@ export function CanvasBlock({ id }) {
       const svg = svgRef.current;
       if (!svg) return;
 
+      if (event.pointerType === 'touch' && touchPointsRef.current.has(event.pointerId)) {
+        touchPointsRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (touchPanRef.current) {
+          event.preventDefault();
+          const scale = localPixelScale(svg, viewSize);
+          const center = touchCentroid(touchPointsRef.current);
+          const { startCenterX, startCenterY, startViewX, startViewY } = touchPanRef.current;
+          const dx = (center.x - startCenterX) / scale;
+          const dy = (center.y - startCenterY) / scale;
+          // startViewX/startViewY are captured above (not read from the ref
+          // inside this updater) — several of these events can be queued
+          // within the same React batch, and touchPanRef.current may
+          // already have been reset to null by a LATER pointerup/pointer-
+          // cancel by the time this updater actually runs.
+          setView((prev) => ({ ...prev, x: startViewX - dx, y: startViewY - dy }));
+          return;
+        }
+      }
+
       if (panRef.current) {
         // Same letterbox-aware scale clientToLocal uses (see canvasGeometry.js) —
         // a delta only needs the shared scale factor, not the absolute view.x/y offset.
         const scale = localPixelScale(svg, viewSize);
-        const dx = (event.clientX - panRef.current.startClientX) / scale;
-        const dy = (event.clientY - panRef.current.startClientY) / scale;
-        setView((prev) => ({ ...prev, x: panRef.current.startViewX - dx, y: panRef.current.startViewY - dy }));
+        const { startClientX, startClientY, startViewX, startViewY } = panRef.current;
+        const dx = (event.clientX - startClientX) / scale;
+        const dy = (event.clientY - startClientY) / scale;
+        // startViewX/startViewY are captured above rather than read from
+        // the ref inside this updater — a queued functional setView update
+        // runs later, by which point panRef.current could already have
+        // been reset to null by a subsequent pointerup/pointercancel
+        // dispatched within the same batch (see the identical touch-pan
+        // fix above, where this exact lazy-read pattern crashed).
+        setView((prev) => ({ ...prev, x: startViewX - dx, y: startViewY - dy }));
         return;
       }
       if (shapeDraftRef.current) {
@@ -1678,6 +1806,14 @@ export function CanvasBlock({ id }) {
 
   const handlePointerUp = useCallback(
     (event) => {
+      if (event.pointerType === 'touch') {
+        touchPointsRef.current.delete(event.pointerId);
+        if (touchPanRef.current) {
+          releaseCapture(event);
+          if (touchPointsRef.current.size < 2) touchPanRef.current = null;
+          return;
+        }
+      }
       if (panRef.current) {
         releaseCapture(event);
         panRef.current = null;
@@ -1739,6 +1875,14 @@ export function CanvasBlock({ id }) {
   // unlike pointerup.
   const handlePointerCancel = useCallback(
     (event) => {
+      if (event.pointerType === 'touch') {
+        touchPointsRef.current.delete(event.pointerId);
+        if (touchPanRef.current) {
+          releaseCapture(event);
+          if (touchPointsRef.current.size < 2) touchPanRef.current = null;
+          return;
+        }
+      }
       if (panRef.current) {
         releaseCapture(event);
         panRef.current = null;

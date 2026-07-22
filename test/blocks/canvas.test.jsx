@@ -2968,7 +2968,7 @@ describe('canvas block: pan/zoom (Phase 5) — local view state, never touches t
     });
   });
 
-  it('a plain wheel (no Ctrl/Cmd) leaves the view untouched — lets the surrounding page scroll normally', () => {
+  it('a plain wheel (no Ctrl/Cmd) pans the view — a trackpad two-finger scroll, not the surrounding page', () => {
     withMockedRect(() => {
       const store = new EditorStore(emptyDoc());
       const id = insertAtRoot(store, createCanvasBlock());
@@ -2976,11 +2976,14 @@ describe('canvas block: pan/zoom (Phase 5) — local view state, never touches t
       const svg = container.querySelector(`[data-block-id="${id}"] svg.be-canvas-surface`);
       const before = svg.getAttribute('viewBox');
 
+      const event = new Event('wheel', { bubbles: true, cancelable: true });
+      Object.assign(event, { deltaX: 0, deltaY: -100, clientX: 240, clientY: 160 });
       act(() => {
-        fireEvent.wheel(svg, { deltaY: -100, clientX: 240, clientY: 160 });
+        svg.dispatchEvent(event);
       });
 
-      expect(svg.getAttribute('viewBox')).toBe(before);
+      expect(event.defaultPrevented).toBe(true);
+      expect(svg.getAttribute('viewBox')).not.toBe(before);
     });
   });
 
@@ -3002,6 +3005,48 @@ describe('canvas block: pan/zoom (Phase 5) — local view state, never touches t
       expect(svg.getAttribute('viewBox')).not.toBe(before);
       expect(applySpy).not.toHaveBeenCalled();
       expect(store.getBlock(id).props.strokes).toHaveLength(0); // pan, not a pen stroke
+    });
+  });
+
+  it('a two-finger touch drag pans the view and discards whatever the first finger alone had already started drawing', () => {
+    withMockedRect(() => {
+      const store = new EditorStore(emptyDoc());
+      const id = insertAtRoot(store, createCanvasBlock());
+      const { container } = renderDoc(store);
+      const svg = container.querySelector(`[data-block-id="${id}"] svg.be-canvas-surface`);
+      const applySpy = vi.spyOn(store, 'applyOperation');
+      const before = svg.getAttribute('viewBox');
+
+      act(() => {
+        // First finger alone starts a pen stroke (the default tool).
+        firePointerEvent(svg, 'pointerdown', { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 });
+        firePointerEvent(svg, 'pointermove', { pointerId: 1, pointerType: 'touch', clientX: 105, clientY: 105 });
+        // A second finger lands mid-gesture — this should cancel the
+        // in-progress stroke and switch straight into a two-finger pan.
+        firePointerEvent(svg, 'pointerdown', {
+          pointerId: 2,
+          pointerType: 'touch',
+          isPrimary: false,
+          clientX: 140,
+          clientY: 100,
+        });
+        // Both fingers drag together (same relative offset from each
+        // other — a pan, not a pinch).
+        firePointerEvent(svg, 'pointermove', { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 130 });
+        firePointerEvent(svg, 'pointermove', { pointerId: 2, pointerType: 'touch', clientX: 140, clientY: 130 });
+        firePointerEvent(svg, 'pointerup', { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 130 });
+        firePointerEvent(svg, 'pointerup', {
+          pointerId: 2,
+          pointerType: 'touch',
+          isPrimary: false,
+          clientX: 140,
+          clientY: 130,
+        });
+      });
+
+      expect(svg.getAttribute('viewBox')).not.toBe(before);
+      expect(applySpy).not.toHaveBeenCalled();
+      expect(store.getBlock(id).props.strokes).toHaveLength(0); // the first finger's stroke was discarded, not committed
     });
   });
 
