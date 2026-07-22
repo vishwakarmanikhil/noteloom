@@ -261,9 +261,10 @@ export class EditorStore {
         const index = order.toArray().indexOf(op.id);
         const subtree = this._captureSubtree(op.id);
         this._deleteSubtree(op.id);
-        order.delete(op.id);
+        const deleteClock = this._clock.tick();
+        order.delete(op.id, deleteClock);
         this.blocks.set(parentId, { ...parent, contentIds: order.toArray() });
-        this._lastEnvelope = { kind: 'deleteSlot', parentId, blockId: op.id };
+        this._lastEnvelope = { kind: 'deleteSlot', parentId, blockId: op.id, clock: deleteClock };
         this._notify([parentId]);
         return { type: OP.INSERT_BLOCK, block: target, parentId, index, subtree };
       }
@@ -280,7 +281,7 @@ export class EditorStore {
         // interpreted against (matches the original index-based
         // contract, where toIndex already meant "position in the
         // resulting list").
-        fromOrder.delete(op.id);
+        fromOrder.delete(op.id, this._clock.tick());
         this.blocks.set(fromParentId, { ...this.blocks.get(fromParentId), contentIds: fromOrder.toArray() });
 
         const toOrder = this._getOrder(op.toParentId);
@@ -449,7 +450,8 @@ export class EditorStore {
       case 'deleteSlot': {
         const order = this._getOrder(envelope.parentId);
         if (this.blocks.has(envelope.blockId)) this._deleteSubtree(envelope.blockId);
-        order.delete(envelope.blockId);
+        order.delete(envelope.blockId, envelope.clock);
+        if (envelope.clock) this._clock.receive(envelope.clock);
         const parent = this.blocks.get(envelope.parentId);
         this.blocks.set(envelope.parentId, { ...parent, contentIds: order.toArray() });
         this._notify([envelope.parentId]);
@@ -458,7 +460,11 @@ export class EditorStore {
 
       case 'moveSlot': {
         const fromOrder = this._getOrder(envelope.fromParentId);
-        fromOrder.delete(envelope.blockId);
+        // The move's own clock (envelope.slot.clock) is a reasonable proxy
+        // for "when the old position was vacated" -- there's no separate
+        // timestamp for that specific fact, and it's close enough in time
+        // to be a safe (if not perfectly precise) tombstone age.
+        fromOrder.delete(envelope.blockId, envelope.slot?.clock);
         this.blocks.set(envelope.fromParentId, { ...this.blocks.get(envelope.fromParentId), contentIds: fromOrder.toArray() });
 
         const toOrder = this._getOrder(envelope.toParentId);
@@ -527,6 +533,31 @@ export class EditorStore {
       default:
         throw new Error(`Unknown remote envelope kind: ${envelope.kind}`);
     }
+  }
+
+  /** Total tombstoned (deleted but still retained) slots across every parent's ordering CRDT — a cheap signal for whether pruneTombstones() is worth calling, or just for observing growth over a long session. */
+  getTombstoneCount() {
+    let count = 0;
+    for (const order of this._orders.values()) count += order.tombstoneCount();
+    return count;
+  }
+
+  /**
+   * Permanently removes tombstones older than `maxAgeMs` (default 24h)
+   * across every parent's ordering CRDT — see ListCrdtState.pruneTombstones
+   * for the safety argument this relies on (this package's reconnect model
+   * always resyncs via a full snapshot, never a replayed op log, which is
+   * what makes a time-based threshold safe here specifically). Opt-in:
+   * never called automatically by anything in this store — call it
+   * yourself on whatever schedule fits (see createPeriodicTombstoneGC for
+   * a ready-made "just handle it" helper). Returns the number of slots
+   * removed.
+   */
+  pruneTombstones({ maxAgeMs = 24 * 60 * 60 * 1000, now = Date.now() } = {}) {
+    const threshold = { wallTime: now - maxAgeMs, counter: 0, peerId: '' };
+    let removed = 0;
+    for (const order of this._orders.values()) removed += order.pruneTombstones(threshold);
+    return removed;
   }
 
   toJSON() {

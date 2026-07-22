@@ -241,3 +241,39 @@ describe('EditorStore + History: a remote write landing mid-local-coalescing-bat
     }
   });
 });
+
+describe('EditorStore two-peer convergence: tombstone garbage collection', () => {
+  it('a block deleted on A, synced to B, and pruned by both after enough time -- a later insert near the pruned spot still lands correctly on both sides', () => {
+    const storeA = new EditorStore(makeDoc());
+    const storeB = new EditorStore(makeDoc());
+
+    const deleteTime = Date.now();
+    const deleteEnvelope = (() => {
+      storeA.applyOperation(removeBlock('hello'));
+      return storeA.getLastEnvelope();
+    })();
+    storeB.applyRemoteOperation(deleteEnvelope);
+
+    expect(storeA.getBlock('root').contentIds).toEqual(['world']);
+    expect(storeB.getBlock('root').contentIds).toEqual(['world']);
+
+    // both peers independently GC after "24h + margin" have passed -- no
+    // coordination between them required, each just runs its own sweep
+    const prunedOnA = storeA.pruneTombstones({ now: deleteTime + 24 * 60 * 60 * 1000 + 1000 });
+    const prunedOnB = storeB.pruneTombstones({ now: deleteTime + 24 * 60 * 60 * 1000 + 1000 });
+    expect(prunedOnA).toBe(1);
+    expect(prunedOnB).toBe(1);
+    expect(storeA.getTombstoneCount()).toBe(0);
+    expect(storeB.getTombstoneCount()).toBe(0);
+
+    // a fresh insert at the start of root (anchored to null, same spot the
+    // pruned block used to occupy) must still resolve correctly on both
+    const { block: introBlock, subtree: introSubtree } = makeLeafBlock('intro', 'rIntro', 'Intro');
+    storeA.applyOperation(insertBlock(introBlock, 'root', 0, introSubtree));
+    storeB.applyRemoteOperation(storeA.getLastEnvelope());
+
+    expect(storeA.getBlock('root').contentIds).toEqual(['intro', 'world']);
+    expect(storeB.getBlock('root').contentIds).toEqual(['intro', 'world']);
+    expect(storeB.getRun('rIntro').value).toBe('Intro');
+  });
+});

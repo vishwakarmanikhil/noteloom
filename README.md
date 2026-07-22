@@ -517,9 +517,27 @@ From then on, every edit made via `store`/`history` (typing, inserting/moving/de
 - Concurrent type-conversion of the same block ("Turn into") — one type wins deterministically (the same one, on every peer), not two duplicate blocks.
 - Concurrent edits to a run's text — whole-value last-write-wins (the newer edit replaces the older one entirely; character-level interleaving, like Google Docs, is not implemented).
 
+### Tombstone garbage collection
+
+Deleted blocks/runs are kept as "tombstones" rather than actually removed — necessary so a concurrent operation that references a since-deleted item (an insert anchored to it, say) can still resolve correctly no matter when it arrives. Left alone, this grows without bound over a long enough session. To actually reclaim that memory:
+
+```js
+import { EditorStore, createPeriodicTombstoneGC } from 'noteloom';
+
+const store = new EditorStore(myDoc);
+const gc = createPeriodicTombstoneGC({ store, intervalMs: 60 * 60 * 1000, maxAgeMs: 24 * 60 * 60 * 1000 }); // hourly sweep, 24h retention (both defaults, shown explicitly)
+
+// later, when the store is no longer in use:
+gc.stop();
+```
+
+Or call `store.pruneTombstones({ maxAgeMs })` yourself on whatever schedule you want — `createPeriodicTombstoneGC` is just a thin timer wrapper around it. `store.getTombstoneCount()` tells you how many are currently being retained, if you want to observe growth before deciding on a policy. Both work identically whether `store` is a plain `EditorStore` or a `History` wrapping one, and pruning is never itself an undo step (it doesn't change the visible document — the pruned content was already invisible).
+
+**Why a time-based threshold is safe here specifically:** this only works because of how `CollabSession` reconnects — a peer rejoining after any absence gets a full document *snapshot* (`syncResponse`), never a replay of the ops it missed. That means a peer offline longer than the GC threshold never needs an old tombstone to resolve a stale reference; it just adopts the current state directly. The only residual risk is a single *already-connected* peer somehow stalling for exactly as long as the threshold and then delivering a queued message afterward — implausible for a live, reliable, ordered WebRTC data channel (which disconnects long before that under any real interruption), but not impossible, which is why this is opt-in rather than automatic.
+
 **Known limitations — read before relying on this in production:**
 - **Undo is local-only, and can overwrite a peer's edit to the same run.** Your undo/redo never touches a peer's changes directly — but because text merges as *whole-value* LWW (see above), undoing your own past edit to a run replays an old full-string snapshot, which will clobber anything a peer has since typed into that same run. Avoid undoing text you know a peer may have touched; a true fix requires character-level text merging, which is a deliberately larger, not-yet-built change.
-- **Deleted content is never garbage-collected.** Tombstones for deleted blocks are kept forever (needed so a late-arriving concurrent operation can still resolve correctly) — long collaborative sessions with heavy insert/delete churn grow unbounded memory over time.
+- **Deleted content isn't garbage-collected automatically, but can be — opt-in.** Tombstones are kept by default (needed so a late-arriving concurrent operation can still resolve correctly), which means unbounded memory growth over a long enough session unless you do something about it. `store.pruneTombstones({ maxAgeMs })` (default 24h) removes tombstones older than that safely — see "Tombstone garbage collection" below. Nothing calls this automatically; wire up `createPeriodicTombstoneGC` (or call it yourself) if you want it handled for you.
 - **A peer joining with their own existing (different) document does not merge with yours.** `CollabSession` only adopts a peer's document wholesale when your own side is still empty — the common "open a shared link and get the document" flow. Reconciling two independently-created, already-diverged documents on first contact is a fundamentally harder problem (no shared id space) and isn't attempted.
 - **Reconnecting after a dropped connection re-syncs the full document**, not just what was missed — simple and correct, at the cost of O(document size) traffic per reconnect.
 - Only structural block changes and field edits (props, type, run text) are collaboration-aware. A few coarse "resync" operations (`setBlockContentIds`, `replaceRunSpan`, `setBlockRuns` — used for DOM-reconciliation escape hatches like paste-into-contentEditable or IME composition) remain local-only for now.

@@ -213,3 +213,77 @@ describe('ListCrdtState — chained sequential inserts stay contiguous', () => {
     expect(Math.max(...aIndices) - Math.min(...aIndices)).toBe(2); // contiguous, not interleaved
   });
 });
+
+describe('ListCrdtState — tombstone garbage collection', () => {
+  it('tombstoneCount reflects the current number of deleted-but-retained slots', () => {
+    const state = ListCrdtState.fromArray(['a', 'b', 'c']);
+    expect(state.tombstoneCount()).toBe(0);
+    state.delete('b');
+    expect(state.tombstoneCount()).toBe(1);
+    state.delete('c');
+    expect(state.tombstoneCount()).toBe(2);
+  });
+
+  it('prunes only tombstones strictly older than the given clock, leaving newer ones and live slots alone', () => {
+    const state = ListCrdtState.fromArray(['a', 'b', 'c']);
+    const p = makePeer('peer-a');
+
+    const oldTs = p.clock.tick();
+    state.slots.get('a').deleted = true;
+    state.slots.get('a').clock = oldTs;
+
+    const newTs = p.clock.tick(); // HLC.tick() guarantees this is strictly greater than oldTs
+    state.slots.get('b').deleted = true;
+    state.slots.get('b').clock = newTs;
+    // 'c' stays alive (not deleted)
+
+    // newTs itself as the threshold: anything strictly before it (oldTs) is
+    // prunable; anything at or after it (newTs itself) is not.
+    const removed = state.pruneTombstones(newTs);
+
+    expect(removed).toBe(1);
+    expect(state.has('a')).toBe(false); // pruned
+    expect(state.has('b')).toBe(true); // too new to prune yet
+    expect(state.isDeleted('b')).toBe(true);
+    expect(state.toArray()).toEqual(['c']); // 'c' untouched throughout
+  });
+
+  it('reparents children of a pruned tombstone instead of orphaning them', () => {
+    // chain: a -> b -> c, b gets deleted and pruned
+    const state = ListCrdtState.fromArray(['a', 'b', 'c']);
+    const p = makePeer('peer-a');
+    const oldTs = p.clock.tick();
+    state.slots.get('b').deleted = true;
+    state.slots.get('b').clock = oldTs;
+
+    expect(state.toArray()).toEqual(['a', 'c']); // 'b' already invisible pre-prune
+
+    const removed = state.pruneTombstones({ wallTime: oldTs.wallTime + 1, counter: 0, peerId: '' });
+
+    expect(removed).toBe(1);
+    expect(state.has('b')).toBe(false);
+    // 'c' must still be reachable -- reparented to 'b's own origin ('a')
+    expect(state.toArray()).toEqual(['a', 'c']);
+    expect(state.getSlot('c').originId).toBe('a');
+  });
+
+  it('pruning an id that nothing else anchors to is a plain removal', () => {
+    const state = ListCrdtState.fromArray(['a', 'b']);
+    const p = makePeer('peer-a');
+    const oldTs = p.clock.tick();
+    state.slots.get('b').deleted = true; // 'b' is the tail -- nothing anchors to it
+    state.slots.get('b').clock = oldTs;
+
+    const removed = state.pruneTombstones({ wallTime: oldTs.wallTime + 1, counter: 0, peerId: '' });
+    expect(removed).toBe(1);
+    expect(state.toArray()).toEqual(['a']);
+  });
+
+  it('never removes a slot that is not deleted, regardless of how old its clock is', () => {
+    const state = ListCrdtState.fromArray(['a', 'b']);
+    // fromArray seeds every slot with clock {wallTime: 0, ...} -- about as old as a clock can be
+    const removed = state.pruneTombstones({ wallTime: Number.MAX_SAFE_INTEGER, counter: 0, peerId: '' });
+    expect(removed).toBe(0);
+    expect(state.toArray()).toEqual(['a', 'b']);
+  });
+});

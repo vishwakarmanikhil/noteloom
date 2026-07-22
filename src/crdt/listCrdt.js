@@ -66,10 +66,20 @@ export class ListCrdtState {
     this.slots.set(id, { id, originId: afterId, peerId, clock, deleted: false });
   }
 
-  delete(id) {
+  /**
+   * `clock` records WHEN the delete happened (used by pruneTombstones to
+   * judge tombstone age) — deliberately a separate value from whatever
+   * clock the slot already had from insertion/move, which recorded a
+   * different thing (when its POSITION was last established). Without
+   * this, an old-but-just-deleted slot would look ancient from the
+   * moment it's deleted (inheriting its original insertion time, however
+   * long ago that was) and become immediately GC-eligible.
+   */
+  delete(id, clock) {
     const slot = this.slots.get(id);
     if (!slot) return;
     slot.deleted = true;
+    if (clock) slot.deletedClock = clock;
   }
 
   /** Undoes a local delete in place, preserving the slot's original position. */
@@ -135,6 +145,55 @@ export class ListCrdtState {
   /** Every slot as a plain array, for persistence/transport. */
   toSlotArray() {
     return Array.from(this.slots.values());
+  }
+
+  /** How many tombstoned (deleted but still retained) slots this list is currently carrying — for deciding whether GC is worth running, or just observing growth. */
+  tombstoneCount() {
+    let count = 0;
+    for (const slot of this.slots.values()) {
+      if (slot.deleted) count += 1;
+    }
+    return count;
+  }
+
+  /**
+   * Permanently removes tombstoned slots whose delete happened before
+   * `beforeClock` — the actual fix for the "deleted content is never
+   * garbage-collected" limitation. Splices each removed slot out of the
+   * chain first (children reparented to its own origin, same technique
+   * as `move()`) so removal never orphans a slot anchored to it. Returns
+   * the number of slots actually removed.
+   *
+   * Safety of this is specifically tied to how this package's transport
+   * layer reconnects: `CollabSession` resyncs a reconnecting peer via a
+   * full document snapshot (see syncResponse in CollabSession.js), never
+   * by replaying a log of historical ops — so a peer that was offline
+   * longer than any reasonable GC threshold never needs an old tombstone
+   * to resolve a stale anchor; it just adopts the current state directly.
+   * The one theoretical residual risk is a single already-open connection
+   * somehow stalling for exactly as long as the GC threshold and then
+   * delivering an old queued message afterward — vanishingly unlikely for
+   * a live, ordered, reliable data channel (which disconnects long before
+   * that under any real network interruption), but not mathematically
+   * impossible, which is why this is opt-in rather than automatic.
+   */
+  pruneTombstones(beforeClock) {
+    let removed = 0;
+    for (const [id, slot] of this.slots) {
+      if (!slot.deleted) continue;
+      // deletedClock (when it was actually deleted) is what age means
+      // here -- falling back to the slot's own clock (when its position
+      // was established) only for a slot deleted before this field
+      // existed, which otherwise has no recorded deletion time at all.
+      const age = slot.deletedClock ?? slot.clock;
+      if (HLC.compare(age, beforeClock) >= 0) continue; // not old enough yet
+      for (const other of this.slots.values()) {
+        if (other.originId === id) other.originId = slot.originId;
+      }
+      this.slots.delete(id);
+      removed += 1;
+    }
+    return removed;
   }
 
   /**

@@ -7,6 +7,7 @@ export * as operations from './store/operations.js';
 export { HLC, genPeerId } from './crdt/clock.js';
 export { ListCrdtState } from './crdt/listCrdt.js';
 export { FieldClockRegistry } from './crdt/fieldRegistry.js';
+export { createPeriodicTombstoneGC } from './crdt/gc.js';
 
 // WebRTC transport for live collaboration — carries the same envelopes
 // EditorStore.applyRemoteOperation already knows how to merge. Bring your

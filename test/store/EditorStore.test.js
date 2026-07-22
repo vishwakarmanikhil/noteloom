@@ -275,3 +275,59 @@ describe('EditorStore.subscribeAll', () => {
     expect(calls).toBe(1);
   });
 });
+
+describe('EditorStore tombstone garbage collection', () => {
+  it('getTombstoneCount reflects deleted blocks, pruneTombstones removes old ones', () => {
+    const store = new EditorStore(makeDoc());
+    expect(store.getTombstoneCount()).toBe(0);
+
+    const deleteTime = Date.now();
+    store.applyOperation(removeBlock('p1')); // deleteClock's wallTime lands at ~deleteTime
+    expect(store.getTombstoneCount()).toBe(1);
+
+    // too recent to prune with the default 24h window -- "now" is basically the same moment as the delete
+    expect(store.pruneTombstones({ now: deleteTime })).toBe(0);
+    expect(store.getTombstoneCount()).toBe(1);
+
+    // simulate 24h (+ a generous margin for real clock ticks during the test) passing
+    const removed = store.pruneTombstones({ now: deleteTime + 24 * 60 * 60 * 1000 + 1000 });
+    expect(removed).toBe(1);
+    expect(store.getTombstoneCount()).toBe(0);
+  });
+
+  it('pruning does not change the visible document at all', () => {
+    const store = new EditorStore(makeDoc());
+    store.applyOperation(removeBlock('p1'));
+    const before = store.getBlock('root').contentIds;
+
+    store.pruneTombstones({ now: Date.now() + 30 * 24 * 60 * 60 * 1000 });
+
+    expect(store.getBlock('root').contentIds).toEqual(before);
+    expect(store.getBlock('root').contentIds).toEqual(['p2']);
+  });
+
+  it('a block inserted after pruning still lands in the correct position (no orphaning across the whole store, not just one ListCrdtState)', () => {
+    const store = new EditorStore(makeDoc());
+    store.applyOperation(removeBlock('p1')); // root: [p1(deleted), p2] -- p2 anchored to p1
+    store.pruneTombstones({ now: Date.now() + 30 * 24 * 60 * 60 * 1000 });
+    expect(store.getBlock('root').contentIds).toEqual(['p2']);
+
+    const p3 = { id: 'p3', type: 'paragraph', parentId: 'root', contentIds: ['r3'], props: {} };
+    store.applyOperation(insertBlock(p3, 'root', 0, { blocks: [p3], runs: [{ id: 'r3', type: 'text', value: 'new', marks: {} }] }));
+    expect(store.getBlock('root').contentIds).toEqual(['p3', 'p2']);
+  });
+
+  it('History delegates getTombstoneCount/pruneTombstones to the underlying store, without touching the undo stack', async () => {
+    const { History } = await import('../../src/store/history.js');
+    const history = new History(new EditorStore(makeDoc()));
+    history.perform(removeBlock('p1'));
+    expect(history.getTombstoneCount()).toBe(1);
+
+    const undoStackSizeBefore = history.undoStack.length;
+    history.pruneTombstones({ now: Date.now() + 30 * 24 * 60 * 60 * 1000 });
+
+    expect(history.getTombstoneCount()).toBe(0);
+    expect(history.undoStack.length).toBe(undoStackSizeBefore); // pruning is not an undo step
+    expect(history.canUndo()).toBe(true); // the original delete is still undoable
+  });
+});

@@ -222,6 +222,20 @@ export class History {
     return this.store.subscribeAll(listener);
   }
 
+  /**
+   * Delegates straight to the store, deliberately outside perform/
+   * performBatch — pruning tombstones never changes the visible document
+   * (they were already invisible), so it isn't a user-facing edit and has
+   * no business on the undo stack.
+   */
+  getTombstoneCount() {
+    return this.store.getTombstoneCount();
+  }
+
+  pruneTombstones(options) {
+    return this.store.pruneTombstones(options);
+  }
+
   toJSON() {
     return this.store.toJSON();
   }
