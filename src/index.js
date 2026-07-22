@@ -83,6 +83,7 @@ export { useBlock, useRun } from './react/useBlock.js';
 export { useFieldTypes } from './react/useFieldTypes.js';
 export { useHistory } from './react/useHistory.js';
 export { usePersistedDocument } from './react/usePersistedDocument.js';
+export { useServiceWorkerUpdate } from './react/useServiceWorkerUpdate.js';
 export { useVoiceTyping } from './react/useVoiceTyping.js';
 export { VoicePermissionModal } from './react/VoicePermissionModal.jsx';
 export { VoiceListeningIndicator } from './react/VoiceListeningIndicator.jsx';

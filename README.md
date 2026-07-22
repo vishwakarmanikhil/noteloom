@@ -226,7 +226,28 @@ Lower-level pieces, if `usePersistedDocument`'s all-in-one behavior doesn't fit 
 - `savePersistedDocument(docId, doc)` / `loadPersistedDocument(docId)` / `deletePersistedDocument(docId)` / `listPersistedDocumentIds()` — the raw IndexedDB operations `usePersistedDocument` is built on.
 - `createAutoPersistence({ store, docId, debounceMs, onError })` — just the debounced auto-save half, if you want to handle the initial load yourself. Returns `{ stop, flush }`.
 
-This is standalone — works with a solo, non-collaborating store just as well as one wired to `CollabSession` (a collaborated-on document also gets saved locally, so it survives even after every peer disconnects). Note this only makes the *editing* work offline; if the app itself is loaded from a dev server or web host, opening it for the very first time (or after clearing cache) still needs that host to be reachable once — that's a separate concern (a service worker / PWA setup), not something this handles.
+This is standalone — works with a solo, non-collaborating store just as well as one wired to `CollabSession` (a collaborated-on document also gets saved locally, so it survives even after every peer disconnects). Note this only makes the *editing* work offline; if the app itself is loaded from a dev server or web host, opening it for the very first time (or after clearing cache) still needs that host to be reachable once — that's the separate concern the next section covers.
+
+### Offline app shell (PWA)
+
+`usePersistedDocument` makes the *document* offline-capable; it doesn't make the *app itself* loadable with no network — that needs a service worker precaching the HTML/JS/CSS, which is a build-level concern (the exact list of files to cache is whatever your bundler outputs), not something a runtime library can inject. This package doesn't ship a service worker implementation for that reason — instead:
+
+- Use a standard Vite PWA setup — [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/) is the common choice, and requires no noteloom-specific configuration; a working example is in `examples/offline-persist/vite.config.js`.
+- `useServiceWorkerUpdate()` (exported from the package) is the one genuinely reusable piece: it watches for a newly-installed service worker sitting in the "waiting" state (the standard signal a fresh build is ready) and gives you a way to activate it —
+
+  ```js
+  import { useServiceWorkerUpdate } from 'noteloom';
+
+  function UpdateBanner() {
+    const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
+    if (!updateAvailable) return null;
+    return <button onClick={applyUpdate}>Update available — reload</button>;
+  }
+  ```
+
+  Works with any service worker registration, however it got there — it only observes, it doesn't register one itself.
+
+Run `npm run dev:offline-persist`, then `npx vite build --config examples/offline-persist/vite.config.js && npx vite preview --config examples/offline-persist/vite.config.js` to try the built (not dev-mode) version — service workers only activate on a real build. Load it once online, then disconnect entirely and reload: the app shell still loads, and editing/persistence both keep working, since IndexedDB has no network dependency of its own.
 
 ## Right-to-left / multi-language text
 
