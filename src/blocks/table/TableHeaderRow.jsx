@@ -23,8 +23,8 @@ const MAX_COLUMN_WIDTH_HINT = 800;
 /**
  * Manages a "select" column's shared option list (add/rename/remove) —
  * configured once here, for the whole column, rather than per cell. This
- * is the piece that makes a select column behave like Notion's Select
- * property instead of the general-purpose inline `select` type's
+ * is the piece that makes a select column behave like a shared property
+ * instead of the general-purpose inline `select` type's
  * independent-per-chip options: every cell reads the *same* list (see
  * TableSelectInlineNode), so it only needs managing in one place.
  */
@@ -48,8 +48,8 @@ function SelectOptionsManager({ tableId, colIndex, options }) {
     if (!label) return;
     // Color is assigned once, here, at creation time — not derived from
     // position at render time — so it stays the same tag color even after
-    // other options are reordered/removed, matching Notion's own Select
-    // property (a tag's color is fixed once you pick/create it).
+    // other options are reordered/removed — a tag's color is fixed once
+    // you pick/create it.
     setColumnOptions(store, tableId, colIndex, [...options, { value: genId(), label, color: pickTagColor(options.length) }]);
   }, [store, tableId, colIndex, options, draft]);
 

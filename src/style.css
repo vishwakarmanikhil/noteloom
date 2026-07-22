@@ -1,5 +1,5 @@
 /*
- * noteloom's default theme — minimal, clean, Notion/Linear-adjacent.
+ * noteloom's default theme — minimal, clean, modern SaaS-adjacent.
  *
  * Ships as plain CSS custom properties on :root (not scoped to a wrapper
  * element) deliberately: several of this package's own pieces — Select's
@@ -2195,8 +2195,8 @@ tr.be-table-row:hover .be-table-delete-row {
 }
 
 /* A mention chip always uses this one fixed color, not each option's own
-   tag color — matches Notion/Slack/GitHub's "@mentions are one consistent
-   color" convention rather than a per-person palette. */
+   tag color — "@mentions are one consistent color" is the common
+   convention rather than a per-person palette. */
 .be-select-tag-mention {
   background: var(--noteloom-accent-soft);
   color: var(--noteloom-accent);

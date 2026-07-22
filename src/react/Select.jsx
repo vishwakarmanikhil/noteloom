@@ -52,7 +52,7 @@ function matchesQuery(option, query) {
  *
  * `variant="tag"` renders the selected value (and each option in the list)
  * as a small colored pill instead of plain text in a bordered/chevroned
- * box — Notion's own Select-property look. Pass `color: { bg, text }` on
+ * box — a familiar Select-property look. Pass `color: { bg, text }` on
  * each option for this (see blocks/table/tagColors.js); the trigger itself
  * loses its border/background/chevron chrome entirely in this mode — just
  * the pill (or the placeholder, if nothing's chosen yet) is clickable.

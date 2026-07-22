@@ -24,8 +24,8 @@ const MARK_KEYS = { b: 'bold', i: 'italic', u: 'underline' };
  * selection spanning non-sibling blocks (different nesting depths) still
  * isn't supported.
  *
- * Select-all is two-stage, matching every other block editor (Notion,
- * Google Docs): native Ctrl+A in a focused contentEditable region already
+ * Select-all is two-stage, matching every other block editor: native
+ * Ctrl+A in a focused contentEditable region already
  * selects only that block's own content — no code needed for the first
  * press. Pressing it *again*, once the whole current block is already
  * selected, promotes to a *custom* "whole document selected" state (see
@@ -33,7 +33,7 @@ const MARK_KEYS = { b: 'bold', i: 'italic', u: 'underline' };
  * Selection/Range spanning every block — browsers don't reliably support a
  * script-constructed Range across multiple independent contentEditable
  * islands (each is its own "editing host"), which is exactly why this
- * editor uses one region per block in the first place. Notion's own
+ * editor uses one region per block in the first place. A block editor's
  * cross-block "select all" highlight isn't native browser text selection
  * either, for the same reason.
  *

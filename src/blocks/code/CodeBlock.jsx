@@ -19,7 +19,7 @@ const LANGUAGE_OPTIONS = LANGUAGES.map((lang) => ({ value: lang, label: lang }))
  * Inserts literal text at the live caret within `blockId`'s own run,
  * splicing directly into that run's value — used for Enter (a real "\n",
  * not a block split: a code block is multi-line *within one block*, like a
- * <textarea>, matching Notion/TipTap) and Tab (two literal spaces, since
+ * <textarea>) and Tab (two literal spaces, since
  * Tab inside code should never trigger indent-list/next-cell navigation).
  * Deliberately simple (single-run splice, no split-into-marks handling)
  * because code content is plain text — no rich inline formatting is

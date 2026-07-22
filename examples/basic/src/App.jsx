@@ -482,7 +482,7 @@ export function App() {
     // separate hardcoded built-in for it (a real roster/search always
     // needs to be host-supplied anyway) — `triggers: ['slash', 'at']`
     // is what makes this one show up under "@" (via useAtMenuTrigger)
-    // as well as "/", exactly like Notion/TipTap's own @-mention.
+    // as well as "/", matching the familiar @-mention pattern.
     const demoAssignees = [
       { value: 'u1', label: 'Alex Rivera' },
       { value: 'u2', label: 'Bailey Chen' },

@@ -7,7 +7,7 @@ function applyOps(store, ops) {
   else for (const op of ops) store.applyOperation(op);
 }
 
-// Notion/TipTap-style markdown shortcuts: a recognized prefix, typed at the
+// Markdown shortcuts: a recognized prefix, typed at the
 // very start of an otherwise-plain paragraph, converts the block once the
 // pattern is complete — most need a trailing trigger space ("# ", "- ",
 // "1. ", "> ", "[] "), matching every other editor's convention that the
@@ -41,8 +41,7 @@ const RULES = [
  * survive — all as one atomic undo step. Only fires when the block's
  * ENTIRE content is a single plain text run (no marks/atomic runs mixed in
  * yet); typing the same characters mid-sentence, or spanning multiple
- * runs, never triggers it, matching how Notion/TipTap scope this to a
- * fresh, still-plain line.
+ * runs, never triggers it — scoped to a fresh, still-plain line.
  *
  * `runs` is the block's just-committed run list (see EditableBlockContent's
  * handleInput, onlyValueChanges path — a markdown shortcut is always typed

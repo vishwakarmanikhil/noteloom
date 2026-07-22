@@ -17,7 +17,9 @@ All notable changes to this project are documented here. Format loosely follows 
 - **Offline-first persistence** — `usePersistedDocument`, `createAutoPersistence`, and the underlying IndexedDB primitives (`savePersistedDocument`/`loadPersistedDocument`/`deletePersistedDocument`/`listPersistedDocumentIds`). Works standalone or alongside `CollabSession`.
 - **PWA / offline app-shell support** — `useServiceWorkerUpdate`, for surfacing "a new version is available" against any service worker registration (host apps bring their own service worker setup, e.g. via `vite-plugin-pwa` — see `examples/offline-persist/`).
 - `EditorStore.subscribeAll` (+ `History` passthrough) — a whole-document "something changed" change hook, distinct from the existing per-id `subscribe` used for render isolation.
-- New runnable examples: `examples/collab/` (BroadcastChannel signaling, same-browser demo), `examples/lan-collab/` (WebSocket relay signaling, real multi-device/LAN), `examples/offline-persist/` (IndexedDB persistence + PWA).
+- New runnable examples: `examples/collab/` (BroadcastChannel signaling, same-browser demo), `examples/lan-collab/` (WebSocket relay signaling, real multi-device/LAN), `examples/offline-persist/` (IndexedDB persistence + PWA), `examples/quickstart/` (the new one-call API below).
+- **`useEditor()` + `<NoteloomEditor>`** — a one-call path to a fully working editor (store + both registries pre-populated with every built-in type, undo/redo, clipboard, slash/emoji/@-mention menus, floating format toolbar, keyboard shortcuts, block-range drag, all wired up), replacing the ~40-line manual setup previously required for the common case. Purely additive — the granular API (`EditorStore`, `EditorProvider`, `createBlockRegistry`, individual hooks, ...) is unchanged and still the documented path for anything this doesn't cover (see README's "Advanced usage" section).
+- **TypeScript type definitions** (`src/index.d.ts`, hand-written, published as `dist/index.d.ts`) covering the public API — no `.js`/`.jsx` source changed to produce it. `npm run typecheck` (`tsc --noEmit` against the declaration file) now also runs in CI.
 
 ### Fixed
 

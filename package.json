@@ -1,7 +1,7 @@
 {
   "name": "noteloom",
   "version": "0.2.0",
-  "description": "Zero-runtime-dependency, React-first block/rich-text editor — Notion-style blocks, inline widgets, slash commands, undo/redo, clipboard, real-time collaborative editing (a custom CRDT over WebRTC), offline-first persistence (IndexedDB + PWA-ready), and live presence, with an optional default theme (noteloom/style.css).",
+  "description": "Zero-runtime-dependency, React-first block/rich-text editor — nestable content blocks, inline widgets, slash commands, undo/redo, clipboard, real-time collaborative editing (a custom CRDT over WebRTC), offline-first persistence (IndexedDB + PWA-ready), and live presence, with an optional default theme (noteloom/style.css).",
   "keywords": [
     "react",
     "editor",
@@ -9,7 +9,6 @@
     "block-editor",
     "wysiwyg",
     "contenteditable",
-    "notion",
     "slash-commands",
     "collaborative-editing",
     "crdt",
@@ -34,9 +33,11 @@
   ],
   "main": "./dist/noteloom.cjs",
   "module": "./dist/noteloom.es.js",
+  "types": "./dist/index.d.ts",
   "style": "./dist/style.css",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/noteloom.es.js",
       "require": "./dist/noteloom.cjs",
       "default": "./dist/noteloom.es.js"
@@ -52,12 +53,14 @@
   },
   "scripts": {
     "dev": "vite --config examples/basic/vite.config.js",
+    "dev:quickstart": "vite --config examples/quickstart/vite.config.js",
     "dev:collab": "vite --config examples/collab/vite.config.js",
     "dev:lan-collab": "vite --config examples/lan-collab/vite.config.js",
     "dev:offline-persist": "vite --config examples/offline-persist/vite.config.js",
-    "build": "vite build && node -e \"require('fs').copyFileSync('src/style.css','dist/style.css')\"",
+    "build": "vite build && node -e \"require('fs').copyFileSync('src/style.css','dist/style.css');require('fs').copyFileSync('src/index.d.ts','dist/index.d.ts')\"",
     "test": "vitest run",
-    "prepublishOnly": "npm test && npm run build"
+    "typecheck": "tsc",
+    "prepublishOnly": "npm test && npm run typecheck && npm run build"
   },
   "peerDependencies": {
     "react": "^18.2.0 || ^19.0.0",
@@ -66,11 +69,14 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^25.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "typescript": "^5.6.0",
     "vite": "^5.4.0",
     "vite-plugin-pwa": "^1.3.0",
     "vitest": "^2.1.0"

@@ -36,8 +36,8 @@ import { ChevronRightIcon } from './icons.jsx';
  * ArrowRight on the trigger opens the submenu (focusing its first item, via
  * useMenuKeyboardNav's own on-open behavior); ArrowLeft anywhere inside the
  * submenu closes it and returns focus to the trigger (via that same hook's
- * on-close behavior) — the standard nested-menu convention (Notion, most
- * native OS menus) alongside Escape/outside-click, which already worked.
+ * on-close behavior) — the standard nested-menu convention (most native OS
+ * menus, and most block editors) alongside Escape/outside-click, which already worked.
  */
 export function TurnIntoSubmenu({ onSelect, onClose, containerRef, menuClassName = 'be-block-gutter-menu', itemClassName = 'be-block-gutter-menu-item' }) {
   const [isOpen, setIsOpen] = useState(false);

@@ -20,7 +20,7 @@ export const CALLOUT_COLORS = [
 /**
  * A plain container (contentIds hold child block ids, exactly like
  * layoutColumn/page) wrapped in a colored card with an editable icon — same
- * mechanism Notion/TipTap use for "callout": no bespoke text/run handling
+ * mechanism used for "callout": no bespoke text/run handling
  * of its own, so every child block (paragraph, list, another callout, ...)
  * gets full selection/copy/paste/format/undo support for free from the
  * shared container machinery, the same way layout columns already do.

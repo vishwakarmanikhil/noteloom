@@ -11,7 +11,7 @@ import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
  * render only while `collapsed` is false. `checked` and `collapsed` are
  * mutually exclusive markers in the UI (whichever is set decides which
  * marker renders; see ListItemBlock) — passing both is not a supported
- * combination, matches Notion's own "one marker style per item".
+ * combination — matches the common "one marker style per item" convention.
  * `initialRuns`, when given (Enter-to-split), seeds the title with the runs
  * that landed after the caret instead of a single blank run.
  *

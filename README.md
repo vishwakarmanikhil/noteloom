@@ -36,65 +36,26 @@ npm install noteloom react react-dom
 ## Quick start
 
 ```jsx
-import {
-  EditorStore,
-  History,
-  EditorProvider,
-  BlockChildren,
-  createBlockRegistry,
-  registerBuiltInBlocks,
-  createInlineRegistry,
-  registerBuiltInInlineTypes,
-  useClipboardHandlers,
-  useSlashMenuTrigger,
-  useEditorKeyboardShortcuts,
-  SlashMenu,
-} from 'noteloom';
-import { useMemo, useRef } from 'react';
+import { useEditor, NoteloomEditor } from 'noteloom';
 
 function Editor() {
-  const containerRef = useRef(null);
-  const { store, registry, inlineRegistry } = useMemo(() => {
-    const registry = createBlockRegistry();
-    registerBuiltInBlocks(registry);
-    const inlineRegistry = createInlineRegistry();
-    registerBuiltInInlineTypes(inlineRegistry);
-    const store = new History(
-      new EditorStore({
-        rootId: 'root',
-        blocks: [
-          { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
-          { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
-        ],
-        runs: [{ id: 'r1', type: 'text', value: 'Hello — try typing "/" for commands.', marks: {} }],
-      }),
-    );
-    return { store, registry, inlineRegistry };
-  }, []);
-
-  const { onCopy, onCut, onPaste } = useClipboardHandlers();
-  const slashMenu = useSlashMenuTrigger(containerRef);
-  useEditorKeyboardShortcuts(containerRef);
-
-  return (
-    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store}>
-      <div ref={containerRef} onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
-        <BlockChildren parentId="root" />
-        <SlashMenu
-          isOpen={slashMenu.isOpen}
-          rect={slashMenu.rect}
-          commands={slashMenu.commands}
-          runId={slashMenu.runId}
-          onSelect={slashMenu.selectCommand}
-          onClose={slashMenu.close}
-        />
-      </div>
-    </EditorProvider>
-  );
+  const editor = useEditor();
+  return <NoteloomEditor editor={editor} />;
 }
 ```
 
-See `examples/basic` for a complete working app (run `npm run dev`).
+That's it — `useEditor()` creates a fully wired store (undo/redo included) and both registries pre-populated with every built-in block and inline type; `<NoteloomEditor>` renders it with clipboard, slash/emoji/@-mention menus, the floating format toolbar, keyboard shortcuts, and block-range drag already hooked up. Run it yourself with `npm run dev:quickstart` (`examples/quickstart/`).
+
+Pass a starting document, or opt out of undo/redo:
+
+```jsx
+const editor = useEditor({
+  doc: myDocumentJSON, // defaults to one empty paragraph
+  history: true, // default; false gives a plain EditorStore with no undo/redo
+});
+```
+
+Need more control than that — a custom toolbar, only a subset of block types, mobile chrome, voice typing, field-type management? `useEditor()` still hands you the raw pieces (`{ store, registry, inlineRegistry }`), so you can drop straight into `<EditorProvider>` and the granular hooks/components below, mixing and matching as needed — nothing about the simplified path is a separate, incompatible mode. See [Advanced usage](#advanced-usage-the-granular-api) and `examples/basic` for a complete build from those pieces (run `npm run dev`).
 
 ### Styling — zero setup required
 
@@ -199,6 +160,73 @@ Rich text (`data.text`) is an HTML string — the exact same per-run serializati
 One existing, by-design limitation carried over from clipboard paste: an atomic inline type's *core* value round-trips (a checkbox's checked state + label, a date's ISO value, a select's chosen value + label) but its full `options` list does not — only the currently-selected option survives, the same as pasting one of these chips into another instance of the editor today.
 
 This is purely an additive, alternate *interchange* format — the internal engine format above is unaffected either way, and this is not a replacement for it.
+
+## Advanced usage (the granular API)
+
+`useEditor()`/`<NoteloomEditor>` are a convenience layer over the same pieces they create — nothing is hidden behind them. Build the same editor by hand when you need something they don't cover (a custom toolbar, a subset of block types, mobile chrome, voice typing, field-type management, ...):
+
+```jsx
+import {
+  EditorStore,
+  History,
+  EditorProvider,
+  BlockChildren,
+  createBlockRegistry,
+  registerBuiltInBlocks,
+  createInlineRegistry,
+  registerBuiltInInlineTypes,
+  useClipboardHandlers,
+  useSlashMenuTrigger,
+  useEditorKeyboardShortcuts,
+  SlashMenu,
+} from 'noteloom';
+import { useMemo, useRef } from 'react';
+
+function Editor() {
+  const containerRef = useRef(null);
+  const { store, registry, inlineRegistry } = useMemo(() => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const inlineRegistry = createInlineRegistry();
+    registerBuiltInInlineTypes(inlineRegistry);
+    const store = new History(
+      new EditorStore({
+        rootId: 'root',
+        blocks: [
+          { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
+          { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+        ],
+        runs: [{ id: 'r1', type: 'text', value: 'Hello — try typing "/" for commands.', marks: {} }],
+      }),
+    );
+    return { store, registry, inlineRegistry };
+  }, []);
+
+  const { onCopy, onCut, onPaste } = useClipboardHandlers();
+  const slashMenu = useSlashMenuTrigger(containerRef);
+  useEditorKeyboardShortcuts(containerRef);
+
+  return (
+    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store}>
+      <div ref={containerRef} onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
+        <BlockChildren parentId="root" />
+        <SlashMenu
+          isOpen={slashMenu.isOpen}
+          rect={slashMenu.rect}
+          commands={slashMenu.commands}
+          runId={slashMenu.runId}
+          onSelect={slashMenu.selectCommand}
+          onClose={slashMenu.close}
+        />
+      </div>
+    </EditorProvider>
+  );
+}
+```
+
+For an opt-in pick of only the block/inline types you want, swap `registerBuiltInBlocks(registry)`/`registerBuiltInInlineTypes(inlineRegistry)` for `registerBlocks(registry, { paragraph: paragraphBlockType, heading: headingBlockType, ... })`/`registerInlineTypes` with whichever exported `xBlockType`/`xInlineType` values you actually need — `registerBuiltInBlocks` is itself just that call with every type included. See [Picking only the blocks you want](#picking-only-the-blocks-you-want) for the full picture, including how to do this through `useEditor()` instead of building the registry by hand.
+
+See `examples/basic` for a complete working app built this way (run `npm run dev`).
 
 ## Offline persistence
 
@@ -322,19 +350,19 @@ Trigger-menu and `Select` popovers reposition above the caret instead of below i
 
 **Touch detection deliberately isn't a static `matchMedia('(pointer: coarse)')` check** (see `useCoarsePointer`, also exported) — a touchscreen laptop reports its trackpad as the "primary" pointer even though the touchscreen sitting right there can be used at any moment, so a pure media-query check would never show touch UI on that class of device. Instead, the media query only supplies the *initial* guess (correct pre-interaction, SSR-safe); every real `pointerdown` afterward overrides it with that event's own `pointerType`, so a 2-in-1 laptop correctly shows desktop UI while the trackpad is in use and mobile UI the instant the screen is tapped, live, no reload needed. The same signal is mirrored onto `<html class="be-touch-input">` so plain CSS (the gutter-hiding rule above) reacts to it too, not just `MobileActionBar` itself.
 
-**Not included**: a touch equivalent for dragging in the block gutter to select a range of blocks — Notion, TipTap, and Editor.js all keep that gesture desktop/mouse-only too.
+**Not included**: a touch equivalent for dragging in the block gutter to select a range of blocks — most block editors keep that gesture desktop/mouse-only too.
 
 ## Built-in block types
 
-`paragraph`, `heading` (h1–h3), `listItem` (bulleted, numbered, to-do, and toggle — with Notion-style Tab/Shift+Tab nesting and Enter conventions), `table` (with row/column insert/delete), `layout` (multi-column), `divider`, `callout`, `blockquote`, `code`, `toggleHeading`, `button`, and `embed` (image/video/audio/file).
+`paragraph`, `heading` (h1–h3), `listItem` (bulleted, numbered, to-do, and toggle — with Tab/Shift+Tab nesting and standard Enter conventions), `table` (with row/column insert/delete), `layout` (multi-column), `divider`, `callout`, `blockquote`, `code`, `toggleHeading`, `button`, and `embed` (image/video/audio/file).
 
 ## Picking only the blocks you want
 
 `registerBuiltInBlocks`/`registerBuiltInInlineTypes` register everything at
 once — the fastest way to a fully-featured editor. If you'd rather ship
-only what you actually use (TipTap's `extensions: [...]` idea), every
-built-in block/inline type is also exported individually, and
-`registerBlocks`/`registerInlineTypes` register just the ones you name:
+only what you actually use, every built-in block/inline type is also
+exported individually, and `registerBlocks`/`registerInlineTypes` register
+just the ones you name:
 
 ```js
 import {
@@ -357,6 +385,35 @@ registerBlocks(registry, {
 
 `registerBuiltInBlocks(registry)` is itself just `registerBlocks(registry, { paragraph: paragraphBlockType, ... })` with every type included — so mixing "give me everything" and "just these few" across different parts of your app is never an either/or choice. `layout` has the same "needs its own group" shape as `table` — see `LAYOUT_BLOCKS`. `TABLE_SELECT_INLINE_TYPES` (inline side) is only needed if you use a table's "select" column type.
 
+**The same pick applies through `useEditor()`** — pass `registerBlocks`/`registerInlineTypes` callbacks and it calls them instead of `registerBuiltInBlocks`/`registerBuiltInInlineTypes`:
+
+```jsx
+import { useEditor, NoteloomEditor, registerBlocks, paragraphBlockType, headingBlockType, TABLE_BLOCKS } from 'noteloom';
+
+function Editor() {
+  const editor = useEditor({
+    registerBlocks: (registry) => registerBlocks(registry, { paragraph: paragraphBlockType, heading: headingBlockType, ...TABLE_BLOCKS }),
+  });
+  return <NoteloomEditor editor={editor} />;
+}
+```
+
+`useEditor()` still hands back `{ store, registry, inlineRegistry }` either way, so `registry.register('myCustomType', myBlockTypeEntry)` — for a block/inline type this package doesn't ship at all, see the next two sections — works identically regardless of which path built the registry:
+
+```jsx
+import { useEditor, NoteloomEditor, registerBuiltInBlocks } from 'noteloom';
+
+function Editor() {
+  const editor = useEditor({
+    registerBlocks: (registry) => {
+      registerBuiltInBlocks(registry); // keep everything built-in...
+      registry.register('myCustomType', myBlockTypeEntry); // ...plus your own
+    },
+  });
+  return <NoteloomEditor editor={editor} />;
+}
+```
+
 ## Built-in inline types
 
 Atomic, non-text content that can be spliced into running text via the slash menu at any cursor position — `select` (with in-editor add/remove-option UI), `date` (native `<input type="date">`).
@@ -378,7 +435,7 @@ inlineRegistry.register(
     type: 'status', // must match the key you register it under
     label: 'Status', // shown in the "/" menu and as the search box's aria-label
     placeholder: 'Set status…',
-    variant: 'tag', // 'tag' = Notion-style colored pill; 'default' = plain bordered dropdown
+    variant: 'tag', // 'tag' = colored pill; 'default' = plain bordered dropdown
     options: [
       { value: 'todo', label: 'To do', color: { bg: '#e9e9e7', text: '#37352f' } },
       { value: 'doing', label: 'In progress', color: { bg: '#fdecc8', text: '#a06400' } },
@@ -521,7 +578,7 @@ What presence *contains* is entirely up to you — a cursor position, a display 
 - Concurrent inserts (even at the same position) — both survive, converging to the same order on every peer.
 - Concurrent delete vs. edit of the same block — the delete wins.
 - Concurrent type-conversion of the same block ("Turn into") — one type wins deterministically (the same one, on every peer), not two duplicate blocks.
-- Concurrent edits to a run's text — whole-value last-write-wins (the newer edit replaces the older one entirely; character-level interleaving, like Google Docs, is not implemented).
+- Concurrent edits to a run's text — whole-value last-write-wins (the newer edit replaces the older one entirely; character-level interleaving is not implemented).
 
 ### Tombstone garbage collection
 

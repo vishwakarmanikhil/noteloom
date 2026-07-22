@@ -13,7 +13,7 @@ import { PencilIcon, XIcon } from './icons.jsx';
  * Ctrl/Cmd+click only, since the text is still editable), so there needs
  * to be some other way to discover "this is a link" and get back into it
  * without re-selecting the exact same text again. Hovering is that
- * discovery path, same as Notion/Google Docs' own link tooltip.
+ * discovery path, the same link-tooltip pattern most rich text editors use.
  *
  * The pencil button opens the exact same LinkEditModal FloatingToolbar's
  * Link button uses (pre-filled), rather than a second, smaller inline

@@ -139,7 +139,7 @@ describe('Select: choosing an option', () => {
   });
 });
 
-describe('Select: variant="tag" (Notion-style colored pill, no dropdown-box chrome)', () => {
+describe('Select: variant="tag" (colored pill, no dropdown-box chrome)', () => {
   it('shows the placeholder as plain text (no border/chevron) when nothing is selected', () => {
     const { container } = render(
       <Select value="" options={TAG_OPTIONS} onChange={() => {}} placeholder="Empty" variant="tag" />,

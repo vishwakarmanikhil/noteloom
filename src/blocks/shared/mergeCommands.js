@@ -31,7 +31,7 @@ export function canMergeTypes(prevType, blockType) {
  * Backspace-at-start-of-block behavior:
  * 1. If the previous sibling is contentless (e.g. a divider), delete *it*
  *    first and stay put — matches the familiar "backspace clears the
- *    nearest obstacle" convention (Notion et al.), and means a second
+ *    nearest obstacle" convention, and means a second
  *    backspace then merges into whatever's before the divider.
  * 2. Else if this block is empty, delete it.
  * 3. Else merge its inline content onto the end of the previous sibling —

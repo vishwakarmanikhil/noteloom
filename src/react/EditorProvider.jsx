@@ -54,14 +54,14 @@ export function EditorProvider({
   // reliably support a native Selection/Range spanning multiple independent
   // contentEditable islands constructed via script — so cross-block "select
   // all" is its own custom selection model instead of a native one, the
-  // same way Notion's whole-block selection isn't native browser text
+  // same way a block editor's whole-block selection isn't native browser text
   // selection either. This package ships no default styling, so rendering
   // the corresponding highlight is left to the host app (see this hook's
   // own doc comment).
   const [isWholeDocumentSelected, setIsWholeDocumentSelected] = useState(false);
 
   // A contiguous run of top-level block ids selected by dragging from the
-  // gutter margin (see useBlockRangeDrag/BlockGutterRow) — Notion's "drag
+  // gutter margin (see useBlockRangeDrag/BlockGutterRow) — the familiar "drag
   // in the margin to select several blocks" gesture. `[]` means nothing is
   // range-selected. Kept in DOCUMENT order (matches root.contentIds), not
   // drag order, so Move up/down and Delete don't need to re-sort it.
@@ -95,7 +95,7 @@ export function EditorProvider({
 
   // A single non-editable/contentless block (image, divider, etc.) that's
   // "selected" pending a second Backspace/Delete to actually remove it —
-  // matching Notion/TipTap's convention for atomic nodes: the first press
+  // a common convention for atomic nodes: the first press
   // adjacent to one just highlights it, the second one deletes it.
   //
   // Deliberately NOT React state: this can be set on every single
@@ -226,7 +226,7 @@ export function useBlockRangeSelection() {
  * re-render every block in the document). `setSelectedBlockId` also
  * imperatively toggles the `be-block-selected` CSS class on the relevant
  * block's own `[data-block-id]` element; a host app can restyle that
- * class however it likes (a highlighted border, same as Notion/TipTap).
+ * class however it likes (e.g. a highlighted border).
  */
 export function useSelectedBlock() {
   const { getSelectedBlockId, setSelectedBlockId } = useEditorContext();

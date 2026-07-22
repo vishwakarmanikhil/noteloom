@@ -18,10 +18,10 @@ import {
 /**
  * The "text family" — every block type this codebase's own R&D pass (see
  * README/commit history) settled on as freely inter-convertible, matching
- * the same boundary Notion/Editor.js/TipTap each independently draw:
+ * the same boundary most block editors independently draw:
  * blocks holding rich/plain text content. Deliberately excludes the
  * "structural" group (table, layout/layoutColumn, embed, divider, button)
- * — none of the reference editors offer generic type-conversion for those
+ * — few block editors offer generic type-conversion for those
  * either; they keep their own dedicated creation/management UI instead.
  *
  * Each entry's `props` matches the exact shape that type's own slash

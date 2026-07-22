@@ -1,9 +1,9 @@
 /**
- * Notion-style tag color palette for a table's "select" column — assigned
+ * Tag color palette for a table's "select" column — assigned
  * once, at option-creation time (see TableHeaderRow's SelectOptionsManager),
  * and stored on the option itself (`{ value, label, color }`) so it stays
- * stable across reorders/removals, the same way Notion's own Select
- * property keeps whatever color a tag was first given.
+ * stable across reorders/removals: a tag keeps whatever color it was
+ * first given.
  */
 export const TAG_COLORS = [
   { bg: '#e9e9e7', text: '#32302c' }, // gray (default)

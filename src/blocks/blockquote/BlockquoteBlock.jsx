@@ -14,8 +14,8 @@ import { resolveBlockDir } from '../shared/resolveBlockDir.js';
  * A leaf block, exactly like ParagraphBlock/HeadingBlock (contentIds are
  * its own run ids, not child blocks) — the only difference is presentation
  * (a <blockquote> tag with a left border). Enter exits the quote into a
- * plain paragraph sibling, matching heading's own convention (and Notion/
- * TipTap's actual quote behavior) — a quote is a single formatted block,
+ * plain paragraph sibling, matching heading's own convention — a quote
+ * is a single formatted block,
  * not a container you keep typing new lines into via Enter.
  */
 export function BlockquoteBlock({ id }) {

@@ -33,8 +33,8 @@ export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.
 
 // registerBuiltInBlocks/registerBuiltInInlineTypes register EVERY built-in
 // type at once — the quickest way to get a fully-featured editor running.
-// For an opt-in, TipTap-`extensions`-style pick of only the block/inline
-// types you actually want, use registerBlocks/registerInlineTypes with
+// For an opt-in pick of only the block/inline types you actually want,
+// use registerBlocks/registerInlineTypes with
 // whichever of the individual xBlockType/xInlineType values below you need
 // instead — none of this is an all-or-nothing choice, since
 // registerBuiltInBlocks(registry) is itself just `registerBlocks(registry,
@@ -66,6 +66,16 @@ export {
   tableSelectInlineType,
   emojiInlineType,
 } from './inlineTypes/index.js';
+
+// The quickest path to a working editor: useEditor() creates a fully
+// wired store + registries in one call, <NoteloomEditor editor={...} />
+// renders it with every built-in interaction (clipboard, slash/emoji/@
+// menus, floating toolbar, keyboard shortcuts, block-range drag) already
+// hooked up. Everything below is still available for anyone who needs
+// more control than that gives them — this is an addition, not a
+// replacement for the granular API.
+export { useEditor } from './react/useEditor.js';
+export { NoteloomEditor } from './react/NoteloomEditor.jsx';
 
 export {
   EditorProvider,

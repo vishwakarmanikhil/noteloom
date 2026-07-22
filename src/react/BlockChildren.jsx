@@ -12,9 +12,9 @@ import { BlockGutterRow } from './BlockGutterRow.jsx';
  * `isTopLevel` opts into wrapping each child with the per-block hover
  * gutter (+/duplicate/move/delete/hide — see BlockGutterRow) — pass it only
  * for the ONE call site rendering the document's actual top-level blocks
- * (the page root), never for a nested container's own children: Notion/
- * TipTap/editor.js all restrict this affordance to the outermost level
- * only, and showing it for a table cell's or list item's own content would
+ * (the page root), never for a nested container's own children: most block
+ * editors restrict this affordance to the outermost level only, and
+ * showing it for a table cell's or list item's own content would
  * be visually cramped and semantically confusing (e.g. "delete" there
  * could read as deleting the cell/item itself or just its content).
  *

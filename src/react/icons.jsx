@@ -333,7 +333,7 @@ export function ScissorsIcon(props) {
 }
 
 // --- Slash-menu command icons ---------------------------------------------
-// One icon per command so the "/" menu reads like Notion/TipTap's own
+// One icon per command so the "/" menu reads like a familiar block editor's
 // (glyph + label, not label-only) — see SlashMenu.jsx and each block/
 // inline type's own `slashCommand(s)` definition for where these attach.
 

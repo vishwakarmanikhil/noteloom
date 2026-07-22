@@ -63,7 +63,7 @@ function EmbedPreview({ kind, src, name, alt }) {
  * dependency-free package can reasonably go on its own.
  *
  * `align` positions the whole widget within the line (a flex row on
- * `.be-embed-preview`, matching Notion's own media alignment). `width` is a
+ * `.be-embed-preview`, a common media alignment pattern). `width` is a
  * percentage, dragged via `.be-embed-resize-handle` — only image/video
  * kinds get the handle (an audio player or a file-download pill don't have
  * a meaningful "shrink the visual" concept the same way). The drag itself

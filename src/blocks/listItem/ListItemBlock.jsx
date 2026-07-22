@@ -51,7 +51,7 @@ export function ListItemBlock({ id }) {
     // Enter on an empty item that's nested under another list item pops it
     // out one level instead of creating yet another empty nested item —
     // this is how the caret "comes out" of a list, matching every other
-    // list-editor's convention (Notion, Workflowy, Word, etc.).
+    // list editor's convention.
     const titleRunIds = block?.props?.titleRunIds ?? [];
     const parent = store.getBlock(block?.parentId);
     const empty = isBlankTitle(store, titleRunIds);
@@ -85,7 +85,7 @@ export function ListItemBlock({ id }) {
     // does NOT apply to a toggle: its contentIds are the collapsible body,
     // not "the next line of a continued list" — Enter on a toggle's own
     // title always creates a new sibling toggle at the same level,
-    // matching Notion (Tab is the only way to nest something under it).
+    // (Tab is the only way to nest something under it).
     if (hasNestedChildren && !isToggle) {
       insertFirstChildSplitAtCaretAndFocus(store, id, titleRunIds, factory);
     } else {
@@ -180,7 +180,7 @@ export function ListItemBlock({ id }) {
           // order itself, not by this glyph, so it's hidden from assistive
           // tech. The glyph itself cycles with nesting depth (1,2,3 ->
           // a,b,c -> i,ii,iii for numbered; disc -> circle -> square for
-          // bulleted, repeating every 3 levels), matching Notion/Word's
+          // bulleted, repeating every 3 levels), a common list-nesting
           // convention — see listMarkers.js.
           <span className="be-list-marker" aria-hidden="true">
             {ordered

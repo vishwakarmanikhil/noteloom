@@ -28,7 +28,7 @@ function selectCollapsedAt(runNode, offset) {
   selection.addRange(range);
 }
 
-// Regression: real editors (Notion, Word, Google Docs) split a block's text
+// Regression: real editors split a block's text
 // at the caret on Enter — text before stays, text after moves into the new
 // block. This project's Enter used to always insert a *blank* sibling and
 // leave the entire original text behind, silently dropping the split.

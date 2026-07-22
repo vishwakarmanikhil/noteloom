@@ -50,7 +50,7 @@ function isPlainMarkerItem(block) {
 /**
  * How many listItem ancestors this block is nested under — 0 for a
  * top-level item, 1 for its first nested level, and so on. Cycles every 3
- * levels for marker style (matching Notion/Word's numbered-list convention:
+ * levels for marker style (a common numbered-list convention:
  * 1,2,3 -> a,b,c -> i,ii,iii -> 1,2,3 again as you keep nesting), applied
  * uniformly regardless of whether ancestors at those levels happen to be
  * ordered, bulleted, or a mix.
@@ -72,9 +72,9 @@ export function listItemDepth(store, block) {
  * sibling list items — counting backward from this item only while
  * immediately-preceding siblings are also plain ordered list items, so
  * numbering restarts at 1 after any interruption (a bullet item, a toggle,
- * a to-do, or a completely different block type), the same way Notion
- * restarts a numbered list after a break rather than continuing a global
- * counter across the whole document.
+ * a to-do, or a completely different block type) — a numbered list restarts
+ * after a break rather than continuing a global counter across the whole
+ * document.
  */
 export function orderedItemIndex(store, block, siblingIds) {
   const pos = siblingIds.indexOf(block.id);

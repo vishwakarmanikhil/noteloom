@@ -178,7 +178,7 @@ export function useClipboardHandlers() {
       // Simple, single-run plain-text paste — by far the common case (a
       // word, a phrase, a URL) — splices directly into the run at the
       // caret instead of always creating a whole new sibling block,
-      // matching ProseMirror/TipTap. Multi-block or structured clipboard
+      // a common rich text editor convention. Multi-block or structured clipboard
       // content (tables, lists, several paragraphs) still inserts as new
       // block(s) after the current one; splitting the current block
       // around it is a further follow-up.

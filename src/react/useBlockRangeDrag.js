@@ -27,7 +27,7 @@ function isCoarsePointer() {
 }
 
 /**
- * Notion-style "drag in the margin to select a run of blocks" mechanic.
+ * "Drag in the margin to select a run of blocks" mechanic.
  * Call this ONCE (e.g. in EditorSurface), passing the same containerRef the
  * rest of the surface's own trigger hooks use — it registers a single
  * document-level mousedown listener that decides, per press, whether it

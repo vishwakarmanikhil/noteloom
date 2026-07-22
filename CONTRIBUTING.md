@@ -17,12 +17,14 @@ That's it — no build step is needed to run the tests.
 ## Running things
 
 ```bash
-npm run dev                  # examples/basic — the general-purpose demo
+npm run dev                  # examples/basic — the general-purpose demo, built from the granular API
+npm run dev:quickstart       # examples/quickstart — the same editor built from useEditor()/<NoteloomEditor>
 npm run dev:collab           # examples/collab — real-time collaboration (BroadcastChannel signaling, open two tabs)
 npm run dev:lan-collab       # examples/lan-collab — collaboration over a WebSocket relay (see tools/lan-relay-server/)
 npm run dev:offline-persist  # examples/offline-persist — IndexedDB persistence + PWA
 npm test                     # vitest (jsdom + @testing-library/react)
-npm run build                # library build -> dist/ (ESM + CJS)
+npm run typecheck            # tsc --noEmit against src/index.d.ts
+npm run build                # library build -> dist/ (ESM + CJS + index.d.ts + style.css)
 ```
 
 If you're working on the collaboration/sync layer (`src/sync/`, `src/crdt/`), the relevant examples under `examples/` are the fastest way to see a change actually working — prefer driving one of them over reasoning from the code alone, especially for anything touching WebRTC, since a lot of real bugs in this codebase were only caught by opening two real browser tabs.
@@ -31,6 +33,7 @@ If you're working on the collaboration/sync layer (`src/sync/`, `src/crdt/`), th
 
 - **Run `npm test`.** CI runs the full suite on Node 18/20/22 on every push and PR (`.github/workflows/ci.yml`) — a red CI check is expected to be fixed before merge, not ignored.
 - **Add or update tests for behavior changes.** `test/` mirrors `src/`'s structure — find the sibling test file for whatever you touched.
+- **If you change the public API** (add/remove/rename an export in `src/index.js`), update `src/index.d.ts` to match and run `npm run typecheck` — it's hand-written, not generated, so nothing enforces this automatically.
 - **If you're touching `src/sync/` or `src/crdt/`, verify against a real scenario**, not just unit tests — the fake WebRTC/IndexedDB test harnesses (`test/sync/fakeWebrtc.js`, `fake-indexeddb`) are good for fast feedback, but this codebase's history includes several bugs (message chunking, backpressure, undo/remote-edit races) that only showed up under real browser + real network conditions.
 - **Keep the zero-runtime-dependency constraint intact.** Nothing in `src/` should end up requiring a new npm package at runtime for a consuming app — devDependencies (test tooling, example build tooling) are fine; runtime `dependencies` are not.
 

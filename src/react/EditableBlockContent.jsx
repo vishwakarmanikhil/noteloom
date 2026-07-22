@@ -120,7 +120,7 @@ function TextRunSpan({ id, host, onValueSynced }) {
     // A link mark is a *style*, not a real <a> — the host is always a plain
     // <span> (created once, before any run's marks are known; see
     // getOrCreateHost), so navigation is opt-in via Ctrl/Cmd+click rather
-    // than a native anchor, exactly like Notion/Google Docs: a plain click
+    // than a native anchor, matching most rich text editors: a plain click
     // still just places the caret for editing.
     const link = run.marks?.link;
     host.title = link?.href ? `${link.href} — Ctrl+Click to open` : '';
@@ -571,7 +571,7 @@ export function EditableBlockContent({
   );
 
   /**
-   * Notion/TipTap's convention for a non-editable neighbor (image/video/
+   * The common convention for a non-editable neighbor (image/video/
    * audio/file embed, divider): the first Backspace/Delete that reaches it
    * only selects/highlights it (see the be-block-selected class toggled by
    * setSelectedBlockId); a second press while it's already selected is

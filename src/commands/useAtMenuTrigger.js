@@ -13,7 +13,7 @@ const AT_RE = /(^|\s)@(\w*)$/;
  * comment) — its own dedicated trigger, deliberately separate from "/"
  * (same rationale as useEmojiMenuTrigger's own ":" trigger: doesn't crowd
  * out every other slash command, and "@" carries its own well-understood
- * meaning from Notion/TipTap/Slack that "/" doesn't).
+ * meaning elsewhere that "/" doesn't).
  *
  * Not every inline type shows up here — only ones that asked to (e.g. a
  * host-defined "Assignee" field type registered with

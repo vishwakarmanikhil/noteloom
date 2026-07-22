@@ -176,7 +176,7 @@ function runPlainText(run, inlineRegistry) {
 
 /**
  * Changing a column *to* select needs every cell's current value at once
- * (to build one shared, deduplicated option list — Notion's own "text ->
+ * (to build one shared, deduplicated option list — the common "text ->
  * select" convention: one tag per distinct existing string, not one per
  * cell), which is why it's split out from the generic per-run
  * convertRunToType. Each cell is assigned whichever option matches its own

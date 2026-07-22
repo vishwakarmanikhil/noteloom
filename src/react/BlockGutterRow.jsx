@@ -31,7 +31,7 @@ import {
  * Wraps ONE top-level block with a hover-revealed left gutter — a "+" to
  * insert a new paragraph right after it, and a grip-handle trigger opening
  * a small menu (Duplicate / Move Up / Move Down / Hide-Show / Delete), the
- * same per-block affordance Notion/TipTap/editor.js all show. Only used for
+ * same per-block affordance most block editors show. Only used for
  * TOP-LEVEL blocks (see BlockChildren's `isTopLevel` prop) — nested
  * content (list item children, table cells, layout columns) doesn't get
  * its own gutter, matching every one of those editors' own convention of

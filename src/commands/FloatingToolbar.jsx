@@ -31,7 +31,7 @@ const HIGHLIGHT_COLORS = [
 ];
 
 /**
- * Notion/TipTap-style format bar that appears above a non-collapsed text
+ * A floating format bar that appears above a non-collapsed text
  * selection (see useFloatingToolbarTrigger). Every action goes through
  * useTextFormattingActions (shared with MobileActionBar) — this component
  * only owns the desktop bubble's own chrome/positioning/color-picker state.
@@ -41,7 +41,7 @@ const HIGHLIGHT_COLORS = [
  * focus to whatever you clicked — preventing it here (before any button's
  * own onClick even fires) is what lets a toolbar button apply formatting to
  * a selection that's still fully intact, exactly like every other
- * mousedown-then-click toolbar (Google Docs, Notion, etc.).
+ * mousedown-then-click floating format toolbar.
  *
  * Deliberately a no-op on a coarse (touch) pointer: a floating bubble
  * positioned off Range.getBoundingClientRect() fights the OS's own native

@@ -477,7 +477,7 @@ describe('table select column: shared options, managed from the column header (n
     expect(dispatched).toBe(false); // false means preventDefault was called
   });
 
-  it('a newly created option gets a color assigned once, and it renders as a colored pill in cells (Notion-style)', () => {
+  it('a newly created option gets a color assigned once, and it renders as a colored pill in cells', () => {
     const store = new EditorStore(emptyDoc());
     const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
     const inlineRegistry = createInlineRegistry();

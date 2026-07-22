@@ -7,7 +7,7 @@ import { ensureRootNonEmpty } from '../blocks/shared/ensureRootNonEmpty.js';
 
 /**
  * Matches every real editor's "click below the last block to keep writing"
- * affordance (Notion, Google Docs, ...): a plain clickable strip below the
+ * affordance: a plain clickable strip below the
  * document's own content, sized so there's always somewhere to click even
  * when the last block fills the viewport. If the last top-level block is
  * already a paragraph, clicking here just moves the caret to its end —

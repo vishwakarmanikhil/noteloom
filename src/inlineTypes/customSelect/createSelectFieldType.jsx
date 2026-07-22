@@ -63,9 +63,9 @@ export function createSelectFieldType({
   triggers = ['slash'],
   // Defaults to true for an @-reachable type (Assignee, Reviewer, ...): a
   // picked chip renders as "@Name" in a fixed accent color rather than each
-  // option's own tag color, matching how @mentions read everywhere else
-  // (Notion, Slack, GitHub) — a consistent mention style, not a per-person
-  // palette. Pass `mention: false` to opt an @-triggered type out of this
+  // option's own tag color, matching how @mentions read everywhere else —
+  // a consistent mention style, not a per-person palette. Pass
+  // `mention: false` to opt an @-triggered type out of this
   // (e.g. it's reachable via "@" but isn't really a "who" mention).
   mention = triggers.includes('at'),
 }) {
