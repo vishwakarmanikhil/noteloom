@@ -435,7 +435,32 @@ const session = new CollabSession({ history: store, signaling });
 session.connect(remotePeerId, { initiator: true });
 ```
 
-From then on, every edit made via `store`/`history` (typing, inserting/moving/deleting blocks, "Turn into" type conversions) is automatically broadcast to connected peers, and incoming changes merge in live. A runnable example, using the browser's native `BroadcastChannel` as a zero-server signaling backend for a same-machine two-tab demo, is in `examples/collab/` — run `npm run dev:collab` and open the URL in two tabs.
+From then on, every edit made via `store`/`history` (typing, inserting/moving/deleting blocks, "Turn into" type conversions) is automatically broadcast to connected peers, and incoming changes merge in live.
+
+### Signaling options
+
+`CollabSession` only needs *something* that can pass small JSON messages between two peers to bootstrap their WebRTC connection — it never needs to touch the internet itself. Two ready-to-use signaling backends:
+
+- **Same-browser demo, zero server** — `examples/collab/` uses the native `BroadcastChannel` API so every tab open on the same machine can find and sync with each other. Run `npm run dev:collab` and open the URL in two tabs. Good for trying the feature out; only works within one browser.
+- **Real multi-device collaboration — same WiFi/LAN, no internet required, or over the open internet if you point it at a public host** — `createWebSocketSignaling()` (exported from the package) connects to a small relay server that only ever sees connection-setup messages, never document content:
+
+  ```js
+  import { createWebSocketSignaling, CollabSession } from 'noteloom';
+
+  const signaling = createWebSocketSignaling({
+    url: 'ws://192.168.1.5:8080', // a relay running on your LAN -- or any host, if you want internet-wide instead
+    roomId: 'my-document-id',      // anyone using the same roomId ends up in the same room
+    peerId: crypto.randomUUID(),
+  });
+  const session = new CollabSession({ history, signaling });
+
+  signaling.onPeerDiscovered((remotePeerId) => {
+    const initiator = signaling.localPeerId > remotePeerId; // deterministic tie-break
+    session.connect(remotePeerId, { initiator });
+  });
+  ```
+
+  A minimal reference relay server (Node, `ws`-based, ~80 lines, **not** part of the npm package) lives in `tools/lan-relay-server/` — see its README for how to run it and the wire protocol. A full runnable example wiring it up is in `examples/lan-collab/` — run `npm run dev:lan-collab` (after starting the relay), open the URL in two tabs, and it works with zero internet connectivity as long as both tabs can reach the relay.
 
 **How conflicts resolve:**
 - Concurrent inserts (even at the same position) — both survive, converging to the same order on every peer.

@@ -1,0 +1,14 @@
+{
+  "name": "noteloom-lan-relay-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Reference WebSocket signaling relay for noteloom's createWebSocketSignaling — not published, not part of the noteloom package.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

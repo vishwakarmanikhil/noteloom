@@ -14,6 +14,7 @@ export { FieldClockRegistry } from './crdt/fieldRegistry.js';
 export { CollabSession } from './sync/CollabSession.js';
 export { PeerConnection } from './sync/peerConnection.js';
 export { MESSAGE_TYPE, encodeMessage, decodeMessage } from './sync/syncProtocol.js';
+export { createWebSocketSignaling } from './sync/websocketSignaling.js';
 
 export { BlockRegistry, createBlockRegistry } from './registry/blockRegistry.js';
 export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.js';

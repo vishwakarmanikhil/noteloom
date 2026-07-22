@@ -47,6 +47,7 @@
   "scripts": {
     "dev": "vite --config examples/basic/vite.config.js",
     "dev:collab": "vite --config examples/collab/vite.config.js",
+    "dev:lan-collab": "vite --config examples/lan-collab/vite.config.js",
     "build": "vite build && node -e \"require('fs').copyFileSync('src/style.css','dist/style.css')\"",
     "test": "vitest run",
     "prepublishOnly": "npm test && npm run build"
