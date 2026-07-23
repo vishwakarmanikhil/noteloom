@@ -347,6 +347,7 @@ export const codeBlockType: BlockTypeDefinition;
 export const toggleHeadingBlockType: BlockTypeDefinition;
 export const buttonBlockType: BlockTypeDefinition;
 export const embedBlockType: BlockTypeDefinition;
+export const canvasBlockType: BlockTypeDefinition;
 
 export function registerBuiltInInlineTypes(inlineRegistry: InlineRegistry): void;
 export function registerInlineTypes(inlineRegistry: InlineRegistry, types: Record<string, InlineTypeDefinition>): void;

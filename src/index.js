@@ -56,6 +56,7 @@ export {
   toggleHeadingBlockType,
   buttonBlockType,
   embedBlockType,
+  canvasBlockType,
 } from './blocks/index.js';
 
 export { registerBuiltInInlineTypes, registerInlineTypes, TABLE_SELECT_INLINE_TYPES } from './inlineTypes/index.js';

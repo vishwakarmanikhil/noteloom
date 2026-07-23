@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- `canvasBlockType` was defined and used internally (`registerBuiltInBlocks` already wired it in) but never re-exported from the package's public entry point (`src/index.js`/`src/index.d.ts`) — every other block type had an individual opt-in export, canvas didn't. Opting into a hand-picked subset of blocks that included canvas (`registerBlocks(registry, { canvas: canvasBlockType, ... })`) silently received `undefined` for it. Now exported like every other block type, both from JS and the `.d.ts` types.
+
 ## [0.2.0]
 
 ### Added
