@@ -6,6 +6,7 @@ import {
   changeBlockType,
   updateBlockProps,
   updateRun,
+  editRunChars,
   setBlockContentIds,
   replaceRunSpan,
   setBlockRuns,
@@ -16,6 +17,8 @@ import {
 import { ListCrdtState } from '../crdt/listCrdt.js';
 import { HLC, genPeerId } from '../crdt/clock.js';
 import { FieldClockRegistry } from '../crdt/fieldRegistry.js';
+import { diffCodePoints } from '../crdt/textDiff.js';
+import { genId } from '../utils/idGen.js';
 
 /** Sentinel subscribe/notify key for "the fieldTypes collection changed" — see useFieldTypes. */
 const FIELD_TYPES_KEY = '$fieldTypes';
@@ -55,6 +58,20 @@ export class EditorStore {
     this._clock = new HLC(this._peerId);
     this._fieldClocks = new FieldClockRegistry();
     this._orders = new Map(); // parent block id -> ListCrdtState over its contentIds, lazily seeded on first touch — see _getOrder
+
+    // Character-level text merge state — same lazy-seed-from-existing-data
+    // relationship to `runs` that `_orders` has to `blocks`. `_runOrders`
+    // orders a run's characters (ListCrdtState is fully generic over
+    // whatever ids it's given, so it's reused as-is here, just one
+    // instance per RUN instead of per parent BLOCK); `_runChars` holds the
+    // actual character payload for each slot (ListCrdtState's slots carry
+    // no value of their own); `_runValueSnapshots` memoizes the
+    // materialized string per run (see _materializeRunValue), the same
+    // invalidate-on-mutation convention `getFieldTypes()` already uses for
+    // `_fieldTypesSnapshot`.
+    this._runOrders = new Map();
+    this._runChars = new Map();
+    this._runValueSnapshots = new Map();
   }
 
   /** Lazily seeds a block's ordering CRDT state from its current (plain-array) contentIds the first time it's touched. */
@@ -66,6 +83,125 @@ export class EditorStore {
       this._orders.set(parentId, order);
     }
     return order;
+  }
+
+  /**
+   * Lazily seeds a run's character-ordering CRDT state from its current
+   * (plain-string) value the first time it's touched. Unlike blocks,
+   * individual characters have no pre-existing stable id of their own —
+   * BUT a fresh *random* one (genId()) can't be minted here the way
+   * `_getRunOrder`'s block equivalent doesn't need to, because a block's
+   * seed ids (its real `.id`s) are already identical on every peer (the
+   * document itself was already synced); a run's *characters* aren't
+   * separately synced at all, only its plain `value` string is. Two peers
+   * independently lazy-seeding the same pre-existing text with random ids
+   * would each invent a DIFFERENT id for "the same" character, so a
+   * remote edit's `afterId` (anchored to the sender's random id) would
+   * never resolve on the receiving side. Fix: ids for this initial seed
+   * are DETERMINISTIC — `` `${runId}:legacyChar:${index}` `` — so any peer
+   * seeding from the same starting string (guaranteed, since a peer only
+   * ever needs to seed a run it has already received the full document
+   * for) always mints the identical ids independently, with no
+   * coordination required. Only ever used for this one-time seed; every
+   * character inserted after that (by typing, on any peer) gets a real
+   * `genId()`.
+   */
+  _getRunOrder(runId) {
+    let order = this._runOrders.get(runId);
+    if (!order) {
+      const run = this.runs.get(runId);
+      const chars = new Map();
+      order = new ListCrdtState();
+      let prev = null;
+      let index = 0;
+      for (const ch of Array.from(run?.value ?? '')) {
+        const charId = `${runId}:legacyChar:${index}`;
+        chars.set(charId, ch);
+        order.insert(charId, prev, { wallTime: 0, counter: 0, peerId: 'legacy' }, 'legacy');
+        prev = charId;
+        index += 1;
+      }
+      this._runOrders.set(runId, order);
+      this._runChars.set(runId, chars);
+    }
+    return order;
+  }
+
+  /** Materializes a run's current text from its character CRDT, memoized until that run's char order next changes. */
+  _materializeRunValue(runId) {
+    let value = this._runValueSnapshots.get(runId);
+    if (value === undefined) {
+      const order = this._getRunOrder(runId);
+      const chars = this._runChars.get(runId);
+      value = order.toArray().map((charId) => chars.get(charId)).join('');
+      this._runValueSnapshots.set(runId, value);
+    }
+    return value;
+  }
+
+  /**
+   * Diffs `newValue` against the run's current materialized value (common
+   * prefix/suffix, code-point aware — see diffCodePoints) and translates
+   * only the changed region into character-CRDT insert/delete ops. One
+   * shared clock covers the whole edit — matching how a single
+   * INSERT_BLOCK/REMOVE_BLOCK op already uses one tick() each — since
+   * these characters are never independently reordered relative to each
+   * other regardless of how many ticks they'd otherwise get.
+   */
+  _editRunText(runId, newValue) {
+    const oldValue = this._materializeRunValue(runId);
+    const { start, oldEnd, newEnd, newChars } = diffCodePoints(oldValue, newValue);
+    const order = this._getRunOrder(runId);
+    const chars = this._runChars.get(runId);
+    const currentIds = order.toArray();
+    const clock = this._clock.tick();
+
+    const deletedCharIds = [];
+    for (let i = start; i < oldEnd; i += 1) {
+      const id = currentIds[i];
+      order.delete(id, clock);
+      deletedCharIds.push({ id, clock });
+    }
+
+    const insertedChars = [];
+    let afterId = start > 0 ? currentIds[start - 1] : null;
+    for (let i = start; i < newEnd; i += 1) {
+      const id = genId();
+      const ch = newChars[i];
+      chars.set(id, ch);
+      order.insert(id, afterId, clock, this._peerId);
+      insertedChars.push({ id, char: ch, afterId, clock });
+      afterId = id;
+    }
+
+    this._runValueSnapshots.delete(runId);
+    return { oldValue, insertedChars, deletedCharIds, clock };
+  }
+
+  /**
+   * Replays a previously-resolved text edit's EXACT character ids (from
+   * `op._charEdit`, cached on first application — see the UPDATE_RUN case)
+   * instead of re-diffing and minting fresh ones. Needed for `History`'s
+   * redo, which replays the same op OBJECT a second time: re-diffing would
+   * mint a brand-new set of ids rather than restoring the ones the
+   * matching undo had only tombstoned, breaking a subsequent undo/redo
+   * cycle (mirrors how INSERT_BLOCK's own handler restores an existing
+   * slot via `order.restore()` on redo instead of creating a new one,
+   * since a block's id is already stable across replay — characters have
+   * no such built-in stable id, so this cache is what gives them one).
+   */
+  _replayRunTextEdit(runId, charEdit) {
+    const order = this._getRunOrder(runId);
+    const chars = this._runChars.get(runId);
+    for (const c of charEdit.insertedChars) {
+      if (order.has(c.id)) order.restore(c.id);
+      else {
+        chars.set(c.id, c.char);
+        order.insert(c.id, c.afterId, c.clock, this._peerId);
+      }
+    }
+    for (const d of charEdit.deletedCharIds) order.delete(d.id, d.clock);
+    this._runValueSnapshots.delete(runId);
   }
 
   getBlock(id) {
@@ -181,9 +317,49 @@ export class EditorStore {
     switch (op.type) {
       case OP.UPDATE_RUN: {
         const run = this.runs.get(op.id);
+        const patchKeys = Object.keys(op.patch);
+
+        // The overwhelmingly common (and, per every real call site in this
+        // codebase, the ONLY observed) shape: a lone `value` key, from
+        // typing. Routed through this run's own character CRDT instead of
+        // whole-value LWW, so concurrent edits to the same run interleave
+        // instead of one clobbering the other, and undo can precisely
+        // reverse only the characters THIS actor touched (via
+        // EDIT_RUN_CHARS below) instead of replaying a stale whole-string
+        // snapshot that can clobber a peer's concurrent edit. Any other
+        // patch shape (marks, an atomic chip's `data`, or — never observed
+        // in practice — `value` mixed with another key) keeps the
+        // original whole-field LWW path below.
+        if (patchKeys.length === 1 && patchKeys[0] === 'value') {
+          let charEdit = op._charEdit;
+          if (charEdit) {
+            this._replayRunTextEdit(op.id, charEdit); // redo: reuse the exact ids from the first application
+          } else {
+            const { oldValue, insertedChars, deletedCharIds, clock } = this._editRunText(op.id, op.patch.value);
+            charEdit = { oldValue, insertedChars, deletedCharIds, clock };
+            op._charEdit = charEdit; // cached on the op object itself so a future redo replays these same ids -- see _replayRunTextEdit
+          }
+          const newValue = this._materializeRunValue(op.id);
+          this.runs.set(op.id, { ...run, value: newValue });
+          this._lastEnvelope = {
+            kind: 'runTextEdit',
+            runId: op.id,
+            insertedChars: charEdit.insertedChars,
+            deletedCharIds: charEdit.deletedCharIds,
+            clock: charEdit.clock,
+          };
+          this._notify([op.id]);
+          return editRunChars(
+            op.id,
+            charEdit.insertedChars.map((c) => c.id), // undo: tombstone what was just inserted...
+            charEdit.deletedCharIds.map((c) => c.id), // ...and restore what was just deleted
+            charEdit.oldValue, // cosmetic-only, for History's caret restoration/change log -- see editRunChars's own doc comment
+          );
+        }
+
         const previousPatch = {};
         const clocks = {};
-        for (const key of Object.keys(op.patch)) {
+        for (const key of patchKeys) {
           previousPatch[key] = run[key];
           clocks[key] = this._clock.tick();
           this._fieldClocks.recordLocal(op.id, key, clocks[key]);
@@ -192,6 +368,20 @@ export class EditorStore {
         this._lastEnvelope = { kind: 'fieldWrite', target: 'run', id: op.id, patch: op.patch, clocks };
         this._notify([op.id]);
         return updateRun(op.id, previousPatch);
+      }
+
+      case OP.EDIT_RUN_CHARS: {
+        const order = this._getRunOrder(op.id);
+        const clock = this._clock.tick();
+        for (const charId of op.tombstoneIds) order.delete(charId, clock);
+        for (const charId of op.restoreIds) order.restore(charId);
+        this._runValueSnapshots.delete(op.id);
+        const run = this.runs.get(op.id);
+        const newValue = this._materializeRunValue(op.id);
+        this.runs.set(op.id, { ...run, value: newValue });
+        this._lastEnvelope = { kind: 'runCharEdit', runId: op.id, tombstoneIds: op.tombstoneIds, restoreIds: op.restoreIds, clock };
+        this._notify([op.id]);
+        return editRunChars(op.id, op.restoreIds, op.tombstoneIds); // swapped -- this op is its own inverse shape
       }
 
       case OP.UPDATE_BLOCK_PROPS: {
@@ -530,15 +720,48 @@ export class EditorStore {
         return;
       }
 
+      case 'runTextEdit': {
+        const order = this._getRunOrder(envelope.runId);
+        const chars = this._runChars.get(envelope.runId);
+        for (const c of envelope.insertedChars) {
+          if (!order.has(c.id)) chars.set(c.id, c.char);
+          order.insert(c.id, c.afterId, c.clock, c.clock?.peerId); // idempotent -- safe on duplicate delivery, same as block inserts
+        }
+        for (const d of envelope.deletedCharIds) order.delete(d.id, d.clock);
+        this._runValueSnapshots.delete(envelope.runId);
+        const run = this.runs.get(envelope.runId);
+        if (run) {
+          this.runs.set(envelope.runId, { ...run, value: this._materializeRunValue(envelope.runId) });
+          this._notify([envelope.runId]);
+        }
+        this._clock.receive(envelope.clock);
+        return;
+      }
+
+      case 'runCharEdit': {
+        const order = this._getRunOrder(envelope.runId);
+        for (const charId of envelope.tombstoneIds) order.delete(charId, envelope.clock);
+        for (const charId of envelope.restoreIds) order.restore(charId);
+        this._runValueSnapshots.delete(envelope.runId);
+        const run = this.runs.get(envelope.runId);
+        if (run) {
+          this.runs.set(envelope.runId, { ...run, value: this._materializeRunValue(envelope.runId) });
+          this._notify([envelope.runId]);
+        }
+        this._clock.receive(envelope.clock);
+        return;
+      }
+
       default:
         throw new Error(`Unknown remote envelope kind: ${envelope.kind}`);
     }
   }
 
-  /** Total tombstoned (deleted but still retained) slots across every parent's ordering CRDT — a cheap signal for whether pruneTombstones() is worth calling, or just for observing growth over a long session. */
+  /** Total tombstoned (deleted but still retained) slots across every parent's ordering CRDT and every run's character CRDT — a cheap signal for whether pruneTombstones() is worth calling, or just for observing growth over a long session. */
   getTombstoneCount() {
     let count = 0;
     for (const order of this._orders.values()) count += order.tombstoneCount();
+    for (const order of this._runOrders.values()) count += order.tombstoneCount();
     return count;
   }
 
@@ -557,6 +780,15 @@ export class EditorStore {
     const threshold = { wallTime: now - maxAgeMs, counter: 0, peerId: '' };
     let removed = 0;
     for (const order of this._orders.values()) removed += order.pruneTombstones(threshold);
+    // Character payloads for pruned run-char slots (_runChars) are
+    // deliberately left in place rather than cleaned up here:
+    // ListCrdtState.pruneTombstones only returns a removed *count*, not
+    // which ids were removed (a shared contract with the block-level GC
+    // above, which has no equivalent payload map to clean), and a few
+    // orphaned single-character map entries per prune is a far smaller
+    // concern than the whole-subtree leaks tombstone GC exists to prevent
+    // in the first place.
+    for (const order of this._runOrders.values()) removed += order.pruneTombstones(threshold);
     return removed;
   }
 

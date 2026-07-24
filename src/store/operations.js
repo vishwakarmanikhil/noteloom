@@ -8,6 +8,7 @@ export const OP = {
   SET_BLOCK_CONTENT_IDS: 'setBlockContentIds',
   REPLACE_RUN_SPAN: 'replaceRunSpan',
   SET_BLOCK_RUNS: 'setBlockRuns',
+  EDIT_RUN_CHARS: 'editRunChars',
   ADD_FIELD_TYPE: 'addFieldType',
   UPDATE_FIELD_TYPE: 'updateFieldType',
   REMOVE_FIELD_TYPE: 'removeFieldType',
@@ -45,6 +46,26 @@ export function changeBlockType(id, blockType, props) {
 
 export function updateRun(id, patch) {
   return { type: OP.UPDATE_RUN, id, patch };
+}
+
+/**
+ * Tombstones `tombstoneIds` and restores `restoreIds` within a run's own
+ * character CRDT (see EditorStore's `_getRunOrder`/`_editRunText`) — the
+ * precise undo/redo counterpart to a text `updateRun`, used instead of a
+ * whole-value replace so undoing your own edit only ever touches the
+ * character ids YOU inserted/deleted, never a peer's concurrent edit to
+ * the same run. Deliberately self-inverting: applying this op's own
+ * returned inverse is just this same op with the two arrays swapped, which
+ * is what makes undo/redo of a text edit cycle correctly back and forth.
+ *
+ * `previousValue`, when given, is a cosmetic-only plain-string snapshot of
+ * the run's value right before the edit this is the inverse of — used
+ * exclusively by History's caret-restoration (`computeEntrySelection`) and
+ * opt-in change log (`getChangeLog`), never for undo's actual data
+ * correctness (that's the tombstone/restore ids above).
+ */
+export function editRunChars(id, tombstoneIds, restoreIds, previousValue) {
+  return { type: OP.EDIT_RUN_CHARS, id, tombstoneIds, restoreIds, previousValue };
 }
 
 /** Directly reassigns a block's contentIds array (e.g. merging one block's runs into another). */

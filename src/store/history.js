@@ -35,6 +35,22 @@ function diffValueOffsets(oldValue, newValue) {
  * (structural batches, non-text runs), which callers treat as "don't move
  * focus", same as today's behavior.
  */
+/**
+ * Pulls "the run's value right before this op was applied" out of an
+ * inverse, regardless of which of the two shapes `applyOperation` can
+ * return for a text `updateRun`: the classic whole-value inverse
+ * (`{type: 'updateRun', patch: {value}}`, still used for non-text patches
+ * like marks/data) or the character-CRDT inverse (`{type: 'editRunChars',
+ * previousValue}` — see operations.js's own doc comment on why it carries
+ * a cosmetic-only plain-string snapshot alongside the real tombstone/
+ * restore ids). Returns `undefined` for anything else.
+ */
+function previousValueFromInverse(inverse) {
+  if (inverse?.type === 'updateRun' && typeof inverse.patch?.value === 'string') return inverse.patch.value;
+  if (inverse?.type === 'editRunChars' && typeof inverse.previousValue === 'string') return inverse.previousValue;
+  return undefined;
+}
+
 function computeEntrySelection(entry) {
   if (!entry.ops.length || !entry.inverses.length) return null;
   const firstOp = entry.ops[0];
@@ -45,9 +61,10 @@ function computeEntrySelection(entry) {
   // inverses are unshifted (most-recent-first), so the last element is the
   // inverse of the *first* op — the run's value before the whole batch.
   const oldestInverse = entry.inverses[entry.inverses.length - 1];
-  if (oldestInverse?.type !== 'updateRun' || typeof oldestInverse.patch?.value !== 'string') return null;
+  const previousValue = previousValueFromInverse(oldestInverse);
+  if (previousValue === undefined) return null;
 
-  const { beforeOffset, afterOffset } = diffValueOffsets(oldestInverse.patch.value, lastOp.patch.value);
+  const { beforeOffset, afterOffset } = diffValueOffsets(previousValue, lastOp.patch.value);
   return { runId: firstOp.id, beforeOffset, afterOffset };
 }
 
@@ -135,11 +152,15 @@ export class History {
   _recordChange(op, inverse, meta) {
     if (!this.trackChanges) return;
     const hasPatch = op.patch !== undefined && inverse?.patch !== undefined;
+    // A text `updateRun`'s inverse is `editRunChars`-shaped (see
+    // operations.js), which has no `.patch` at all — its cosmetic-only
+    // `previousValue` string is the equivalent "before" here.
+    const previousValue = hasPatch ? undefined : previousValueFromInverse(inverse);
     this.changeLog.push({
       opType: op.type,
       id: op.id ?? op.blockId ?? op.block?.id,
-      before: hasPatch ? inverse.patch : undefined,
-      after: hasPatch ? op.patch : undefined,
+      before: hasPatch ? inverse.patch : previousValue !== undefined ? { value: previousValue } : undefined,
+      after: hasPatch ? op.patch : previousValue !== undefined ? op.patch : undefined,
       actorId: meta.actorId ?? null,
       timestamp: meta.timestamp ?? Date.now(),
     });

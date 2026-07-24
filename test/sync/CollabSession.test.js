@@ -119,6 +119,46 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
     sessionB.destroy();
   });
 
+  it('concurrent edits to the SAME run, made before either sees the other\'s change, both survive (character-level merge, not whole-value LWW)', async () => {
+    const historyA = new History(new EditorStore(makeDoc()));
+    const historyB = new History(new EditorStore(makeDoc()));
+    const { sessionA, sessionB } = await connectPair(historyA, historyB);
+
+    // simulate genuine concurrency: both edit the same run before either broadcast is received
+    historyA.performBatch([updateRun('r1', { value: 'hello A' })]);
+    historyB.performBatch([updateRun('r1', { value: 'hello B' })]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(historyA.getRun('r1').value).toBe(historyB.getRun('r1').value);
+    expect(historyA.getRun('r1').value).toContain('A');
+    expect(historyA.getRun('r1').value).toContain('B');
+
+    sessionA.destroy();
+    sessionB.destroy();
+  });
+
+  it('undoing your own edit to a run never removes a peer\'s concurrent edit to that same run', async () => {
+    const historyA = new History(new EditorStore(makeDoc()));
+    const historyB = new History(new EditorStore(makeDoc()));
+    const { sessionA, sessionB } = await connectPair(historyA, historyB);
+
+    historyA.performBatch([updateRun('r1', { value: 'hello A' })]);
+    historyB.performBatch([updateRun('r1', { value: 'hello B' })]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(historyA.getRun('r1').value).toContain('B'); // B's edit arrived before the undo
+
+    historyA.undo();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(historyA.getRun('r1').value).toBe('hello B'); // A's own "A" reverted, B's "B" untouched
+    expect(historyB.getRun('r1').value).toBe('hello B'); // the undo (an editRunChars op) also propagated correctly
+
+    sessionA.destroy();
+    sessionB.destroy();
+  });
+
   it('regression: every op in a multi-op performBatch syncs, not just the last one (e.g. remove-and-replace for an in-place block conversion)', async () => {
     // Reproduces a real reported bug: slash-command block conversion on an
     // otherwise-empty block (e.g. typing "/heading" then selecting it)
