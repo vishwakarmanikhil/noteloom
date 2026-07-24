@@ -1,6 +1,7 @@
 const DB_NAME = 'noteloom-documents';
 const STORE_NAME = 'documents';
-const DB_VERSION = 1;
+const TEMPLATES_STORE_NAME = 'templates';
+const DB_VERSION = 2;
 
 /**
  * IndexedDB-backed local persistence for documents (the shape `EditorStore
@@ -24,6 +25,12 @@ function openDatabase() {
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(STORE_NAME)) {
         request.result.createObjectStore(STORE_NAME);
+      }
+      if (!request.result.objectStoreNames.contains(TEMPLATES_STORE_NAME)) {
+        // Inline-keyed (unlike `documents`' external key) -- listTemplates()
+        // needs getAll() to return full {id, name, ...} objects in one read
+        // for a gallery UI, not just keys.
+        request.result.createObjectStore(TEMPLATES_STORE_NAME, { keyPath: 'id' });
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -71,6 +78,58 @@ export async function listPersistedDocumentIds() {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
     const request = tx.objectStore(STORE_NAME).getAllKeys();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Persists a template — `{ id, scope: 'document' | 'block', name,
+ * description?, doc }`, where `doc` is a full document (for `'document'`
+ * scope, e.g. from `exportDocumentJSON`) or `{ roots }` (for `'block'`
+ * scope, from `captureBlockTemplate`) — overwriting whatever was stored
+ * under the same `id` before. Separate object store from `documents`
+ * (see openDatabase above): a template is independent of any one document
+ * instance, not "the current document."
+ */
+export async function saveTemplate(template) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TEMPLATES_STORE_NAME, 'readwrite');
+    tx.objectStore(TEMPLATES_STORE_NAME).put(template);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Returns the template stored under `id`, or `null` if none exists. */
+export async function loadTemplate(id) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TEMPLATES_STORE_NAME, 'readonly');
+    const request = tx.objectStore(TEMPLATES_STORE_NAME).get(id);
+    request.onsuccess = () => resolve(request.result ?? null);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/** Removes the template stored under `id`, if any. A no-op if nothing was stored under that id. */
+export async function deleteTemplate(id) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TEMPLATES_STORE_NAME, 'readwrite');
+    tx.objectStore(TEMPLATES_STORE_NAME).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Every stored template, in full (unlike listPersistedDocumentIds, which only returns keys) — for rendering a gallery/picker without a per-template round trip. Insertion/write order is not guaranteed. */
+export async function listTemplates() {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TEMPLATES_STORE_NAME, 'readonly');
+    const request = tx.objectStore(TEMPLATES_STORE_NAME).getAll();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });

@@ -243,7 +243,7 @@ User-created types are persisted in the document's own `fieldTypes` collection (
 ```js
 import { exportDocumentJSON, exportDocumentHTML, exportDocumentText } from 'noteloom';
 
-exportDocumentJSON(store); // { rootId, blocks, runs } — feed straight back into `useEditor({ doc })`
+exportDocumentJSON(store); // a JSON *string* — JSON.parse() it to get { version, rootId, blocks, runs }, usable as useEditor({ doc })
 exportDocumentHTML(store, registry, inlineRegistry);
 exportDocumentText(store, registry, inlineRegistry);
 ```
@@ -295,6 +295,77 @@ Rich text (`data.text`) is an HTML string — the exact same per-run serializati
 One existing, by-design limitation carried over from clipboard paste: an atomic inline type's *core* value round-trips (a checkbox's checked state + label, a date's ISO value, a select's chosen value + label) but its full `options` list does not — only the currently-selected option survives, the same as pasting one of these chips into another instance of the editor today.
 
 This is purely an additive, alternate *interchange* format — the internal engine format above is unaffected either way, and this is not a replacement for it.
+
+## Templates
+
+Two kinds — a **document template** seeds a whole new editor (`useEditor({ doc })`), a **block template** is a saved snippet insertable anywhere via "/". Both are developer-definable in code and end-user-creatable/persisted (IndexedDB, alongside `usePersistedDocument`'s own storage but a separate object store — a template isn't tied to any one document). `examples/05-templates/` is a complete runnable app combining every piece below.
+
+**Block templates — reusable snippets, insertable via "/":**
+
+```js
+import { EditorStore, captureBlockTemplate, registerBlockTemplates, registerBuiltInBlocks } from 'noteloom';
+
+// Build once (a throwaway store is fine — only its content is captured):
+const draftStore = new EditorStore({
+  rootId: 'root',
+  blocks: [
+    { id: 'root', type: 'page', parentId: null, contentIds: ['h1', 'li1'], props: {} },
+    { id: 'h1', type: 'heading', parentId: 'root', contentIds: ['r1'], props: { level: 2 } },
+    { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: true, titleRunIds: ['r2'] } },
+  ],
+  runs: [
+    { id: 'r1', type: 'text', value: 'Meeting agenda', marks: {} },
+    { id: 'r2', type: 'text', value: 'Review previous action items', marks: {} },
+  ],
+});
+const agendaSnippet = captureBlockTemplate(draftStore, ['h1', 'li1']);
+
+const editor = useEditor({
+  registerBlocks: (registry) => {
+    registerBuiltInBlocks(registry);
+    registerBlockTemplates(registry, [{ id: 'agenda', label: 'Meeting agenda', keywords: ['agenda'], roots: agendaSnippet.roots }]);
+  },
+});
+```
+
+Typing "/agenda" now shows "Meeting agenda" in the slash menu, same as any built-in block — no changes needed to `SlashMenu`/`useSlashMenuTrigger`, since `registerBlockTemplates` registers under the hood exactly the way a real block type does (just one that's never actually rendered — only its *captured content*, which already has real block types, gets inserted). `insertBlockTemplate(store, template, { parentId, index })` does the same insertion directly, if you want a button instead of/alongside "/".
+
+**Document templates — starter documents:** no new primitives needed — a document template *is* a `DocumentJSON`, so `useEditor({ doc: someTemplate.doc })` already covers "start a new editor from it." To apply one to an **already-mounted** editor instead, use `applyDocumentTemplate(store, doc)`.
+
+**Saving/browsing a library of templates** (either kind), persisted so it survives reload:
+
+```jsx
+import { useEditor, NoteloomEditor, useTemplates, TemplatePicker, saveTemplate, exportDocumentJSON } from 'noteloom';
+
+function NewDocumentScreen({ onPick }) {
+  const { templates, isLoaded } = useTemplates({ scope: 'document' }); // or 'block', or omit for both
+  if (!isLoaded) return <p>Loading…</p>;
+  return <TemplatePicker templates={templates} onSelect={(template) => onPick(template.doc)} />;
+}
+
+// Saving the current document as a reusable template:
+async function saveCurrentAsTemplate(store, name) {
+  await saveTemplate({
+    id: crypto.randomUUID(),
+    scope: 'document',
+    name,
+    doc: JSON.parse(exportDocumentJSON(store)), // exportDocumentJSON returns a JSON *string* — parse it first
+  });
+}
+```
+
+`TemplatePicker` is deliberately just a plain list (name + description + a "Use" button) — wrap it in the exported `Modal` component yourself, or render it inline, whichever fits; what `onSelect` actually does (apply it, insert it, just read `.doc`) is up to you, since that differs by scope. `saveTemplate`/`loadTemplate`/`deleteTemplate`/`listTemplates` are the raw storage operations `useTemplates` is built on, for anywhere the hook's all-in-one behavior doesn't fit.
+
+**Importing a template from a file** — since a stored template is already plain JSON, this needs no new format or function, just `saveTemplate(JSON.parse(fileText))`:
+
+```jsx
+async function handleImport(event) {
+  const template = JSON.parse(await event.target.files[0].text());
+  await saveTemplate(template);
+}
+```
+
+(Exporting one for sharing is the mirror image — `JSON.stringify(template)`, downloaded as a `.json` file — ordinary front-end code, not something this package needs to provide.)
 
 ## Right-to-left / multi-language text
 
@@ -519,11 +590,18 @@ Or call `store.pruneTombstones({ maxAgeMs })` yourself on whatever schedule you 
 
 **Why a time-based threshold is safe here specifically:** this only works because of how `CollabSession` reconnects — a peer rejoining after any absence gets a full document *snapshot* (`syncResponse`), never a replay of the ops it missed. That means a peer offline longer than the GC threshold never needs an old tombstone to resolve a stale reference; it just adopts the current state directly. The only residual risk is a single *already-connected* peer somehow stalling for exactly as long as the threshold and then delivering a queued message afterward — implausible for a live, reliable, ordered WebRTC data channel (which disconnects long before that under any real interruption), but not impossible, which is why this is opt-in rather than automatic.
 
+### Reconnecting reliably
+
+`CollabSession`/`createWebSocketSignaling` deliberately don't retry anything themselves (see the class doc comment) — a dropped connection is a transport-layer concern left to the host app, on purpose, so this stays a small library rather than growing an opinionated retry/backoff policy no two apps would agree on. `examples/lan-collab/` is a complete, runnable reference for the two pieces most apps end up needing on top:
+
+- **A watchdog that actually reconnects.** `createWebSocketSignaling` exposes no `close`/`error` event for the relay connection dying silently (a sleeping laptop, a WiFi drop, the relay restarting) — so periodically checking "do I currently have zero live peers, and has it been a while since I last tried" and, if so, tearing down and recreating the whole signaling + session is the only reliable way to notice and recover. Also worth reacting to the browser's own `online` event immediately, rather than waiting for the next timer tick.
+- **Actually catching up, not just resuming.** A reconnecting peer that keeps its existing (non-empty) store — the right default, so a solo editing session isn't wiped by a network blip — never re-triggers `CollabSession`'s adopt-a-snapshot path, since that only fires when a store is genuinely empty (see "A peer joining with their own existing document" below). Left alone, this peer silently misses everything the room changed while it was away. The fix: on a genuine *reconnect* (never the very first connection) where nothing was typed locally in the gap, reset the store back to that same empty shape first — the same field-level reset `usePersistedDocument` uses internally — so the ordinary adopt-on-empty flow does the catching-up. If local edits *were* made while disconnected, keep them as-is; there's no safe way to both preserve them and adopt someone else's snapshot without a real merge (see the next limitation).
+
 **Known limitations — read before relying on this in production:**
 - **Undo is local-only, and can overwrite a peer's edit to the same run.** Your undo/redo never touches a peer's changes directly — but because text merges as *whole-value* LWW (see above), undoing your own past edit to a run replays an old full-string snapshot, which will clobber anything a peer has since typed into that same run. Avoid undoing text you know a peer may have touched; a true fix requires character-level text merging, which is a deliberately larger, not-yet-built change.
 - **Deleted content isn't garbage-collected automatically, but can be — opt-in.** Tombstones are kept by default (needed so a late-arriving concurrent operation can still resolve correctly), which means unbounded memory growth over a long enough session unless you do something about it. `store.pruneTombstones({ maxAgeMs })` (default 24h) removes tombstones older than that safely — see "Tombstone garbage collection" above. Nothing calls this automatically; wire up `createPeriodicTombstoneGC` (or call it yourself) if you want it handled for you.
-- **A peer joining with their own existing (different) document does not merge with yours.** `CollabSession` only adopts a peer's document wholesale when your own side is still empty — the common "open a shared link and get the document" flow. Reconciling two independently-created, already-diverged documents on first contact is a fundamentally harder problem (no shared id space) and isn't attempted.
-- **Reconnecting after a dropped connection re-syncs the full document**, not just what was missed — simple and correct, at the cost of O(document size) traffic per reconnect.
+- **A peer joining with their own existing (different) document does not merge with yours.** `CollabSession` only adopts a peer's document wholesale when your own side is still empty — the common "open a shared link and get the document" flow. Reconciling two independently-created, already-diverged documents on first contact is a fundamentally harder problem (no shared id space) and isn't attempted. This is also why the reconnect pattern above only ever resets a store that has no unsynced local edits of its own.
+- **Reconnecting after a dropped connection re-syncs the full document**, not just what was missed — simple and correct, at the cost of O(document size) traffic per reconnect. See "Reconnecting reliably" above for making the reconnect itself actually happen.
 - Only structural block changes and field edits (props, type, run text) are collaboration-aware. A few coarse "resync" operations (`setBlockContentIds`, `replaceRunSpan`, `setBlockRuns` — used for DOM-reconciliation escape hatches like paste-into-contentEditable or IME composition) remain local-only for now.
 - Large single messages (e.g. an embedded video/file's `data:` URL, or a full-document `syncResponse` for a big document) are transparently fragmented, flow-controlled against the data channel's own backpressure, and reassembled under the hood — you don't need to do anything for this, but very large embeds mean more individual send calls and somewhat higher latency to fully arrive.
 

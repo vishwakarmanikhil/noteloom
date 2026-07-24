@@ -4,9 +4,14 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Added
+
+- **Templates** — document templates (starter documents for `useEditor({ doc })`/`applyDocumentTemplate`) and block templates (reusable snippets insertable via "/", `captureBlockTemplate`/`insertBlockTemplate`/`registerBlockTemplates`), both developer-definable in code and end-user-creatable/persisted. `saveTemplate`/`loadTemplate`/`deleteTemplate`/`listTemplates` add a second IndexedDB object store (`templates`, alongside the existing `documents` one — `DB_VERSION` bumped 1 → 2, additive, doesn't disturb existing persisted documents), plus `useTemplates` and a generic `TemplatePicker` list component. `registerBlockTemplates` needed zero changes to `SlashMenu`/`useSlashMenuTrigger`/`BlockRegistry` — templates register as ordinary (never-rendered) slash-command-only registry entries. New `examples/05-templates/` demonstrates the full loop (register snippets, save-as-template, pick-from-gallery, import from a JSON file).
+
 ### Fixed
 
 - `canvasBlockType` was defined and used internally (`registerBuiltInBlocks` already wired it in) but never re-exported from the package's public entry point (`src/index.js`/`src/index.d.ts`) — every other block type had an individual opt-in export, canvas didn't. Opting into a hand-picked subset of blocks that included canvas (`registerBlocks(registry, { canvas: canvasBlockType, ... })`) silently received `undefined` for it. Now exported like every other block type, both from JS and the `.d.ts` types.
+- `exportDocumentJSON`'s README example and `.d.ts` type both implied it returns a plain `{ rootId, blocks, runs }` object — it actually returns a JSON *string* (it's the "view source"/copy-out format), always did. Fixed both; `JSON.parse()` it first when feeding the result into `useEditor({ doc })` or `saveTemplate`.
 
 ## [0.2.0]
 

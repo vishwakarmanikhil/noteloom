@@ -1703,6 +1703,67 @@ tr.be-table-row:hover .be-table-delete-row {
   color: var(--noteloom-danger);
 }
 
+/* --- template picker (see TemplatePicker.jsx) --- */
+
+.be-template-picker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.be-template-picker-empty {
+  color: var(--noteloom-text-faint);
+  font-size: 0.88rem;
+}
+
+.be-template-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  background: var(--noteloom-bg);
+}
+
+.be-template-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.be-template-card-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--noteloom-text);
+}
+
+.be-template-card-description {
+  font-size: 0.82rem;
+  color: var(--noteloom-text-muted);
+}
+
+.be-template-card-select {
+  flex: none;
+  border: 1px solid var(--noteloom-border);
+  background: var(--noteloom-bg-subtle);
+  color: var(--noteloom-text);
+  border-radius: var(--noteloom-radius-sm);
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.be-template-card-select:hover {
+  background: var(--noteloom-bg-hover);
+}
+
 /* --- mobile action bar (pinned above the on-screen keyboard) --- */
 
 .be-mobile-action-bar {

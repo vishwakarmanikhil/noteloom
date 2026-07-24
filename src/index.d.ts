@@ -285,6 +285,63 @@ export function createAutoPersistence(options: {
 }): { stop: () => void; flush: () => void };
 
 // ---------------------------------------------------------------------------
+// templates/ (+ the template half of persistence/)
+// ---------------------------------------------------------------------------
+
+/** One captured block-template root — see captureBlockTemplate. */
+export interface BlockTemplate {
+  roots: CapturedSubtree[];
+}
+
+export interface StoredTemplate {
+  id: string;
+  scope: 'document' | 'block';
+  name: string;
+  description?: string;
+  /** A full DocumentJSON for scope 'document', or a BlockTemplate ({ roots }) for scope 'block'. */
+  doc: DocumentJSON | BlockTemplate;
+}
+
+export function saveTemplate(template: StoredTemplate): Promise<void>;
+export function loadTemplate(id: string): Promise<StoredTemplate | null>;
+export function deleteTemplate(id: string): Promise<void>;
+export function listTemplates(): Promise<StoredTemplate[]>;
+
+export function captureBlockTemplate(store: EditorStore | History, blockIds: string[]): BlockTemplate;
+export function insertBlockTemplate(
+  store: EditorStore | History,
+  template: BlockTemplate,
+  position: { parentId: string; index: number },
+): void;
+/** Wholesale-replaces an already-mounted editor's content with a document template. To start a NEW editor from one instead, just pass it as useEditor({ doc }). */
+export function applyDocumentTemplate(store: EditorStore | History, doc: DocumentJSON): void;
+
+export interface BlockTemplateDefinition {
+  id: string;
+  label: string;
+  icon?: ComponentType<{ size?: number }>;
+  keywords?: string[];
+  roots: CapturedSubtree[];
+}
+
+/** Registers block templates as slash commands, discoverable/insertable via "/" alongside every built-in block — no SlashMenu/BlockRegistry changes needed. */
+export function registerBlockTemplates(registry: BlockRegistry, templates: BlockTemplateDefinition[]): void;
+
+export function useTemplates(options?: { scope?: 'document' | 'block' }): {
+  templates: StoredTemplate[];
+  isLoaded: boolean;
+  refresh: () => Promise<void>;
+};
+
+export interface TemplatePickerProps {
+  templates: StoredTemplate[];
+  onSelect: (template: StoredTemplate) => void;
+  emptyLabel?: string;
+}
+
+export const TemplatePicker: ComponentType<TemplatePickerProps>;
+
+// ---------------------------------------------------------------------------
 // registry/, blocks/, inlineTypes/
 // ---------------------------------------------------------------------------
 
@@ -454,13 +511,34 @@ export const EditorTrailingSpace: ComponentType<Record<string, unknown>>;
 // clipboard/
 // ---------------------------------------------------------------------------
 
+export interface CapturedSubtree {
+  rootId: string;
+  blocks: Block[];
+  runs: Run[];
+}
+
+export interface RemappedSubtree {
+  block: Block;
+  runs: Run[];
+  subtreeBlocks: Block[];
+}
+
 export const APP_MIME: string;
-export function serializeBlockRange(...args: unknown[]): unknown;
-export function remapSubtreeIds(...args: unknown[]): unknown;
+export function serializeBlockRange(
+  store: EditorStore | History,
+  registry: BlockRegistry,
+  blockIds: string[],
+  inlineRegistry?: InlineRegistry,
+): { html: string; text: string; json: string };
+/** Read-only capture of one block + its descendants, with original ids intact — see also captureBlockTemplate for capturing several sibling roots at once. */
+export function captureSubtree(store: EditorStore | History, rootId: string): CapturedSubtree;
+/** Gives a captured subtree fresh ids, ready to insert elsewhere without colliding with existing content. */
+export function remapSubtreeIds(captured: CapturedSubtree): RemappedSubtree;
 export function deserializeClipboard(...args: unknown[]): unknown;
 export function walkDomToBlocks(...args: unknown[]): unknown;
 export function textToParagraphs(...args: unknown[]): unknown;
-export function exportDocumentJSON(store: EditorStore | History): unknown;
+/** Returns a JSON *string* (pretty-printed by default) — parse it (`JSON.parse`) to get back a plain `{ version, rootId, blocks, runs }` object usable as `useEditor({ doc })`. */
+export function exportDocumentJSON(store: EditorStore | History, options?: { pretty?: boolean }): string;
 export function exportDocumentHTML(store: EditorStore | History, registry: BlockRegistry): string;
 export function exportDocumentText(store: EditorStore | History, registry: BlockRegistry): string;
 export function exportDocumentSimpleJSON(store: EditorStore | History, registry: BlockRegistry, inlineRegistry: InlineRegistry): unknown;

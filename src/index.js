@@ -25,8 +25,21 @@ export {
   loadPersistedDocument,
   deletePersistedDocument,
   listPersistedDocumentIds,
+  saveTemplate,
+  loadTemplate,
+  deleteTemplate,
+  listTemplates,
 } from './persistence/indexedDbPersistence.js';
 export { createAutoPersistence } from './persistence/autoPersist.js';
+
+// Templates -- reusable starter documents (useEditor({ doc })) and
+// insertable block snippets (via "/", see registerBlockTemplates). Storage
+// (saveTemplate/loadTemplate/deleteTemplate/listTemplates, above) is shared
+// between both; capture/insert are block-scope-specific since a document
+// template needs no new primitives beyond exportDocumentJSON/useEditor.
+export { captureBlockTemplate, insertBlockTemplate, applyDocumentTemplate, registerBlockTemplates } from './templates/blockTemplates.js';
+export { useTemplates } from './react/useTemplates.js';
+export { TemplatePicker } from './react/TemplatePicker.jsx';
 
 export { BlockRegistry, createBlockRegistry } from './registry/blockRegistry.js';
 export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.js';
@@ -122,7 +135,7 @@ export { Select } from './react/Select.jsx';
 export { EditorTrailingSpace } from './react/EditorTrailingSpace.jsx';
 
 export { APP_MIME } from './clipboard/mimeType.js';
-export { serializeBlockRange, remapSubtreeIds } from './clipboard/serialize.js';
+export { serializeBlockRange, remapSubtreeIds, captureSubtree } from './clipboard/serialize.js';
 export { deserializeClipboard } from './clipboard/deserialize.js';
 export { walkDomToBlocks, textToParagraphs } from './clipboard/domWalk.js';
 export { exportDocumentJSON, exportDocumentHTML, exportDocumentText } from './clipboard/exportDocument.js';
