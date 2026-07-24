@@ -50,6 +50,26 @@ function PeerCursors({ session }) {
     return () => cancelAnimationFrame(id);
   }, [presence]);
 
+  // getBoundingClientRect() is viewport-relative, and these cursors are
+  // position: fixed (also viewport-relative) -- so the rect itself is
+  // never stale from scrolling alone. What WAS stale is this component:
+  // nothing re-rendered on scroll, so a cursor stayed glued to its old
+  // on-screen spot while the real text moved underneath it, until the
+  // next presence-driven re-render (above) happened to catch it back up.
+  // capture: true because scrolling a nested scrollable container (not
+  // just the window) doesn't bubble, but does fire during capture.
+  useEffect(() => {
+    function handleScrollOrResize() {
+      forceRerender((n) => n + 1);
+    }
+    window.addEventListener('scroll', handleScrollOrResize, { passive: true, capture: true });
+    window.addEventListener('resize', handleScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, { capture: true });
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, []);
+
   return (
     <>
       {[...presence.entries()].map(([peerId, data]) => {
