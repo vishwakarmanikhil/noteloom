@@ -221,6 +221,22 @@ export function App() {
       if (knownPeerIds.has(remotePeerId)) return;
       knownPeerIds.add(remotePeerId);
       peerFound = true;
+
+      // Deadlock guard: two brand-new tabs opening the room at nearly the
+      // same moment each discover the other (peerFound becomes true on
+      // both sides) before either's SOLO_TIMEOUT_MS below fires -- so
+      // neither ever seeds, and since both start empty, the connection
+      // they're about to make has no real content to sync either way.
+      // Fix: seed HERE, synchronously, before `session.connect()` even
+      // starts the handshake -- its own initial syncRequest/syncResponse
+      // exchange (automatic once the data channel opens, well after this)
+      // then just picks up real content naturally instead of two empty
+      // snapshots meeting in the middle. Deterministic tie-break
+      // (whichever peerId sorts lower) so exactly one side seeds, never
+      // both -- same idea as `initiator` below, decided independently on
+      // each side with no extra coordination.
+      if (!hasContent() && signaling.localPeerId < remotePeerId) seedStarterDoc();
+
       // Deterministic tie-break: exactly one side of each pair must be the
       // WebRTC offer-maker. Comparing peer ids the same way on both sides
       // always agrees on which one that is, with no extra coordination.
