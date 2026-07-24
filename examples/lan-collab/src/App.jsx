@@ -294,6 +294,29 @@ export function App() {
       function connectTo(remotePeerId) {
         if (knownPeerIds.has(remotePeerId)) return;
         knownPeerIds.add(remotePeerId);
+
+        // Deadlock guard: two brand-new tabs joining the same room at
+        // nearly the same moment each discover the other via the roster
+        // before either's "I'm alone" seed timeout below fires -- so
+        // neither ever seeds, and since both start empty, the connection
+        // they're about to make has no real content to sync either way.
+        // Fix: seed HERE, synchronously, before `collabSession.connect()`
+        // below even starts the handshake -- its own initial syncRequest/
+        // syncResponse exchange (which happens automatically once the
+        // data channel opens, well after this) then just picks up real
+        // content naturally instead of two empty snapshots meeting in the
+        // middle. Deterministic tie-break (whichever peerId sorts lower)
+        // so exactly one side seeds, never both -- same idea as
+        // `initiator` below, just decided independently on each side
+        // without needing to agree over the wire.
+        if (!hasEverConnected && !hasContent() && localPeerId < remotePeerId) {
+          const doc = makeStarterDoc();
+          store.store.blocks = new Map(doc.blocks.map((b) => [b.id, b]));
+          store.store.runs = new Map(doc.runs.map((r) => [r.id, r]));
+          store.store.rootId = doc.rootId;
+          store.store._notify([...store.store.blocks.keys(), ...store.store.runs.keys()]);
+        }
+
         // Deterministic tie-break: exactly one side of each pair must be
         // the WebRTC offer-maker.
         const initiator = localPeerId > remotePeerId;
