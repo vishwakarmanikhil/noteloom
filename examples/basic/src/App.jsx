@@ -33,6 +33,7 @@ import {
   VoiceListeningIndicator,
   listVoiceCommands,
   Modal,
+  CommentsPanel,
 } from '../../../src/index.js';
 import { genId } from '../../../src/utils/idGen.js';
 import { MentionIcon } from '../../../src/react/icons.jsx';
@@ -335,6 +336,16 @@ function VoiceCommandsModal({ isOpen, onClose }) {
   );
 }
 
+// The whole comments experience below -- the floating toolbar's Comment
+// button, click/hover-to-view on existing highlighted text, and this panel
+// -- is entirely built into the package once `commentAuthorId` is set (see
+// EditorProvider's own prop below and FloatingToolbar's `commentAuthorId`)
+// and CommentsPanel is rendered somewhere under the provider. No comment
+// UI is hand-written in this file at all; contrast with the rest of this
+// demo (Toolbar, VoiceCommandsModal, ...), which IS this file's own code,
+// since undo/redo/preview/voice/etc. have no built-in chrome of their own.
+const COMMENT_AUTHOR_ID = 'You';
+
 function Toolbar() {
   const history = useHistory();
   const [isPreviewMode, setIsPreviewMode] = usePreviewMode();
@@ -417,6 +428,7 @@ function EditorSurface() {
       onPaste={onPaste}
     >
       <Toolbar />
+      <CommentsPanel authorId={COMMENT_AUTHOR_ID} />
       <FieldTypeEditorModal />
       <BlockRangeActionMenu />
       <BlockChildren parentId="root" isTopLevel />
@@ -457,6 +469,7 @@ function EditorSurface() {
         crossSelection={floatingToolbar.crossSelection}
         marks={floatingToolbar.marks}
         store={store}
+        commentAuthorId={COMMENT_AUTHOR_ID}
       />
       <MobileActionBar containerRef={containerRef} />
     </div>
@@ -514,7 +527,7 @@ export function App() {
   }, []);
 
   return (
-    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store}>
+    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store} commentAuthorId={COMMENT_AUTHOR_ID}>
       <EditorSurface />
     </EditorProvider>
   );

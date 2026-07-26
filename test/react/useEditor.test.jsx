@@ -108,4 +108,40 @@ describe('NoteloomEditor', () => {
     expect(root.style.getPropertyValue('--noteloom-accent')).toBe('#16a34a');
     expect(container.querySelector('.be-paragraph.my-paragraph')).toBeTruthy();
   });
+
+  it('does not render CommentsPanel by default', () => {
+    const { container } = render(<Wrapper />);
+    expect(container.querySelector('.be-comments-panel')).toBeNull();
+  });
+
+  it('renders CommentsPanel when showCommentsPanel is true', () => {
+    function PanelWrapper() {
+      const editor = useEditor();
+      return <NoteloomEditor editor={editor} showCommentsPanel commentAuthorId="alice" />;
+    }
+    const { container, getByText } = render(<PanelWrapper />);
+    expect(container.querySelector('.be-comments-panel')).toBeTruthy();
+    expect(getByText('No comments yet.')).toBeTruthy();
+  });
+
+  it('the floating toolbar gets commentAuthorId (built-in composer path) when NoteloomEditor is given it', () => {
+    function CommentWrapper() {
+      const editor = useEditor();
+      return <NoteloomEditor editor={editor} commentAuthorId="alice" />;
+    }
+    const { container } = render(<CommentWrapper />);
+    const runNode = container.querySelector('[data-run-id]');
+    typeIntoRun(runNode, 'hello world');
+
+    const range = document.createRange();
+    range.setStart(runNode.firstChild, 0);
+    range.setEnd(runNode.firstChild, 5);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    fireEvent(document, new Event('selectionchange'));
+
+    const commentBtn = container.querySelector('.be-floating-toolbar-btn[title="Comment"]');
+    expect(commentBtn).toBeTruthy();
+  });
 });

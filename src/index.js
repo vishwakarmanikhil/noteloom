@@ -29,6 +29,10 @@ export {
   loadTemplate,
   deleteTemplate,
   listTemplates,
+  saveDocumentVersion,
+  loadDocumentVersion,
+  deleteDocumentVersion,
+  listDocumentVersions,
 } from './persistence/indexedDbPersistence.js';
 export { createAutoPersistence } from './persistence/autoPersist.js';
 
@@ -40,6 +44,25 @@ export { createAutoPersistence } from './persistence/autoPersist.js';
 export { captureBlockTemplate, insertBlockTemplate, applyDocumentTemplate, registerBlockTemplates } from './templates/blockTemplates.js';
 export { useTemplates } from './react/useTemplates.js';
 export { TemplatePicker } from './react/TemplatePicker.jsx';
+
+// Version history -- point-in-time document snapshots (storage above),
+// restored via the same applyDocumentTemplate used for templates.
+export { createPeriodicVersionSnapshotter } from './versions/versionSnapshotter.js';
+export { useDocumentVersions } from './react/useDocumentVersions.js';
+
+// Comments -- thread metadata (text/author/replies/resolved) is
+// collaboration-aware; the highlighted range it's anchored to is
+// local-only for v1 (same pre-existing scope as every other
+// replaceRunSpan-based formatting operation). See src/comments/comments.js
+// for the full scope note.
+export { addComment, replyToComment, resolveComment, deleteComment } from './comments/comments.js';
+export { addCommentMarkOverRange, removeCommentMarkEverywhere } from './comments/commentMarks.js';
+export { useComments } from './react/useComments.js';
+export { useCommentAuthorId } from './react/EditorProvider.jsx';
+export { CommentsPanel } from './react/CommentsPanel.jsx';
+export { CommentThreadCard } from './react/CommentThreadCard.jsx';
+export { CommentComposer } from './react/CommentComposer.jsx';
+export { CommentAvatar } from './react/CommentAvatar.jsx';
 
 export { BlockRegistry, createBlockRegistry } from './registry/blockRegistry.js';
 export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.js';

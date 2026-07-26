@@ -36,6 +36,7 @@ export function EditorProvider({
   style,
   theme = 'default',
   getBlockClassName,
+  commentAuthorId,
   children,
 }) {
   useEffect(() => {
@@ -138,6 +139,7 @@ export function EditorProvider({
       openEditFieldType,
       closeFieldTypeEditor,
       getBlockClassName,
+      commentAuthorId,
     }),
     [
       store,
@@ -154,6 +156,7 @@ export function EditorProvider({
       openEditFieldType,
       closeFieldTypeEditor,
       getBlockClassName,
+      commentAuthorId,
     ],
   );
   const content =
@@ -277,6 +280,18 @@ export function useBlockClassName(baseClassName, block) {
   const { getBlockClassName } = useEditorContext();
   const extra = block && getBlockClassName ? getBlockClassName(block) : undefined;
   return extra ? `${baseClassName} ${extra}` : baseClassName;
+}
+
+/**
+ * The current user's id for AUTHORING comments through the package's own
+ * built-in UI (CommentPopover's reply composer, CommentsPanel) — see
+ * NoteloomEditor's `commentAuthorId` prop. `undefined` when not configured,
+ * in which case those surfaces still show existing threads (view/resolve/
+ * delete need no identity) but hide the reply composer, since there's no
+ * author to attribute a new message to.
+ */
+export function useCommentAuthorId() {
+  return useEditorContext().commentAuthorId;
 }
 
 export function useFieldTypeEditor() {

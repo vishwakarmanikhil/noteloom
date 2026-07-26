@@ -116,6 +116,15 @@
   outline: none;
 }
 
+/* A run with marks.commentIds set (see src/comments/commentMarks.js) --
+   presence/absence only, no per-comment value to vary the color by.
+   cursor: pointer hints that it opens CommentPopover on click. */
+.be-comment-highlight {
+  background: rgba(234, 179, 8, 0.2);
+  border-bottom: 2px solid rgba(234, 179, 8, 0.6);
+  cursor: pointer;
+}
+
 /* --- basic leaf blocks --- */
 
 .be-paragraph {
@@ -2436,6 +2445,235 @@ tr.be-table-row:hover .be-table-delete-row {
   color: var(--noteloom-text);
 }
 
+/* --- comments: avatar, composer, thread card, click/hover popover, right-side panel --- */
+
+.be-comment-avatar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Overrides the dark `.be-floating-toolbar` chrome it also carries (see
+   FloatingToolbar.jsx's own comment on why that base class stays) -- a
+   comment composer reads better as a light pill than white text on the
+   toolbar's own near-black background. */
+.be-floating-toolbar.be-floating-toolbar-comment-standalone {
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  padding: 6px 8px;
+  width: 280px;
+}
+
+.be-comment-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.be-comment-composer-textarea {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  resize: none;
+  max-height: 90px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--noteloom-text);
+  background: var(--noteloom-bg-subtle);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-xl);
+}
+
+.be-comment-composer-textarea:focus {
+  outline: none;
+  border-color: var(--noteloom-accent);
+}
+
+.be-comment-composer-cancel,
+.be-comment-composer-submit {
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.be-comment-composer-cancel {
+  background: var(--noteloom-bg-hover);
+  color: var(--noteloom-text-muted);
+}
+
+.be-comment-composer-submit {
+  background: var(--noteloom-accent);
+  color: #fff;
+}
+
+.be-comment-composer-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.be-comment-thread {
+  font-size: 0.85rem;
+}
+
+.be-comment-thread + .be-comment-thread {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--noteloom-border);
+}
+
+.be-comment-thread-resolved {
+  opacity: 0.6;
+}
+
+.be-comment-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.be-comment-message + .be-comment-message {
+  margin-top: 8px;
+}
+
+.be-comment-message-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.be-comment-message-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.be-comment-message-author {
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.be-comment-message-time {
+  font-size: 0.72rem;
+  color: var(--noteloom-text-muted);
+}
+
+.be-comment-message-text {
+  margin: 2px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Replies (every message after the thread's first) get a connecting
+   vertical line + indent, chat-thread style -- our data model has no
+   deeper nesting than "root message + flat replies", so one indent level
+   is all this needs. */
+.be-comment-thread-replies {
+  margin: 8px 0 0 13px;
+  padding-left: 12px;
+  border-left: 2px solid var(--noteloom-border);
+}
+
+.be-comment-thread-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.be-comment-thread-actions button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--noteloom-text-muted);
+  font-size: 0.78rem;
+  padding: 3px 6px;
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+}
+
+.be-comment-thread-actions button:hover {
+  background: var(--noteloom-bg-hover);
+  color: var(--noteloom-text);
+}
+
+.be-comment-thread-delete {
+  margin-left: auto;
+}
+
+/* --- comments: click/hover popover over existing highlighted text --- */
+
+.be-comment-popover {
+  z-index: 1000;
+  width: 280px;
+  max-width: calc(100vw - 24px);
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-lg);
+  padding: 12px 14px;
+  box-shadow: var(--noteloom-shadow);
+}
+
+/* --- comments: opt-in right-side panel (NoteloomEditor showCommentsPanel) --- */
+
+.be-comments-panel {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  width: 300px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-lg);
+  box-shadow: var(--noteloom-shadow);
+  padding: 14px;
+  font-size: 0.85rem;
+  z-index: 500;
+}
+
+.be-comments-panel-header {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+}
+
+.be-comments-panel-empty {
+  color: var(--noteloom-text-muted);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.be-comments-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.be-comments-panel-list .be-comment-thread + .be-comment-thread {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+@media (max-width: 900px) {
+  .be-comments-panel {
+    display: none;
+  }
+}
+
 /* --- voice typing: caret-anchored listening/processing indicator --- */
 
 .be-voice-indicator {
@@ -2519,6 +2757,8 @@ tr.be-table-row:hover .be-table-delete-row {
   #be-at-menu,
   .be-floating-toolbar,
   .be-link-hover-card,
+  .be-comment-popover,
+  .be-comments-panel,
   .be-voice-indicator,
   .be-table-header-menu-trigger,
   .be-table-header-menu,

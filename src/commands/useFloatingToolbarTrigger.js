@@ -32,6 +32,15 @@ export function useFloatingToolbarTrigger(containerRef) {
     if (!container) return undefined;
 
     const recompute = () => {
+      // Don't re-derive (and don't blank out) toolbar state while focus is
+      // inside the toolbar's own popover content (e.g. typing into the
+      // Comment button's inline composer textarea) -- a <textarea> isn't
+      // part of the editor's own run/block DOM, so resolveMultiRunSelection
+      // below would find nothing and close the whole toolbar out from under
+      // whatever's being typed. The toolbar keeps showing whatever
+      // selection/rect it already had before focus moved there.
+      if (document.activeElement?.closest?.('.be-floating-toolbar')) return;
+
       const selection = window.getSelection?.();
       if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
         setState(null);

@@ -13,6 +13,8 @@ Each of these adds exactly **one** new thing over the previous one — read them
 | 3 | [`03-custom-field-type/`](03-custom-field-type) | `npm run dev:custom-field-type` | A brand-new inline field type (`status`, a colored-pill dropdown) via `createSelectFieldType` — no component to write. |
 | 4 | [`04-styling/`](04-styling) | `npm run dev:styling` | Retheming: CSS custom property overrides, `className`, and `getBlockClassName`. |
 | 5 | [`05-templates/`](05-templates) | `npm run dev:templates` | Document + block templates: developer-defined block snippets insertable via "/", saving the current document as a reusable template, and a `TemplatePicker` gallery for starting a new document from one (or importing one from a JSON file). |
+| 6 | [`06-comments/`](06-comments) | `npm run dev:comments` | Comments: the fully built-in experience (`commentAuthorId` + `showCommentsPanel`) — a floating-toolbar composer, click/hover-to-view popovers on highlighted text, and a right-side thread panel, with zero comment-UI code of your own. |
+| 7 | [`07-version-history/`](07-version-history) | `npm run dev:version-history` | Version history: periodic + manual document snapshots to IndexedDB and a version list with one-click restore, via `createPeriodicVersionSnapshotter`/`useDocumentVersions` and the same `applyDocumentTemplate` templates use. |
 
 ## Feature deep-dives
 

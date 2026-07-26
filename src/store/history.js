@@ -235,6 +235,18 @@ export class History {
     return this.store.getFieldType(id);
   }
 
+  getComments() {
+    return this.store.getComments();
+  }
+
+  getComment(id) {
+    return this.store.getComment(id);
+  }
+
+  getAllRunIds() {
+    return this.store.getAllRunIds();
+  }
+
   subscribe(id, listener) {
     return this.store.subscribe(id, listener);
   }

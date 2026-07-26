@@ -367,6 +367,115 @@ async function handleImport(event) {
 
 (Exporting one for sharing is the mirror image — `JSON.stringify(template)`, downloaded as a `.json` file — ordinary front-end code, not something this package needs to provide.)
 
+## Comments
+
+Select a range, leave a comment on it; click or hover the highlighted text later to view/reply/resolve/delete it — `examples/06-comments/` is a complete runnable app. Two ways to wire it up:
+
+### The built-in UI (zero comment-authoring code of your own)
+
+Pass `commentAuthorId` — the current user's id — to `<NoteloomEditor>` and the whole experience just works, Notion/Google Docs-style:
+
+```jsx
+<NoteloomEditor editor={editor} commentAuthorId={currentUser.id} showCommentsPanel />
+```
+
+- The floating format toolbar's Comment button opens a small inline composer (a textarea, matching the rest of the toolbar's minimal chrome) and creates the comment on submit.
+- Clicking (or hovering) any highlighted comment opens a popover right there with the thread's messages and Reply/Resolve/Delete — mirroring how the existing link hover card works, just triggered by click too, not hover alone.
+- `showCommentsPanel` (optional) adds a right-side panel listing every thread in the document, unresolved first — the "extra feature" for apps that want a persistent overview alongside the inline popovers, not instead of them. It's `position: fixed` by default (see `.be-comments-panel` in style.css) so it needs no layout changes on your end; override that rule for a different placement.
+
+Every reply/new-comment composed through any of these built-in surfaces is attributed to `commentAuthorId`. Omit it and the toolbar's Comment button disappears, the click/hover popover on existing comments still works (viewing/resolving/deleting need no identity) but hides its Reply composer, and `showCommentsPanel` still lists threads read-only in the same way.
+
+For the granular API, render the pieces yourself anywhere under an `<EditorProvider commentAuthorId={currentUser.id}>`: `<FloatingToolbar commentAuthorId={...} .../>` for the toolbar button, `<CommentsPanel authorId={...} />` for the sidebar — the click/hover popover (`CommentPopover`) is mounted automatically inside every block's editable content, same as the link hover card, so there's nothing extra to render for it.
+
+### Full control (bring your own UI)
+
+Pass `onComment` instead of `commentAuthorId` — it's called with the selected range and you decide what happens next (open your own modal, pick the author yourself):
+
+```jsx
+import { addComment, replyToComment, resolveComment, deleteComment, useComments, resolveMultiRunSelection } from 'noteloom';
+
+<NoteloomEditor
+  editor={editor}
+  onComment={(range) => {
+    const text = window.prompt('Comment text?');
+    if (text) addComment(editor.store, range, { authorId: currentUser.id, text });
+  }}
+/>;
+
+// Outside the floating toolbar entirely, resolve the selection yourself:
+function AddCommentButton({ store }) {
+  function handleClick() {
+    const range = resolveMultiRunSelection(); // { blockId, startRunId, startOffset, endRunId, endOffset }
+    if (!range) return; // no non-collapsed selection
+    addComment(store, range, { authorId: currentUser.id, text: 'Can we tighten this up?' });
+  }
+  return <button onClick={handleClick}>Add comment</button>;
+}
+
+// A hand-rolled list, using useComments() directly instead of CommentsPanel/CommentThreadCard:
+function CommentsSidebar({ store }) {
+  const comments = useComments();
+  return (
+    <ul>
+      {comments.map((thread) => (
+        <li key={thread.id}>
+          {thread.messages.map((m) => <p key={m.id}>{m.authorId}: {m.text}</p>)}
+          <button onClick={() => replyToComment(store, thread.id, { authorId: currentUser.id, text: '...' })}>Reply</button>
+          <button onClick={() => resolveComment(store, thread.id, !thread.resolved)}>{thread.resolved ? 'Reopen' : 'Resolve'}</button>
+          <button onClick={() => deleteComment(store, thread.id)}>Delete</button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+`onComment` (given to `<NoteloomEditor>` or `<FloatingToolbar>` directly) always takes priority over `commentAuthorId`'s built-in composer, so the two can't fight over the same button. The Comment button only appears for a same-block selection either way — `addCommentMarkOverRange` doesn't support a cross-block range yet, the same single-block scope every mark-toggle command already has for its own splitting logic.
+
+A comment thread is `{ id, blockId, anchorRunIds, resolved, messages: [{ id, authorId, text, createdAt }] }`. `CommentThreadCard`/`CommentComposer` (the pieces `CommentPopover`/`CommentsPanel` are built from) are exported too, for reusing the built-in look while customizing the surrounding layout.
+
+**Scope, stated plainly:** a thread's own metadata (text, author, replies, resolved flag) is fully collaboration-aware — it broadcasts live to connected peers and undoes/redoes normally. The *highlighted range* it's anchored to is local-only in collaboration for v1: a newly-joining peer sees it correctly (full document snapshots always include it), but an already-connected peer won't see someone else's brand-new highlight appear live until their next resync. This isn't a new gap introduced by comments — every other range-based formatting operation (bold, italic, highlight, ...) already has this exact scope today, since none of them have a CRDT-safe wire representation yet.
+
+`thread.anchorRunIds` is a creation-time hint only, meant for jumping to roughly where a comment was made — it is **not** re-validated after a later formatting edit splits or re-mints run ids in that range. To reliably find where a comment's highlight actually lives right now, look at which runs' `marks.commentIds` include it (exactly what `deleteComment` itself does internally via `removeCommentMarkEverywhere`), not `anchorRunIds`.
+
+## Version history
+
+Point-in-time document snapshots, stored in IndexedDB (a third object store, alongside `usePersistedDocument`'s `documents` and Templates' `templates`) — periodic, manual, or both. `examples/07-version-history/` is a complete runnable app with a version list and one-click restore.
+
+```jsx
+import { createPeriodicVersionSnapshotter, useDocumentVersions, saveDocumentVersion, applyDocumentTemplate, exportDocumentJSON } from 'noteloom';
+
+// Automatic: snapshot every few minutes, keep the most recent 50.
+useEffect(() => {
+  const snapshotter = createPeriodicVersionSnapshotter({ store: editor.store, docId, intervalMs: 5 * 60 * 1000 });
+  return () => snapshotter.stop();
+}, [editor.store, docId]);
+
+// Manual: "save a version now" button.
+async function saveNow(label) {
+  const doc = JSON.parse(exportDocumentJSON(editor.store)); // exportDocumentJSON returns a JSON *string* — parse it first
+  await saveDocumentVersion({ id: crypto.randomUUID(), docId, timestamp: Date.now(), label, doc });
+}
+
+// A version list:
+function VersionList({ docId }) {
+  const { versions, isLoaded } = useDocumentVersions(docId); // newest first
+  if (!isLoaded) return <p>Loading…</p>;
+  return (
+    <ul>
+      {versions.map((v) => (
+        <li key={v.id}>
+          {v.label ?? '(untitled)'} — {new Date(v.timestamp).toLocaleString()}
+          <button onClick={() => applyDocumentTemplate(editor.store, v.doc)}>Restore</button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+Restoring needs no new function — it's the exact same `applyDocumentTemplate(store, doc)` Templates already uses to wholesale-replace a live editor's content. `saveDocumentVersion`/`loadDocumentVersion`/`deleteDocumentVersion`/`listDocumentVersions` are the raw storage operations `useDocumentVersions` is built on. `createPeriodicVersionSnapshotter({ store, docId, intervalMs?, label?, maxVersions? })` prunes the oldest version past `maxVersions` (default 50) after each snapshot, so a long-running document doesn't grow the store unbounded.
+
 ## Right-to-left / multi-language text
 
 Every block defaults to `dir="auto"` — the browser's own Unicode bidi algorithm detects direction per block from its first strong character, so a document mixing LTR and RTL blocks (an English heading over an Arabic paragraph, say) just works with zero configuration. For the cases `auto` can't infer on its own (most commonly an empty block, which has no text yet to detect a direction from), set an explicit override:
@@ -715,3 +824,4 @@ See `examples/README.md` for the rest of the runnable examples, and `CONTRIBUTIN
 - RTL support covers direction resolution (`dir="auto"` + per-block/document override) and the highest-impact visual pieces (list markers, blockquote border, block gutter position) — a full logical-properties rewrite of every hardcoded pixel value in `style.css` is a bigger follow-up, not yet done.
 - Voice typing (`useVoiceTyping`) only acts on *finalized* speech results, not interim/in-progress ones, and command detection requires a spoken command to be its own complete utterance — there's no explicit "command mode" trigger (push-to-command, wake phrase) yet, just pause-based auto-detection.
 - Automated tests run under jsdom; there is no automated real-browser test suite. If you hit an edge case jsdom can't reproduce (anything involving actual native `contentEditable` browser quirks, or the real Web Speech API), please file an issue with the exact browser/OS and steps.
+- A comment's highlighted range is local-only in collaboration for v1 (same scope every other range-based formatting operation already has — see [Comments](#comments)); a comment thread's `anchorRunIds` is a creation-time hint only, not re-validated after later formatting edits reshape that range.

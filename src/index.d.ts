@@ -38,11 +38,28 @@ export interface FieldType {
   [key: string]: unknown;
 }
 
+export interface CommentMessage {
+  id: string;
+  authorId: string;
+  text: string;
+  createdAt: number;
+}
+
+export interface CommentThread {
+  id: string;
+  blockId: string;
+  /** Creation-time hint only, not re-validated after later formatting edits -- see the README's documented limitation. */
+  anchorRunIds: string[];
+  resolved: boolean;
+  messages: CommentMessage[];
+}
+
 export interface DocumentJSON {
   rootId: string;
   blocks: Block[];
   runs: Run[];
   fieldTypes?: FieldType[];
+  comments?: CommentThread[];
 }
 
 export type Operation = { type: string; [key: string]: unknown };
@@ -68,6 +85,11 @@ export const OP: {
   ADD_FIELD_TYPE: 'addFieldType';
   UPDATE_FIELD_TYPE: 'updateFieldType';
   REMOVE_FIELD_TYPE: 'removeFieldType';
+  ADD_COMMENT_THREAD: 'addCommentThread';
+  REMOVE_COMMENT_THREAD: 'removeCommentThread';
+  ADD_COMMENT_REPLY: 'addCommentReply';
+  REMOVE_COMMENT_REPLY: 'removeCommentReply';
+  RESOLVE_COMMENT: 'resolveComment';
 };
 
 export namespace operations {
@@ -83,6 +105,11 @@ export namespace operations {
   export function addFieldType(fieldType: FieldType): Operation;
   export function updateFieldType(id: string, patch: Partial<FieldType>): Operation;
   export function removeFieldType(id: string): Operation;
+  export function addCommentThread(thread: CommentThread): Operation;
+  export function removeCommentThread(commentId: string): Operation;
+  export function addCommentReply(commentId: string, message: CommentMessage): Operation;
+  export function removeCommentReply(commentId: string, messageId: string): Operation;
+  export function resolveComment(commentId: string, resolved: boolean): Operation;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,11 +122,16 @@ export class EditorStore {
   runs: Map<string, Run>;
   rootId: string | null;
   fieldTypes: Map<string, FieldType>;
+  comments: Map<string, CommentThread>;
 
   getBlock(id: string): Block | undefined;
   getRun(id: string): Run | undefined;
   getFieldTypes(): FieldType[];
   getFieldType(id: string): FieldType | undefined;
+  getComments(): CommentThread[];
+  getComment(id: string): CommentThread | undefined;
+  /** Every run id in the whole document, regardless of reachability from the root -- see removeCommentMarkEverywhere. */
+  getAllRunIds(): string[];
   getRootId(): string | null;
   subscribe(id: string, listener: () => void): () => void;
   subscribeAll(listener: () => void): () => void;
@@ -145,6 +177,9 @@ export class History {
   getRootId(): string | null;
   getFieldTypes(): FieldType[];
   getFieldType(id: string): FieldType | undefined;
+  getComments(): CommentThread[];
+  getComment(id: string): CommentThread | undefined;
+  getAllRunIds(): string[];
   subscribe(id: string, listener: () => void): () => void;
   subscribeAll(listener: () => void): () => void;
   getTombstoneCount(): number;
@@ -342,6 +377,107 @@ export interface TemplatePickerProps {
 export const TemplatePicker: ComponentType<TemplatePickerProps>;
 
 // ---------------------------------------------------------------------------
+// versions/ (+ the version half of persistence/)
+// ---------------------------------------------------------------------------
+
+export interface DocumentVersion {
+  id: string;
+  docId: string;
+  timestamp: number;
+  label?: string;
+  doc: DocumentJSON;
+}
+
+export function saveDocumentVersion(version: DocumentVersion): Promise<void>;
+export function loadDocumentVersion(id: string): Promise<DocumentVersion | null>;
+export function deleteDocumentVersion(id: string): Promise<void>;
+/** All versions saved for docId, newest first. */
+export function listDocumentVersions(docId: string): Promise<DocumentVersion[]>;
+
+/** Periodically snapshots a live document into the versions store; prunes oldest beyond maxVersions for this docId. Restore with applyDocumentTemplate(store, version.doc). */
+export function createPeriodicVersionSnapshotter(options: {
+  store: History | EditorStore;
+  docId: string;
+  intervalMs?: number;
+  label?: string;
+  maxVersions?: number;
+  onSnapshot?: (version: DocumentVersion) => void;
+  onError?: (error: unknown) => void;
+}): { stop: () => void };
+
+export function useDocumentVersions(docId: string | null | undefined): {
+  versions: DocumentVersion[];
+  isLoaded: boolean;
+  refresh: () => Promise<void>;
+};
+
+// ---------------------------------------------------------------------------
+// comments/
+// ---------------------------------------------------------------------------
+
+export interface CommentRange {
+  blockId: string;
+  startRunId: string;
+  startOffset: number;
+  endRunId: string;
+  endOffset: number;
+}
+
+/** Creates a comment thread anchored to `range`, highlighting it and creating the thread as one atomic undo step. Returns the new comment's id. */
+export function addComment(store: EditorStore | History, range: CommentRange, message: { authorId: string; text: string }): string;
+/** Appends a reply to an existing thread. Returns the new message's id. */
+export function replyToComment(store: EditorStore | History, commentId: string, message: { authorId: string; text: string }): string;
+/** Flips a thread's resolved flag (defaults to true). */
+export function resolveComment(store: EditorStore | History, commentId: string, resolved?: boolean): void;
+/** Removes a thread and strips its highlight from every run that still carries it, as one atomic undo step. */
+export function deleteComment(store: EditorStore | History, commentId: string): void;
+
+/** Computes (does not apply) the op that highlights `range` with `commentId` -- for advanced use; addComment already calls this. Returns null for a collapsed/unresolvable range. */
+export function addCommentMarkOverRange(store: EditorStore | History, range: CommentRange, commentId: string): Operation | null;
+/** Computes (does not apply) the ops that strip `commentId` from every run in the document that carries it. */
+export function removeCommentMarkEverywhere(store: EditorStore | History, commentId: string): Operation[];
+
+export function useComments(): CommentThread[];
+
+export interface CommentComposerProps {
+  /** Renders the composer's own avatar preview -- does not decide who the message is attributed to (the caller still passes authorId to addComment/replyToComment). */
+  authorId?: string;
+  placeholder?: string;
+  autoFocus?: boolean;
+  onSubmit: (text: string) => void;
+  /** Renders a Cancel button when given. */
+  onCancel?: () => void;
+}
+
+/** An avatar + textarea + send button for composing one comment message -- the shared piece CommentThreadCard's reply flow and FloatingToolbar's built-in Comment composer both use. */
+export const CommentComposer: ComponentType<CommentComposerProps>;
+
+export interface CommentAvatarProps {
+  authorId?: string;
+  size?: number;
+}
+
+/** A small colored circle with the author's initials, deterministically generated from authorId -- this package has no profile-picture/identity concept of its own. */
+export const CommentAvatar: ComponentType<CommentAvatarProps>;
+
+export interface CommentThreadCardProps {
+  store: EditorStore | History;
+  thread: CommentThread;
+  /** Hides the Reply action when not given -- composing a message needs an author. */
+  authorId?: string;
+}
+
+/** One comment thread -- messages, then Reply/Resolve/Delete. Shared by CommentPopover (click/hover on highlighted text, mounted automatically) and CommentsPanel. */
+export const CommentThreadCard: ComponentType<CommentThreadCardProps>;
+
+export interface CommentsPanelProps {
+  authorId?: string;
+}
+
+/** The opt-in right-side comments panel (Notion/Google Docs-style) -- see NoteloomEditorProps.showCommentsPanel, or render it yourself anywhere under an EditorProvider for the granular API. */
+export const CommentsPanel: ComponentType<CommentsPanelProps>;
+
+// ---------------------------------------------------------------------------
 // registry/, blocks/, inlineTypes/
 // ---------------------------------------------------------------------------
 
@@ -429,6 +565,8 @@ export interface EditorProviderProps {
   style?: CSSProperties;
   theme?: 'default' | 'none';
   getBlockClassName?: (block: Block) => string | undefined;
+  /** Current user's id for authoring comments through the built-in comment UI -- see useCommentAuthorId. */
+  commentAuthorId?: string;
   children?: ReactNode;
 }
 
@@ -440,6 +578,8 @@ export function useWholeDocumentSelection(): [boolean, (value: boolean) => void]
 export function useBlockRangeSelection(): [string[], (ids: string[]) => void];
 export function useSelectedBlock(): [string | null, (id: string | null) => void];
 export function usePreviewMode(): [boolean, (value: boolean) => void];
+/** The commentAuthorId passed to EditorProvider/NoteloomEditor, or undefined if not configured -- see NoteloomEditorProps.commentAuthorId. */
+export function useCommentAuthorId(): string | undefined;
 export function useFieldTypeEditor(): {
   editingFieldTypeId: string | null;
   openFieldTypeEditor: (id: string | null) => void;
@@ -582,6 +722,10 @@ export interface FloatingToolbarProps {
   crossSelection: unknown;
   marks: Record<string, unknown>;
   store: EditorStore | History;
+  /** Adds a Comment button (same-block selections only) that calls this with the CommentRange under the current selection. Takes priority over commentAuthorId's built-in composer when both are given. */
+  onComment?: (range: CommentRange) => void;
+  /** Adds a Comment button using a built-in inline composer (addComment(store, range, {authorId: commentAuthorId, text})) instead of onComment -- see NoteloomEditorProps.commentAuthorId. */
+  commentAuthorId?: string;
 }
 
 export const FloatingToolbar: ComponentType<FloatingToolbarProps>;
@@ -692,6 +836,12 @@ export interface NoteloomEditorProps {
   style?: CSSProperties;
   theme?: 'default' | 'none';
   getBlockClassName?: (block: Block) => string | undefined;
+  /** Adds a Comment button to the floating format toolbar, fully host-controlled — see FloatingToolbarProps.onComment. */
+  onComment?: (range: CommentRange) => void;
+  /** Current user's id -- enables the whole built-in comments UI (floating toolbar composer, click/hover popover on existing highlights, CommentsPanel) with no host UI code. Ignored by the floating toolbar's button when onComment is also given. */
+  commentAuthorId?: string;
+  /** Renders CommentsPanel (right-side, Notion/Google Docs-style thread list) automatically. */
+  showCommentsPanel?: boolean;
   children?: ReactNode;
 }
 

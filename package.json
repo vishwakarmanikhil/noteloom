@@ -58,6 +58,8 @@
     "dev:custom-field-type": "vite --config examples/03-custom-field-type/vite.config.js",
     "dev:styling": "vite --config examples/04-styling/vite.config.js",
     "dev:templates": "vite --config examples/05-templates/vite.config.js",
+    "dev:comments": "vite --config examples/06-comments/vite.config.js",
+    "dev:version-history": "vite --config examples/07-version-history/vite.config.js",
     "dev:collab": "vite --config examples/collab/vite.config.js",
     "dev:lan-collab": "vite --config examples/lan-collab/vite.config.js",
     "dev:offline-persist": "vite --config examples/offline-persist/vite.config.js",

@@ -13,6 +13,11 @@ import {
   addFieldType,
   updateFieldType,
   removeFieldType,
+  addCommentThread,
+  removeCommentThread,
+  addCommentReply,
+  removeCommentReply,
+  resolveComment,
 } from './operations.js';
 import { ListCrdtState } from '../crdt/listCrdt.js';
 import { HLC, genPeerId } from '../crdt/clock.js';
@@ -22,6 +27,9 @@ import { genId } from '../utils/idGen.js';
 
 /** Sentinel subscribe/notify key for "the fieldTypes collection changed" — see useFieldTypes. */
 const FIELD_TYPES_KEY = '$fieldTypes';
+
+/** Sentinel subscribe/notify key for "the comments collection changed" — see useComments. */
+const COMMENTS_KEY = '$comments';
 
 /**
  * Flat, normalized document store with per-id pub-sub.
@@ -44,6 +52,8 @@ export class EditorStore {
     this.rootId = doc?.rootId ?? null;
     this.fieldTypes = new Map((doc?.fieldTypes ?? []).map((f) => [f.id, f]));
     this._fieldTypesSnapshot = null; // invalidated (set to null) on every fieldTypes mutation — see getFieldTypes
+    this.comments = new Map((doc?.comments ?? []).map((c) => [c.id, c]));
+    this._commentsSnapshot = null; // invalidated (set to null) on every comments mutation — see getComments
     this._listeners = new Map(); // id -> Set<() => void>
     this._globalListeners = new Set(); // fired on every mutation regardless of which id(s) changed -- see subscribeAll
 
@@ -226,6 +236,31 @@ export class EditorStore {
 
   getFieldType(id) {
     return this.fieldTypes.get(id);
+  }
+
+  /**
+   * Every comment thread — insertion order. Returns the SAME array
+   * reference across calls unless a comments op ran in between — required
+   * for useSyncExternalStore (see useComments), same contract as
+   * getFieldTypes.
+   */
+  getComments() {
+    if (!this._commentsSnapshot) this._commentsSnapshot = [...this.comments.values()];
+    return this._commentsSnapshot;
+  }
+
+  getComment(id) {
+    return this.comments.get(id);
+  }
+
+  /**
+   * Every run id in the whole document, regardless of reachability from
+   * the root — used by removeCommentMarkEverywhere (see
+   * src/comments/commentMarks.js) to strip a deleted comment's id from
+   * any run that still carries it, without needing a separate index.
+   */
+  getAllRunIds() {
+    return [...this.runs.keys()];
   }
 
   getRootId() {
@@ -593,6 +628,52 @@ export class EditorStore {
         return addFieldType(existing);
       }
 
+      case OP.ADD_COMMENT_THREAD: {
+        this.comments.set(op.thread.id, op.thread);
+        this._commentsSnapshot = null;
+        this._lastEnvelope = { kind: 'commentWrite', op: 'addThread', thread: op.thread };
+        this._notify([COMMENTS_KEY]);
+        return removeCommentThread(op.thread.id);
+      }
+
+      case OP.REMOVE_COMMENT_THREAD: {
+        const existing = this.comments.get(op.commentId);
+        this.comments.delete(op.commentId);
+        this._commentsSnapshot = null;
+        this._lastEnvelope = { kind: 'commentWrite', op: 'removeThread', commentId: op.commentId };
+        this._notify([COMMENTS_KEY]);
+        return addCommentThread(existing);
+      }
+
+      case OP.ADD_COMMENT_REPLY: {
+        const thread = this.comments.get(op.commentId);
+        this.comments.set(op.commentId, { ...thread, messages: [...thread.messages, op.message] });
+        this._commentsSnapshot = null;
+        this._lastEnvelope = { kind: 'commentWrite', op: 'addReply', commentId: op.commentId, message: op.message };
+        this._notify([COMMENTS_KEY]);
+        return removeCommentReply(op.commentId, op.message.id);
+      }
+
+      case OP.REMOVE_COMMENT_REPLY: {
+        const thread = this.comments.get(op.commentId);
+        const removedMessage = thread.messages.find((m) => m.id === op.messageId);
+        this.comments.set(op.commentId, { ...thread, messages: thread.messages.filter((m) => m.id !== op.messageId) });
+        this._commentsSnapshot = null;
+        this._lastEnvelope = { kind: 'commentWrite', op: 'removeReply', commentId: op.commentId, messageId: op.messageId };
+        this._notify([COMMENTS_KEY]);
+        return addCommentReply(op.commentId, removedMessage);
+      }
+
+      case OP.RESOLVE_COMMENT: {
+        const thread = this.comments.get(op.commentId);
+        const previousResolved = thread.resolved;
+        this.comments.set(op.commentId, { ...thread, resolved: op.resolved });
+        this._commentsSnapshot = null;
+        this._lastEnvelope = { kind: 'commentWrite', op: 'resolve', commentId: op.commentId, resolved: op.resolved };
+        this._notify([COMMENTS_KEY]);
+        return resolveComment(op.commentId, previousResolved);
+      }
+
       default:
         throw new Error(`Unknown operation type: ${op.type}`);
     }
@@ -752,6 +833,50 @@ export class EditorStore {
         return;
       }
 
+      case 'commentWrite': {
+        // Simple, no-per-field-clock handling -- comment thread metadata
+        // sees low write concurrency in practice (see the plan's own
+        // rationale), so each sub-kind just applies directly rather than
+        // comparing HLC clocks the way run/block field writes do above.
+        // Existence checks guard only against out-of-order delivery (e.g.
+        // a reply arriving before its thread's own add), not against real
+        // conflicts -- a later full resync reconciles anything this misses.
+        if (envelope.op === 'addThread') {
+          if (!this.comments.has(envelope.thread.id)) {
+            this.comments.set(envelope.thread.id, envelope.thread);
+            this._commentsSnapshot = null;
+            this._notify([COMMENTS_KEY]);
+          }
+        } else if (envelope.op === 'removeThread') {
+          if (this.comments.delete(envelope.commentId)) {
+            this._commentsSnapshot = null;
+            this._notify([COMMENTS_KEY]);
+          }
+        } else if (envelope.op === 'addReply') {
+          const thread = this.comments.get(envelope.commentId);
+          if (thread && !thread.messages.some((m) => m.id === envelope.message.id)) {
+            this.comments.set(envelope.commentId, { ...thread, messages: [...thread.messages, envelope.message] });
+            this._commentsSnapshot = null;
+            this._notify([COMMENTS_KEY]);
+          }
+        } else if (envelope.op === 'removeReply') {
+          const thread = this.comments.get(envelope.commentId);
+          if (thread && thread.messages.some((m) => m.id === envelope.messageId)) {
+            this.comments.set(envelope.commentId, { ...thread, messages: thread.messages.filter((m) => m.id !== envelope.messageId) });
+            this._commentsSnapshot = null;
+            this._notify([COMMENTS_KEY]);
+          }
+        } else if (envelope.op === 'resolve') {
+          const thread = this.comments.get(envelope.commentId);
+          if (thread) {
+            this.comments.set(envelope.commentId, { ...thread, resolved: envelope.resolved });
+            this._commentsSnapshot = null;
+            this._notify([COMMENTS_KEY]);
+          }
+        }
+        return;
+      }
+
       default:
         throw new Error(`Unknown remote envelope kind: ${envelope.kind}`);
     }
@@ -798,6 +923,7 @@ export class EditorStore {
       runs: [...this.runs.values()],
       rootId: this.rootId,
       fieldTypes: [...this.fieldTypes.values()],
+      comments: [...this.comments.values()],
     };
   }
 

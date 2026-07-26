@@ -1,7 +1,8 @@
 const DB_NAME = 'noteloom-documents';
 const STORE_NAME = 'documents';
 const TEMPLATES_STORE_NAME = 'templates';
-const DB_VERSION = 2;
+const VERSIONS_STORE_NAME = 'versions';
+const DB_VERSION = 3;
 
 /**
  * IndexedDB-backed local persistence for documents (the shape `EditorStore
@@ -31,6 +32,15 @@ function openDatabase() {
         // needs getAll() to return full {id, name, ...} objects in one read
         // for a gallery UI, not just keys.
         request.result.createObjectStore(TEMPLATES_STORE_NAME, { keyPath: 'id' });
+      }
+      if (!request.result.objectStoreNames.contains(VERSIONS_STORE_NAME)) {
+        // Same inline-keyed shape as templates, same reason (a version
+        // history list needs full {id, docId, timestamp, ...} objects in
+        // one read). No index on docId -- listDocumentVersions() filters
+        // client-side after getAll(), same no-index precedent as
+        // listTemplates(); per-document version counts are small enough
+        // that this is fine.
+        request.result.createObjectStore(VERSIONS_STORE_NAME, { keyPath: 'id' });
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -131,6 +141,63 @@ export async function listTemplates() {
     const tx = db.transaction(TEMPLATES_STORE_NAME, 'readonly');
     const request = tx.objectStore(TEMPLATES_STORE_NAME).getAll();
     request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Persists one named point-in-time snapshot of a document — `{ id, docId,
+ * timestamp, label?, doc }`, where `doc` is a full document (the same
+ * shape a document-scope template uses). Separate object store from both
+ * `documents` and `templates` (see openDatabase above): a version is tied
+ * to one specific document's history, not "the current document" or a
+ * reusable starter. Overwrites whatever was stored under the same `id`
+ * before, though callers normally mint a fresh `id` per snapshot (see
+ * `createPeriodicVersionSnapshotter`) rather than reusing one.
+ */
+export async function saveDocumentVersion(version) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(VERSIONS_STORE_NAME, 'readwrite');
+    tx.objectStore(VERSIONS_STORE_NAME).put(version);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Returns the version stored under `id`, or `null` if none exists. */
+export async function loadDocumentVersion(id) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(VERSIONS_STORE_NAME, 'readonly');
+    const request = tx.objectStore(VERSIONS_STORE_NAME).get(id);
+    request.onsuccess = () => resolve(request.result ?? null);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/** Removes the version stored under `id`, if any. A no-op if nothing was stored under that id. */
+export async function deleteDocumentVersion(id) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(VERSIONS_STORE_NAME, 'readwrite');
+    tx.objectStore(VERSIONS_STORE_NAME).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Every version saved for `docId`, in full, newest first. Filters client-side after a full getAll() -- see openDatabase's own note on why there's no docId index. */
+export async function listDocumentVersions(docId) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(VERSIONS_STORE_NAME, 'readonly');
+    const request = tx.objectStore(VERSIONS_STORE_NAME).getAll();
+    request.onsuccess = () => {
+      const all = request.result.filter((v) => v.docId === docId);
+      all.sort((a, b) => b.timestamp - a.timestamp);
+      resolve(all);
+    };
     request.onerror = () => reject(request.error);
   });
 }

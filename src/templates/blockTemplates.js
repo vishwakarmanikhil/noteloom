@@ -51,8 +51,14 @@ export function applyDocumentTemplate(store, doc) {
   rawStore.rootId = doc.rootId ?? null;
   rawStore.fieldTypes = new Map((doc.fieldTypes ?? []).map((f) => [f.id, f]));
   rawStore._fieldTypesSnapshot = null;
+  rawStore.comments = new Map((doc.comments ?? []).map((c) => [c.id, c]));
+  rawStore._commentsSnapshot = null;
   rawStore._orders = new Map();
-  rawStore._notify([...rawStore.blocks.keys(), ...rawStore.runs.keys()]);
+  // '$fieldTypes'/'$comments' are the same sentinel notify keys
+  // useFieldTypes/useComments subscribe to -- without them, a restored
+  // template/version's field types or comments wouldn't refresh a
+  // currently-mounted list for either, even though the underlying Maps did change.
+  rawStore._notify([...rawStore.blocks.keys(), ...rawStore.runs.keys(), '$fieldTypes', '$comments']);
 }
 
 /**

@@ -63,6 +63,10 @@ body {
   line-height: 1.6;
 }
 
+/* .be-comments-panel itself is the package's own default-theme styling
+   now (see src/style.css) -- CommentsPanel, imported from 'noteloom'
+   below, needs no local CSS here at all. */
+
 /*
  * The library's own style.css hides every *editor* chrome element for
  * print (see its @media print block) — but this demo's own Toolbar lives

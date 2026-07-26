@@ -12,6 +12,11 @@ export const OP = {
   ADD_FIELD_TYPE: 'addFieldType',
   UPDATE_FIELD_TYPE: 'updateFieldType',
   REMOVE_FIELD_TYPE: 'removeFieldType',
+  ADD_COMMENT_THREAD: 'addCommentThread',
+  REMOVE_COMMENT_THREAD: 'removeCommentThread',
+  ADD_COMMENT_REPLY: 'addCommentReply',
+  REMOVE_COMMENT_REPLY: 'removeCommentReply',
+  RESOLVE_COMMENT: 'resolveComment',
 };
 
 export function insertBlock(block, parentId, index, subtree) {
@@ -113,4 +118,35 @@ export function updateFieldType(id, patch) {
 
 export function removeFieldType(id) {
   return { type: OP.REMOVE_FIELD_TYPE, id };
+}
+
+/**
+ * Adds a comment thread — `thread` is `{ id, blockId, anchorRunIds,
+ * resolved, messages }` (see src/comments/comments.js's addComment, which
+ * is the documented entry point; this raw op is exposed for advanced use
+ * the same way editRunChars is). Unlike ADD_FIELD_TYPE/UPDATE_FIELD_TYPE/
+ * REMOVE_FIELD_TYPE (which are local-only in collaboration today), comment
+ * thread ops DO set a wire envelope and DO have an applyRemoteOperation
+ * case — see EditorStore.
+ */
+export function addCommentThread(thread) {
+  return { type: OP.ADD_COMMENT_THREAD, thread };
+}
+
+export function removeCommentThread(commentId) {
+  return { type: OP.REMOVE_COMMENT_THREAD, commentId };
+}
+
+/** Appends `message` ({ id, authorId, text, createdAt }) to an existing thread's messages. */
+export function addCommentReply(commentId, message) {
+  return { type: OP.ADD_COMMENT_REPLY, commentId, message };
+}
+
+/** The precise inverse of addCommentReply — removes one reply by its own id (not the whole thread). */
+export function removeCommentReply(commentId, messageId) {
+  return { type: OP.REMOVE_COMMENT_REPLY, commentId, messageId };
+}
+
+export function resolveComment(commentId, resolved) {
+  return { type: OP.RESOLVE_COMMENT, commentId, resolved };
 }

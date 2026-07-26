@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { EditorStore } from '../../src/store/EditorStore.js';
@@ -25,7 +25,7 @@ function makeDoc() {
   };
 }
 
-function Harness() {
+function Harness({ onComment, commentAuthorId }) {
   const containerRef = useRef(null);
   const store = useEditorStore();
   const toolbar = useFloatingToolbarTrigger(containerRef);
@@ -40,17 +40,19 @@ function Harness() {
         crossSelection={toolbar.crossSelection}
         marks={toolbar.marks}
         store={store}
+        onComment={onComment}
+        commentAuthorId={commentAuthorId}
       />
     </div>
   );
 }
 
-function renderHarness(store) {
+function renderHarness(store, { onComment, commentAuthorId } = {}) {
   const registry = createBlockRegistry();
   registerBuiltInBlocks(registry);
   return render(
     <EditorProvider store={store} registry={registry}>
-      <Harness />
+      <Harness onComment={onComment} commentAuthorId={commentAuthorId} />
     </EditorProvider>,
   );
 }
@@ -241,5 +243,143 @@ describe('FloatingToolbar: applying marks over a cross-block selection', () => {
     const p2Runs = store.getBlock('p2').contentIds.map((id) => store.getRun(id));
     expect(p1Runs.find((r) => r.value === 'world').marks.bold).toBe(true);
     expect(p2Runs.find((r) => r.value === 'second').marks.bold).toBe(true);
+  });
+});
+
+describe('FloatingToolbar: comment button', () => {
+  it('is not rendered when onComment is not given', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store);
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5);
+    expect(container.querySelector('.be-floating-toolbar-btn[title="Comment"]')).toBeNull();
+  });
+
+  it('appears for a same-block selection and calls onComment with the resolved range', () => {
+    const store = new EditorStore(makeDoc());
+    const onComment = vi.fn();
+    const { container } = renderHarness(store, { onComment });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "hello"
+    const commentBtn = container.querySelector('.be-floating-toolbar-btn[title="Comment"]');
+    expect(commentBtn).not.toBeNull();
+
+    fireEvent.click(commentBtn);
+    expect(onComment).toHaveBeenCalledWith({ blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 });
+  });
+
+  it('does not appear for a cross-block selection (commentMarks.js does not support one yet)', () => {
+    const store = new EditorStore(makeDoc());
+    const onComment = vi.fn();
+    const { container } = renderHarness(store, { onComment });
+    const r1Node = container.querySelector('[data-run-id="r1"]');
+    const r2Node = container.querySelector('[data-run-id="r2"]');
+
+    selectAcrossRunNodes(r1Node, 6, r2Node, 6);
+    expect(container.querySelector('.be-floating-toolbar-btn[title="Comment"]')).toBeNull();
+  });
+
+  it('appears when only commentAuthorId is given (no onComment) and opens a built-in composer instead of calling anything', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store, { commentAuthorId: 'alice' });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "hello"
+    const commentBtn = container.querySelector('.be-floating-toolbar-btn[title="Comment"]');
+    expect(commentBtn).not.toBeNull();
+
+    fireEvent.click(commentBtn);
+    expect(container.querySelector('.be-comment-composer-textarea')).not.toBeNull();
+  });
+
+  it('opening the built-in composer replaces the whole button row -- Bold/Italic/etc. are hidden while composing', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store, { commentAuthorId: 'alice' });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "hello"
+    expect(container.querySelector('.be-floating-toolbar-btn[title^="Bold"]')).not.toBeNull();
+
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+
+    expect(container.querySelector('.be-floating-toolbar-btn[title^="Bold"]')).toBeNull();
+    expect(container.querySelector('.be-floating-toolbar-comment-standalone')).not.toBeNull();
+  });
+
+  it('highlights the selected text immediately when the composer opens, before submitting', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store, { commentAuthorId: 'alice' });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "hello"
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+
+    expect(container.querySelector('.be-comment-highlight')).not.toBeNull();
+    // No thread exists yet -- only the highlight mark was applied so far.
+    expect(store.getComments()).toEqual([]);
+  });
+
+  it('Cancel strips the just-applied highlight back off and creates no thread', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store, { commentAuthorId: 'alice' });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "hello"
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+    expect(container.querySelector('.be-comment-highlight')).not.toBeNull();
+
+    fireEvent.click(container.querySelector('.be-comment-composer-cancel'));
+
+    expect(container.querySelector('.be-comment-highlight')).toBeNull();
+    expect(store.getComments()).toEqual([]);
+  });
+
+  it('Escape while composing strips the highlight the same way Cancel does', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store, { commentAuthorId: 'alice' });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "hello"
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+    expect(container.querySelector('.be-comment-highlight')).not.toBeNull();
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+
+    expect(container.querySelector('.be-comment-highlight')).toBeNull();
+    expect(store.getComments()).toEqual([]);
+  });
+
+  it('the built-in composer creates a comment via addComment on submit, and closes itself', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store, { commentAuthorId: 'alice' });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "hello"
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+
+    fireEvent.change(container.querySelector('.be-comment-composer-textarea'), { target: { value: 'needs work' } });
+    fireEvent.click(container.querySelector('.be-comment-composer-submit'));
+
+    expect(container.querySelector('.be-comment-composer-textarea')).toBeNull();
+    const comments = store.getComments();
+    expect(comments.length).toBe(1);
+    expect(comments[0]).toMatchObject({ resolved: false, messages: [{ authorId: 'alice', text: 'needs work' }] });
+  });
+
+  it('onComment takes priority over commentAuthorId when both are given', () => {
+    const store = new EditorStore(makeDoc());
+    const onComment = vi.fn();
+    const { container } = renderHarness(store, { onComment, commentAuthorId: 'alice' });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5);
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+
+    expect(onComment).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('.be-comment-composer-textarea')).toBeNull();
   });
 });

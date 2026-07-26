@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useEditorStore, useInlineRegistry, useSelectedBlock } from './EditorProvider.jsx';
+import { useEditorStore, useInlineRegistry, useSelectedBlock, useCommentAuthorId } from './EditorProvider.jsx';
 import { useRun } from './useBlock.js';
 import { updateRun, setBlockRuns, removeBlock } from '../store/operations.js';
 import { reconcileDomToRuns, EMPTY_RUN_PLACEHOLDER, stripEmptyRunPlaceholder } from './domRunSync.js';
@@ -9,6 +9,7 @@ import { isContentlessBlock } from '../blocks/shared/contentless.js';
 import { genId } from '../utils/idGen.js';
 import { focusRunEnd, focusRunStart } from './focusRun.js';
 import { LinkHoverCard } from './LinkHoverCard.jsx';
+import { CommentPopover } from './CommentPopover.jsx';
 
 /**
  * Keeps the block wrapper's data-empty attribute (see the be-*[data-empty]
@@ -116,6 +117,12 @@ function TextRunSpan({ id, host, onValueSynced }) {
     host.style.color = style.color ?? '';
     host.style.backgroundColor = style.backgroundColor ?? '';
     host.style.cursor = style.cursor ?? '';
+
+    // Comment-highlight is a plain CSS class (not an inline style, unlike
+    // every mark above) since it's a presence/absence toggle with no
+    // per-comment value to compute -- see src/comments/commentMarks.js for
+    // how `marks.commentIds` gets populated.
+    host.classList.toggle('be-comment-highlight', (run.marks?.commentIds?.length ?? 0) > 0);
 
     // A link mark is a *style*, not a real <a> — the host is always a plain
     // <span> (created once, before any run's marks are known; see
@@ -470,6 +477,7 @@ export function EditableBlockContent({
 }) {
   const store = useEditorStore();
   const inlineRegistry = useInlineRegistry();
+  const commentAuthorId = useCommentAuthorId();
   const { getSelectedBlockId, setSelectedBlockId } = useSelectedBlock();
   const containerRef = useRef(null);
   // IME composition (CJK/Korean/etc.) produces a sequence of transient,
@@ -841,6 +849,7 @@ export function EditableBlockContent({
         })}
       </span>
       <LinkHoverCard containerRef={containerRef} store={store} />
+      <CommentPopover containerRef={containerRef} store={store} authorId={commentAuthorId} />
     </>
   );
 }
