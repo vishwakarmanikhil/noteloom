@@ -61,6 +61,12 @@ export function EditorProvider({
   // own doc comment).
   const [isWholeDocumentSelected, setIsWholeDocumentSelected] = useState(false);
 
+  // Which comment thread (by id) is currently hovered, wherever that
+  // happened -- the highlighted text in the editor, or a thread's card in
+  // the panel -- so the OTHER side can echo the same emphasis. Plain
+  // useState is fine: hover changes are infrequent relative to typing.
+  const [hoveredCommentId, setHoveredCommentId] = useState(null);
+
   // A contiguous run of top-level block ids selected by dragging from the
   // gutter margin (see useBlockRangeDrag/BlockGutterRow) — the familiar "drag
   // in the margin to select several blocks" gesture. `[]` means nothing is
@@ -140,6 +146,8 @@ export function EditorProvider({
       closeFieldTypeEditor,
       getBlockClassName,
       commentAuthorId,
+      hoveredCommentId,
+      setHoveredCommentId,
     }),
     [
       store,
@@ -157,6 +165,7 @@ export function EditorProvider({
       closeFieldTypeEditor,
       getBlockClassName,
       commentAuthorId,
+      hoveredCommentId,
     ],
   );
   const content =
@@ -292,6 +301,12 @@ export function useBlockClassName(baseClassName, block) {
  */
 export function useCommentAuthorId() {
   return useEditorContext().commentAuthorId;
+}
+
+/** `[hoveredCommentId, setHoveredCommentId]` -- lets a hover in the editor's highlighted text and a hover over a thread card in the panel echo each other, same idea as useWholeDocumentSelection. */
+export function useHoveredComment() {
+  const { hoveredCommentId, setHoveredCommentId } = useEditorContext();
+  return [hoveredCommentId, setHoveredCommentId];
 }
 
 export function useFieldTypeEditor() {

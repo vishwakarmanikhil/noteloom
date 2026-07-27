@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useEditorStore, useInlineRegistry, useSelectedBlock, useCommentAuthorId } from './EditorProvider.jsx';
+import { useEditorStore, useInlineRegistry, useSelectedBlock, useCommentAuthorId, useHoveredComment } from './EditorProvider.jsx';
 import { useRun } from './useBlock.js';
 import { updateRun, setBlockRuns, removeBlock } from '../store/operations.js';
 import { reconcileDomToRuns, EMPTY_RUN_PLACEHOLDER, stripEmptyRunPlaceholder } from './domRunSync.js';
@@ -98,6 +98,7 @@ function setHostText(host, displayValue) {
 
 function TextRunSpan({ id, host, onValueSynced }) {
   const run = useRun(id);
+  const [hoveredCommentId] = useHoveredComment();
 
   useLayoutEffect(() => {
     if (!host || !run) return;
@@ -123,6 +124,9 @@ function TextRunSpan({ id, host, onValueSynced }) {
     // per-comment value to compute -- see src/comments/commentMarks.js for
     // how `marks.commentIds` gets populated.
     host.classList.toggle('be-comment-highlight', (run.marks?.commentIds?.length ?? 0) > 0);
+    // Echoes a hover from the comment panel/popover back onto the text --
+    // see useHoveredComment.
+    host.classList.toggle('be-comment-highlight-active', Boolean(hoveredCommentId) && Boolean(run.marks?.commentIds?.includes(hoveredCommentId)));
 
     // A link mark is a *style*, not a real <a> — the host is always a plain
     // <span> (created once, before any run's marks are known; see
@@ -146,7 +150,7 @@ function TextRunSpan({ id, host, onValueSynced }) {
     // syncEmptyAttr; this makes every other path to a run's value changing
     // keep the placeholder hint in sync too.
     onValueSynced?.();
-  }, [host, run, onValueSynced]);
+  }, [host, run, onValueSynced, hoveredCommentId]);
 
   return null;
 }

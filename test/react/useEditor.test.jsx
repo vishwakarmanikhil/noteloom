@@ -4,6 +4,7 @@ import { useEditor } from '../../src/react/useEditor.js';
 import { NoteloomEditor } from '../../src/react/NoteloomEditor.jsx';
 import { History } from '../../src/store/history.js';
 import { EditorStore } from '../../src/store/EditorStore.js';
+import { addComment } from '../../src/comments/comments.js';
 
 describe('useEditor', () => {
   it('returns a History-wrapped store seeded with one empty paragraph, and populated registries', () => {
@@ -114,14 +115,27 @@ describe('NoteloomEditor', () => {
     expect(container.querySelector('.be-comments-panel')).toBeNull();
   });
 
-  it('renders CommentsPanel when showCommentsPanel is true', () => {
+  it('renders CommentsPanel (with its actual content) when showCommentsPanel is true and a comment exists', () => {
+    const doc = {
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'hello world', marks: {} }],
+    };
     function PanelWrapper() {
-      const editor = useEditor();
+      const editor = useEditor({ doc });
+      addComment(
+        editor.store,
+        { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+        { authorId: 'alice', text: 'a comment' },
+      );
       return <NoteloomEditor editor={editor} showCommentsPanel commentAuthorId="alice" />;
     }
     const { container, getByText } = render(<PanelWrapper />);
     expect(container.querySelector('.be-comments-panel')).toBeTruthy();
-    expect(getByText('No comments yet.')).toBeTruthy();
+    expect(getByText('a comment')).toBeTruthy();
   });
 
   it('the floating toolbar gets commentAuthorId (built-in composer path) when NoteloomEditor is given it', () => {
@@ -141,7 +155,7 @@ describe('NoteloomEditor', () => {
     selection.addRange(range);
     fireEvent(document, new Event('selectionchange'));
 
-    const commentBtn = container.querySelector('.be-floating-toolbar-btn[title="Comment"]');
+    const commentBtn = container.querySelector('.be-floating-toolbar-btn[title^="Comment"]');
     expect(commentBtn).toBeTruthy();
   });
 });

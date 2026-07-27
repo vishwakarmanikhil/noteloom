@@ -125,6 +125,11 @@
   cursor: pointer;
 }
 
+/* Echoes a hover from the panel/popover back onto the actual text -- see useHoveredComment. */
+.be-comment-highlight-active {
+  background: rgba(234, 179, 8, 0.4);
+}
+
 /* --- basic leaf blocks --- */
 
 .be-paragraph {
@@ -2445,7 +2450,7 @@ tr.be-table-row:hover .be-table-delete-row {
   color: var(--noteloom-text);
 }
 
-/* --- comments: avatar, composer, thread card, click/hover popover, right-side panel --- */
+/* --- comments: avatar, header, composer, thread card, click/hover popover, right-side panel --- */
 
 .be-comment-avatar {
   flex: none;
@@ -2458,21 +2463,66 @@ tr.be-table-row:hover .be-table-delete-row {
   line-height: 1;
 }
 
+/* Shared by CommentPopover and FloatingToolbar's standalone composer (see
+   CommentPopoverHeader.jsx) -- title on the left, an explicit close button
+   on the right so dismissing doesn't rely solely on Escape/outside-click. */
+.be-comment-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--noteloom-border);
+}
+
+.be-comment-popover-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.be-comment-popover-close {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--noteloom-text-muted);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+}
+
+.be-comment-popover-close:hover {
+  background: var(--noteloom-bg-hover);
+  color: var(--noteloom-text);
+}
+
 /* Overrides the dark `.be-floating-toolbar` chrome it also carries (see
    FloatingToolbar.jsx's own comment on why that base class stays) -- a
-   comment composer reads better as a light pill than white text on the
+   comment composer reads better as a light card than white text on the
    toolbar's own near-black background. */
 .be-floating-toolbar.be-floating-toolbar-comment-standalone {
+  display: block;
   background: var(--noteloom-bg);
   border: 1px solid var(--noteloom-border);
-  padding: 6px 8px;
-  width: 280px;
+  padding: 10px 12px 12px;
+  width: 300px;
 }
 
 .be-comment-composer {
   display: flex;
-  align-items: flex-end;
-  gap: 6px;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.be-comment-composer-input-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .be-comment-composer-textarea {
@@ -2480,14 +2530,19 @@ tr.be-table-row:hover .be-table-delete-row {
   min-width: 0;
   box-sizing: border-box;
   resize: none;
-  max-height: 90px;
-  padding: 6px 10px;
+  /* ~2 lines to start, grows with content (see CommentComposer's own
+     resizeToContent) up to ~5 lines, then scrolls. */
+  min-height: 2.8em;
+  max-height: 7.2em;
+  overflow-y: auto;
+  padding: 8px 10px;
   font: inherit;
   font-size: 0.85rem;
+  line-height: 1.4;
   color: var(--noteloom-text);
   background: var(--noteloom-bg-subtle);
   border: 1px solid var(--noteloom-border);
-  border-radius: var(--noteloom-radius-xl);
+  border-radius: var(--noteloom-radius-md);
 }
 
 .be-comment-composer-textarea:focus {
@@ -2495,16 +2550,22 @@ tr.be-table-row:hover .be-table-delete-row {
   border-color: var(--noteloom-accent);
 }
 
+.be-comment-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .be-comment-composer-cancel,
 .be-comment-composer-submit {
-  flex: none;
-  border: none;
-  border-radius: 50%;
-  width: 26px;
-  height: 26px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--noteloom-radius-md);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -2528,8 +2589,8 @@ tr.be-table-row:hover .be-table-delete-row {
 }
 
 .be-comment-thread + .be-comment-thread {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 1px solid var(--noteloom-border);
 }
 
@@ -2537,14 +2598,22 @@ tr.be-table-row:hover .be-table-delete-row {
   opacity: 0.6;
 }
 
+/* Echoes a hover from the highlighted text back onto this card -- see useHoveredComment. */
+.be-comment-thread-hovered {
+  background: var(--noteloom-bg-hover);
+  border-radius: var(--noteloom-radius-md);
+  margin: -6px;
+  padding: 6px;
+}
+
 .be-comment-message {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
 }
 
 .be-comment-message + .be-comment-message {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .be-comment-message-body {
@@ -2569,7 +2638,8 @@ tr.be-table-row:hover .be-table-delete-row {
 }
 
 .be-comment-message-text {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
+  line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -2579,16 +2649,23 @@ tr.be-table-row:hover .be-table-delete-row {
    deeper nesting than "root message + flat replies", so one indent level
    is all this needs. */
 .be-comment-thread-replies {
-  margin: 8px 0 0 13px;
-  padding-left: 12px;
+  margin: 10px 0 0 13px;
+  padding-left: 14px;
   border-left: 2px solid var(--noteloom-border);
 }
 
 .be-comment-thread-actions {
   display: flex;
   align-items: center;
-  gap: 2px;
-  margin-top: 8px;
+  gap: 4px;
+  margin-top: 10px;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.be-comment-thread:hover .be-comment-thread-actions,
+.be-comment-thread:focus-within .be-comment-thread-actions {
+  opacity: 1;
 }
 
 .be-comment-thread-actions button {
@@ -2599,7 +2676,7 @@ tr.be-table-row:hover .be-table-delete-row {
   background: transparent;
   color: var(--noteloom-text-muted);
   font-size: 0.78rem;
-  padding: 3px 6px;
+  padding: 4px 8px;
   border-radius: var(--noteloom-radius-sm);
   cursor: pointer;
 }
@@ -2617,37 +2694,44 @@ tr.be-table-row:hover .be-table-delete-row {
 
 .be-comment-popover {
   z-index: 1000;
-  width: 280px;
+  width: 300px;
   max-width: calc(100vw - 24px);
   background: var(--noteloom-bg);
   border: 1px solid var(--noteloom-border);
   border-radius: var(--noteloom-radius-lg);
-  padding: 12px 14px;
+  padding: 12px 14px 14px;
   box-shadow: var(--noteloom-shadow);
 }
 
 /* --- comments: opt-in right-side panel (NoteloomEditor showCommentsPanel) --- */
 
+/* Deliberately no border/shadow/box background here, or on
+   .be-comments-panel-item below -- comments float directly on the page
+   like margin notes, not a boxed widget, matching how most other editors'
+   own comment sidebars read. */
+/* No overflow/scrolling of its own on purpose -- each card's position
+   already tracks the PAGE's scroll (see CommentsPanel's recompute()), so
+   the panel scrolling independently would fight that: a wheel gesture over
+   it needs to fall through and scroll the page, not the panel's own box,
+   or cards visually detach from the text they're anchored to. Cards whose
+   anchor has scrolled off-screen just go negative/beyond the viewport and
+   aren't painted -- no clipping box needed for that. */
 .be-comments-panel {
   position: fixed;
   top: 80px;
   right: 24px;
-  width: 300px;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  background: var(--noteloom-bg);
-  border: 1px solid var(--noteloom-border);
-  border-radius: var(--noteloom-radius-lg);
-  box-shadow: var(--noteloom-shadow);
-  padding: 14px;
+  width: 320px;
+  overflow: visible;
+  background: transparent;
+  padding: 0 12px;
   font-size: 0.85rem;
   z-index: 500;
+  pointer-events: none;
 }
 
-.be-comments-panel-header {
-  font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 10px;
+.be-comments-panel-item,
+.be-comments-panel-empty {
+  pointer-events: auto;
 }
 
 .be-comments-panel-empty {
@@ -2656,16 +2740,25 @@ tr.be-table-row:hover .be-table-delete-row {
   margin: 0;
 }
 
+/* Each .be-comments-panel-item is absolutely positioned (top set inline by
+   CommentsPanel, aligned with its thread's own anchored text, margin-comment
+   style) inside this relatively-positioned container -- height is also set
+   inline, sized to fit the lowest card. */
 .be-comments-panel-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  position: relative;
 }
 
-.be-comments-panel-list .be-comment-thread + .be-comment-thread {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
+.be-comments-panel-item {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: 8px 12px;
+  border-radius: var(--noteloom-radius-md);
+  transition: top 0.15s ease, background-color 0.1s ease;
+}
+
+.be-comments-panel-item:hover {
+  background: var(--noteloom-bg-hover);
 }
 
 @media (max-width: 900px) {

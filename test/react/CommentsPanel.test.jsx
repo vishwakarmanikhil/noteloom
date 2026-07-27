@@ -28,10 +28,10 @@ function renderPanel(store, { authorId } = {}) {
 }
 
 describe('CommentsPanel', () => {
-  it('shows an empty-state message when there are no comments', () => {
+  it('renders nothing when there are no comments', () => {
     const store = new EditorStore(makeDoc());
-    const { getByText } = renderPanel(store);
-    expect(getByText('No comments yet.')).not.toBeNull();
+    const { container } = renderPanel(store);
+    expect(container.querySelector('.be-comments-panel')).toBeNull();
   });
 
   it('lists every thread in the document, unresolved first', () => {

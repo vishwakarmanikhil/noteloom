@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAutoAdjustedPosition } from './useAutoAdjustedPosition.js';
 import { CommentThreadCard } from './CommentThreadCard.jsx';
+import { CommentPopoverHeader } from './CommentPopoverHeader.jsx';
+import { useHoveredComment } from './EditorProvider.jsx';
 
 /**
  * The click-or-hover popover for VIEWING/replying to/resolving/deleting an
@@ -23,6 +25,7 @@ export function CommentPopover({ containerRef, store, authorId }) {
   const [pinned, setPinned] = useState(false);
   const hideTimerRef = useRef(null);
   const popoverRef = useRef(null);
+  const [, setHoveredCommentId] = useHoveredComment();
 
   const clearHideTimer = useCallback(() => {
     if (hideTimerRef.current) {
@@ -109,6 +112,17 @@ export function CommentPopover({ containerRef, store, authorId }) {
 
   useEffect(() => () => clearHideTimer(), [clearHideTimer]);
 
+  // Echoes onto the matching thread card in the panel, if one's rendered --
+  // see useHoveredComment.
+  useEffect(() => {
+    setHoveredCommentId(target?.commentIds?.[0] ?? null);
+  }, [target, setHoveredCommentId]);
+
+  const closePopover = useCallback(() => {
+    setPinned(false);
+    setTarget(null);
+  }, []);
+
   const isOpen = Boolean(target);
   const position = useAutoAdjustedPosition(popoverRef, isOpen, target ? target.rect.bottom + 6 : null, target ? target.rect.left : null);
 
@@ -126,6 +140,7 @@ export function CommentPopover({ containerRef, store, authorId }) {
       onMouseEnter={clearHideTimer}
       onMouseLeave={scheduleHide}
     >
+      <CommentPopoverHeader title={`Comments (${threads.length})`} onClose={closePopover} />
       {threads.map((thread) => (
         <CommentThreadCard key={thread.id} store={store} thread={thread} authorId={authorId} />
       ))}

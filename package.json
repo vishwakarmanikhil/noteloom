@@ -65,6 +65,7 @@
     "dev:offline-persist": "vite --config examples/offline-persist/vite.config.js",
     "build": "vite build && node -e \"require('fs').copyFileSync('src/style.css','dist/style.css');require('fs').copyFileSync('src/index.d.ts','dist/index.d.ts')\"",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "typecheck": "tsc",
     "prepublishOnly": "npm test && npm run typecheck && npm run build"
   },
@@ -73,6 +74,7 @@
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^18.3.0",

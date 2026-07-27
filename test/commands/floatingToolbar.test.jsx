@@ -253,7 +253,7 @@ describe('FloatingToolbar: comment button', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5);
-    expect(container.querySelector('.be-floating-toolbar-btn[title="Comment"]')).toBeNull();
+    expect(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]')).toBeNull();
   });
 
   it('appears for a same-block selection and calls onComment with the resolved range', () => {
@@ -263,7 +263,7 @@ describe('FloatingToolbar: comment button', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5); // "hello"
-    const commentBtn = container.querySelector('.be-floating-toolbar-btn[title="Comment"]');
+    const commentBtn = container.querySelector('.be-floating-toolbar-btn[title^="Comment"]');
     expect(commentBtn).not.toBeNull();
 
     fireEvent.click(commentBtn);
@@ -278,7 +278,7 @@ describe('FloatingToolbar: comment button', () => {
     const r2Node = container.querySelector('[data-run-id="r2"]');
 
     selectAcrossRunNodes(r1Node, 6, r2Node, 6);
-    expect(container.querySelector('.be-floating-toolbar-btn[title="Comment"]')).toBeNull();
+    expect(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]')).toBeNull();
   });
 
   it('appears when only commentAuthorId is given (no onComment) and opens a built-in composer instead of calling anything', () => {
@@ -287,7 +287,7 @@ describe('FloatingToolbar: comment button', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5); // "hello"
-    const commentBtn = container.querySelector('.be-floating-toolbar-btn[title="Comment"]');
+    const commentBtn = container.querySelector('.be-floating-toolbar-btn[title^="Comment"]');
     expect(commentBtn).not.toBeNull();
 
     fireEvent.click(commentBtn);
@@ -302,7 +302,7 @@ describe('FloatingToolbar: comment button', () => {
     selectWithinRunNode(runNode, 0, 5); // "hello"
     expect(container.querySelector('.be-floating-toolbar-btn[title^="Bold"]')).not.toBeNull();
 
-    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
 
     expect(container.querySelector('.be-floating-toolbar-btn[title^="Bold"]')).toBeNull();
     expect(container.querySelector('.be-floating-toolbar-comment-standalone')).not.toBeNull();
@@ -314,11 +314,44 @@ describe('FloatingToolbar: comment button', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5); // "hello"
-    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
 
     expect(container.querySelector('.be-comment-highlight')).not.toBeNull();
     // No thread exists yet -- only the highlight mark was applied so far.
     expect(store.getComments()).toEqual([]);
+  });
+
+  it('submitting a comment clears the native selection, so the Bold/Italic toolbar does not pop back up behind the closed composer', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store, { commentAuthorId: 'alice' });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "hello"
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
+    fireEvent.change(container.querySelector('.be-comment-composer-textarea'), { target: { value: 'done' } });
+    fireEvent.click(container.querySelector('.be-comment-composer-submit'));
+
+    // Real browsers fire selectionchange asynchronously after
+    // removeAllRanges() -- dispatch it explicitly here to exercise the same
+    // recompute() path useFloatingToolbarTrigger would run.
+    act(() => document.dispatchEvent(new Event('selectionchange')));
+
+    expect(window.getSelection().rangeCount).toBe(0);
+    expect(container.querySelector('.be-floating-toolbar')).toBeNull();
+  });
+
+  it('Cancel also clears the native selection, closing the toolbar entirely instead of falling back to it', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store, { commentAuthorId: 'alice' });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "hello"
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
+    fireEvent.click(container.querySelector('.be-comment-composer-cancel'));
+
+    act(() => document.dispatchEvent(new Event('selectionchange')));
+
+    expect(container.querySelector('.be-floating-toolbar')).toBeNull();
   });
 
   it('Cancel strips the just-applied highlight back off and creates no thread', () => {
@@ -327,7 +360,7 @@ describe('FloatingToolbar: comment button', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5); // "hello"
-    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
     expect(container.querySelector('.be-comment-highlight')).not.toBeNull();
 
     fireEvent.click(container.querySelector('.be-comment-composer-cancel'));
@@ -342,7 +375,7 @@ describe('FloatingToolbar: comment button', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5); // "hello"
-    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
     expect(container.querySelector('.be-comment-highlight')).not.toBeNull();
 
     act(() => {
@@ -359,7 +392,7 @@ describe('FloatingToolbar: comment button', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5); // "hello"
-    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
 
     fireEvent.change(container.querySelector('.be-comment-composer-textarea'), { target: { value: 'needs work' } });
     fireEvent.click(container.querySelector('.be-comment-composer-submit'));
@@ -377,7 +410,7 @@ describe('FloatingToolbar: comment button', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5);
-    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title="Comment"]'));
+    fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
 
     expect(onComment).toHaveBeenCalledTimes(1);
     expect(container.querySelector('.be-comment-composer-textarea')).toBeNull();

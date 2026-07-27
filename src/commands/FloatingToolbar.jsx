@@ -3,6 +3,7 @@ import { useTextFormattingActions } from './useTextFormattingActions.js';
 import { useCoarsePointer } from '../react/useCoarsePointer.js';
 import { LinkEditModal } from '../react/LinkEditModal.jsx';
 import { CommentComposer } from '../react/CommentComposer.jsx';
+import { CommentPopoverHeader } from '../react/CommentPopoverHeader.jsx';
 import { useAutoAdjustedCenteredLeft } from '../react/usePopoverEdgeClamp.js';
 import { BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, LinkIcon, CommentIcon } from '../react/icons.jsx';
 import { addCommentMarkOverRange, removeCommentMarkEverywhere } from '../comments/commentMarks.js';
@@ -99,6 +100,23 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
   const pendingCommentRef = useRef(null);
   pendingCommentRef.current = pendingComment;
 
+  /**
+   * Blurs whatever's currently focused (typically the composer's own
+   * textarea) and clears the native selection once a comment's been
+   * created/discarded -- without this, the selection stays intact and the
+   * ordinary Bold/Italic toolbar pops right back up "behind" the composer
+   * the instant it closes, since as far as the browser's concerned nothing
+   * about the underlying selection ever changed. Blurring first matters:
+   * useFloatingToolbarTrigger's recompute() deliberately ignores selection
+   * changes while focus is still inside `.be-floating-toolbar` (see its own
+   * comment, added to keep IT from blanking out state mid-type) -- without
+   * the blur, clearing the selection here would be silently ignored too.
+   */
+  function closeFloatingSelection() {
+    document.activeElement?.blur?.();
+    window.getSelection?.()?.removeAllRanges();
+  }
+
   function openCommentComposer() {
     if (!selection) return;
     const commentId = genId();
@@ -114,6 +132,7 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
     if (!pending) return;
     for (const op of removeCommentMarkEverywhere(store, pending.commentId)) store.applyOperation(op);
     setPendingComment(null);
+    closeFloatingSelection();
   }
 
   function submitCommentComposer(text) {
@@ -129,12 +148,35 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
     );
     setPendingComment(null);
     setOpenPicker(null);
+    closeFloatingSelection();
   }
 
   function cancelCommentComposer() {
     discardPendingComment();
     setOpenPicker(null);
   }
+
+  // Ctrl/Cmd+Alt+M -- same shortcut most other editors use for "comment on
+  // the current selection". Only listens while a same-block selection with
+  // the Comment button actually available is open, so it doesn't shadow
+  // the shortcut for anything else.
+  useEffect(() => {
+    if (!isOpen || kind !== 'same-block' || !(onComment || commentAuthorId)) return undefined;
+    const handleKeyDown = (event) => {
+      // event.code (the physical key), not event.key -- Option/Alt+M
+      // doesn't produce the character "m" at all on a Mac (US layout types
+      // "µ"), and Ctrl+Alt is AltGr on several European Windows layouts,
+      // remapping the character too. .code is unaffected by either.
+      if ((event.metaKey || event.ctrlKey) && event.altKey && event.code === 'KeyM') {
+        event.preventDefault();
+        if (onComment) onComment(selection);
+        else openCommentComposer();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, kind, onComment, commentAuthorId, selection]);
 
   useEffect(() => {
     if (!openPicker) return undefined;
@@ -207,6 +249,7 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
         if (event.target.tagName !== 'TEXTAREA') event.preventDefault();
       }}
     >
+      <CommentPopoverHeader title="Add comment" onClose={cancelCommentComposer} />
       <CommentComposer authorId={commentAuthorId} autoFocus onSubmit={submitCommentComposer} onCancel={cancelCommentComposer} />
     </div>
     )}
@@ -347,7 +390,7 @@ export function FloatingToolbar({ isOpen, rect, kind, selection, crossSelection,
           <button
             type="button"
             className="be-floating-toolbar-btn"
-            title="Comment"
+            title="Comment (Ctrl+Alt+M)"
             aria-label="Comment"
             onClick={() => (onComment ? onComment(selection) : openCommentComposer())}
           >

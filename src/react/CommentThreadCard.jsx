@@ -4,6 +4,7 @@ import { CommentComposer } from './CommentComposer.jsx';
 import { CommentAvatar } from './CommentAvatar.jsx';
 import { formatRelativeTime } from './commentFormatting.js';
 import { CommentIcon, CheckIcon, TrashIcon } from './icons.jsx';
+import { useHoveredComment } from './EditorProvider.jsx';
 
 function CommentMessageRow({ message, size = 26 }) {
   return (
@@ -35,9 +36,16 @@ function CommentMessageRow({ message, size = 26 }) {
  * `authorId`, if not given, hides the Reply action entirely (composing a
  * message needs an author; resolving/deleting don't, so those stay
  * available either way) — see NoteloomEditor's `commentAuthorId` prop.
+ *
+ * Hovering the card echoes the highlight onto the actual text in the
+ * editor (see useHoveredComment); `onJumpToText`, if given (CommentsPanel
+ * passes it, CommentPopover doesn't need to -- you're already looking at
+ * the text there), is called when the messages themselves are clicked, for
+ * scrolling to and briefly re-highlighting the anchored text.
  */
-export function CommentThreadCard({ store, thread, authorId }) {
+export function CommentThreadCard({ store, thread, authorId, onJumpToText }) {
   const [isReplying, setIsReplying] = useState(false);
+  const [hoveredCommentId, setHoveredCommentId] = useHoveredComment();
   const [rootMessage, ...replies] = thread.messages;
 
   function handleReplySubmit(text) {
@@ -46,8 +54,15 @@ export function CommentThreadCard({ store, thread, authorId }) {
   }
 
   return (
-    <div className={`be-comment-thread${thread.resolved ? ' be-comment-thread-resolved' : ''}`}>
-      <CommentMessageRow message={rootMessage} />
+    <div
+      className={`be-comment-thread${thread.resolved ? ' be-comment-thread-resolved' : ''}${hoveredCommentId === thread.id ? ' be-comment-thread-hovered' : ''}`}
+      onMouseEnter={() => setHoveredCommentId(thread.id)}
+      onMouseLeave={() => setHoveredCommentId(null)}
+    >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+      <div onClick={onJumpToText ? () => onJumpToText(thread.id) : undefined} style={onJumpToText ? { cursor: 'pointer' } : undefined}>
+        <CommentMessageRow message={rootMessage} />
+      </div>
 
       {replies.length > 0 && (
         <div className="be-comment-thread-replies">

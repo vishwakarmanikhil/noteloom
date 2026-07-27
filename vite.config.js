@@ -29,5 +29,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     css: true,
+    // test-e2e/ is a separate Playwright suite (npm run test:e2e) -- its
+    // files import `test`/`expect` from '@playwright/test', not vitest,
+    // and vitest would otherwise try to collect and run them too.
+    exclude: ['node_modules/**', 'test-e2e/**'],
   },
 });
