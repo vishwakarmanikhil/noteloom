@@ -146,14 +146,16 @@ export async function listTemplates() {
 }
 
 /**
- * Persists one named point-in-time snapshot of a document — `{ id, docId,
- * timestamp, label?, doc }`, where `doc` is a full document (the same
- * shape a document-scope template uses). Separate object store from both
- * `documents` and `templates` (see openDatabase above): a version is tied
- * to one specific document's history, not "the current document" or a
- * reusable starter. Overwrites whatever was stored under the same `id`
- * before, though callers normally mint a fresh `id` per snapshot (see
- * `createPeriodicVersionSnapshotter`) rather than reusing one.
+ * Persists one point-in-time snapshot of a document — `{ id, docId,
+ * timestamp, authorId?, authorIds?, summary?, label?, doc }`, where `doc`
+ * is a full document (the same shape a document-scope template uses).
+ * Separate object store from both `documents` and `templates` (see
+ * openDatabase above): a version is tied to one specific document's
+ * history, not "the current document" or a reusable starter. Overwrites
+ * whatever was stored under the same `id` before, though callers normally
+ * mint a fresh `id` per snapshot (see `createAutoVersionHistory`, which
+ * saves one automatically after each burst of edits settles) rather than
+ * reusing one.
  */
 export async function saveDocumentVersion(version) {
   const db = await openDatabase();

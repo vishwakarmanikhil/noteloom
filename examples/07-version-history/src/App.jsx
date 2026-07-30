@@ -1,80 +1,54 @@
-import { useEffect, useRef } from 'react';
-import {
-  useEditor,
-  NoteloomEditor,
-  registerBuiltInBlocks,
-  useDocumentVersions,
-  createPeriodicVersionSnapshotter,
-  saveDocumentVersion,
-  applyDocumentTemplate,
-  exportDocumentJSON,
-} from 'noteloom';
+import { useEditor, NoteloomEditor, registerBuiltInBlocks, VersionHistory } from 'noteloom';
 
 const DOC_ID = 'version-history-demo';
+const CURRENT_USER_ID = 'You';
 
-// A short interval so the demo doesn't require actually waiting an hour --
-// a real app would use something like 5-10 minutes (createPeriodicVersionSnapshotter's
-// own default).
-const SNAPSHOT_INTERVAL_MS = 15000;
+// A short idle gap so the demo doesn't require actually waiting 5 minutes
+// (createAutoVersionHistory's own default) -- pause typing for this long
+// and a version is saved automatically, no "name it and save" step.
+const IDLE_MS = 5000;
+
+// A brand-new document (useEditor()'s own default when no `doc` is given)
+// starts as ONE EMPTY paragraph -- and this package's placeholder text only
+// renders once that block is actually focused (see style.css's
+// `[data-placeholder][data-empty]:focus-within::before`, matching Notion's
+// own "no placeholder until you click in" behavior). For a first-time demo
+// visitor, an empty, placeholder-less paragraph is functionally invisible:
+// there's nothing to see or click before you already know it's there. Real
+// apps normally load a document with actual content already in it (from
+// IndexedDB, an API, ...) where this never comes up -- seeding one here is
+// what a real app's own persisted content would already provide.
+function makeInitialDoc() {
+  const rootId = 'root';
+  const blockId = 'p1';
+  const runId = 'r1';
+  return {
+    rootId,
+    blocks: [
+      { id: rootId, type: 'page', parentId: null, contentIds: [blockId], props: {} },
+      { id: blockId, type: 'paragraph', parentId: rootId, contentIds: [runId], props: {} },
+    ],
+    runs: [{ id: runId, type: 'text', value: 'Click here and start typing…', marks: {} }],
+  };
+}
 
 export function App() {
-  const editor = useEditor({ registerBlocks: registerBuiltInBlocks });
-  const { versions, isLoaded, refresh } = useDocumentVersions(DOC_ID);
-  const snapshotterRef = useRef(null);
-
-  useEffect(() => {
-    snapshotterRef.current = createPeriodicVersionSnapshotter({
-      store: editor.store,
-      docId: DOC_ID,
-      intervalMs: SNAPSHOT_INTERVAL_MS,
-      onSnapshot: () => refresh(),
-    });
-    return () => snapshotterRef.current?.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor.store]);
-
-  async function handleSaveNow() {
-    const label = window.prompt('Label this version? (optional)') ?? undefined;
-    // exportDocumentJSON returns a JSON *string* -- parse it back into the
-    // plain object saveDocumentVersion/applyDocumentTemplate both expect.
-    const doc = JSON.parse(exportDocumentJSON(editor.store));
-    await saveDocumentVersion({ id: crypto.randomUUID(), docId: DOC_ID, timestamp: Date.now(), label, doc });
-    await refresh();
-  }
-
-  function handleRestore(version) {
-    if (!window.confirm(`Restore "${version.label ?? version.id}"? This replaces the current document.`)) return;
-    applyDocumentTemplate(editor.store, version.doc);
-  }
+  const editor = useEditor({ doc: makeInitialDoc(), registerBlocks: registerBuiltInBlocks, currentUserId: CURRENT_USER_ID });
 
   return (
-    <div style={{ maxWidth: 900, margin: '40px auto', padding: '0 24px', display: 'flex', gap: 32 }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'baseline' }}>
-          <h1 style={{ margin: 0, fontSize: 20 }}>Version history demo</h1>
-          <button onClick={handleSaveNow}>Save version now</button>
+    <div style={{ maxWidth: 900, margin: '40px auto', padding: '0 24px' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'baseline' }}>
+        <h1 style={{ margin: 0, fontSize: 20 }}>Version history demo</h1>
+      </div>
+      <p style={{ color: '#666', fontSize: 14 }}>
+        Type something, then pause for {IDLE_MS / 1000}s — a version is saved automatically, attributed to{' '}
+        <code>{CURRENT_USER_ID}</code>. Click "Version history" to browse, preview, and restore past versions.
+      </p>
+      <NoteloomEditor editor={editor}>
+        <div style={{ position: 'fixed', top: 24, right: 24 }}>
+          <VersionHistory docId={DOC_ID} idleMs={IDLE_MS} />
         </div>
-        <p style={{ color: '#666', fontSize: 14 }}>
-          A snapshot is also saved automatically every {SNAPSHOT_INTERVAL_MS / 1000}s while you edit.
-        </p>
-        <NoteloomEditor editor={editor} />
-      </div>
-      <div style={{ width: 260 }}>
-        <h2 style={{ fontSize: 16 }}>Versions</h2>
-        {!isLoaded && <p>Loading…</p>}
-        {isLoaded && versions.length === 0 && <p style={{ color: '#666' }}>No versions saved yet.</p>}
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {versions.map((version) => (
-            <li key={version.id} style={{ border: '1px solid #ddd', borderRadius: 6, padding: 8 }}>
-              <div style={{ fontWeight: 600 }}>{version.label ?? '(untitled)'}</div>
-              <div style={{ fontSize: 12, color: '#666' }}>{new Date(version.timestamp).toLocaleTimeString()}</div>
-              <button onClick={() => handleRestore(version)} style={{ marginTop: 6 }}>
-                Restore
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      </NoteloomEditor>
     </div>
   );
 }

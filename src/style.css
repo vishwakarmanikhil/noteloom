@@ -2767,6 +2767,288 @@ tr.be-table-row:hover .be-table-delete-row {
   }
 }
 
+/* --- version history: trigger button + drawer (VersionHistory) --- */
+
+.be-version-history-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--noteloom-border);
+  background: var(--noteloom-bg);
+  color: var(--noteloom-text);
+  border-radius: var(--noteloom-radius-md);
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.be-version-history-trigger:hover {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-version-history-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.25);
+  z-index: 1400;
+}
+
+.be-version-history-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  max-width: 100vw;
+  background: var(--noteloom-bg);
+  box-shadow: var(--noteloom-shadow);
+  z-index: 1401;
+  display: flex;
+  flex-direction: column;
+}
+
+.be-version-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--noteloom-border);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.be-version-history-close {
+  border: none;
+  background: transparent;
+  color: var(--noteloom-text-muted);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--noteloom-radius-sm);
+  cursor: pointer;
+}
+
+.be-version-history-close:hover {
+  background: var(--noteloom-bg-hover);
+  color: var(--noteloom-text);
+}
+
+.be-version-history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.be-version-history-empty {
+  color: var(--noteloom-text-muted);
+  font-size: 0.85rem;
+  padding: 16px;
+  margin: 0;
+}
+
+.be-version-history-group-label {
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--noteloom-text-muted);
+  padding: 10px 16px 4px;
+}
+
+.be-version-history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.be-version-history-item:hover {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-version-history-item-body {
+  min-width: 0;
+}
+
+.be-version-history-item-author {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.be-version-history-item-meta {
+  font-size: 0.78rem;
+  color: var(--noteloom-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.be-version-history-preview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.be-version-history-preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--noteloom-border);
+}
+
+.be-version-history-preview-author {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.be-version-history-preview-time {
+  font-size: 0.78rem;
+  color: var(--noteloom-text-muted);
+}
+
+.be-version-history-view-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+}
+
+.be-version-history-view-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--noteloom-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--noteloom-radius-md);
+  cursor: pointer;
+}
+
+.be-version-history-view-toggle button.is-active {
+  background: var(--noteloom-bg-subtle);
+  color: var(--noteloom-text);
+}
+
+.be-version-history-diff-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px 0;
+  font-size: 0.75rem;
+}
+
+.be-version-history-diff-legend-note {
+  color: var(--noteloom-text-muted);
+}
+
+.be-version-history-preview-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.be-version-history-diff-body :is(p.be-version-diff-block) {
+  margin: 0 0 0.6em;
+}
+
+/* Google Docs-style change highlighting: additions get a green underline/background,
+   removals a struck-through red one -- self-evident at a glance, no legend required
+   to understand the individual spans (the legend row above just labels the colors). */
+.be-version-diff-added {
+  background: rgba(34, 197, 94, 0.18);
+  color: var(--noteloom-text);
+  text-decoration: underline;
+  text-decoration-color: rgba(34, 197, 94, 0.6);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.be-version-diff-removed {
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--noteloom-text-muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(239, 68, 68, 0.6);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.be-version-history-diff-legend .be-version-diff-added,
+.be-version-history-diff-legend .be-version-diff-removed {
+  padding: 2px 6px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* exportDocumentHTML emits plain semantic HTML (<p>/<h1-3>/<ul>/<blockquote>/...),
+   not this package's own be-* block classes, so the preview needs its own
+   basic typography rather than inheriting the live editor's block styling. */
+.be-version-history-preview-body :is(h1, h2, h3) {
+  margin: 0.6em 0 0.3em;
+}
+
+.be-version-history-preview-body p {
+  margin: 0 0 0.6em;
+}
+
+.be-version-history-preview-body :is(ul, ol) {
+  margin: 0 0 0.6em;
+  padding-left: 1.4em;
+}
+
+.be-version-history-preview-body blockquote {
+  margin: 0 0 0.6em;
+  padding-left: 0.8em;
+  border-left: 3px solid var(--noteloom-border);
+  color: var(--noteloom-text-muted);
+}
+
+.be-version-history-preview-body pre {
+  background: var(--noteloom-bg-subtle);
+  border-radius: var(--noteloom-radius-sm);
+  padding: 10px;
+  overflow-x: auto;
+}
+
+.be-version-history-preview-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--noteloom-border);
+}
+
+.be-version-history-preview-actions button {
+  border-radius: var(--noteloom-radius-md);
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.be-version-history-preview-actions button:first-child {
+  border: 1px solid var(--noteloom-border);
+  background: var(--noteloom-bg);
+  color: var(--noteloom-text);
+}
+
+.be-version-history-restore {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: var(--noteloom-accent);
+  color: #fff;
+}
+
 /* --- voice typing: caret-anchored listening/processing indicator --- */
 
 .be-voice-indicator {

@@ -338,3 +338,54 @@ describe('History.performBatch', () => {
     expect(store.getRun('r1').value).toBe('hello');
   });
 });
+
+describe('History defaultActorId', () => {
+  it('stamps historyLog/changeLog entries with defaultActorId when perform() is not given its own actorId', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store, { defaultActorId: 'alice' });
+
+    history.perform(updateRun('r1', { value: 'hi' }));
+
+    expect(history.getHistoryLog()[0].actorId).toBe('alice');
+  });
+
+  it('an explicit meta.actorId still takes priority over defaultActorId', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store, { defaultActorId: 'alice' });
+
+    history.perform(updateRun('r1', { value: 'hi' }), { actorId: 'bob' });
+
+    expect(history.getHistoryLog()[0].actorId).toBe('bob');
+  });
+
+  it('performBatch also stamps defaultActorId', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store, { defaultActorId: 'alice' });
+
+    history.performBatch([updateRun('r1', { value: 'hi' })]);
+
+    expect(history.getHistoryLog()[0].actorId).toBe('alice');
+  });
+
+  it('with no defaultActorId configured, actorId stays null (unchanged pre-existing behavior)', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store);
+
+    history.perform(updateRun('r1', { value: 'hi' }));
+
+    expect(history.getHistoryLog()[0].actorId).toBeNull();
+  });
+
+  it('setDefaultActorId changes it for future edits, without touching already-recorded entries', () => {
+    const store = new EditorStore(makeDoc());
+    const history = new History(store, { defaultActorId: 'alice' });
+
+    history.perform(updateRun('r1', { value: 'h' }), { timestamp: 1000 });
+    history.setDefaultActorId('bob');
+    history.perform(updateRun('r1', { value: 'hi' }), { timestamp: 5000 }); // past the idle window, its own new batch
+
+    const log = history.getHistoryLog();
+    expect(log[0].actorId).toBe('alice');
+    expect(log[1].actorId).toBe('bob');
+  });
+});

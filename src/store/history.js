@@ -116,9 +116,20 @@ function extractAffectedBlockIds(entry) {
  * not erase "who changed what, when".
  */
 export class History {
-  constructor(store, { idleMs = IDLE_MS, trackChanges = false, maxChangeLogSize = 500 } = {}) {
+  constructor(store, { idleMs = IDLE_MS, trackChanges = false, maxChangeLogSize = 500, defaultActorId = null } = {}) {
     this.store = store;
     this.idleMs = idleMs;
+    // Stamped onto historyLog/changeLog entries whenever a perform/
+    // performBatch call doesn't pass its own `meta.actorId` -- the
+    // pass-an-actorId-to-every-call-site convention this class already had
+    // was never actually wired up anywhere in the package (every internal
+    // call site is single-argument), so nothing knew "who" made an edit in
+    // practice. Setting this once (see useEditor's `currentUserId` option)
+    // makes every edit attributable for free, which is what
+    // createAutoVersionHistory relies on for its own "who changed this"
+    // tracking. `setDefaultActorId` below lets it change after construction
+    // (e.g. identity resolves asynchronously after the editor already mounted).
+    this.defaultActorId = defaultActorId;
     this.undoStack = [];
     this.redoStack = [];
     this.currentBatch = null;
@@ -289,8 +300,13 @@ export class History {
    * press per op). Flushes any in-progress typing batch first so the merge
    * doesn't get folded into unrelated coalescing.
    */
+  /** Changes the actorId future perform/performBatch calls fall back to when they don't pass their own `meta.actorId`. */
+  setDefaultActorId(actorId) {
+    this.defaultActorId = actorId;
+  }
+
   performBatch(ops, meta = {}) {
-    const actorId = meta.actorId ?? null;
+    const actorId = meta.actorId ?? this.defaultActorId;
     const timestamp = meta.timestamp ?? Date.now();
     this._commitCurrentBatch();
 
@@ -316,7 +332,7 @@ export class History {
   }
 
   perform(op, meta = {}) {
-    const actorId = meta.actorId ?? null;
+    const actorId = meta.actorId ?? this.defaultActorId;
     const timestamp = meta.timestamp ?? Date.now();
     const inverse = this.store.applyOperation(op);
     this._record(op, inverse, { actorId, timestamp });

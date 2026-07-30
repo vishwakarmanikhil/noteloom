@@ -148,6 +148,8 @@ export interface HistoryOptions {
   idleMs?: number;
   trackChanges?: boolean;
   maxChangeLogSize?: number;
+  /** Stamped as every edit's actorId when a perform/performBatch call doesn't pass its own -- see useEditor's `currentUserId`. */
+  defaultActorId?: string | null;
 }
 
 export interface HistoryLogEntry {
@@ -171,6 +173,8 @@ export interface OperationMeta {
 export class History {
   constructor(store: EditorStore, options?: HistoryOptions);
   store: EditorStore;
+  defaultActorId: string | null;
+  setDefaultActorId(actorId: string | null): void;
 
   getBlock(id: string): Block | undefined;
   getRun(id: string): Run | undefined;
@@ -384,6 +388,13 @@ export interface DocumentVersion {
   id: string;
   docId: string;
   timestamp: number;
+  /** Whoever made the most recent edit in this version's window -- read from History's defaultActorId, null if never configured. */
+  authorId?: string | null;
+  /** Every distinct actorId that contributed to this version's window. */
+  authorIds?: string[];
+  /** Lightweight auto-generated description (e.g. "3 blocks changed") -- not a full diff. */
+  summary?: string;
+  /** Only ever set by renaming a version yourself -- nothing in this package's automatic capture sets it. */
   label?: string;
   doc: DocumentJSON;
 }
@@ -394,22 +405,45 @@ export function deleteDocumentVersion(id: string): Promise<void>;
 /** All versions saved for docId, newest first. */
 export function listDocumentVersions(docId: string): Promise<DocumentVersion[]>;
 
-/** Periodically snapshots a live document into the versions store; prunes oldest beyond maxVersions for this docId. Restore with applyDocumentTemplate(store, version.doc). */
-export function createPeriodicVersionSnapshotter(options: {
-  store: History | EditorStore;
+/**
+ * Automatic, Google Docs-style version history -- no "name it and save"
+ * step. `store` must be a History instance (needs getHistoryLog()/
+ * subscribeToHistory()). Saves one snapshot after each burst of edits
+ * settles (idleMs of inactivity), attributed to whoever made them.
+ */
+export function createAutoVersionHistory(options: {
+  store: History;
   docId: string;
-  intervalMs?: number;
-  label?: string;
+  /** Inactivity gap that closes a version's window. Default 5 minutes. */
+  idleMs?: number;
   maxVersions?: number;
   onSnapshot?: (version: DocumentVersion) => void;
   onError?: (error: unknown) => void;
-}): { stop: () => void };
+}): { stop: () => void; flush: () => Promise<void> };
 
 export function useDocumentVersions(docId: string | null | undefined): {
   versions: DocumentVersion[];
   isLoaded: boolean;
   refresh: () => Promise<void>;
 };
+
+/**
+ * Google Docs "show changes"-style HTML diff of `nextDoc` against `prevDoc`
+ * (pass null/undefined for prevDoc to mark everything as newly added) --
+ * word-level insertions/deletions wrapped in `.be-version-diff-added`/
+ * `.be-version-diff-removed` spans. Used internally by `<VersionHistory>`'s
+ * "Changes" tab; exported for building a custom version-history UI.
+ */
+export function diffDocumentsHTML(prevDoc: DocumentJSON | null | undefined, nextDoc: DocumentJSON): string;
+
+export interface VersionHistoryProps {
+  docId: string;
+  idleMs?: number;
+  maxVersions?: number;
+}
+
+/** Self-contained "Version history" button + drawer (list/preview/restore) -- also owns the automatic capture (createAutoVersionHistory) for as long as it's mounted. `store` (from context) must be a History instance. */
+export const VersionHistory: ComponentType<VersionHistoryProps>;
 
 // ---------------------------------------------------------------------------
 // comments/
@@ -815,6 +849,8 @@ export interface UseEditorOptions {
   doc?: DocumentJSON;
   /** true (default): store is undo/redo-aware (a History instance). false: a plain EditorStore. */
   history?: boolean;
+  /** Stamped as every edit's actorId (History's defaultActorId) -- used by createAutoVersionHistory/VersionHistory for "who changed this", with no separate identity plumbing needed. Ignored when history: false. */
+  currentUserId?: string | null;
   /** Replaces registerBuiltInBlocks for an opt-in subset of block types. */
   registerBlocks?: (registry: BlockRegistry) => void;
   /** Replaces registerBuiltInInlineTypes for an opt-in subset of inline types. */

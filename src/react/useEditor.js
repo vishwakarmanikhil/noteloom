@@ -37,15 +37,29 @@ function defaultDoc() {
  * The store is created once, on first render — pass a different `doc` and
  * change `key` on the consuming component to load a different document,
  * the same convention used throughout this package's examples.
+ *
+ * `currentUserId`, if given, is stamped as every edit's `actorId` (see
+ * History's `defaultActorId`) with no per-call-site wiring needed —
+ * `createAutoVersionHistory`'s own "who changed this" attribution reads it
+ * straight off the history log this populates. Since the store is only
+ * built once, changing `currentUserId` on a later render has no effect —
+ * call `editor.store.setDefaultActorId(id)` directly if it can change after
+ * mount (e.g. identity resolving asynchronously).
  */
-export function useEditor({ doc, history = true, registerBlocks: customRegisterBlocks, registerInlineTypes: customRegisterInlineTypes } = {}) {
+export function useEditor({
+  doc,
+  history = true,
+  currentUserId = null,
+  registerBlocks: customRegisterBlocks,
+  registerInlineTypes: customRegisterInlineTypes,
+} = {}) {
   return useMemo(() => {
     const registry = createBlockRegistry();
     (customRegisterBlocks ?? registerBuiltInBlocks)(registry);
     const inlineRegistry = createInlineRegistry();
     (customRegisterInlineTypes ?? registerBuiltInInlineTypes)(inlineRegistry);
     const store = new EditorStore(doc ?? defaultDoc());
-    return { store: history ? new History(store) : store, registry, inlineRegistry };
+    return { store: history ? new History(store, { defaultActorId: currentUserId }) : store, registry, inlineRegistry };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

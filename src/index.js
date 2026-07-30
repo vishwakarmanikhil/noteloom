@@ -47,8 +47,12 @@ export { TemplatePicker } from './react/TemplatePicker.jsx';
 
 // Version history -- point-in-time document snapshots (storage above),
 // restored via the same applyDocumentTemplate used for templates.
-export { createPeriodicVersionSnapshotter } from './versions/versionSnapshotter.js';
+// Google Docs-style: no manual "name it and save" step -- see
+// createAutoVersionHistory's own doc comment.
+export { createAutoVersionHistory } from './versions/autoVersionHistory.js';
+export { diffDocumentsHTML } from './versions/diffVersions.js';
 export { useDocumentVersions } from './react/useDocumentVersions.js';
+export { VersionHistory } from './react/VersionHistory.jsx';
 
 // Comments -- thread metadata (text/author/replies/resolved) is
 // collaboration-aware; the highlighted range it's anchored to is

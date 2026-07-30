@@ -440,41 +440,25 @@ A comment thread is `{ id, blockId, anchorRunIds, resolved, messages: [{ id, aut
 
 ## Version history
 
-Point-in-time document snapshots, stored in IndexedDB (a third object store, alongside `usePersistedDocument`'s `documents` and Templates' `templates`) — periodic, manual, or both. `examples/07-version-history/` is a complete runnable app with a version list and one-click restore.
+Google Docs-style — there's no "type a label and save" step. Point-in-time document snapshots (stored in IndexedDB, a third object store alongside `usePersistedDocument`'s `documents` and Templates' `templates`) are captured automatically after each burst of edits settles down, each one attributed to whoever made the changes. `examples/07-version-history/` is a complete runnable app.
 
 ```jsx
-import { createPeriodicVersionSnapshotter, useDocumentVersions, saveDocumentVersion, applyDocumentTemplate, exportDocumentJSON } from 'noteloom';
+import { useEditor, NoteloomEditor, VersionHistory } from 'noteloom';
 
-// Automatic: snapshot every few minutes, keep the most recent 50.
-useEffect(() => {
-  const snapshotter = createPeriodicVersionSnapshotter({ store: editor.store, docId, intervalMs: 5 * 60 * 1000 });
-  return () => snapshotter.stop();
-}, [editor.store, docId]);
+const editor = useEditor({ currentUserId: currentUser.id }); // stamps every edit's author, see below
 
-// Manual: "save a version now" button.
-async function saveNow(label) {
-  const doc = JSON.parse(exportDocumentJSON(editor.store)); // exportDocumentJSON returns a JSON *string* — parse it first
-  await saveDocumentVersion({ id: crypto.randomUUID(), docId, timestamp: Date.now(), label, doc });
-}
-
-// A version list:
-function VersionList({ docId }) {
-  const { versions, isLoaded } = useDocumentVersions(docId); // newest first
-  if (!isLoaded) return <p>Loading…</p>;
-  return (
-    <ul>
-      {versions.map((v) => (
-        <li key={v.id}>
-          {v.label ?? '(untitled)'} — {new Date(v.timestamp).toLocaleString()}
-          <button onClick={() => applyDocumentTemplate(editor.store, v.doc)}>Restore</button>
-        </li>
-      ))}
-    </ul>
-  );
-}
+<NoteloomEditor editor={editor}>
+  <VersionHistory docId={docId} />
+</NoteloomEditor>;
 ```
 
-Restoring needs no new function — it's the exact same `applyDocumentTemplate(store, doc)` Templates already uses to wholesale-replace a live editor's content. `saveDocumentVersion`/`loadDocumentVersion`/`deleteDocumentVersion`/`listDocumentVersions` are the raw storage operations `useDocumentVersions` is built on. `createPeriodicVersionSnapshotter({ store, docId, intervalMs?, label?, maxVersions? })` prunes the oldest version past `maxVersions` (default 50) after each snapshot, so a long-running document doesn't grow the store unbounded.
+That's the whole integration. `<VersionHistory>` is self-contained: it renders the "Version history" button, and for as long as it's mounted it also quietly captures snapshots in the background — no separate wiring needed. Clicking the button opens a drawer (matching the built-in Comments UI's own design language) listing every version grouped by day, each showing an avatar, author, relative time, and a lightweight summary ("3 blocks changed"); clicking one opens it on a **Changes** tab — a word-level diff against the version right before it, insertions highlighted green, deletions struck through in red, Google Docs "show changes"-style — with a **Preview** tab alongside for a plain read-only render, and a "Restore this version" button.
+
+**Attribution** — `currentUserId` (passed to `useEditor()`, or `history.setDefaultActorId(id)`/`new History(store, { defaultActorId })` for the granular API) is stamped as every edit's `actorId` automatically; `VersionHistory`/`createAutoVersionHistory` read it straight off the history log, no separate identity plumbing required. Omit it and versions still get created, just with `authorId: null` (shown as "Unknown").
+
+**Tuning the capture window** — `<VersionHistory docId idleMs={5 * 60 * 1000} maxVersions={200} />`: `idleMs` (default 5 minutes) is how long edits need to pause before a version is closed and saved (a smaller value in the example app, so you don't have to actually wait); `maxVersions` prunes the oldest versions beyond that count. For the granular API, or to save an explicit snapshot right before some risky action, use `createAutoVersionHistory({ store, docId, idleMs?, maxVersions? })` directly — it returns `{ stop, flush }`; `flush()` closes and saves the current window immediately instead of waiting for the idle gap (e.g. right before navigating away).
+
+Restoring needs no new function — it's the exact same `applyDocumentTemplate(store, doc)` Templates already uses to wholesale-replace a live editor's content, which is what the drawer's own Restore button calls. `saveDocumentVersion`/`loadDocumentVersion`/`deleteDocumentVersion`/`listDocumentVersions` are the raw storage operations everything above is built on, for anywhere the built-in UI doesn't fit; `useDocumentVersions(docId)` is the reactive hook if you want to build your own list instead of `<VersionHistory>`; `diffDocumentsHTML(prevDoc, nextDoc)` is the diffing function behind the Changes tab (pass `null` as `prevDoc` to mark everything as newly added), for building a custom diff view instead.
 
 ## Right-to-left / multi-language text
 

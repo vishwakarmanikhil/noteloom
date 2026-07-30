@@ -142,6 +142,27 @@ export function CommentIcon(props) {
   );
 }
 
+/** A clock with a counter-clockwise arrow around it -- "version history", same glyph most other editors use for it. */
+export function ClockHistoryIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <polyline points="3 5 3 10 8 10" />
+      <polyline points="12 7 12 12 16 14" />
+    </Icon>
+  );
+}
+
+/** A plain counter-clockwise circular arrow -- "restore this version". */
+export function RestoreIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M3 12a9 9 0 1 0 2.6-6.3" />
+      <polyline points="3 4 3 9 8 9" />
+    </Icon>
+  );
+}
+
 export function CheckIcon(props) {
   return (
     <Icon {...props}>

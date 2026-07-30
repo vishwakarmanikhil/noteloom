@@ -4,6 +4,18 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ## [Unreleased]
 
+### Changed
+
+- **Version history redesigned to be Google Docs-style — BREAKING.** Snapshots are now captured automatically after each burst of edits settles (no "type a label and save" step), each one attributed to whoever made the changes, and browsed/restored through a built-in "Version history" button + drawer instead of hand-rolled UI.
+  - `createPeriodicVersionSnapshotter` (dumb fixed-interval snapshots, regardless of whether anything actually changed) is removed. Replaced by `createAutoVersionHistory({ store, docId, idleMs?, maxVersions? })` — `store` must now be a `History` instance (it reads `getHistoryLog()`/`subscribeToHistory()`), and it saves one snapshot per burst of edits once `idleMs` (default 5 minutes) of inactivity passes, not on a fixed timer.
+  - New `<VersionHistory docId />` component — self-contained (mount it once anywhere under `<EditorProvider>`/`<NoteloomEditor>` and it both renders the button/drawer UI *and* owns the automatic capture for as long as it's mounted). The drawer groups versions by day, shows an avatar/author/relative-time/summary per entry, and previews a version (read-only, via a static HTML render) before restoring — restore still just calls the existing `applyDocumentTemplate`.
+  - `DocumentVersion` gains `authorId`/`authorIds` (who made the changes in that version's window) and `summary` (a lightweight auto-generated "N blocks changed", not a full diff); `label` is now optional and unused by the automatic flow (kept only for anyone who wants to rename a version themselves).
+  - New `History` option `defaultActorId` (+ `setDefaultActorId()`) and `useEditor`'s new `currentUserId` option: every `perform`/`performBatch` call already accepted a per-call `actorId` in its `meta`, but *no internal call site in the whole package ever actually passed one* — every edit's author was silently `null` in practice. Setting `currentUserId` once now stamps every edit for free, which is what the automatic version capture (and `useComments`-style attribution generally) relies on.
+
+### Added
+
+- `<VersionHistory>`'s preview now defaults to a **Changes** tab — a word-level diff against the version right before it, insertions highlighted green and deletions struck through in red (Google Docs "show changes"-style), with a **Preview** tab alongside for the previous plain read-only render. New `diffDocumentsHTML(prevDoc, nextDoc)` export is the diffing function behind it, for building a custom diff view.
+
 ## [0.3.0] - 2026-07-28
 
 ### Added
