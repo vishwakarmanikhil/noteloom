@@ -1,6 +1,7 @@
 import { getStrokeOutlinePath } from './strokeOutline.js';
 import { arrowheadPoints, diamondPoints, trianglePoints, starPoints } from './shapeGeometry.js';
 import { escapeAttr, escapeHTML } from '../../inline/marks.js';
+import { orderedDrawables } from './zOrder.js';
 
 const POLYGON_POINTS_BY_TYPE = { diamond: diamondPoints, triangle: trianglePoints, star: starPoints };
 
@@ -66,7 +67,9 @@ export function shapeToHTML(shape) {
  * Bakes a canvas block's `strokes`/`shapes` into one self-contained
  * `<svg>...</svg>` string — reusing the exact same `getStrokeOutlinePath`/
  * `shapeToHTML` functions the live component renders with, so this always
- * matches what's on screen. Shared by two call sites that both need the
+ * matches what's on screen, INCLUDING their relative stacking order
+ * (`orderedDrawables`, see zOrder.js — a pen stroke drawn on top of a
+ * shape live must still render on top of it here). Shared by two call sites that both need the
  * SAME markup for two different purposes (this module exists specifically
  * to let them both import it without a circular dependency — `index.js`'s
  * own `toHTML` needs `CanvasBlock.jsx` for its `component` field, and
@@ -80,12 +83,12 @@ export function shapeToHTML(shape) {
  */
 export function buildCanvasSVGMarkup(block) {
   const { strokes = [], shapes = [], width, height } = block.props;
-  const paths = strokes
-    .map(
-      (stroke) =>
-        `<path fill="${escapeAttr(stroke.color)}" d="${getStrokeOutlinePath(stroke.points, { size: stroke.size })}"></path>`,
+  const markup = orderedDrawables(strokes, shapes)
+    .map(({ kind, item }) =>
+      kind === 'stroke'
+        ? `<path fill="${escapeAttr(item.color)}" d="${getStrokeOutlinePath(item.points, { size: item.size })}"></path>`
+        : shapeToHTML(item),
     )
     .join('');
-  const shapeMarkup = shapes.map(shapeToHTML).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="${width}" height="${height}">${paths}${shapeMarkup}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="${width}" height="${height}">${markup}</svg>`;
 }

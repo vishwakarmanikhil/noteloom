@@ -38,9 +38,13 @@ const PERMISSION_DENIED_MESSAGE =
  *
  * `sessionAnchorRef` (`{ runId, blockId, offset }`) is this hook's own,
  * single source of truth for "where does the next chunk of dictated text
- * go" — resolved from the real caret exactly *once*, when `start()` is
- * called, and after that updated *only* by this hook's own writes; it is
- * never re-read from `window.getSelection()` mid-session.
+ * go" — resolved from the real caret when `start()` is called, and after
+ * that updated only by this hook's own writes OR by the `selectionchange`
+ * listener below noticing the user manually moved the caret somewhere else
+ * (click, arrow keys, Tab into another block) — it is never blindly
+ * re-read from `window.getSelection()` on some other trigger (e.g. every
+ * `onresult` event), which is what the two broken attempts below actually
+ * ran into.
  *
  * `liveEntryRef` is the *one* mutable "currently being revised, not yet
  * final" text buffer — on every `onresult` event, every non-final result
@@ -142,8 +146,17 @@ export function useVoiceTyping({ shortcut = true } = {}) {
   // { runId, blockId, offset } | null — this hook's single, internally-
   // owned source of truth for "where does dictation write next." See the
   // class comment for why this is never re-read from the live DOM
-  // mid-session.
+  // mid-session EXCEPT via the selectionchange listener below, which only
+  // reacts to a caret move this hook didn't itself just cause.
   const sessionAnchorRef = useRef(null);
+  // { runId, offset } | null — wherever this hook itself most recently
+  // placed the caret (via setCaretSync in writeEntryText/revertEntryText).
+  // The selectionchange listener compares against this to tell "the user
+  // just clicked/arrow-keyed somewhere else" apart from "the selection
+  // changed because WE just rewrote this run's text and moved the caret to
+  // match" — without it, every dictated word would look indistinguishable
+  // from a manual caret move and constantly re-anchor to nowhere useful.
+  const expectedCaretRef = useRef(null);
   // The one, single "still being revised" text buffer — replaced wholesale
   // on every onresult event, never matched against a prior event by index.
   // { runId, blockId, startOffset, insertedLength, needsLeadingSpace } | null
@@ -210,8 +223,10 @@ export function useVoiceTyping({ shortcut = true } = {}) {
       // freshly-rewritten text node rather than a stale one.
       flushSync(() => store.applyOperation(updateRun(entry.runId, { value: before + insertedText + after })));
       entry.insertedLength = insertedText.length;
-      setCaretSync(entry.runId, entry.startOffset + insertedText.length);
-      sessionAnchorRef.current = { runId: entry.runId, blockId: entry.blockId, offset: entry.startOffset + insertedText.length };
+      const nextOffset = entry.startOffset + insertedText.length;
+      setCaretSync(entry.runId, nextOffset);
+      sessionAnchorRef.current = { runId: entry.runId, blockId: entry.blockId, offset: nextOffset };
+      expectedCaretRef.current = { runId: entry.runId, offset: nextOffset };
     },
     [store],
   );
@@ -225,6 +240,31 @@ export function useVoiceTyping({ shortcut = true } = {}) {
       flushSync(() => store.applyOperation(updateRun(entry.runId, { value: restored })));
       setCaretSync(entry.runId, entry.startOffset);
       sessionAnchorRef.current = { runId: entry.runId, blockId: entry.blockId, offset: entry.startOffset };
+      expectedCaretRef.current = { runId: entry.runId, offset: entry.startOffset };
+    },
+    [store],
+  );
+
+  /**
+   * Same text removal as `revertEntryText`, but WITHOUT touching the real
+   * caret/selection — used when the user has just manually moved focus
+   * away from `entry`'s own block (see the selectionchange listener below),
+   * where `setCaretSync`ing back to it would fight the move the user just
+   * made. Leaving the interim guess in place instead (an earlier version of
+   * this fix did exactly that) caused a duplication bug: the NEXT interim
+   * update for the same still-in-progress utterance writes the full
+   * accumulated transcript again at the new anchor, since SpeechRecognition
+   * interim results are always the whole phrase-so-far, not just the new
+   * part — so the old block was left with a stale partial guess and the new
+   * block got the same words all over again.
+   */
+  const removeEntryTextSilently = useCallback(
+    (entry) => {
+      const run = store.getRun(entry.runId);
+      if (!run || run.type !== 'text') return;
+      const value = run.value ?? '';
+      const restored = value.slice(0, entry.startOffset) + value.slice(entry.startOffset + entry.insertedLength);
+      store.applyOperation(updateRun(entry.runId, { value: restored }));
     },
     [store],
   );
@@ -265,7 +305,12 @@ export function useVoiceTyping({ shortcut = true } = {}) {
             // (e.g. a new paragraph) via this codebase's usual rAF-deferred
             // focus helpers — force the next phrase to re-resolve the live
             // caret rather than trusting a position that's now stale.
+            // expectedCaretRef is cleared too, so the selectionchange
+            // listener below doesn't mistake the command's own (rAF-
+            // deferred, so not yet reflected here) focus move for a manual
+            // one and race it.
             sessionAnchorRef.current = null;
+            expectedCaretRef.current = null;
             setStatus('listening');
           }
         } else {
@@ -285,10 +330,50 @@ export function useVoiceTyping({ shortcut = true } = {}) {
     [store, createEntryAtAnchor, writeEntryText, revertEntryText],
   );
 
+  // Detects the user manually moving the caret (click, arrow keys, Tab into
+  // another block, ...) WHILE dictation is listening, and redirects the
+  // next dictated phrase there instead of silently continuing to write at
+  // the stale session anchor — this is the fix for a real bug: without it,
+  // clicking into a different block mid-dictation had no effect on where
+  // the next phrase landed, and `setCaretSync` would keep snapping the
+  // visible caret back to the old spot on every subsequent word, making it
+  // look like focus was being fought over.
+  //
+  // Only reacts when the resolved caret differs from `expectedCaretRef` —
+  // this hook's own record of wherever IT most recently placed the caret —
+  // so it never mistakes its own writes (which also move the real DOM
+  // selection) for a manual move. `expectedCaretRef` being null (right
+  // after a voice command moved focus, before the next phrase has
+  // re-resolved yet) means there's no baseline to compare against yet, so
+  // the listener stays passive rather than racing that in-flight move.
+  useEffect(() => {
+    if (!isListening) return undefined;
+    const handleSelectionChange = () => {
+      const expected = expectedCaretRef.current;
+      if (!expected) return;
+      const caret = resolveCollapsedCaret();
+      if (!caret) return; // selection isn't a collapsed caret inside a run right now — nothing to redirect to
+      if (caret.runId === expected.runId && caret.offset === expected.offset) return; // our own write
+      if (liveEntryRef.current) {
+        // Discard the not-yet-finalized guess left behind in the old block —
+        // see removeEntryTextSilently's own doc comment for why leaving it
+        // in place duplicated text instead.
+        removeEntryTextSilently(liveEntryRef.current);
+        liveEntryRef.current = null;
+      }
+      sessionAnchorRef.current = caret;
+      expectedCaretRef.current = { runId: caret.runId, offset: caret.offset };
+    };
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, [isListening, removeEntryTextSilently]);
+
   const start = useCallback(() => {
     if (!isSupported || recognitionRef.current) return;
     setError(null);
-    sessionAnchorRef.current = resolveCollapsedCaret();
+    const initialCaret = resolveCollapsedCaret();
+    sessionAnchorRef.current = initialCaret;
+    expectedCaretRef.current = initialCaret ? { runId: initialCaret.runId, offset: initialCaret.offset } : null;
     liveEntryRef.current = null;
     committedCountRef.current = 0;
     const Ctor = getSpeechRecognitionCtor();
@@ -310,6 +395,7 @@ export function useVoiceTyping({ shortcut = true } = {}) {
     recognition.onend = () => {
       recognitionRef.current = null;
       sessionAnchorRef.current = null;
+      expectedCaretRef.current = null;
       liveEntryRef.current = null;
       committedCountRef.current = 0;
       setIsListening(false);

@@ -8,6 +8,12 @@ import { registerBuiltInBlocks } from '../../src/blocks/index.js';
 import { insertBlock, updateBlockProps } from '../../src/store/operations.js';
 import { createCanvasBlock, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from '../../src/blocks/canvas/createCanvasBlock.js';
 import { canvasBlockType } from '../../src/blocks/canvas/index.js';
+import { orderedDrawables } from '../../src/blocks/canvas/zOrder.js';
+
+/** Front/back reordering now stamps a `z` on the affected items instead of physically reordering `props.strokes`/`props.shapes` (see zOrder.js) — this resolves the actual effective bottom-to-top order, spanning both arrays, the same way rendering/hit-testing/export do. */
+function zOrderIds(block) {
+  return orderedDrawables(block.props.strokes ?? [], block.props.shapes ?? []).map(({ item }) => item.id);
+}
 
 function emptyDoc() {
   return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
@@ -995,12 +1001,12 @@ describe('canvas block: multi-select (marquee, shift-click, group move/delete)',
       act(() => {
         wrapper.querySelector('[aria-label="Bring to front"]').click();
       });
-      expect(store.getBlock(id).props.shapes.map((s) => s.id)).toEqual(['r2', 'r1']);
+      expect(zOrderIds(store.getBlock(id))).toEqual(['r2', 'r1']);
 
       act(() => {
         wrapper.querySelector('[aria-label="Send to back"]').click();
       });
-      expect(store.getBlock(id).props.shapes.map((s) => s.id)).toEqual(['r1', 'r2']); // back to the original order
+      expect(zOrderIds(store.getBlock(id))).toEqual(['r1', 'r2']); // back to the original order
     });
   });
 
@@ -1015,12 +1021,12 @@ describe('canvas block: multi-select (marquee, shift-click, group move/delete)',
       act(() => {
         firePointerEvent(svg, 'keydown', { key: ']', ctrlKey: true, shiftKey: true });
       });
-      expect(store.getBlock(id).props.shapes.map((s) => s.id)).toEqual(['r2', 'r1']);
+      expect(zOrderIds(store.getBlock(id))).toEqual(['r2', 'r1']);
 
       act(() => {
         firePointerEvent(svg, 'keydown', { key: '[', ctrlKey: true, shiftKey: true });
       });
-      expect(store.getBlock(id).props.shapes.map((s) => s.id)).toEqual(['r1', 'r2']);
+      expect(zOrderIds(store.getBlock(id))).toEqual(['r1', 'r2']);
     });
   });
 
@@ -1045,8 +1051,11 @@ describe('canvas block: multi-select (marquee, shift-click, group move/delete)',
       expect(applySpy).toHaveBeenCalledTimes(1); // one op spanning both arrays
 
       const after = store.getBlock(id);
-      expect(after.props.shapes.map((s) => s.id)).toEqual(['r2', 'r1']); // r1 moved after the untouched r2
-      expect(after.props.strokes.map((s) => s.id)).toEqual(['s1']); // the only stroke — trivially "moved to front" of its own array
+      // r1 (shape) and s1 (stroke) both move above the untouched r2, keeping
+      // their own relative order (s1 was already effectively "below" r1 —
+      // legacy strokes sort under legacy shapes, see zOrder.js) — the whole
+      // point of unifying strokes/shapes into one z-order.
+      expect(zOrderIds(after)).toEqual(['r2', 's1', 'r1']);
     });
   });
 
@@ -2431,6 +2440,41 @@ describe('canvas block: pen-tool pointer-drawing (Phase 2)', () => {
     });
   });
 
+  it('a pen stroke drawn over an existing filled shape renders ON TOP of it, not behind it', () => {
+    withMockedRect(() => {
+      const store = new EditorStore(emptyDoc());
+      const id = insertAtRoot(store, createCanvasBlock());
+      // A filled rectangle already on the canvas, legacy-style (no z) --
+      // before z-ordering existed, this always painted above every stroke
+      // regardless of draw order.
+      store.applyOperation(
+        updateBlockProps(id, {
+          shapes: [{ id: 'h1', type: 'rectangle', x: 0, y: 0, width: 1000, height: 1000, color: '#000', fillColor: '#e03131' }],
+        }),
+      );
+      const { container } = renderDoc(store);
+      const svg = container.querySelector(`[data-block-id="${id}"] svg.be-canvas-surface`);
+
+      act(() => {
+        firePointerEvent(svg, 'pointerdown', { clientX: 10, clientY: 10 });
+        firePointerEvent(svg, 'pointermove', { clientX: 50, clientY: 60 });
+        firePointerEvent(svg, 'pointerup', { clientX: 50, clientY: 60 });
+      });
+
+      const block = store.getBlock(id);
+      expect(block.props.strokes).toHaveLength(1);
+      const strokeZ = block.props.strokes[0].z;
+      expect(typeof strokeZ).toBe('number');
+      expect(strokeZ).toBeGreaterThan(0); // above the legacy shape's own fallback z (see zOrder.js)
+
+      // DOM/paint order: the stroke's <path> must come AFTER the shape's <rect> now.
+      const rectIndex = [...svg.children].findIndex((el) => el.tagName === 'rect' && !el.classList.contains('be-canvas-grid-background'));
+      const pathIndex = [...svg.children].findIndex((el) => el.tagName === 'path');
+      expect(rectIndex).toBeGreaterThanOrEqual(0);
+      expect(pathIndex).toBeGreaterThan(rectIndex);
+    });
+  });
+
   it('a tap without dragging still commits a single-point stroke', () => {
     withMockedRect(() => {
       const store = new EditorStore(emptyDoc());
@@ -3098,6 +3142,34 @@ describe('canvas block: pan/zoom (Phase 5) — local view state, never touches t
       for (let i = 0; i < 40; i += 1) zoomOutBtn.click();
     });
     expect(zoomOutBtn.disabled).toBe(true);
+  });
+
+  it('at MIN_ZOOM (whole sheet already fits) dragging no longer pans the view at all', () => {
+    withMockedRect(() => {
+      const store = new EditorStore(emptyDoc());
+      const id = insertAtRoot(store, createCanvasBlock());
+      const { container } = renderDoc(store);
+      const wrapper = container.querySelector(`[data-block-id="${id}"]`);
+      const svg = wrapper.querySelector('svg.be-canvas-surface');
+      const zoomOutBtn = wrapper.querySelector('[aria-label="Zoom out"]');
+
+      act(() => {
+        for (let i = 0; i < 40; i += 1) zoomOutBtn.click(); // clamps at MIN_ZOOM
+      });
+      expect(zoomOutBtn.disabled).toBe(true);
+      const atMinZoom = svg.getAttribute('viewBox');
+
+      act(() => {
+        firePointerEvent(svg, 'pointerdown', { button: 1, clientX: 100, clientY: 100 });
+        firePointerEvent(svg, 'pointermove', { button: 1, clientX: 250, clientY: 260 });
+        firePointerEvent(svg, 'pointerup', { button: 1, clientX: 250, clientY: 260 });
+      });
+
+      // The whole 1000x1000 sheet already fits inside the view window at MIN_ZOOM
+      // (VIEW_SIZE / MIN_ZOOM = 2000 > 1000) -- there is nowhere left to usefully
+      // pan to, so the drag must not move the view at all.
+      expect(svg.getAttribute('viewBox')).toBe(atMinZoom);
+    });
   });
 });
 

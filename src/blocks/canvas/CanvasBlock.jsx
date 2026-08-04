@@ -5,7 +5,7 @@ import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.j
 import { updateBlockProps } from '../../store/operations.js';
 import { genId } from '../../utils/idGen.js';
 import { getStrokeOutlinePath, strokeBoundingBox } from './strokeOutline.js';
-import { clientToLocal, boxesIntersect, localPixelScale, zoomAnchoredView, zoomCenteredView } from './canvasGeometry.js';
+import { clientToLocal, boxesIntersect, localPixelScale, zoomAnchoredView, zoomCenteredView, clampViewOffset } from './canvasGeometry.js';
 import {
   arrowheadPoints,
   normalizeRect,
@@ -21,6 +21,7 @@ import {
 import { useDragResize } from '../shared/useDragResize.js';
 import { DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from './createCanvasBlock.js';
 import { buildCanvasSVGMarkup } from './exportSvg.js';
+import { orderedDrawables, nextZIndex, minZIndex } from './zOrder.js';
 import {
   PencilIcon,
   XIcon,
@@ -262,29 +263,29 @@ const ARROW_HIT_TOLERANCE = 16;
  * outside the actual shape (e.g. a diamond's 4 corner triangles) that a
  * bounding-box test would wrongly treat as "inside."
  */
+function hitTestOneShape(shape, x, y) {
+  if (shape.type === 'arrow') {
+    return pointNearSegment(x, y, shape.x1, shape.y1, shape.x2, shape.y2, ARROW_HIT_TOLERANCE);
+  }
+  const rect = { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+  // A rotated shape is rendered rotated (see ShapeElement) but stored in
+  // its own unrotated `x/y/width/height` — map the click point back into
+  // that unrotated local frame (inverse rotation around the shape's own
+  // center) before running the ordinary tests below, rather than teaching
+  // every one of those tests about rotation individually.
+  let [testX, testY] = [x, y];
+  if (shape.rotation) {
+    const { cx, cy } = shapeCenter(shape);
+    [testX, testY] = rotatePoint(x, y, cx, cy, -shape.rotation);
+  }
+  const pointsFn = POLYGON_POINTS_BY_TYPE[shape.type];
+  if (pointsFn) return pointInPolygon(testX, testY, pointsFn(rect));
+  return shape.type === 'ellipse' ? pointInEllipse(testX, testY, rect) : pointInRect(testX, testY, rect);
+}
+
 function hitTestShapeAt(x, y, shapes) {
   for (let i = shapes.length - 1; i >= 0; i -= 1) {
-    const shape = shapes[i];
-    if (shape.type === 'arrow') {
-      if (pointNearSegment(x, y, shape.x1, shape.y1, shape.x2, shape.y2, ARROW_HIT_TOLERANCE)) return shape.id;
-      continue;
-    }
-    const rect = { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
-    // A rotated shape is rendered rotated (see ShapeElement) but stored in
-    // its own unrotated `x/y/width/height` — map the click point back into
-    // that unrotated local frame (inverse rotation around the shape's own
-    // center) before running the ordinary tests below, rather than teaching
-    // every one of those tests about rotation individually.
-    let [testX, testY] = [x, y];
-    if (shape.rotation) {
-      const { cx, cy } = shapeCenter(shape);
-      [testX, testY] = rotatePoint(x, y, cx, cy, -shape.rotation);
-    }
-    const pointsFn = POLYGON_POINTS_BY_TYPE[shape.type];
-    let hit;
-    if (pointsFn) hit = pointInPolygon(testX, testY, pointsFn(rect));
-    else hit = shape.type === 'ellipse' ? pointInEllipse(testX, testY, rect) : pointInRect(testX, testY, rect);
-    if (hit) return shape.id;
+    if (hitTestOneShape(shapes[i], x, y)) return shapes[i].id;
   }
   return null;
 }
@@ -374,20 +375,23 @@ function findSelectable(block, selId) {
 }
 
 /**
- * Which stroke or shape (if any) the select tool's pointerdown landed on.
- * Shapes are checked first since they render on top of strokes (see the JSX
- * below — strokes are drawn before shapes, so shapes are visually
- * topmost); within shapes, `hitTestShapeAt` already walks topmost-first.
- * Strokes fall back to their own bounding-box hit test — the same
- * deliberate v1 simplification rectangle/ellipse already use, not
+ * Which stroke or shape (if any) the select tool's pointerdown landed on —
+ * walks the SAME merged bottom-to-top order rendering uses (`orderedDrawables`,
+ * see zOrder.js), topmost first, so overlapping items resolve to whichever
+ * one is actually visible on top, regardless of whether it's a stroke or a
+ * shape. Strokes hit-test their own bounding box — the same deliberate v1
+ * simplification rectangle/ellipse click-select already uses, not
  * per-point path distance.
  */
 function hitTestSelectableAt(x, y, strokes, shapes) {
-  const shapeId = hitTestShapeAt(x, y, shapes);
-  if (shapeId) return { kind: 'shape', id: shapeId };
-  for (let i = strokes.length - 1; i >= 0; i -= 1) {
-    const stroke = strokes[i];
-    if (pointInRect(x, y, strokeBoxRect(stroke))) return { kind: 'stroke', id: stroke.id };
+  const ordered = orderedDrawables(strokes, shapes);
+  for (let i = ordered.length - 1; i >= 0; i -= 1) {
+    const { kind, item } = ordered[i];
+    if (kind === 'shape') {
+      if (hitTestOneShape(item, x, y)) return { kind: 'shape', id: item.id };
+    } else if (pointInRect(x, y, strokeBoxRect(item))) {
+      return { kind: 'stroke', id: item.id };
+    }
   }
   return null;
 }
@@ -855,8 +859,9 @@ export function CanvasBlock({ id }) {
     // A tap-without-drag still commits a single-point stroke — getStrokeOutlinePath
     // itself renders a single point as a small filled "dot", so no special-casing
     // is needed here beyond just storing whatever points were captured.
-    const newStroke = { id: genId(), points, color, size: strokeSize };
     const currentStrokes = block?.props?.strokes ?? [];
+    const currentShapes = block?.props?.shapes ?? [];
+    const newStroke = { id: genId(), points, color, size: strokeSize, z: nextZIndex(currentStrokes, currentShapes) };
     store.applyOperation(updateBlockProps(id, { strokes: [...currentStrokes, newStroke] }));
   }, [store, id, block, color, strokeSize]);
 
@@ -987,8 +992,13 @@ export function CanvasBlock({ id }) {
       const rect = normalizeRect(draft.x1, draft.y1, draft.x2, draft.y2);
       if (rect.width === 0 || rect.height === 0) return;
     }
-    const newShape = { id: genId(), ...buildDraftShape(draft, color, strokeSize, fill) };
+    const currentStrokes = block?.props?.strokes ?? [];
     const currentShapes = block?.props?.shapes ?? [];
+    const newShape = {
+      id: genId(),
+      ...buildDraftShape(draft, color, strokeSize, fill),
+      z: nextZIndex(currentStrokes, currentShapes),
+    };
     store.applyOperation(updateBlockProps(id, { shapes: [...currentShapes, newShape] }));
   }, [store, id, block, color, strokeSize, fill]);
 
@@ -1070,16 +1080,22 @@ export function CanvasBlock({ id }) {
     if (items.length === 0) return;
     const currentStrokes = block?.props?.strokes ?? [];
     const currentShapes = block?.props?.shapes ?? [];
+    // Pasted copies always land on top of everything already on the canvas
+    // (nextZIndex, bumped once per item so the pasted group also keeps its
+    // OWN relative stacking order among each other).
+    let nextZ = nextZIndex(currentStrokes, currentShapes);
     const newStrokes = [];
     const newShapes = [];
     const newIds = [];
     for (const { kind, item } of items) {
       const newId = genId();
       newIds.push(newId);
+      const z = nextZ;
+      nextZ += 1;
       if (kind === 'stroke') {
-        newStrokes.push({ ...applyStrokeOffset(item, PASTE_OFFSET, PASTE_OFFSET), id: newId });
+        newStrokes.push({ ...applyStrokeOffset(item, PASTE_OFFSET, PASTE_OFFSET), id: newId, z });
       } else {
-        newShapes.push({ ...applyShapeOffset(item, PASTE_OFFSET, PASTE_OFFSET), id: newId });
+        newShapes.push({ ...applyShapeOffset(item, PASTE_OFFSET, PASTE_OFFSET), id: newId, z });
       }
     }
     store.applyOperation(
@@ -1090,28 +1106,30 @@ export function CanvasBlock({ id }) {
   }, [store, id, block]);
 
   /**
-   * Z-order (front/back): strokes and shapes are two separate arrays, and
-   * shapes always render after (visually on top of) every stroke — see the
-   * JSX below — so z-order only has meaning WITHIN one kind's own array;
-   * there's no single interleaved order across both to reorder into. Moving
-   * every selected item of a kind to that array's own front/back keeps the
-   * relative order among the moved items themselves, and among the
-   * untouched ones, unchanged — the standard "bring to front"/"send to
-   * back" behavior for a multi-item selection.
+   * Z-order (front/back): strokes and shapes share one interleaved stacking
+   * order (see zOrder.js) — this stamps a fresh, consecutive `z` on every
+   * selected item, all above (front) or below (back) everything else on the
+   * canvas, in whatever bottom-to-top order the selected items themselves
+   * were already in — the standard "bring to front"/"send to back"
+   * behavior for a multi-item selection, now spanning strokes and shapes
+   * alike instead of each kind's own array independently.
    */
   const reorderSelection = useCallback(
     (toFront) => {
       if (selectedIds.size === 0) return;
-      const reorderArray = (items) => {
-        const selected = items.filter((item) => selectedIds.has(item.id));
-        if (selected.length === 0) return items;
-        const rest = items.filter((item) => !selectedIds.has(item.id));
-        return toFront ? [...rest, ...selected] : [...selected, ...rest];
-      };
       const currentStrokes = block?.props?.strokes ?? [];
       const currentShapes = block?.props?.shapes ?? [];
+      const selectedStrokes = currentStrokes.filter((item) => selectedIds.has(item.id));
+      const selectedShapes = currentShapes.filter((item) => selectedIds.has(item.id));
+      const selectedOrdered = orderedDrawables(selectedStrokes, selectedShapes);
+      if (selectedOrdered.length === 0) return;
+      const baseZ = toFront
+        ? nextZIndex(currentStrokes, currentShapes)
+        : minZIndex(currentStrokes, currentShapes) - selectedOrdered.length;
+      const zById = new Map(selectedOrdered.map(({ item }, i) => [item.id, baseZ + i]));
+      const stampZ = (item) => (zById.has(item.id) ? { ...item, z: zById.get(item.id) } : item);
       store.applyOperation(
-        updateBlockProps(id, { strokes: reorderArray(currentStrokes), shapes: reorderArray(currentShapes) }),
+        updateBlockProps(id, { strokes: currentStrokes.map(stampZ), shapes: currentShapes.map(stampZ) }),
       );
     },
     [store, id, block, selectedIds],
@@ -1377,7 +1395,7 @@ export function CanvasBlock({ id }) {
           const nextSize = VIEW_SIZE / nextZoom;
           // keep the point under the cursor fixed on screen as the zoom changes
           const { x, y } = zoomAnchoredView(event, svg, { x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom }, nextSize);
-          return { x, y, zoom: nextZoom };
+          return { ...clampViewOffset(x, y, nextSize, VIEW_SIZE), zoom: nextZoom };
         });
         return;
       }
@@ -1387,7 +1405,10 @@ export function CanvasBlock({ id }) {
       // same "this block owns wheel input" choice the zoom branch above
       // already makes.
       const scale = localPixelScale(svg, viewSize);
-      setView((prev) => ({ ...prev, x: prev.x + event.deltaX / scale, y: prev.y + event.deltaY / scale }));
+      setView((prev) => ({
+        ...prev,
+        ...clampViewOffset(prev.x + event.deltaX / scale, prev.y + event.deltaY / scale, viewSize, VIEW_SIZE),
+      }));
     },
     [viewSize],
   );
@@ -1415,7 +1436,7 @@ export function CanvasBlock({ id }) {
       const nextZoom = Math.min(MAX_ZOOM, prev.zoom * ZOOM_STEP);
       const nextSize = VIEW_SIZE / nextZoom;
       const { x, y } = zoomCenteredView({ x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom }, nextSize);
-      return { x, y, zoom: nextZoom };
+      return { ...clampViewOffset(x, y, nextSize, VIEW_SIZE), zoom: nextZoom };
     });
   }, []);
 
@@ -1424,7 +1445,7 @@ export function CanvasBlock({ id }) {
       const nextZoom = Math.max(MIN_ZOOM, prev.zoom / ZOOM_STEP);
       const nextSize = VIEW_SIZE / nextZoom;
       const { x, y } = zoomCenteredView({ x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom }, nextSize);
-      return { x, y, zoom: nextZoom };
+      return { ...clampViewOffset(x, y, nextSize, VIEW_SIZE), zoom: nextZoom };
     });
   }, []);
 
@@ -1718,7 +1739,7 @@ export function CanvasBlock({ id }) {
           // within the same React batch, and touchPanRef.current may
           // already have been reset to null by a LATER pointerup/pointer-
           // cancel by the time this updater actually runs.
-          setView((prev) => ({ ...prev, x: startViewX - dx, y: startViewY - dy }));
+          setView((prev) => ({ ...prev, ...clampViewOffset(startViewX - dx, startViewY - dy, viewSize, VIEW_SIZE) }));
           return;
         }
       }
@@ -1736,7 +1757,7 @@ export function CanvasBlock({ id }) {
         // been reset to null by a subsequent pointerup/pointercancel
         // dispatched within the same batch (see the identical touch-pan
         // fix above, where this exact lazy-read pattern crashed).
-        setView((prev) => ({ ...prev, x: startViewX - dx, y: startViewY - dy }));
+        setView((prev) => ({ ...prev, ...clampViewOffset(startViewX - dx, startViewY - dy, viewSize, VIEW_SIZE) }));
         return;
       }
       if (shapeDraftRef.current) {
@@ -2386,28 +2407,34 @@ export function CanvasBlock({ id }) {
             />
           </>
         )}
-        {strokes.map((stroke) => {
-          const moved = moveOverride?.ids?.includes(stroke.id);
-          const path = moved
-            ? getStrokeOutlinePath(applyStrokeOffset(stroke, moveOverride.dx, moveOverride.dy).points, { size: stroke.size })
-            : getStrokePath(stroke);
-          return (
-            <path
-              key={stroke.id}
-              d={path}
-              fill={stroke.color}
-              fillRule="nonzero"
-              opacity={erasingIds.has(stroke.id) ? 0.25 : 1}
-            />
-          );
-        })}
-        {previewPath && <path d={previewPath} fill={color} fillRule="nonzero" />}
-        {shapes.map((shape) => {
+        {/* One shared bottom-to-top stacking order across strokes AND shapes (see zOrder.js) — a pen
+            stroke drawn after a filled shape now renders on top of it, instead of every shape always
+            painting over every stroke regardless of draw order. */}
+        {orderedDrawables(strokes, shapes).map(({ kind, item }) => {
+          if (kind === 'stroke') {
+            const stroke = item;
+            const moved = moveOverride?.ids?.includes(stroke.id);
+            const path = moved
+              ? getStrokeOutlinePath(applyStrokeOffset(stroke, moveOverride.dx, moveOverride.dy).points, { size: stroke.size })
+              : getStrokePath(stroke);
+            return (
+              <path
+                key={stroke.id}
+                d={path}
+                fill={stroke.color}
+                fillRule="nonzero"
+                opacity={erasingIds.has(stroke.id) ? 0.25 : 1}
+              />
+            );
+          }
+          const shape = item;
           let displayShape = shape;
           if (moveOverride?.ids?.includes(shape.id)) displayShape = applyShapeOffset(shape, moveOverride.dx, moveOverride.dy);
           else if (resizePreviewShape?.id === shape.id) displayShape = resizePreviewShape;
           return <ShapeElement key={shape.id} shape={displayShape} opacity={erasingShapeIds.has(shape.id) ? 0.25 : 1} />;
         })}
+        {/* The in-progress pen/shape draft always renders on top of everything else while actively drawing. */}
+        {previewPath && <path d={previewPath} fill={color} fillRule="nonzero" />}
         {shapeDraftPreview && <ShapeElement shape={shapeDraftPreview} opacity={0.6} />}
         {selectionBoxes.map(({ id: selId, box, rotation }) => (
           <g

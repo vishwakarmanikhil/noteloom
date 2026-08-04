@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project follows [Semantic Versioning](https://semver.org/).
 
+## [0.3.2] - 2026-08-05
+
+### Fixed
+
+- Canvas block: once zoomed out past 100% (the whole 1000x1000 sheet already fits inside the view — most noticeably at MIN_ZOOM, the "Zoom out" button's own limit), dragging/wheel-panning could still scroll the view away from the sheet, leaving blank space on screen instead of the complete drawing. Panning now locks and centers on the sheet for any zoom level where it already fits entirely (`clampViewOffset` in `canvasGeometry.js`); panning at 100% zoom or while zoomed in is unaffected.
+- Canvas block: pen strokes and shapes previously rendered as two hard-coded layers — every shape always painted above every stroke, regardless of which was actually drawn more recently, so there was no way to draw new ink on top of an already-placed shape (it always ended up hidden behind it). Strokes and shapes now share one interleaved stacking order (new `zOrder.js`, `nextZIndex`/`minZIndex`/`orderedDrawables`): whichever you draw more recently — pen or shape — renders on top, matching how layer-based drawing tools generally behave. Bring to front/Send to back now operate on this same shared order instead of each array's own front/back independently. Existing documents are unaffected (no `z` on their strokes/shapes yet, so they keep exactly their old "all strokes under all shapes" layout until something new is drawn into them). PNG/HTML export (`buildCanvasSVGMarkup`) uses the same order, so it always matches what's on screen.
+- Also fixed a real `minZIndex` off-by-one bug caught while adding tests for the above — it could return the same value as the lowest existing item's z instead of one strictly below it.
+- Voice typing (`useVoiceTyping`): manually clicking (or arrow-keying/Tab-ing) into a different block while dictation was still listening had no effect — the next dictated word kept landing at the old caret position, and the visible caret kept snapping back there. Caused by `sessionAnchorRef` (where the next dictated word goes) only ever being resolved from the live caret at `start()` or after a spoken command, never in response to the user's own manual navigation. Now a `selectionchange` listener detects a caret move this hook didn't itself just make (tracked via a new `expectedCaretRef`) and redirects the next phrase there instead.
+  - Follow-up fix to the above: moving the caret away mid-utterance (before the live interim transcript had finalized) could duplicate text across both blocks — the not-yet-final guess was left sitting in the old block, and the very next interim update (always the WHOLE phrase-so-far, not just the new part) wrote the same growing transcript into the new block too. The abandoned interim guess is now silently discarded (`removeEntryTextSilently`, a caret-preserving variant of the existing revert-on-command path) instead of left behind.
+
 ## [0.3.1] - 2026-07-30
 
 ### Changed

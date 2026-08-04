@@ -18,6 +18,21 @@ function makeDoc() {
   };
 }
 
+function makeTwoBlockDoc() {
+  return {
+    rootId: 'root',
+    blocks: [
+      { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'p2'], props: {} },
+      { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+      { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: ['r2'], props: {} },
+    ],
+    runs: [
+      { id: 'r1', type: 'text', value: 'first', marks: {} },
+      { id: 'r2', type: 'text', value: 'second', marks: {} },
+    ],
+  };
+}
+
 function selectCollapsedAt(runNode, offset) {
   const textNode = runNode.firstChild;
   const range = document.createRange();
@@ -26,6 +41,16 @@ function selectCollapsedAt(runNode, offset) {
   const selection = window.getSelection();
   selection.removeAllRanges();
   selection.addRange(range);
+}
+
+// jsdom doesn't synthesize a real 'selectionchange' event from
+// selection.addRange the way a real browser does — this simulates the
+// user actually clicking/arrow-keying to a new spot (as opposed to a
+// programmatic selection change this hook made itself), for exercising the
+// selectionchange listener in useVoiceTyping.
+function moveCaretManually(runNode, offset) {
+  selectCollapsedAt(runNode, offset);
+  document.dispatchEvent(new Event('selectionchange'));
 }
 
 // A minimal stand-in for the real browser SpeechRecognition constructor —
@@ -375,6 +400,107 @@ describe('useVoiceTyping: live interim dictation (regression: caret corruption)'
     act(() => recognition.onresult(finalResultEvent('test for the win', revisions.length)));
 
     expect(store.getRun('r1').value).toBe('hello test for the win');
+  });
+});
+
+describe('useVoiceTyping: manual caret move mid-session (regression: dictation kept writing/snapping back to the old block)', () => {
+  afterEach(() => {
+    delete window.SpeechRecognition;
+    delete window.webkitSpeechRecognition;
+    FakeSpeechRecognition.instances = [];
+  });
+
+  it('redirects the next dictated phrase to wherever the user manually moved the caret, instead of the stale session anchor', () => {
+    window.SpeechRecognition = FakeSpeechRecognition;
+    const store = new EditorStore(makeTwoBlockDoc());
+    const { container } = renderHarness(store);
+
+    act(() => voiceApi.start());
+    const recognition = FakeSpeechRecognition.instances[0];
+    const run1 = container.querySelector('[data-run-id="r1"]');
+    selectCollapsedAt(run1, 5); // end of "first"
+
+    act(() => recognition.onresult(finalResultEvent('word', 0)));
+    expect(store.getRun('r1').value).toBe('first word');
+
+    // The user clicks into the second block — a real caret move this hook
+    // did NOT itself cause.
+    const run2 = container.querySelector('[data-run-id="r2"]');
+    act(() => moveCaretManually(run2, 6)); // end of "second"
+
+    act(() => recognition.onresult(finalResultEvent('block', 1)));
+
+    expect(store.getRun('r2').value).toBe('second block'); // landed in the NEW block
+    expect(store.getRun('r1').value).toBe('first word'); // untouched, not appended to again
+  });
+
+  it('the visible caret stays at the new block after dictating there, not snapped back to the old one', () => {
+    window.SpeechRecognition = FakeSpeechRecognition;
+    const store = new EditorStore(makeTwoBlockDoc());
+    const { container } = renderHarness(store);
+
+    act(() => voiceApi.start());
+    const recognition = FakeSpeechRecognition.instances[0];
+    const run1 = container.querySelector('[data-run-id="r1"]');
+    selectCollapsedAt(run1, 5);
+    act(() => recognition.onresult(finalResultEvent('word', 0)));
+
+    const run2 = container.querySelector('[data-run-id="r2"]');
+    act(() => moveCaretManually(run2, 6));
+    act(() => recognition.onresult(finalResultEvent('block', 1)));
+
+    const selection = window.getSelection();
+    expect(selection.anchorNode.textContent).toBe('second block');
+  });
+
+  it('an in-progress interim revision does not keep targeting the old block after a manual caret move', () => {
+    window.SpeechRecognition = FakeSpeechRecognition;
+    const store = new EditorStore(makeTwoBlockDoc());
+    const { container } = renderHarness(store);
+
+    act(() => voiceApi.start());
+    const recognition = FakeSpeechRecognition.instances[0];
+    const run1 = container.querySelector('[data-run-id="r1"]');
+    selectCollapsedAt(run1, 5);
+
+    act(() => recognition.onresult(interimResultEvent('wor'))); // still mid-utterance, interim only
+    expect(store.getRun('r1').value).toBe('first wor');
+
+    const run2 = container.querySelector('[data-run-id="r2"]');
+    act(() => moveCaretManually(run2, 6));
+
+    act(() => recognition.onresult(finalResultEvent('block')));
+
+    expect(store.getRun('r2').value).toBe('second block');
+    expect(store.getRun('r1').value).toBe('first'); // the abandoned interim guess is discarded, not left behind
+  });
+
+  it('regression: does not duplicate the phrase across both blocks when the caret moves mid-utterance, before it finalizes', () => {
+    window.SpeechRecognition = FakeSpeechRecognition;
+    const store = new EditorStore(makeTwoBlockDoc());
+    const { container } = renderHarness(store);
+
+    act(() => voiceApi.start());
+    const recognition = FakeSpeechRecognition.instances[0];
+    const run1 = container.querySelector('[data-run-id="r1"]');
+    selectCollapsedAt(run1, 5);
+
+    // The engine's growing guess for a single utterance, live in r1...
+    act(() => recognition.onresult(interimResultEvent('hel')));
+    expect(store.getRun('r1').value).toBe('first hel');
+
+    // ...then the user moves to the second block mid-utterance...
+    const run2 = container.querySelector('[data-run-id="r2"]');
+    act(() => moveCaretManually(run2, 6));
+
+    // ...and the SAME utterance keeps revising (SpeechRecognition interim
+    // results are always the whole phrase-so-far, e.g. after mishearing
+    // and correcting) before finally settling.
+    act(() => recognition.onresult(interimResultEvent('hello')));
+    act(() => recognition.onresult(finalResultEvent('hello')));
+
+    expect(store.getRun('r2').value).toBe('second hello'); // lands once, in the new block
+    expect(store.getRun('r1').value).toBe('first'); // back to its original text — no leftover partial guess
   });
 });
 

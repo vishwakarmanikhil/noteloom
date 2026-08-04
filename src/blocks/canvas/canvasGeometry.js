@@ -89,6 +89,27 @@ export function zoomCenteredView(prevView, nextSize) {
   return { x: centerX - nextSize / 2, y: centerY - nextSize / 2 };
 }
 
+/**
+ * Clamps a pan offset once the view window is zoomed out wider than the
+ * fixed `boundsSize x boundsSize` sheet itself (see CanvasBlock.jsx's
+ * VIEW_SIZE) -- used after every pan/zoom update (wheel-drag, toolbar
+ * buttons, mouse/touch drag) so scrolling can't push the sheet off to one
+ * side once it's already small enough to see the whole thing at once.
+ * `size <= boundsSize` (100% zoom or zoomed in) is passed through
+ * unclamped -- there's always at most one sheet-edge in view at a time
+ * there, so panning to any of them is meaningful, same as before this
+ * clamp existed. Only once `size > boundsSize` (zoomed out PAST 100%, all
+ * the way down through MIN_ZOOM) does the offset lock to dead-center --
+ * beyond that point the whole sheet already fits, so there is nowhere left
+ * to usefully pan to and letting the offset drift would only ever show
+ * blank space beyond the sheet's edges.
+ */
+export function clampViewOffset(x, y, size, boundsSize) {
+  if (size <= boundsSize) return { x, y };
+  const centered = (boundsSize - size) / 2;
+  return { x: centered, y: centered };
+}
+
 /** True if two `{minX,minY,maxX,maxY}` boxes overlap, optionally padded outward by `padding` on both — used by the eraser's hit-test (a stroke's own half-width is a natural padding, so a thin eraser pass still catches thick ink). */
 export function boxesIntersect(a, b, padding = 0) {
   return a.minX - padding <= b.maxX && a.maxX + padding >= b.minX && a.minY - padding <= b.maxY && a.maxY + padding >= b.minY;

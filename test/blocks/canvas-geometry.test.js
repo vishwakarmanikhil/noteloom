@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clientToLocal, localPixelScale, zoomAnchoredView, boxesIntersect } from '../../src/blocks/canvas/canvasGeometry.js';
+import { clientToLocal, localPixelScale, zoomAnchoredView, boxesIntersect, clampViewOffset } from '../../src/blocks/canvas/canvasGeometry.js';
 
 // A plain object with just enough shape to stand in for the real <svg>
 // element — clientToLocal/localPixelScale/zoomAnchoredView only ever call
@@ -67,6 +67,24 @@ describe('zoomAnchoredView', () => {
 
     expect(afterX).toBeCloseTo(beforeX);
     expect(afterY).toBeCloseTo(beforeY);
+  });
+});
+
+describe('clampViewOffset', () => {
+  it('passes an offset through unclamped when zoomed in (view smaller than the sheet)', () => {
+    expect(clampViewOffset(200, 300, 500, 1000)).toEqual({ x: 200, y: 300 });
+  });
+
+  it('passes an offset through unclamped at exactly 100% zoom too (view size === sheet size)', () => {
+    expect(clampViewOffset(9999, -9999, 1000, 1000)).toEqual({ x: 9999, y: -9999 });
+  });
+
+  it('locks and centers the offset once zoomed out past 100% (view bigger than the sheet) — no panning possible', () => {
+    // At MIN_ZOOM the view window (2000) is bigger than the 1000x1000 sheet,
+    // so the whole sheet already fits; any attempted pan offset collapses to
+    // the single centered position instead of drifting off into empty space.
+    expect(clampViewOffset(9999, -9999, 2000, 1000)).toEqual({ x: -500, y: -500 });
+    expect(clampViewOffset(-9999, 9999, 2000, 1000)).toEqual({ x: -500, y: -500 });
   });
 });
 
