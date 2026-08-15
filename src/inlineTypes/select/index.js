@@ -55,12 +55,17 @@ export const selectInlineType = {
     icon: SelectIcon,
     keywords: ['select', 'dropdown', 'choice', 'picker'],
     run: (store, { blockId, runId, sliceStart, sliceEnd }) =>
-      insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, () => ({
-        id: genId(),
-        type: 'select',
-        value: '',
-        marks: {},
-        data: { options: [], selectedValue: '', placeholder: 'Select…' },
-      })),
+      insertInlineRunAtCursor(
+        store,
+        { blockId, runId, sliceStart, sliceEnd },
+        () => ({
+          id: genId(),
+          type: 'select',
+          value: '',
+          marks: {},
+          data: { options: [], selectedValue: '', placeholder: 'Select…' },
+        }),
+        { autoOpen: true },
+      ),
   },
 };

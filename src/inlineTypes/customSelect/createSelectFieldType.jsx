@@ -100,10 +100,11 @@ export function createSelectFieldType({
     };
   }
 
-  function Component({ id }) {
+  function Component({ id, blockId }) {
     return (
       <CustomSelectInlineNode
         id={id}
+        blockId={blockId}
         label={label}
         placeholder={placeholder}
         variant={variant}
@@ -127,13 +128,18 @@ export function createSelectFieldType({
     icon: icon ?? SelectIcon,
     keywords: [label.toLowerCase(), 'select', 'field'],
     run: (store, { blockId, runId, sliceStart, sliceEnd }) =>
-      insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, () => ({
-        id: genId(),
-        type,
-        value: '',
-        marks: {},
-        data: { selectedValue: '', selectedLabel: '', selectedColor: undefined },
-      })),
+      insertInlineRunAtCursor(
+        store,
+        { blockId, runId, sliceStart, sliceEnd },
+        () => ({
+          id: genId(),
+          type,
+          value: '',
+          marks: {},
+          data: { selectedValue: '', selectedLabel: '', selectedColor: undefined },
+        }),
+        { autoOpen: true },
+      ),
   };
 
   return {

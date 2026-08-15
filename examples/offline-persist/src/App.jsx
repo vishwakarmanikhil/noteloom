@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   EditorStore,
   History,
@@ -35,7 +35,7 @@ function makeStarterDoc() {
 
 const DOC_ID = new URLSearchParams(window.location.search).get('doc') ?? 'offline-persist-demo';
 
-function Toolbar({ isLoaded }) {
+function Toolbar({ isLoaded, save, justSaved }) {
   const history = useHistory();
   const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
   return (
@@ -50,8 +50,15 @@ function Toolbar({ isLoaded }) {
           </button>
         </>
       )}
+      <button type="button" onClick={save}>
+        Save
+      </button>
       <span className="collab-toolbar-note">
-        {isLoaded ? 'Saved locally (IndexedDB) — no server, no internet.' : 'Loading…'}
+        {justSaved
+          ? 'Saved!'
+          : isLoaded
+            ? 'Saved locally (IndexedDB) — no server, no internet. Ctrl/Cmd+S also works.'
+            : 'Loading…'}
       </span>
       {updateAvailable && (
         <button type="button" className="collab-update-btn" onClick={applyUpdate}>
@@ -93,12 +100,20 @@ export function App() {
     return { store, registry, inlineRegistry };
   }, []);
 
-  const { isLoaded } = usePersistedDocument({ store, docId: DOC_ID });
+  const [justSaved, setJustSaved] = useState(false);
+  const { isLoaded, save } = usePersistedDocument({
+    store,
+    docId: DOC_ID,
+    onSave: () => {
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 1500);
+    },
+  });
 
   return (
     <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store}>
       <div className="collab-page">
-        <Toolbar isLoaded={isLoaded} />
+        <Toolbar isLoaded={isLoaded} save={save} justSaved={justSaved} />
         {isLoaded ? <EditorSurface /> : <p className="collab-loading">Loading your document…</p>}
       </div>
     </EditorProvider>

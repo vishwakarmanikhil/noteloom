@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useEditorStore, useInlineRegistry } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useInlineRegistry, useFieldTypeEditor } from '../../react/EditorProvider.jsx';
+import { useFieldTypes } from '../../react/useFieldTypes.js';
 import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.js';
 import { useMenuKeyboardNav } from '../../react/useMenuKeyboardNav.js';
 import { useAutoAdjustedRightLeft } from '../../react/usePopoverEdgeClamp.js';
@@ -19,6 +20,56 @@ const TYPE_OPTIONS = COLUMN_TYPES.map((type) => ({ value: type, label: TYPE_LABE
 // aria-valuemax, so a screen reader has *some* sense of position within a
 // reasonable range, not a value that's ever enforced against real dragging.
 const MAX_COLUMN_WIDTH_HINT = 800;
+
+/**
+ * Lets a "select" column start from an already-created custom field type's
+ * option list (see createSelectFieldType / FieldTypeEditorModal) instead
+ * of typing options out by hand every time — the same `[{value, label,
+ * color}]` shape both a field type's own `options` and a select column's
+ * `column.options` already use, so this is a plain one-time copy
+ * (`setColumnOptions`), not a live link: picking one seeds the column's
+ * own independent list, which the SelectOptionsManager below it can then
+ * rename/add-to/remove-from freely without touching the source field type.
+ *
+ * "+ New field type" opens the same create flow a chip's own "Manage
+ * options…" popover reaches (`useFieldTypeEditor().openCreate()`) — the
+ * newly-created type then shows up in this same list on the next open, to
+ * be picked from like any other. Requires a `<FieldTypeEditorModal />`
+ * mounted somewhere in the host app to actually render that dialog (same
+ * pre-existing requirement `createSelectFieldType`'s in-editor create/edit
+ * UI already has) — the button still opens the request either way, it's
+ * just a no-op visually if nothing is listening for it.
+ */
+function ColumnFieldTypePicker({ tableId, colIndex }) {
+  const store = useEditorStore();
+  const fieldTypes = useFieldTypes();
+  const { openCreate } = useFieldTypeEditor();
+
+  const handlePick = useCallback(
+    (fieldTypeId) => {
+      const fieldType = store.getFieldType(fieldTypeId);
+      if (fieldType) setColumnOptions(store, tableId, colIndex, fieldType.options ?? []);
+    },
+    [store, tableId, colIndex],
+  );
+
+  return (
+    <div className="be-table-header-menu-field-type">
+      {fieldTypes.length > 0 && (
+        <Select
+          value=""
+          options={fieldTypes.map((ft) => ({ value: ft.id, label: ft.label }))}
+          onChange={handlePick}
+          placeholder="Copy options from…"
+          ariaLabel="Copy options from an existing field type"
+        />
+      )}
+      <button type="button" className="be-table-header-menu-item" onClick={openCreate}>
+        + New field type
+      </button>
+    </div>
+  );
+}
 
 /**
  * Manages a "select" column's shared option list (add/rename/remove) —
@@ -246,7 +297,10 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
               />
             </div>
             {column.type === 'select' && (
-              <SelectOptionsManager tableId={tableId} colIndex={colIndex} options={column.options ?? []} />
+              <>
+                <ColumnFieldTypePicker tableId={tableId} colIndex={colIndex} />
+                <SelectOptionsManager tableId={tableId} colIndex={colIndex} options={column.options ?? []} />
+              </>
             )}
             <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleInsertLeft}>
               Insert column left

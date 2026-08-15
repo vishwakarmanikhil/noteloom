@@ -122,6 +122,47 @@ describe('createSelectFieldType: static options', () => {
   });
 });
 
+describe('createSelectFieldType: auto-opens its picker on insertion (no second click needed)', () => {
+  it('the slash command opens the popover and focuses the search input immediately, with no click', () => {
+    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', variant: 'tag', options: STATIC_OPTIONS });
+    const store = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: '/priority', marks: {} }],
+    });
+
+    entry.slashCommand.run(store, { blockId: 'p1', runId: 'r1', sliceStart: 0, sliceEnd: 9 });
+    const block = store.getBlock('p1');
+    const chipRunId = block.contentIds[1];
+
+    const inlineRegistry = createInlineRegistry();
+    inlineRegistry.register('priority', entry);
+    const { container } = render(
+      <EditorProvider store={store} registry={{}} inlineRegistry={inlineRegistry}>
+        <EditableBlockContent blockId="p1" runIds={block.contentIds} />
+      </EditorProvider>,
+    );
+
+    // document.activeElement isn't a reliable check in this jsdom setup --
+    // focus() doesn't register there even for an ordinary manual-click
+    // open, unrelated to this feature -- so aria-expanded + the popover's
+    // own presence are what actually confirm it opened.
+    const chip = container.querySelector(`[data-run-id="${chipRunId}"]`);
+    expect(chip).not.toBeNull();
+    expect(chip.querySelector('.be-select-trigger').getAttribute('aria-expanded')).toBe('true');
+    expect(document.querySelector('.be-select-popover')).not.toBeNull();
+  });
+
+  it('a chip rendered from existing (already-persisted) document content does NOT auto-open — only a fresh insertion does', () => {
+    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', variant: 'tag', options: STATIC_OPTIONS });
+    renderChip({ id: 'run1', type: 'priority', value: '', marks: {}, data: {} }, entry);
+    expect(document.querySelector('.be-select-popover')).toBeNull();
+  });
+});
+
 describe('createSelectFieldType: dynamic (function) options', () => {
   it('forwards a function options source straight through to Select, resolving asynchronously', async () => {
     vi.useFakeTimers();

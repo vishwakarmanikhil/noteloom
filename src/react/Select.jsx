@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDownIcon } from './icons.jsx';
 import { useOutsideClickAndEscape } from './useOutsideClickAndEscape.js';
@@ -9,6 +9,20 @@ import { useHorizontalAutoAdjustedLeft } from './usePopoverEdgeClamp.js';
 // CSS is 220px, plus the search input and padding) — only used to decide
 // which side of the trigger to open on, not as an exact pixel budget.
 const ESTIMATED_POPOVER_HEIGHT = 280;
+
+// Matches .be-select-options' own CSS max-height — the option list's
+// rendered height is capped there regardless of content, so this is a
+// reliable stand-in for the real value without needing to measure the
+// scroll container itself (see the virtualization doc comment below).
+const LIST_HEIGHT = 220;
+// A reasonable guess for one option row's height, used only until the
+// first actually-rendered row can be measured for real (see rowHeight
+// state below) — refined once, not per-render.
+const ROW_HEIGHT_FALLBACK = 32;
+// Extra rows rendered above/below the visible window so a fast arrow-key
+// press or scroll doesn't ever show a flash of blank space before the next
+// render catches up.
+const OVERSCAN = 6;
 
 function matchesQuery(option, query) {
   if (!query) return true;
@@ -74,6 +88,36 @@ function matchesQuery(option, query) {
  * query, or came from elsewhere), pass `selectedLabel` to control what the
  * trigger displays for the current value directly, instead of relying on
  * an `options.find(...)` lookup that only works for static arrays.
+ *
+ * The option list is windowed (virtualized): only the rows actually
+ * scrolled into view (plus a small OVERSCAN buffer) are ever mounted,
+ * regardless of how many options `filtered` holds — a static list of
+ * thousands of options (or a dynamic resolver returning a big page) stays
+ * just as smooth to scroll as one of ten, since the DOM node count no
+ * longer grows with the option count. `rowHeight` starts at a guess
+ * (ROW_HEIGHT_FALLBACK) and is corrected once from the first real rendered
+ * row's own measured height (`useLayoutEffect`, before paint, so there's no
+ * visible jump) — deliberately not hardcoded, since `variant="tag"` rows
+ * render taller than plain-text ones and a host's own CSS could change
+ * either. `LIST_HEIGHT` mirrors `.be-select-options`'s own CSS max-height
+ * rather than measuring the container, since that's already the exact
+ * value CSS enforces regardless of content.
+ *
+ * Keyboard navigation (Arrow Up/Down) no longer calls `scrollIntoView()` on
+ * the active option's own DOM node — a virtualized item outside the
+ * current window doesn't have one to call it on. Instead the "keep the
+ * active option in view" effect computes the target row's pixel position
+ * from `activeIndex * rowHeight` and adjusts the scroll container's
+ * `scrollTop` directly, the windowed-list equivalent of the same
+ * "nearest edge" behavior.
+ *
+ * `autoOpen` (default false) opens the popover — and focuses its search
+ * input, via the same effect a click already triggers — immediately on
+ * mount, once, instead of waiting for the user to click the trigger.
+ * Meant for a chip that was just inserted from the slash/@ menu (see
+ * insertInlineRunAtCursor's own `autoOpen` option), where landing straight
+ * in "ready to search" is a better default than requiring a second click
+ * right after the first one that inserted it.
  */
 export function Select({
   value,
@@ -88,6 +132,7 @@ export function Select({
   onManageOptions,
   manageOptionsLabel = 'Manage options…',
   mention = false,
+  autoOpen = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -101,10 +146,14 @@ export function Select({
   const buttonRef = useRef(null);
   const popoverRef = useRef(null);
   const inputRef = useRef(null);
-  const activeOptionRef = useRef(null);
+  const listRef = useRef(null);
+  const firstRowRef = useRef(null);
   const outsideRefs = useMemo(() => [rootRef, popoverRef], []);
   const isTag = variant === 'tag';
   const isDynamic = typeof options === 'function';
+
+  const [rowHeight, setRowHeight] = useState(ROW_HEIGHT_FALLBACK);
+  const [scrollTop, setScrollTop] = useState(0);
 
   const staticSelected = !isDynamic ? options.find((o) => o.value === value) : undefined;
   const selected = value
@@ -115,6 +164,29 @@ export function Select({
     () => (isDynamic ? asyncOptions : options.filter((o) => matchesQuery(o, query))),
     [isDynamic, asyncOptions, options, query],
   );
+
+  // Windowing math — see the doc comment above. Clamps scrollTop against
+  // the CURRENT filtered length before computing startIndex so a shorter
+  // result set (e.g. a new search narrowing a long list) can't leave the
+  // window scrolled past the end of it, which would otherwise render a
+  // blank list for one frame until the active-option effect below catches up.
+  const maxScrollTop = Math.max(0, (filtered.length - 1) * rowHeight);
+  const clampedScrollTop = Math.min(scrollTop, maxScrollTop);
+  const startIndex = filtered.length ? Math.max(0, Math.floor(clampedScrollTop / rowHeight) - OVERSCAN) : 0;
+  const visibleCount = Math.ceil(LIST_HEIGHT / rowHeight) + OVERSCAN * 2;
+  const endIndex = Math.min(filtered.length, startIndex + visibleCount);
+  const visibleOptions = filtered.slice(startIndex, endIndex);
+  const topPadding = startIndex * rowHeight;
+  const bottomPadding = Math.max(0, (filtered.length - endIndex) * rowHeight);
+
+  // Refines rowHeight from the first actually-rendered row's real measured
+  // height, once — before paint, so any correction from the fallback guess
+  // is invisible. No-ops (stays at the fallback) in an environment with no
+  // real layout, e.g. jsdom under tests.
+  useLayoutEffect(() => {
+    const measured = firstRowRef.current?.getBoundingClientRect().height;
+    if (measured && Math.abs(measured - rowHeight) > 0.5) setRowHeight(measured);
+  });
 
   // Dynamic resolvers already do their own query-based filtering (a DB
   // search, typically) — refetch on every query change while the popover
@@ -153,20 +225,57 @@ export function Select({
     setRect(buttonRef.current?.getBoundingClientRect() ?? null);
     setQuery('');
     setActiveIndex(0);
+    setScrollTop(0);
     setIsOpen(true);
   }, []);
 
+  // Fires exactly once, on mount — autoOpen is only ever true for a chip
+  // that was just inserted (see the doc comment above), so there's no
+  // later point where re-opening on its own would make sense.
+  useEffect(() => {
+    if (autoOpen) open();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Also depends on adjustedLeft, not just isOpen — the popover (and its
+  // search <input>) only actually mounts once adjustedLeft resolves from
+  // its initial `null` to a real value (useHorizontalAutoAdjustedLeft's own
+  // two-pass measure-then-clamp, see its doc comment), which is USUALLY
+  // one render pass after isOpen itself first flips true. Depending on
+  // isOpen alone meant this effect's one-and-only run could land before
+  // inputRef.current existed at all — a real, if easy to miss, bug: it
+  // happened to go unnoticed for a plain click-to-open because reopening
+  // an already-was-open-before popover reuses adjustedLeft's already-
+  // resolved value from last time (no gap on that render pass), but a
+  // COLD first-ever open (autoOpen right after insertion, most notably)
+  // had no such warm state to fall back on and silently focused nothing.
   useEffect(() => {
     if (isOpen) inputRef.current?.focus();
-  }, [isOpen]);
+  }, [isOpen, adjustedLeft]);
 
   // Keeps the keyboard-active option (Arrow Up/Down) visible as it moves
   // past the edge of the scrollable list — without this, arrowing down
   // past the bottom of a long option list leaves the "active" highlight
   // scrolled out of view with nothing on screen showing which one it is.
+  // Computed from activeIndex * rowHeight rather than a DOM ref + native
+  // scrollIntoView(), since a virtualized item outside the current window
+  // isn't necessarily mounted at all (see the doc comment above).
   useEffect(() => {
-    activeOptionRef.current?.scrollIntoView?.({ block: 'nearest' });
-  }, [activeIndex]);
+    const container = listRef.current;
+    if (!container) return;
+    const itemTop = activeIndex * rowHeight;
+    const itemBottom = itemTop + rowHeight;
+    const viewTop = container.scrollTop;
+    const viewHeight = container.clientHeight || LIST_HEIGHT;
+    const viewBottom = viewTop + viewHeight;
+    let nextScrollTop = null;
+    if (itemTop < viewTop) nextScrollTop = itemTop;
+    else if (itemBottom > viewBottom) nextScrollTop = itemBottom - viewHeight;
+    if (nextScrollTop !== null) {
+      container.scrollTop = nextScrollTop;
+      setScrollTop(nextScrollTop);
+    }
+  }, [activeIndex, rowHeight]);
 
   const selectOption = useCallback(
     (option) => {
@@ -259,36 +368,48 @@ export function Select({
               placeholder="Search…"
               aria-label={ariaLabel ? `Search ${ariaLabel}` : 'Search options'}
             />
-            <div className="be-select-options" role="listbox">
+            <div
+              className="be-select-options"
+              role="listbox"
+              ref={listRef}
+              onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+            >
               {isDynamic && isLoading && <div className="be-select-empty">Loading…</div>}
               {isDynamic && !isLoading && loadError && <div className="be-select-empty be-select-error">Couldn't load options</div>}
               {!isLoading && !loadError && filtered.length === 0 && <div className="be-select-empty">No results</div>}
-              {!isLoading &&
-                !loadError &&
-                filtered.map((option, i) => (
-                  <div
-                    key={option.value}
-                    ref={i === activeIndex ? activeOptionRef : undefined}
-                    role="option"
-                    aria-selected={option.value === value}
-                    className={`be-select-option${i === activeIndex ? ' be-select-option-active' : ''}${
-                      option.value === value ? ' be-select-option-selected' : ''
-                    }`}
-                    onMouseDown={(event) => {
-                      event.preventDefault(); // keep focus in the search input until a real selection commits
-                      selectOption(option);
-                    }}
-                    onMouseEnter={() => setActiveIndex(i)}
-                  >
-                    {isTag ? (
-                      <span className="be-select-tag" style={{ background: option.color?.bg, color: option.color?.text }}>
-                        {option.label}
-                      </span>
-                    ) : (
-                      option.label
-                    )}
-                  </div>
-                ))}
+              {!isLoading && !loadError && filtered.length > 0 && (
+                <>
+                  {topPadding > 0 && <div style={{ height: topPadding }} aria-hidden="true" />}
+                  {visibleOptions.map((option, localIndex) => {
+                    const i = startIndex + localIndex;
+                    return (
+                      <div
+                        key={option.value}
+                        ref={localIndex === 0 ? firstRowRef : undefined}
+                        role="option"
+                        aria-selected={option.value === value}
+                        className={`be-select-option${i === activeIndex ? ' be-select-option-active' : ''}${
+                          option.value === value ? ' be-select-option-selected' : ''
+                        }`}
+                        onMouseDown={(event) => {
+                          event.preventDefault(); // keep focus in the search input until a real selection commits
+                          selectOption(option);
+                        }}
+                        onMouseEnter={() => setActiveIndex(i)}
+                      >
+                        {isTag ? (
+                          <span className="be-select-tag" style={{ background: option.color?.bg, color: option.color?.text }}>
+                            {option.label}
+                          </span>
+                        ) : (
+                          option.label
+                        )}
+                      </div>
+                    );
+                  })}
+                  {bottomPadding > 0 && <div style={{ height: bottomPadding }} aria-hidden="true" />}
+                </>
+              )}
             </div>
             {onManageOptions && (
               <button

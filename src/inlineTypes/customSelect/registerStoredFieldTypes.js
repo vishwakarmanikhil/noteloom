@@ -25,6 +25,7 @@ export function registerStoredFieldTypes(store, inlineRegistry, { onManage } = {
         placeholder: fieldType.placeholder,
         variant: fieldType.variant,
         options: fieldType.options ?? [],
+        triggers: fieldType.mentionable ? ['slash', 'at'] : ['slash'],
         onManage: onManage ? () => onManage(fieldType.id) : undefined,
       }),
     );

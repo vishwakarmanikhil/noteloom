@@ -1,6 +1,7 @@
 import { genId } from '../../utils/idGen.js';
 import { replaceRunSpan } from '../../store/operations.js';
 import { focusRunEnd } from '../../react/focusRun.js';
+import { markPendingAutoOpen } from '../../react/pendingAutoOpen.js';
 
 /**
  * Splices a newly-created inline run in at the *exact* cursor position
@@ -12,8 +13,16 @@ import { focusRunEnd } from '../../react/focusRun.js';
  * at the end) still gets an empty trailing run so there's somewhere to
  * keep typing past the chip. The "before" run keeps the original run's id
  * so its DOM span isn't remounted.
+ *
+ * `autoOpen` (default false) skips moving the caret into the trailing text
+ * run altogether and instead marks the new chip's id to open its own
+ * picker immediately on mount (see pendingAutoOpen.js) — used by
+ * select/custom-select/mention types, where "focus is now on some plain
+ * text past the chip" is a worse landing spot than "the picker you just
+ * asked for is already open, ready to search." Left off for types with no
+ * such picker to open (checkbox, date), which keep the original behavior.
  */
-export function insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, createInlineRun) {
+export function insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, createInlineRun, { autoOpen = false } = {}) {
   const currentRun = store.getRun(runId);
   const value = currentRun?.value ?? '';
   const beforeText = value.slice(0, sliceStart);
@@ -24,5 +33,9 @@ export function insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sli
   const afterRun = { id: genId(), type: 'text', value: afterText, marks: { ...currentRun?.marks } };
 
   store.applyOperation(replaceRunSpan(blockId, [runId], [beforeRun, inlineRun, afterRun]));
-  focusRunEnd(afterRun.id);
+  if (autoOpen) {
+    markPendingAutoOpen(inlineRun.id);
+  } else {
+    focusRunEnd(afterRun.id);
+  }
 }

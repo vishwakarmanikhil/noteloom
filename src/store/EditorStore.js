@@ -18,6 +18,9 @@ import {
   addCommentReply,
   removeCommentReply,
   resolveComment,
+  addPerson,
+  updatePerson,
+  removePerson,
 } from './operations.js';
 import { ListCrdtState } from '../crdt/listCrdt.js';
 import { HLC, genPeerId } from '../crdt/clock.js';
@@ -30,6 +33,9 @@ const FIELD_TYPES_KEY = '$fieldTypes';
 
 /** Sentinel subscribe/notify key for "the comments collection changed" — see useComments. */
 const COMMENTS_KEY = '$comments';
+
+/** Sentinel subscribe/notify key for "the document's people list changed" — see usePeople. */
+const PEOPLE_KEY = '$people';
 
 /**
  * Flat, normalized document store with per-id pub-sub.
@@ -54,6 +60,8 @@ export class EditorStore {
     this._fieldTypesSnapshot = null; // invalidated (set to null) on every fieldTypes mutation — see getFieldTypes
     this.comments = new Map((doc?.comments ?? []).map((c) => [c.id, c]));
     this._commentsSnapshot = null; // invalidated (set to null) on every comments mutation — see getComments
+    this.people = new Map((doc?.people ?? []).map((p) => [p.id, p]));
+    this._peopleSnapshot = null; // invalidated (set to null) on every people mutation — see getPeople
     this._listeners = new Map(); // id -> Set<() => void>
     this._globalListeners = new Set(); // fired on every mutation regardless of which id(s) changed -- see subscribeAll
 
@@ -251,6 +259,23 @@ export class EditorStore {
 
   getComment(id) {
     return this.comments.get(id);
+  }
+
+  /**
+   * The document's own people list (see src/people/people.js's addPerson —
+   * the documented entry point, and createSelectFieldType's "Assignee"
+   * usage, which sources its options from this instead of any device-local
+   * list, so every collaborator on the same document sees the same
+   * assignable people). Same reference-stability contract as getFieldTypes/
+   * getComments — required for useSyncExternalStore (see usePeople).
+   */
+  getPeople() {
+    if (!this._peopleSnapshot) this._peopleSnapshot = [...this.people.values()];
+    return this._peopleSnapshot;
+  }
+
+  getPerson(id) {
+    return this.people.get(id);
   }
 
   /**
@@ -674,6 +699,34 @@ export class EditorStore {
         return resolveComment(op.commentId, previousResolved);
       }
 
+      case OP.ADD_PERSON: {
+        this.people.set(op.person.id, op.person);
+        this._peopleSnapshot = null;
+        this._lastEnvelope = { kind: 'peopleWrite', op: 'add', person: op.person };
+        this._notify([PEOPLE_KEY]);
+        return removePerson(op.person.id);
+      }
+
+      case OP.UPDATE_PERSON: {
+        const existing = this.people.get(op.id);
+        const previousPatch = {};
+        for (const key of Object.keys(op.patch)) previousPatch[key] = existing[key];
+        this.people.set(op.id, { ...existing, ...op.patch });
+        this._peopleSnapshot = null;
+        this._lastEnvelope = { kind: 'peopleWrite', op: 'update', id: op.id, patch: op.patch };
+        this._notify([PEOPLE_KEY]);
+        return updatePerson(op.id, previousPatch);
+      }
+
+      case OP.REMOVE_PERSON: {
+        const existing = this.people.get(op.id);
+        this.people.delete(op.id);
+        this._peopleSnapshot = null;
+        this._lastEnvelope = { kind: 'peopleWrite', op: 'remove', id: op.id };
+        this._notify([PEOPLE_KEY]);
+        return addPerson(existing);
+      }
+
       default:
         throw new Error(`Unknown operation type: ${op.type}`);
     }
@@ -877,6 +930,35 @@ export class EditorStore {
         return;
       }
 
+      case 'peopleWrite': {
+        // Same simple existence-check merge as commentWrite above, for the
+        // same reason: a document's people list sees low write concurrency
+        // in practice (adding/renaming/removing a collaborator's name is
+        // not something two people do to the same entry at the same
+        // instant), so there's no need for the per-field HLC comparison
+        // run/block field writes use.
+        if (envelope.op === 'add') {
+          if (!this.people.has(envelope.person.id)) {
+            this.people.set(envelope.person.id, envelope.person);
+            this._peopleSnapshot = null;
+            this._notify([PEOPLE_KEY]);
+          }
+        } else if (envelope.op === 'update') {
+          const existing = this.people.get(envelope.id);
+          if (existing) {
+            this.people.set(envelope.id, { ...existing, ...envelope.patch });
+            this._peopleSnapshot = null;
+            this._notify([PEOPLE_KEY]);
+          }
+        } else if (envelope.op === 'remove') {
+          if (this.people.delete(envelope.id)) {
+            this._peopleSnapshot = null;
+            this._notify([PEOPLE_KEY]);
+          }
+        }
+        return;
+      }
+
       default:
         throw new Error(`Unknown remote envelope kind: ${envelope.kind}`);
     }
@@ -924,6 +1006,7 @@ export class EditorStore {
       rootId: this.rootId,
       fieldTypes: [...this.fieldTypes.values()],
       comments: [...this.comments.values()],
+      people: [...this.people.values()],
     };
   }
 

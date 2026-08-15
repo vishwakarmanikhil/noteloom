@@ -321,7 +321,7 @@ export function createAutoPersistence(options: {
   docId: string;
   debounceMs?: number;
   onError?: (error: unknown) => void;
-}): { stop: () => void; flush: () => void };
+}): { stop: () => void; flush: () => Promise<void> };
 
 // ---------------------------------------------------------------------------
 // templates/ (+ the template half of persistence/)
@@ -642,7 +642,11 @@ export function usePersistedDocument(options: {
   docId: string;
   debounceMs?: number;
   onError?: (error: unknown) => void;
-}): { isLoaded: boolean };
+  /** Wires Ctrl/Cmd+S to save() and blocks the browser's own save-page dialog. Default true. */
+  saveShortcut?: boolean;
+  /** Fires after every save() completes (shortcut-triggered or manual). */
+  onSave?: () => void;
+}): { isLoaded: boolean; save: () => Promise<void> };
 
 export function usePresence(session: CollabSession | null | undefined): Map<string, Record<string, unknown>>;
 

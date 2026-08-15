@@ -392,6 +392,31 @@
   display: block;
 }
 
+.be-code-block-body {
+  display: flex;
+  align-items: stretch;
+}
+
+.be-code-block-gutter {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.9em 0.6em 0.9em 1em;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--noteloom-text-faint);
+  text-align: right;
+  user-select: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.be-code-block-body .be-code-block-pre {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.5;
+}
+
 /* --- list items (bulleted / numbered / to-do / toggle) --- */
 
 .be-list-item {
@@ -1199,6 +1224,23 @@
   margin-bottom: 4px;
 }
 
+.be-table-header-menu-field-type {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border-bottom: 1px solid var(--noteloom-border);
+  margin-bottom: 4px;
+}
+
+.be-table-header-menu-field-type .be-select {
+  width: 100%;
+}
+
+.be-table-header-menu-field-type .be-select-trigger {
+  width: 100%;
+}
+
 .be-table-header-menu-type {
   display: flex;
   flex-direction: row;
@@ -1898,6 +1940,17 @@ tr.be-table-row:hover .be-table-delete-row {
 
 .be-modal-field select:focus {
   border-color: var(--noteloom-accent);
+}
+
+.be-modal-field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.be-modal-field-checkbox > span {
+  font-size: 0.85rem;
+  color: var(--noteloom-text);
 }
 
 .be-modal-color-row {

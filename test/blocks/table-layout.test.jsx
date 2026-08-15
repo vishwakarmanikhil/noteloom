@@ -7,11 +7,12 @@ import { createBlockRegistry } from '../../src/registry/blockRegistry.js';
 import { registerBuiltInBlocks } from '../../src/blocks/index.js';
 import { createInlineRegistry } from '../../src/registry/inlineRegistry.js';
 import { registerBuiltInInlineTypes } from '../../src/inlineTypes/index.js';
-import { insertBlock } from '../../src/store/operations.js';
+import { insertBlock, addFieldType } from '../../src/store/operations.js';
 import { createTableBlock } from '../../src/blocks/table/createTableBlock.js';
 import { createLayoutBlock } from '../../src/blocks/layout/createLayoutBlock.js';
 import { setColumnType, setColumnWidth } from '../../src/blocks/table/tableEditCommands.js';
 import { DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from '../../src/blocks/table/tableColumns.js';
+import { FieldTypeEditorModal } from '../../src/inlineTypes/customSelect/FieldTypeEditorModal.jsx';
 
 function emptyDoc() {
   return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
@@ -29,6 +30,20 @@ function renderDoc(store, registry) {
   return render(
     <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry}>
       <BlockChildren parentId="root" />
+    </EditorProvider>,
+  );
+}
+
+// Also mounts FieldTypeEditorModal (host apps mount it once themselves, same
+// as createSelectFieldType chips' own "Manage options..." popover assumes) —
+// needed for the "+ New field type" tests below to have somewhere to render.
+function renderDocWithFieldTypeEditor(store, registry) {
+  const inlineRegistry = createInlineRegistry();
+  registerBuiltInInlineTypes(inlineRegistry);
+  return render(
+    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry}>
+      <BlockChildren parentId="root" />
+      <FieldTypeEditorModal />
     </EditorProvider>,
   );
 }
@@ -607,5 +622,94 @@ describe('layout block type reuses the page container mechanism', () => {
     const html = registry.get('layout').toHTML(store.getBlock(layoutId), { store, registry });
     expect(html).toContain('display:flex');
     expect((html.match(/<p>/g) ?? []).length).toBe(3);
+  });
+});
+
+describe('select column: copying options from an already-created custom field type', () => {
+  it('lists existing field types in the column menu and copies the picked one\'s options into the column (a one-time copy, not a live link)', () => {
+    const store = new EditorStore(emptyDoc());
+    store.applyOperation(
+      addFieldType({
+        id: 'ft-priority',
+        label: 'Priority',
+        placeholder: 'Select…',
+        variant: 'tag',
+        options: [
+          { value: 'lo', label: 'Low', color: { bg: '#e0f2e0', text: '#1a7a1a' } },
+          { value: 'hi', label: 'High', color: { bg: '#f9e0e0', text: '#a11' } },
+        ],
+      }),
+    );
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+    const inlineRegistry = createInlineRegistry();
+    registerBuiltInInlineTypes(inlineRegistry);
+    setColumnType(store, tableId, 0, 'select', inlineRegistry);
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    fireEvent.click(document.querySelector('.be-table-header-menu-field-type .be-select-trigger'));
+    // The option list is portaled to document.body (see Select.jsx), not
+    // nested under the trigger's own container -- query it unscoped, same
+    // as every other Select-popover test in this file/codebase.
+    const optionLabels = [...document.querySelectorAll('.be-select-option')].map((o) => o.textContent);
+    expect(optionLabels).toEqual(['Priority']);
+    fireEvent.mouseDown(document.querySelector('.be-select-option'));
+
+    const column = store.getBlock(tableId).props.columns[0];
+    expect(column.options).toEqual([
+      { value: 'lo', label: 'Low', color: { bg: '#e0f2e0', text: '#1a7a1a' } },
+      { value: 'hi', label: 'High', color: { bg: '#f9e0e0', text: '#a11' } },
+    ]);
+
+    // it's a copy, not a live link: renaming an option on the column afterward
+    // does not touch the original field type definition.
+    const renameInput = [...document.querySelectorAll('.be-table-header-menu-option-input')].find((el) => el.value === 'Low');
+    fireEvent.change(renameInput, { target: { value: 'Chill' } });
+    expect(store.getFieldType('ft-priority').options[0].label).toBe('Low'); // unchanged
+    expect(store.getBlock(tableId).props.columns[0].options[0].label).toBe('Chill');
+  });
+
+  it('does not render the "copy from" dropdown at all when no field types exist yet, but still offers "+ New field type"', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+    const inlineRegistry = createInlineRegistry();
+    registerBuiltInInlineTypes(inlineRegistry);
+    setColumnType(store, tableId, 0, 'select', inlineRegistry);
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    expect(document.querySelector('.be-table-header-menu-field-type .be-select-trigger')).toBeNull();
+    expect(
+      [...document.querySelectorAll('.be-table-header-menu-field-type .be-table-header-menu-item')].some(
+        (b) => b.textContent === '+ New field type',
+      ),
+    ).toBe(true);
+  });
+
+  it('"+ New field type" opens the create-field-type dialog', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+    const inlineRegistry = createInlineRegistry();
+    registerBuiltInInlineTypes(inlineRegistry);
+    setColumnType(store, tableId, 0, 'select', inlineRegistry);
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDocWithFieldTypeEditor(store, registry);
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    const newFieldTypeButton = [...document.querySelectorAll('.be-table-header-menu-field-type .be-table-header-menu-item')].find(
+      (b) => b.textContent === '+ New field type',
+    );
+    fireEvent.click(newFieldTypeButton);
+
+    expect(document.body.textContent).toContain('New field type');
+    expect(document.querySelector('input[placeholder="e.g. Priority, Status…"]')).not.toBeNull();
   });
 });

@@ -68,6 +68,12 @@ export { CommentThreadCard } from './react/CommentThreadCard.jsx';
 export { CommentComposer } from './react/CommentComposer.jsx';
 export { CommentAvatar } from './react/CommentAvatar.jsx';
 
+// A document's own people list — real, collaboration-aware document data
+// (unlike custom field type definitions, see useFieldTypes below, which are
+// local-only today). See src/people/people.js.
+export { addPerson, updatePerson, removePerson } from './people/people.js';
+export { usePeople } from './react/usePeople.js';
+
 export { BlockRegistry, createBlockRegistry } from './registry/blockRegistry.js';
 export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.js';
 
@@ -129,6 +135,7 @@ export {
   usePreviewMode,
   useFieldTypeEditor,
   useBlockClassName,
+  useShowLineNumbers,
 } from './react/EditorProvider.jsx';
 export { injectDefaultStyles } from './react/injectDefaultStyles.js';
 export { useBlock, useRun } from './react/useBlock.js';
@@ -138,6 +145,8 @@ export { usePersistedDocument } from './react/usePersistedDocument.js';
 export { usePresence } from './react/usePresence.js';
 export { useServiceWorkerUpdate } from './react/useServiceWorkerUpdate.js';
 export { useVoiceTyping } from './react/useVoiceTyping.js';
+export { useSmartQuotes } from './react/useSmartQuotes.js';
+export { useAutoPairBrackets } from './react/useAutoPairBrackets.js';
 export { VoicePermissionModal } from './react/VoicePermissionModal.jsx';
 export { VoiceListeningIndicator } from './react/VoiceListeningIndicator.jsx';
 export { useCaretRect } from './react/useCaretRect.js';

@@ -221,7 +221,21 @@ function makeInitialDoc() {
         contentIds: [],
         props: { ordered: false, checked: false, titleRunIds: [rTodo2] },
       },
-      { id: table, type: 'table', parentId: rootId, contentIds: [row], props: {} },
+      {
+        id: table,
+        type: 'table',
+        parentId: rootId,
+        contentIds: [row],
+        // Column metadata (id/label/type/width per column) must be set up
+        // front, matching what createTableBlock's own factory already does
+        // for a table inserted via "/table" — leaving it out entirely (as
+        // this hand-authored table previously did) makes resolveColumns
+        // fall back to regenerating brand-new column ids on every single
+        // render, which in turn remounts each column's header cell (React
+        // key={column.id}) and silently resets any of its own open menu/
+        // popover state.
+        props: { columns: [{ id: genId(), label: 'Column 1', type: 'text', width: 160 }, { id: genId(), label: 'Column 2', type: 'text', width: 160 }] },
+      },
       { id: row, type: 'tableRow', parentId: table, contentIds: [cellA, cellB], props: {} },
       { id: cellA, type: 'tableCell', parentId: row, contentIds: [rCellA], props: {} },
       { id: cellB, type: 'tableCell', parentId: row, contentIds: [rCellB], props: {} },

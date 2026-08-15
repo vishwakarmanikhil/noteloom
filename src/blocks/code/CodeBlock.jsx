@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { Select } from '../../react/Select.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useBlockClassName, useShowLineNumbers } from '../../react/EditorProvider.jsx';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
 import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusRunEnd, focusRunAtOffset } from '../../react/focusRun.js';
@@ -57,6 +57,7 @@ function insertLiteralTextAtCaret(store, blockId, text) {
 export function CodeBlock({ id }) {
   const store = useEditorStore();
   const block = useBlock(id);
+  const showLineNumbers = useShowLineNumbers();
 
   const handleEnter = useCallback(() => insertLiteralTextAtCaret(store, id, '\n'), [store, id]);
   const handleTab = useCallback(() => insertLiteralTextAtCaret(store, id, '  '), [store, id]);
@@ -84,6 +85,12 @@ export function CodeBlock({ id }) {
   if (!block) return null;
   const language = block.props?.language ?? 'plaintext';
   const isEmpty = isRunsEmpty(store, block.contentIds);
+  // Display-only — derived fresh from the block's own text on every render,
+  // never stored. Counts '\n's inserted by handleEnter above (this block's
+  // multi-line-within-one-run model), not separate line blocks.
+  const lineCount = showLineNumbers
+    ? (block.contentIds.map((runId) => store.getRun(runId)?.value ?? '').join('').match(/\n/g)?.length ?? 0) + 1
+    : 0;
 
   return (
     <div className={className} data-block-id={id}>
@@ -108,20 +115,29 @@ export function CodeBlock({ id }) {
         real code editor (VS Code included) forces LTR for code for the
         same reason.
       */}
-      <pre className="be-code-block-pre" dir="ltr">
-        <code data-empty={isEmpty ? '' : undefined} data-placeholder="Empty code block">
-          <EditableBlockContent
-            blockId={id}
-            runIds={block.contentIds}
-            dir="ltr"
-            onEnter={handleEnter}
-            onTab={handleTab}
-            onBackspaceAtStart={handleBackspaceAtStart}
-            onArrowUp={handleArrowUp}
-            onArrowDown={handleArrowDown}
-          />
-        </code>
-      </pre>
+      <div className="be-code-block-body">
+        {showLineNumbers && (
+          <div className="be-code-block-gutter" contentEditable={false} aria-hidden="true">
+            {Array.from({ length: lineCount }, (_, i) => (
+              <span key={i}>{i + 1}</span>
+            ))}
+          </div>
+        )}
+        <pre className="be-code-block-pre" dir="ltr">
+          <code data-empty={isEmpty ? '' : undefined} data-placeholder="Empty code block">
+            <EditableBlockContent
+              blockId={id}
+              runIds={block.contentIds}
+              dir="ltr"
+              onEnter={handleEnter}
+              onTab={handleTab}
+              onBackspaceAtStart={handleBackspaceAtStart}
+              onArrowUp={handleArrowUp}
+              onArrowDown={handleArrowDown}
+            />
+          </code>
+        </pre>
+      </div>
     </div>
   );
 }

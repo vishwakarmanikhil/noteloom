@@ -93,6 +93,29 @@ describe('createAutoPersistence', () => {
     stop();
   });
 
+  it('flush() returns a Promise that resolves once the write actually lands', async () => {
+    const store = new EditorStore(makeDoc());
+    const { stop, flush } = createAutoPersistence({ store, docId: 'debounce-test-flush-promise', debounceMs: 5000 });
+
+    store.applyOperation(updateRun('r1', { value: 'flushed' }));
+    await flush(); // no separate wait(...) needed -- awaiting flush() itself is enough
+
+    const saved = await loadPersistedDocument('debounce-test-flush-promise');
+    expect(saved.runs.find((r) => r.id === 'r1').value).toBe('flushed');
+
+    stop();
+  });
+
+  it('flush() resolves immediately (a no-op) when nothing is pending', async () => {
+    const store = new EditorStore(makeDoc());
+    const { stop, flush } = createAutoPersistence({ store, docId: 'debounce-test-flush-noop', debounceMs: 50 });
+
+    await expect(flush()).resolves.toBeUndefined();
+    expect(await loadPersistedDocument('debounce-test-flush-noop')).toBeNull();
+
+    stop();
+  });
+
   it('stop() cancels a pending debounced save that has not fired yet', async () => {
     const store = new EditorStore(makeDoc());
     const { stop } = createAutoPersistence({ store, docId: 'debounce-test-stop', debounceMs: 50 });

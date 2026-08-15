@@ -20,20 +20,26 @@ const DEFAULT_DEBOUNCE_MS = 500;
  * cancel any pending debounced save. `stop()` does NOT flush a pending
  * save first; call `flush()` (also returned) beforehand if the most
  * recent edit must be persisted before tearing down.
+ *
+ * `flush()` returns a Promise that resolves once the write actually lands
+ * (or resolves immediately if there was nothing pending — the document was
+ * already fully saved) — used by `usePersistedDocument`'s Ctrl/Cmd+S
+ * shortcut to know when it's safe to report "saved" back to the host app.
  */
 export function createAutoPersistence({ store, docId, debounceMs = DEFAULT_DEBOUNCE_MS, onError }) {
   let timer = null;
 
   function saveNow() {
-    savePersistedDocument(docId, store.toJSON()).catch((err) => onError?.(err));
+    return savePersistedDocument(docId, store.toJSON()).catch((err) => onError?.(err));
   }
 
   function flush() {
     if (timer) {
       clearTimeout(timer);
       timer = null;
-      saveNow();
+      return saveNow();
     }
+    return Promise.resolve();
   }
 
   const unsubscribe = store.subscribeAll(() => {

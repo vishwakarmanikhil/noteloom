@@ -1,8 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useRun } from '../../react/useBlock.js';
 import { useEditorStore } from '../../react/EditorProvider.jsx';
 import { updateRun } from '../../store/operations.js';
 import { Select } from '../../react/Select.jsx';
+import { consumePendingAutoOpen } from '../../react/pendingAutoOpen.js';
+import { focusAfterChip } from '../shared/advanceAfterPick.js';
 
 /**
  * An atomic inline "chip" mixed directly into running text — e.g. a
@@ -19,15 +21,30 @@ import { Select } from '../../react/Select.jsx';
  * createSelectFieldType for a full, named/reusable version of that idea),
  * to be revisited later.
  */
-export function SelectInlineNode({ id }) {
+export function SelectInlineNode({ id, blockId }) {
   const store = useEditorStore();
   const run = useRun(id);
+  // Consumed at most once per mount — see pendingAutoOpen.js. A plain
+  // `useRef(null)` (not a lazy useState initializer) so the one-time
+  // consumption survives React StrictMode's dev-only double-invocation of
+  // component bodies without being triggered twice. Also doubles as "was
+  // this chip inserted via the slash/@ menu" for handleChange below — a
+  // chip picked up on an existing document (not just-inserted) doesn't
+  // auto-advance on every later edit, only the fresh-insertion flow does.
+  const autoOpenRef = useRef(null);
+  if (autoOpenRef.current === null) autoOpenRef.current = consumePendingAutoOpen(id);
 
   const handleChange = useCallback(
     (selectedValue) => {
       store.applyOperation(updateRun(id, { data: { ...run?.data, selectedValue } }));
+      // Completes the "insert -> auto-open -> pick" flow this chip started
+      // with: picking a value lands the caret right after the chip, in the
+      // SAME paragraph — the trailing-run focus a normal (non-auto-opening)
+      // insertion already does immediately, just deferred until now so the
+      // picker could take focus first.
+      if (autoOpenRef.current) focusAfterChip(store, blockId, id);
     },
-    [store, id, run?.data],
+    [store, id, run?.data, blockId],
   );
 
   if (!run) return null;
@@ -58,7 +75,14 @@ export function SelectInlineNode({ id }) {
       // just interacting with the dropdown.
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <Select value={selectedValue} options={options} onChange={handleChange} placeholder={placeholder} ariaLabel="Select an option" />
+      <Select
+        value={selectedValue}
+        options={options}
+        onChange={handleChange}
+        placeholder={placeholder}
+        ariaLabel="Select an option"
+        autoOpen={autoOpenRef.current}
+      />
     </span>
   );
 }

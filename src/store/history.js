@@ -254,6 +254,14 @@ export class History {
     return this.store.getComment(id);
   }
 
+  getPeople() {
+    return this.store.getPeople();
+  }
+
+  getPerson(id) {
+    return this.store.getPerson(id);
+  }
+
   getAllRunIds() {
     return this.store.getAllRunIds();
   }

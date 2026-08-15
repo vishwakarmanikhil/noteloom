@@ -37,6 +37,7 @@ export function FieldTypeEditorModal() {
   const [name, setName] = useState('');
   const [options, setOptions] = useState([]);
   const [draft, setDraft] = useState('');
+  const [mentionable, setMentionable] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,9 +45,11 @@ export function FieldTypeEditorModal() {
       const existing = store.getFieldType(target);
       setName(existing?.label ?? '');
       setOptions(existing?.options ?? []);
+      setMentionable(!!existing?.mentionable);
     } else {
       setName('');
       setOptions([]);
+      setMentionable(false);
     }
     setDraft('');
   }, [isOpen, isEditing, target, store]);
@@ -70,14 +73,14 @@ export function FieldTypeEditorModal() {
     const label = name.trim();
     if (!label) return;
     if (isEditing) {
-      store.applyOperation(updateFieldType(target, { label, options }));
+      store.applyOperation(updateFieldType(target, { label, options, mentionable }));
     } else {
       store.applyOperation(
-        addFieldType({ id: genId(), label, placeholder: 'Select…', variant: 'tag', options }),
+        addFieldType({ id: genId(), label, placeholder: 'Select…', variant: 'tag', options, mentionable }),
       );
     }
     close();
-  }, [store, isEditing, target, name, options, close]);
+  }, [store, isEditing, target, name, options, mentionable, close]);
 
   const handleDelete = useCallback(() => {
     if (isEditing) store.applyOperation(removeFieldType(target));
@@ -140,6 +143,11 @@ export function FieldTypeEditorModal() {
           </button>
         </div>
       </div>
+
+      <label className="be-modal-field be-modal-field-checkbox">
+        <input type="checkbox" checked={mentionable} onChange={(event) => setMentionable(event.target.checked)} />
+        <span>Also show in @ mentions</span>
+      </label>
 
       <div className="be-modal-actions">
         {isEditing && (

@@ -179,27 +179,102 @@ describe('Select: variant="tag" (colored pill, no dropdown-box chrome)', () => {
   });
 });
 
-describe('Select: keeps the active option in view while navigating with arrow keys', () => {
-  it('calls scrollIntoView on the newly-active option whenever Arrow Up/Down moves the selection', () => {
-    const scrollIntoView = vi.fn();
-    const originalScrollIntoView = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = scrollIntoView;
+describe('Select: keeps the active option in view while navigating with arrow keys (windowed/virtualized list)', () => {
+  // jsdom has no real layout, so clientHeight is always 0 unless mocked —
+  // pin it to something small enough that moving a couple of rows down
+  // (at the un-measured ROW_HEIGHT_FALLBACK of 32px) actually pushes the
+  // active option below the visible window, exercising the scrollTop math.
+  // clientHeight is defined on Element.prototype in jsdom, not
+  // HTMLElement.prototype — shadow it there with an own property instead
+  // of trying to save/restore a descriptor that doesn't exist at this
+  // level, then just delete the shadow afterward to fall back to the real
+  // (inherited) getter again.
+  beforeEach(() => {
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, value: 40 });
+  });
+  afterEach(() => {
+    delete HTMLElement.prototype.clientHeight;
+  });
 
-    try {
-      const { container } = render(<Select value="" options={OPTIONS} onChange={() => {}} />);
-      fireEvent.click(container.querySelector('.be-select-trigger'));
-      const search = document.querySelector('.be-select-search');
-      scrollIntoView.mockClear(); // ignore the initial mount's call for activeIndex 0
+  it('scrolls the option list container (not a per-item scrollIntoView) as the active index moves past the visible window', () => {
+    const { container } = render(<Select value="" options={OPTIONS} onChange={() => {}} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+    const search = document.querySelector('.be-select-search');
+    const list = document.querySelector('.be-select-options');
+    expect(list.scrollTop).toBe(0); // nothing to do yet at the top of the list
 
-      fireEvent.keyDown(search, { key: 'ArrowDown' });
-      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    fireEvent.keyDown(search, { key: 'ArrowDown' }); // -> Bravo (index 1)
+    fireEvent.keyDown(search, { key: 'ArrowDown' }); // -> Charlie (index 2)
+    expect(list.scrollTop).toBeGreaterThan(0); // scrolled down to keep Charlie in view
 
-      scrollIntoView.mockClear();
-      fireEvent.keyDown(search, { key: 'ArrowUp' });
-      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
-    } finally {
-      Element.prototype.scrollIntoView = originalScrollIntoView;
-    }
+    const scrolledDown = list.scrollTop;
+    fireEvent.keyDown(search, { key: 'ArrowUp' }); // -> Bravo (index 1) again
+    // Moving back up doesn't need to scroll further (Bravo's already above the bottom edge).
+    expect(list.scrollTop).toBeLessThanOrEqual(scrolledDown);
+  });
+});
+
+describe('Select: option list virtualization', () => {
+  // clientHeight is defined on Element.prototype in jsdom, not
+  // HTMLElement.prototype — shadow it there with an own property instead
+  // of trying to save/restore a descriptor that doesn't exist at this
+  // level, then just delete the shadow afterward to fall back to the real
+  // (inherited) getter again.
+  beforeEach(() => {
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, value: 40 });
+  });
+  afterEach(() => {
+    delete HTMLElement.prototype.clientHeight;
+  });
+
+  function manyOptions(count) {
+    return Array.from({ length: count }, (_, i) => ({ value: `v${i}`, label: `Option ${i}` }));
+  }
+
+  it('does not mount every option at once for a large list — only a windowed subset', () => {
+    const { container } = render(<Select value="" options={manyOptions(500)} onChange={() => {}} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+
+    const rendered = document.querySelectorAll('.be-select-option').length;
+    expect(rendered).toBeGreaterThan(0);
+    expect(rendered).toBeLessThan(500); // nowhere near all 500 mounted
+  });
+
+  it('renders top/bottom spacers so the scrollbar still reflects the full (unmounted) list length', () => {
+    const { container } = render(<Select value="" options={manyOptions(500)} onChange={() => {}} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+
+    const list = document.querySelector('.be-select-options');
+    // First child is a top spacer (0 height at scrollTop 0); scrolling down
+    // should make a nonzero-height spacer appear below the visible rows.
+    list.scrollTop = 2000;
+    fireEvent.scroll(list);
+
+    const spacers = [...list.children].filter((el) => el.getAttribute('aria-hidden') === 'true');
+    expect(spacers.length).toBeGreaterThan(0);
+  });
+
+  it('scrolling reveals options further down the list that were not initially mounted', () => {
+    const { container } = render(<Select value="" options={manyOptions(500)} onChange={() => {}} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+
+    expect(document.body.textContent).not.toContain('Option 400');
+
+    const list = document.querySelector('.be-select-options');
+    list.scrollTop = 400 * 32; // roughly where "Option 400" should be, at the fallback row height
+    fireEvent.scroll(list);
+
+    expect(document.body.textContent).toContain('Option 400');
+  });
+
+  it('a small option list still renders and behaves exactly as before (no regression for the common case)', () => {
+    const onChange = vi.fn();
+    const { container } = render(<Select value="" options={OPTIONS} onChange={onChange} />);
+    fireEvent.click(container.querySelector('.be-select-trigger'));
+
+    expect(document.querySelectorAll('.be-select-option')).toHaveLength(3);
+    fireEvent.mouseDown(document.querySelectorAll('.be-select-option')[1]);
+    expect(onChange).toHaveBeenCalledWith('b', OPTIONS[1]);
   });
 });
 
@@ -289,6 +364,30 @@ describe('Select: options as a function (dynamic/DB-backed source)', () => {
     fireEvent.click(container.querySelector('.be-select-trigger'));
     expect(document.querySelector('.be-select-empty')).toBeNull();
     expect(document.querySelectorAll('.be-select-option')).toHaveLength(3);
+  });
+});
+
+describe('Select: autoOpen (regression — opening on mount must actually focus the search input, not just render the popover)', () => {
+  it('autoOpen actually calls .focus() on the real search input element once it mounts', () => {
+    // Regression: the "focus the search input" effect used to depend on
+    // isOpen alone, but the popover (and its <input>) only mounts a render
+    // pass LATER, once adjustedLeft resolves from its initial null (see
+    // useHorizontalAutoAdjustedLeft) — so that effect's one-and-only firing
+    // could land while inputRef.current was still null, silently doing
+    // nothing (optional chaining swallows it). A plain click happened to
+    // dodge this by reusing an already-resolved adjustedLeft from a PRIOR
+    // open, so this only ever showed up on a genuinely cold first open —
+    // exactly what autoOpen always is. Spying on focus() (rather than
+    // checking document.activeElement, which this jsdom setup doesn't
+    // reliably reflect even for a real click) verifies the call actually
+    // happens on the right element once it exists.
+    const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus');
+    render(<Select value="" options={OPTIONS} onChange={() => {}} autoOpen />);
+
+    const search = document.querySelector('.be-select-search');
+    expect(search).not.toBeNull();
+    expect(focusSpy).toHaveBeenCalled();
+    expect(focusSpy.mock.instances).toContain(search);
   });
 });
 

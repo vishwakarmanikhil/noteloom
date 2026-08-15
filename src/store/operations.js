@@ -17,6 +17,9 @@ export const OP = {
   ADD_COMMENT_REPLY: 'addCommentReply',
   REMOVE_COMMENT_REPLY: 'removeCommentReply',
   RESOLVE_COMMENT: 'resolveComment',
+  ADD_PERSON: 'addPerson',
+  UPDATE_PERSON: 'updatePerson',
+  REMOVE_PERSON: 'removePerson',
 };
 
 export function insertBlock(block, parentId, index, subtree) {
@@ -149,4 +152,25 @@ export function removeCommentReply(commentId, messageId) {
 
 export function resolveComment(commentId, resolved) {
   return { type: OP.RESOLVE_COMMENT, commentId, resolved };
+}
+
+/**
+ * Adds a person to the document's own people list — `person` is
+ * `{ id, name, color }` (see src/people/people.js's addPerson, the
+ * documented entry point). Unlike ADD_FIELD_TYPE/UPDATE_FIELD_TYPE/
+ * REMOVE_FIELD_TYPE, these DO set a wire envelope and DO have an
+ * applyRemoteOperation case — see EditorStore — same collaboration-aware
+ * treatment as comment threads, and for the same reason: this is small,
+ * low-write-concurrency document metadata, not per-character content.
+ */
+export function addPerson(person) {
+  return { type: OP.ADD_PERSON, person };
+}
+
+export function updatePerson(id, patch) {
+  return { type: OP.UPDATE_PERSON, id, patch };
+}
+
+export function removePerson(id) {
+  return { type: OP.REMOVE_PERSON, id };
 }

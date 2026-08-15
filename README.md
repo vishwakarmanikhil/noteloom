@@ -195,6 +195,8 @@ function Editor() {
 
 `examples/03-custom-field-type/` is a complete runnable version of this pattern.
 
+Inserting one from "/" or "@" opens its picker immediately, focused and ready to search — no second click needed to actually pick something right after inserting it. Picking a value then moves focus straight on to the next block, so filling in a form-like document ("Diagnosis: [pick]", then the next line, then the next...) is a smooth insert → pick → keep-typing flow. Reopening an *existing* chip elsewhere to change its value later doesn't also jump away — this only applies right after a fresh insertion.
+
 `options` can also be a **function** instead of a plain array — `(query) => Option[] | Promise<Option[]>` — for a real database/API-backed search (React Select's `loadOptions`, essentially):
 
 ```js
@@ -217,6 +219,8 @@ A few things worth knowing about the dynamic path:
 - Your function is called **fresh on every keystroke**, debounced ~250ms — there's no built-in caching layer, so if you want caching, memoize inside your own function.
 - Only the **resolved pick** — `{ value, label }` (plus `color` for the tag variant) — is ever written onto the document. The live options list itself is never persisted, so a chip never embeds a stale snapshot of your database; re-opening it always calls your function again.
 - `triggers` (default `['slash']`) decides whether the type shows up under `/`, `@` (via `useAtMenuTrigger`), or both. A field that doesn't read naturally after "@" (e.g. "Priority") should usually stay slash-only.
+- A **static** array works just as well when it comes from a JSON file — `import options from './options.json'` (or fetch it once at setup) is already a plain array by the time it reaches `options`, no special handling needed. A hybrid of both ("show a local list, search an API once the user types") is just a function that returns the static list for an empty query and calls your API otherwise — the same debounce applies regardless of what the function does inside.
+- The option list itself is **virtualized** — only the rows currently scrolled into view are ever mounted, so a list of thousands of options (static or a big resolved page) scrolls smoothly, same as a list of ten.
 
 ### Letting end users create their own field types, in-editor
 
@@ -237,6 +241,8 @@ function NewFieldTypeButton() {
 ```
 
 User-created types are persisted in the document's own `fieldTypes` collection (so they survive reload) and are automatically rehydrated back into your inline registry by `FieldTypeEditorModal` itself — you don't need to call anything extra. Each chip's popover also gets a "Manage options…" entry that reopens this same modal, pre-filled, for renaming/editing/deleting the type it belongs to.
+
+Once at least one is created this way, a table column set to "Select" type gets a **"Copy options from…"** dropdown in its own menu (alongside its usual "+ New field type" button) — pick one to seed the column's option list from it in one shot, instead of typing the same options out again by hand. It's a one-time copy, not a live link: renaming/adding/removing options on the column afterward never touches the source field type.
 
 ## Exporting the document (JSON / HTML / plain text)
 
@@ -563,9 +569,19 @@ function App() {
 
 On mount, this loads whatever was last saved under `docId` (if anything) and replaces the store's content with it; every edit after that — typing, structural changes, even changes arriving from a collaborating peer via `CollabSession` — is auto-saved back, debounced (default 500ms of quiet) so a full-document write doesn't fire on every keystroke. Different `docId`s are stored independently, so one browser can hold many separate documents (e.g. keyed by page/route). A runnable example is in `examples/offline-persist/` — run `npm run dev:offline-persist`, type something, then reload the page or close and reopen the tab.
 
+Everything already auto-saves, but `usePersistedDocument` also wires up the keyboard shortcut every user reaches for anyway: **Ctrl+S (Windows/Linux) or Cmd+S (Mac)** forces an immediate save (skipping the rest of the debounce window) and blocks the browser's own "Save Page" dialog from popping up instead — pass `{ saveShortcut: false }` to opt out, and `onSave` (fires after every save, shortcut-triggered or manual) to show your own "Saved" feedback. The hook also returns `save()` directly, for a manual Save button:
+
+```jsx
+const { isLoaded, save } = usePersistedDocument({
+  store: editor.store,
+  docId: 'my-document-id',
+  onSave: () => showSavedToast(),
+});
+```
+
 Lower-level pieces, if `usePersistedDocument`'s all-in-one behavior doesn't fit (a non-React host app, custom load/save timing, etc.):
 - `savePersistedDocument(docId, doc)` / `loadPersistedDocument(docId)` / `deletePersistedDocument(docId)` / `listPersistedDocumentIds()` — the raw IndexedDB operations `usePersistedDocument` is built on.
-- `createAutoPersistence({ store, docId, debounceMs, onError })` — just the debounced auto-save half, if you want to handle the initial load yourself. Returns `{ stop, flush }`.
+- `createAutoPersistence({ store, docId, debounceMs, onError })` — just the debounced auto-save half, if you want to handle the initial load yourself. Returns `{ stop, flush }` — `flush()` returns a Promise that resolves once the write actually lands (or immediately if there was nothing pending).
 
 This is standalone — works with a solo, non-collaborating store just as well as one wired to `CollabSession` (a collaborated-on document also gets saved locally, so it survives even after every peer disconnects). Note this only makes the *editing* work offline; if the app itself is loaded from a dev server or web host, opening it for the very first time (or after clearing cache) still needs that host to be reachable once — that's the separate concern the next section covers.
 

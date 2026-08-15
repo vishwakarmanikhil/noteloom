@@ -135,8 +135,38 @@ const PERMISSION_DENIED_MESSAGE =
  * `options.shortcut` (default true) wires one native, document-level
  * Ctrl/Cmd+Shift+M keydown listener that toggles start()/stop() — pass
  * `{ shortcut: false }` to opt out if a host wants its own binding.
+ *
+ * `options.engine` lets a host app supply its own recognition engine
+ * instead of relying on `window.SpeechRecognition`/`webkitSpeechRecognition`
+ * — needed because that API is commonly absent or non-functional in
+ * embedded webviews (e.g. Tauri's WebView2/WKWebView), which have no Web
+ * Speech API implementation, or a Chromium-derived one that's missing the
+ * private Google API key real Chrome ships with (constructor exists, but
+ * every session fails immediately with a `'network'` error). `engine` is a
+ * zero-arg factory, `() => SpeechRecognitionLike`, called once per `start()`
+ * to produce a fresh instance implementing the same surface this hook
+ * already drives on the native constructor:
+ *   - properties: `continuous`, `interimResults` (set by this hook before
+ *     starting; the engine should honor them)
+ *   - event handlers this hook assigns: `onresult`, `onstart`,
+ *     `onspeechstart`, `onspeechend`, `onerror`, `onend`
+ *   - methods: `start()`, `stop()`
+ *   - `onresult`'s event shape: `{ resultIndex, results }` where `results`
+ *     is array-like of `results[i][0].transcript` (string) and
+ *     `results[i].isFinal` (boolean) — exactly the native SpeechRecognition
+ *     result shape, since `handleRecognitionResult` above reads it that way
+ *     regardless of what produced it (native browser engine, a native/OS
+ *     bridge, or a cloud STT service streamed back into this shape).
+ *   - `onerror`'s event shape: `{ error: string }` — pass `'not-allowed'` or
+ *     `'service-not-allowed'` for a permission denial (drives
+ *     `permissionState`/`VoicePermissionModal`), anything else is surfaced
+ *     as-is via `error`.
+ * When `engine` is provided, `isSupported` is unconditionally `true` (the
+ * host has already decided its engine is usable) — the browser-detection
+ * path (`getSpeechRecognitionCtor`) is only consulted when `engine` is
+ * omitted, so existing callers are unaffected.
  */
-export function useVoiceTyping({ shortcut = true } = {}) {
+export function useVoiceTyping({ shortcut = true, engine } = {}) {
   const store = useEditorStore();
   const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState('idle');
@@ -165,7 +195,7 @@ export function useVoiceTyping({ shortcut = true } = {}) {
   // only ever advanced by this hook itself; used solely to avoid
   // reprocessing an index already committed, never to identify a phrase.
   const committedCountRef = useRef(0);
-  const isSupported = getSpeechRecognitionCtor() !== null;
+  const isSupported = engine != null || getSpeechRecognitionCtor() !== null;
 
   useEffect(() => {
     if (!navigator.permissions?.query) return undefined;
@@ -376,8 +406,13 @@ export function useVoiceTyping({ shortcut = true } = {}) {
     expectedCaretRef.current = initialCaret ? { runId: initialCaret.runId, offset: initialCaret.offset } : null;
     liveEntryRef.current = null;
     committedCountRef.current = 0;
-    const Ctor = getSpeechRecognitionCtor();
-    const recognition = new Ctor();
+    let recognition;
+    if (engine) {
+      recognition = engine();
+    } else {
+      const Ctor = getSpeechRecognitionCtor();
+      recognition = new Ctor();
+    }
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onresult = handleRecognitionResult;
@@ -404,7 +439,7 @@ export function useVoiceTyping({ shortcut = true } = {}) {
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
-  }, [isSupported, handleRecognitionResult]);
+  }, [isSupported, handleRecognitionResult, engine]);
 
   const stop = useCallback(() => {
     recognitionRef.current?.stop();

@@ -37,6 +37,7 @@ export function EditorProvider({
   theme = 'default',
   getBlockClassName,
   commentAuthorId,
+  showLineNumbers = false,
   children,
 }) {
   useEffect(() => {
@@ -148,6 +149,7 @@ export function EditorProvider({
       commentAuthorId,
       hoveredCommentId,
       setHoveredCommentId,
+      showLineNumbers,
     }),
     [
       store,
@@ -166,6 +168,7 @@ export function EditorProvider({
       getBlockClassName,
       commentAuthorId,
       hoveredCommentId,
+      showLineNumbers,
     ],
   );
   const content =
@@ -307,6 +310,11 @@ export function useCommentAuthorId() {
 export function useHoveredComment() {
   const { hoveredCommentId, setHoveredCommentId } = useEditorContext();
   return [hoveredCommentId, setHoveredCommentId];
+}
+
+/** Whether `CodeBlock` should render its line-number gutter — see `EditorProvider`'s `showLineNumbers` prop. */
+export function useShowLineNumbers() {
+  return useEditorContext().showLineNumbers;
 }
 
 export function useFieldTypeEditor() {
