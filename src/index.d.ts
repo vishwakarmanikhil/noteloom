@@ -601,6 +601,12 @@ export interface EditorProviderProps {
   getBlockClassName?: (block: Block) => string | undefined;
   /** Current user's id for authoring comments through the built-in comment UI -- see useCommentAuthorId. */
   commentAuthorId?: string;
+  /** Whether CodeBlock renders its line-number gutter -- see useShowLineNumbers. */
+  showLineNumbers?: boolean;
+  /** Sends a picked/dropped EmbedBlock file somewhere real (local disk, S3, any other cloud storage) instead of inlining it as a data: URL -- see useFileUpload's own doc comment for the full contract. */
+  uploadFile?: (file: File, ctx: { kind: 'image' | 'video' | 'audio' | 'file' }) => Promise<{ src: string; name?: string; mimeType?: string }>;
+  /** Byte cap for the in-document data: URL fallback ONLY (no effect once uploadFile is configured) -- an oversized file is rejected with a clear error instead of bloating the document. */
+  maxFileSize?: number;
   children?: ReactNode;
 }
 
@@ -614,6 +620,13 @@ export function useSelectedBlock(): [string | null, (id: string | null) => void]
 export function usePreviewMode(): [boolean, (value: boolean) => void];
 /** The commentAuthorId passed to EditorProvider/NoteloomEditor, or undefined if not configured -- see NoteloomEditorProps.commentAuthorId. */
 export function useCommentAuthorId(): string | undefined;
+/** Whether CodeBlock should render its line-number gutter -- see EditorProviderProps.showLineNumbers. */
+export function useShowLineNumbers(): boolean;
+/** `{ uploadFile, maxFileSize }` from EditorProvider -- see EditorProviderProps and useFileUpload's own doc comment for the full contract. */
+export function useFileUpload(): {
+  uploadFile?: (file: File, ctx: { kind: 'image' | 'video' | 'audio' | 'file' }) => Promise<{ src: string; name?: string; mimeType?: string }>;
+  maxFileSize?: number;
+};
 export function useFieldTypeEditor(): {
   editingFieldTypeId: string | null;
   openFieldTypeEditor: (id: string | null) => void;
@@ -882,6 +895,10 @@ export interface NoteloomEditorProps {
   commentAuthorId?: string;
   /** Renders CommentsPanel (right-side, Notion/Google Docs-style thread list) automatically. */
   showCommentsPanel?: boolean;
+  /** Sends a picked/dropped EmbedBlock file somewhere real (local disk, S3, any other cloud storage) instead of inlining it as a data: URL -- see useFileUpload's own doc comment for the full contract. */
+  uploadFile?: (file: File, ctx: { kind: 'image' | 'video' | 'audio' | 'file' }) => Promise<{ src: string; name?: string; mimeType?: string }>;
+  /** Byte cap for the in-document data: URL fallback ONLY (no effect once uploadFile is configured). */
+  maxFileSize?: number;
   children?: ReactNode;
 }
 

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useBlockClassName, useFileUpload } from '../../react/EditorProvider.jsx';
 import { updateBlockProps } from '../../store/operations.js';
 import { Modal } from '../../react/Modal.jsx';
 import { PaperclipIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from '../../react/icons.jsx';
@@ -12,6 +12,12 @@ function readFileAsDataURL(file) {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 const KIND_LABEL = { image: 'image', video: 'video', audio: 'audio', file: 'file' };
@@ -51,16 +57,23 @@ function EmbedPreview({ kind, src, name, alt }) {
  * into it from a following block clears it as the nearest obstacle,
  * matching every other contentless block (see mergeWithPreviousOrDelete).
  *
- * There is no upload-to-a-server endpoint here — this is a zero-runtime-
- * dependency package with no backend component at all — so a local file
- * picked via the file input or dropped is read via FileReader straight
- * into a data: URL and stored directly in props.src. That keeps the
+ * This package ships no backend of its own, so a picked/dropped file's
+ * destination is entirely up to the host: `EditorProvider`'s `uploadFile`
+ * option (see `useFileUpload`'s own doc comment for the full contract —
+ * local disk, S3, any other cloud storage) is called with the raw `File`
+ * when configured. Without it, a file is read via `FileReader` straight
+ * into a `data:` URL and stored directly in `props.src` — keeps the
  * document fully self-contained (works offline, round-trips through copy/
  * paste and undo/redo like any other prop) at the cost of bloating the
- * document for large media; a host app that wants real upload-to-a-server
- * behavior should intercept this at a higher level (e.g. wrapping
- * createEmbedBlock/this component with its own), which is as far as a
- * dependency-free package can reasonably go on its own.
+ * document for large media, which is also why THAT path (and only that
+ * path) respects `maxFileSize`, rejecting anything over it with a clear
+ * error instead of silently ballooning the document.
+ *
+ * `isUploading`/`uploadError` are local, ephemeral UI state (not stored on
+ * the block) — a real network upload can take a while and can fail, so the
+ * dropzone shows a "Uploading…" state meanwhile and a dismissible error
+ * message on failure, instead of leaving a click that just silently does
+ * nothing until it eventually resolves.
  *
  * `align` positions the whole widget within the line (a flex row on
  * `.be-embed-preview`, a common media alignment pattern). `width` is a
@@ -74,11 +87,14 @@ function EmbedPreview({ kind, src, name, alt }) {
 export function EmbedBlock({ id }) {
   const store = useEditorStore();
   const block = useBlock(id);
+  const { uploadFile, maxFileSize } = useFileUpload();
   const [urlInput, setUrlInput] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragWidth, setDragWidth] = useState(null);
   const [isAltTextOpen, setIsAltTextOpen] = useState(false);
   const [altDraft, setAltDraft] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const previewRef = useRef(null);
   const frameRef = useRef(null);
 
@@ -98,26 +114,51 @@ export function EmbedBlock({ id }) {
     [altDraft, setMedia],
   );
 
-  const handleFileChange = useCallback(
-    async (event) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
+  // The one path every file (picked or dropped) goes through — see
+  // useFileUpload's own doc comment for uploadFile's contract and
+  // maxFileSize's scope (the in-document data: URL fallback only).
+  const acceptFile = useCallback(
+    async (file, kind) => {
+      setUploadError(null);
+      if (uploadFile) {
+        setIsUploading(true);
+        try {
+          const result = await uploadFile(file, { kind });
+          setMedia({ src: result.src, name: result.name ?? file.name, mimeType: result.mimeType ?? file.type });
+        } catch (err) {
+          setUploadError(err?.message || 'Upload failed. Please try again.');
+        } finally {
+          setIsUploading(false);
+        }
+        return;
+      }
+      if (maxFileSize && file.size > maxFileSize) {
+        setUploadError(`This file is ${formatBytes(file.size)} — larger than the ${formatBytes(maxFileSize)} limit.`);
+        return;
+      }
       const src = await readFileAsDataURL(file);
       setMedia({ src, name: file.name, mimeType: file.type });
     },
-    [setMedia],
+    [uploadFile, maxFileSize, setMedia],
+  );
+
+  const handleFileChange = useCallback(
+    (event) => {
+      const file = event.target.files?.[0];
+      event.target.value = ''; // lets picking the exact same file again re-fire onChange
+      if (file) acceptFile(file, block?.props?.kind ?? 'file');
+    },
+    [acceptFile, block?.props?.kind],
   );
 
   const handleDrop = useCallback(
-    async (event) => {
+    (event) => {
       event.preventDefault();
       setIsDragOver(false);
       const file = event.dataTransfer.files?.[0];
-      if (!file) return;
-      const src = await readFileAsDataURL(file);
-      setMedia({ src, name: file.name, mimeType: file.type });
+      if (file) acceptFile(file, block?.props?.kind ?? 'file');
     },
-    [setMedia],
+    [acceptFile, block?.props?.kind],
   );
 
   const handleDragOver = useCallback((event) => {
@@ -222,28 +263,42 @@ export function EmbedBlock({ id }) {
       ) : (
         <div
           className={`be-embed-dropzone${isDragOver ? ' be-embed-dropzone-active' : ''}`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
+          onDrop={isUploading ? undefined : handleDrop}
+          onDragOver={isUploading ? undefined : handleDragOver}
           onDragLeave={handleDragLeave}
         >
-          <label className="be-embed-upload-btn">
-            Upload {KIND_LABEL[kind]}
-            <input type="file" accept={KIND_ACCEPT[kind]} onChange={handleFileChange} hidden />
-          </label>
-          <span className="be-embed-dropzone-hint">or drop a file, or paste a URL below</span>
-          <div className="be-embed-url-row">
-            <input
-              type="text"
-              className="be-embed-url-input"
-              placeholder={`https://... ${KIND_LABEL[kind]} URL`}
-              value={urlInput}
-              onChange={(event) => setUrlInput(event.target.value)}
-              onKeyDown={(event) => event.key === 'Enter' && commitUrl()}
-            />
-            <button type="button" className="be-embed-url-commit" onClick={commitUrl}>
-              Embed
-            </button>
-          </div>
+          {isUploading ? (
+            <span className="be-embed-uploading">Uploading…</span>
+          ) : (
+            <>
+              <label className="be-embed-upload-btn">
+                Upload {KIND_LABEL[kind]}
+                <input type="file" accept={KIND_ACCEPT[kind]} onChange={handleFileChange} hidden />
+              </label>
+              <span className="be-embed-dropzone-hint">or drop a file, or paste a URL below</span>
+              <div className="be-embed-url-row">
+                <input
+                  type="text"
+                  className="be-embed-url-input"
+                  placeholder={`https://... ${KIND_LABEL[kind]} URL`}
+                  value={urlInput}
+                  onChange={(event) => setUrlInput(event.target.value)}
+                  onKeyDown={(event) => event.key === 'Enter' && commitUrl()}
+                />
+                <button type="button" className="be-embed-url-commit" onClick={commitUrl}>
+                  Embed
+                </button>
+              </div>
+            </>
+          )}
+          {uploadError && (
+            <div className="be-embed-upload-error" role="alert">
+              {uploadError}
+              <button type="button" onClick={() => setUploadError(null)} aria-label="Dismiss error">
+                ×
+              </button>
+            </div>
+          )}
         </div>
       )}
       <Modal isOpen={isAltTextOpen} onClose={closeAltText} title="Alt text">

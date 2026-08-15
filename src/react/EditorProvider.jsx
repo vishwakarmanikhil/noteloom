@@ -26,6 +26,20 @@ const EditorContext = createContext(null);
  * root element's class list (see useBlockClassName), so individual blocks
  * (by type, id, or props — the whole block object is passed in) can be
  * customized too, not just the editor's outer wrapper.
+ *
+ * `uploadFile(file, { kind }) -> Promise<{ src, name?, mimeType? }>`, if
+ * given, is how `EmbedBlock` (image/video/audio/file) sends a picked or
+ * dropped `File` somewhere real instead of inlining it — see
+ * useFileUpload's own doc comment for the full contract (local disk, S3,
+ * any other cloud storage, and how to make your own size-tiered decisions
+ * off `file.size`). Without it, a file is read straight into a `data:` URL
+ * and stored directly in the document, same as always — this package ships
+ * no backend of its own, so that in-document fallback is the only upload
+ * path that needs zero configuration. `maxFileSize` (bytes) only applies to
+ * THAT fallback path — rejects an oversized file with a clear error instead
+ * of silently bloating the document with a huge base64 string; has no
+ * effect once `uploadFile` is configured, since the host's own function (or
+ * backend) is what decides what it can handle.
  */
 export function EditorProvider({
   store,
@@ -38,6 +52,8 @@ export function EditorProvider({
   getBlockClassName,
   commentAuthorId,
   showLineNumbers = false,
+  uploadFile,
+  maxFileSize,
   children,
 }) {
   useEffect(() => {
@@ -150,6 +166,8 @@ export function EditorProvider({
       hoveredCommentId,
       setHoveredCommentId,
       showLineNumbers,
+      uploadFile,
+      maxFileSize,
     }),
     [
       store,
@@ -169,6 +187,8 @@ export function EditorProvider({
       commentAuthorId,
       hoveredCommentId,
       showLineNumbers,
+      uploadFile,
+      maxFileSize,
     ],
   );
   const content =
@@ -315,6 +335,71 @@ export function useHoveredComment() {
 /** Whether `CodeBlock` should render its line-number gutter — see `EditorProvider`'s `showLineNumbers` prop. */
 export function useShowLineNumbers() {
   return useEditorContext().showLineNumbers;
+}
+
+/**
+ * `{ uploadFile, maxFileSize }` from `EditorProvider` — see its own doc
+ * comment for the full contract. `EmbedBlock` is the one built-in consumer
+ * (a picked/dropped file always goes through whichever of the two paths
+ * this resolves to), but both are exported here too for a host building
+ * its own upload UI outside `EmbedBlock` (e.g. a custom drag-and-drop
+ * cover-image picker) that still wants to honor the same configured
+ * behavior instead of re-deciding it independently.
+ *
+ * `uploadFile` is `undefined` when not configured — `EmbedBlock` falls
+ * back to its own built-in `data:` URL read in that case, which is why
+ * this hook doesn't provide a default itself; the "no host function
+ * configured" case is a real, valid state a caller needs to see, not
+ * something to paper over with a no-op stand-in.
+ *
+ * Example wiring for the three most common storage targets — each is just
+ * `uploadFile: async (file) => ({ src: <wherever it ended up> })`:
+ *
+ * ```js
+ * // Your own server (saves to local disk, a mounted volume, ...)
+ * uploadFile: async (file) => {
+ *   const body = new FormData();
+ *   body.append('file', file);
+ *   const res = await fetch('/api/upload', { method: 'POST', body });
+ *   const { url } = await res.json();
+ *   return { src: url };
+ * }
+ *
+ * // AWS S3 (or any presigned-URL-style object storage) — two requests:
+ * // one to your own backend for a presigned PUT URL, one straight to S3.
+ * uploadFile: async (file) => {
+ *   const { uploadUrl, publicUrl } = await fetch('/api/s3-presign', {
+ *     method: 'POST',
+ *     headers: { 'Content-Type': 'application/json' },
+ *     body: JSON.stringify({ filename: file.name, contentType: file.type }),
+ *   }).then((r) => r.json());
+ *   await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+ *   return { src: publicUrl };
+ * }
+ *
+ * // Any other cloud storage (Cloudinary, Supabase Storage, R2, GCS, ...)
+ * // is the same shape as one of the two above — a single API call that
+ * // returns a hosted URL, or a signed-URL handshake — since this package
+ * // only ever needs the final `{ src }` back, not how it got there.
+ * ```
+ *
+ * Size-tiered handling ("small files inline, medium ones compress first,
+ * large ones stream/chunk") is entirely `uploadFile`'s own business, off
+ * `file.size` (bytes) — this package deliberately hardcodes no byte
+ * thresholds of its own, since what counts as "large" varies wildly by
+ * app. A representative sketch:
+ *
+ * ```js
+ * uploadFile: async (file) => {
+ *   if (file.size < 200 * 1024) return { src: await inlineAsDataUrl(file) }; // small: keep it simple
+ *   if (file.size < 25 * 1024 * 1024) return uploadToYourServer(file); // medium
+ *   return uploadToS3Multipart(file); // large: chunked/multipart
+ * }
+ * ```
+ */
+export function useFileUpload() {
+  const { uploadFile, maxFileSize } = useEditorContext();
+  return { uploadFile, maxFileSize };
 }
 
 export function useFieldTypeEditor() {

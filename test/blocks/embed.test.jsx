@@ -30,6 +30,16 @@ function renderDoc(store) {
   );
 }
 
+function renderDocWithUpload(store, uploadOptions) {
+  const registry = createBlockRegistry();
+  registerBuiltInBlocks(registry);
+  return render(
+    <EditorProvider store={store} registry={registry} {...uploadOptions}>
+      <BlockChildren parentId="root" />
+    </EditorProvider>,
+  );
+}
+
 describe('embed block: rendering per kind', () => {
   it('shows an upload/URL dropzone when no src is set yet', () => {
     const store = new EditorStore(emptyDoc());
@@ -159,6 +169,117 @@ describe('embed block: uploading a local file reads it into a data: URL (no back
 
     await waitFor(() => expect(store.getBlock(id).props.src).toMatch(/^data:application\/pdf/));
     expect(store.getBlock(id).props.name).toBe('doc.pdf');
+  });
+});
+
+describe('embed block: uploadFile — sends the file to the host instead of inlining it', () => {
+  it('calls uploadFile(file, { kind }) and writes back its resolved src/name/mimeType', async () => {
+    const uploadFile = async (file, { kind }) => {
+      expect(kind).toBe('image');
+      expect(file.name).toBe('photo.png');
+      return { src: 'https://cdn.example.com/photo-abc123.png' };
+    };
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image' }));
+    const { container } = renderDocWithUpload(store, { uploadFile });
+
+    const file = new File(['fake-image-bytes'], 'photo.png', { type: 'image/png' });
+    const fileInput = container.querySelector(`[data-block-id="${id}"] input[type="file"]`);
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    await waitFor(() => expect(store.getBlock(id).props.src).toBe('https://cdn.example.com/photo-abc123.png'));
+    // falls back to the file's own name/type since uploadFile didn't return them
+    expect(store.getBlock(id).props.name).toBe('photo.png');
+    expect(store.getBlock(id).props.mimeType).toBe('image/png');
+  });
+
+  it('uploadFile\'s own returned name/mimeType win over the file\'s own, when given', async () => {
+    const uploadFile = async () => ({ src: 'https://cdn.example.com/x', name: 'renamed.png', mimeType: 'image/webp' });
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image' }));
+    const { container } = renderDocWithUpload(store, { uploadFile });
+
+    const file = new File(['bytes'], 'original.png', { type: 'image/png' });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+
+    await waitFor(() => expect(store.getBlock(id).props.name).toBe('renamed.png'));
+    expect(store.getBlock(id).props.mimeType).toBe('image/webp');
+  });
+
+  it('shows "Uploading..." while the returned Promise is pending, then clears it', async () => {
+    let resolveUpload;
+    const uploadFile = () => new Promise((resolve) => { resolveUpload = resolve; });
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image' }));
+    const { container } = renderDocWithUpload(store, { uploadFile });
+
+    const file = new File(['bytes'], 'photo.png', { type: 'image/png' });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+
+    await waitFor(() => expect(container.querySelector(`[data-block-id="${id}"] .be-embed-uploading`)).not.toBeNull());
+    expect(container.querySelector(`[data-block-id="${id}"] input[type="file"]`)).toBeNull(); // upload UI hidden meanwhile
+
+    resolveUpload({ src: 'https://cdn.example.com/done.png' });
+    await waitFor(() => expect(store.getBlock(id).props.src).toBe('https://cdn.example.com/done.png'));
+    expect(container.querySelector(`[data-block-id="${id}"] .be-embed-uploading`)).toBeNull();
+  });
+
+  it('shows a dismissible error and does NOT write to the store when uploadFile rejects', async () => {
+    const uploadFile = async () => {
+      throw new Error('Network down');
+    };
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image' }));
+    const { container } = renderDocWithUpload(store, { uploadFile });
+
+    const file = new File(['bytes'], 'photo.png', { type: 'image/png' });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+
+    await waitFor(() => expect(container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`)).not.toBeNull());
+    expect(container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`).textContent).toContain('Network down');
+    expect(store.getBlock(id).props.src).toBe(''); // never written
+
+    fireEvent.click(container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error button`));
+    expect(container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`)).toBeNull();
+  });
+
+  it('maxFileSize has no effect once uploadFile is configured -- an oversized file still goes through', async () => {
+    const uploadFile = async (file) => ({ src: 'https://cdn.example.com/big', name: file.name });
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'file' }));
+    const { container } = renderDocWithUpload(store, { uploadFile, maxFileSize: 10 });
+
+    const file = new File(['x'.repeat(1000)], 'big.zip', { type: 'application/zip' });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+
+    await waitFor(() => expect(store.getBlock(id).props.src).toBe('https://cdn.example.com/big'));
+  });
+});
+
+describe('embed block: maxFileSize (no uploadFile configured) -- caps the in-document data: URL fallback only', () => {
+  it('rejects a file over the limit with a clear error, writing nothing to the store', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'file' }));
+    const { container } = renderDocWithUpload(store, { maxFileSize: 10 }); // 10 bytes
+
+    const file = new File(['this is way more than ten bytes'], 'doc.pdf', { type: 'application/pdf' });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+
+    const error = container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`);
+    expect(error).not.toBeNull();
+    expect(error.textContent).toMatch(/larger than the 10 B limit/);
+    expect(store.getBlock(id).props.src).toBe('');
+  });
+
+  it('a file within the limit still uploads fine via the data: URL fallback', async () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'file' }));
+    const { container } = renderDocWithUpload(store, { maxFileSize: 10_000 });
+
+    const file = new File(['small'], 'doc.pdf', { type: 'application/pdf' });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+
+    await waitFor(() => expect(store.getBlock(id).props.src).toMatch(/^data:application\/pdf/));
   });
 });
 

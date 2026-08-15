@@ -106,8 +106,24 @@ function EditorSurface({ store, rootId, onComment, commentAuthorId }) {
  *   Docs-style, `position: fixed` to the right by default — see
  *   `.be-comments-panel` in style.css) — purely additive to the popover
  *   above, not a replacement for it.
+ *
+ * `uploadFile`/`maxFileSize` forward straight to `EditorProvider` too — see
+ * `useFileUpload`'s own doc comment for the full contract (wiring a picked/
+ * dropped file to local disk, S3, or any other cloud storage).
  */
-export function NoteloomEditor({ editor, className, style, theme, getBlockClassName, onComment, commentAuthorId, showCommentsPanel, children }) {
+export function NoteloomEditor({
+  editor,
+  className,
+  style,
+  theme,
+  getBlockClassName,
+  onComment,
+  commentAuthorId,
+  showCommentsPanel,
+  uploadFile,
+  maxFileSize,
+  children,
+}) {
   const { store, registry, inlineRegistry } = editor;
   const rootId = store.getRootId();
   return (
@@ -121,6 +137,8 @@ export function NoteloomEditor({ editor, className, style, theme, getBlockClassN
       theme={theme}
       getBlockClassName={getBlockClassName}
       commentAuthorId={commentAuthorId}
+      uploadFile={uploadFile}
+      maxFileSize={maxFileSize}
     >
       <EditorSurface store={store} rootId={rootId} onComment={onComment} commentAuthorId={commentAuthorId} />
       {showCommentsPanel && <CommentsPanel authorId={commentAuthorId} />}

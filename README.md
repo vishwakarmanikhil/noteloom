@@ -606,6 +606,52 @@ This is standalone — works with a solo, non-collaborating store just as well a
 
 Run `npm run dev:offline-persist`, then `npx vite build --config examples/offline-persist/vite.config.js && npx vite preview --config examples/offline-persist/vite.config.js` to try the built (not dev-mode) version — service workers only activate on a real build. Load it once online, then disconnect entirely and reload: the app shell still loads, and editing/persistence both keep working, since IndexedDB has no network dependency of its own.
 
+## File & image uploads
+
+The image/video/audio/file block (`embed`, reachable via "/image", "/video", etc.) ships with zero configuration needed: a picked or dropped file is read straight into a `data:` URL and stored directly in the document. That keeps everything fully self-contained — works offline, round-trips through copy/paste and undo/redo like any other block — at the cost of bloating the document for large media, since this package has no backend of its own to hand a file to instead.
+
+For real upload-to-a-server behavior — local disk, AWS S3, or any other cloud storage — pass `uploadFile` to `<NoteloomEditor>` (or `<EditorProvider>` for the granular API):
+
+```jsx
+<NoteloomEditor
+  editor={editor}
+  uploadFile={async (file, { kind }) => {
+    const body = new FormData();
+    body.append('file', file);
+    const res = await fetch('/api/upload', { method: 'POST', body });
+    const { url } = await res.json();
+    return { src: url }; // { name?, mimeType? } also accepted, defaulting to the file's own
+  }}
+/>
+```
+
+A few things worth knowing:
+
+- **AWS S3** (or any presigned-URL-style object storage) is the same shape, just two requests instead of one — ask your own backend for a presigned PUT URL, then `PUT` the file straight to it:
+  ```js
+  uploadFile: async (file) => {
+    const { uploadUrl, publicUrl } = await fetch('/api/s3-presign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: file.name, contentType: file.type }),
+    }).then((r) => r.json());
+    await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+    return { src: publicUrl };
+  }
+  ```
+  Any other cloud storage (Cloudinary, Supabase Storage, R2, GCS, ...) is one of these two shapes — a single API call back with a hosted URL, or a signed-URL handshake — since this package only ever needs the final `{ src }`, not how it got there.
+- **Small/medium/large file handling** is entirely `uploadFile`'s own business, off `file.size` (bytes) — this package deliberately hardcodes no byte thresholds of its own, since what counts as "large" varies wildly by app:
+  ```js
+  uploadFile: async (file) => {
+    if (file.size < 200 * 1024) return { src: await inlineAsDataUrl(file) }; // small: keep it simple
+    if (file.size < 25 * 1024 * 1024) return uploadToYourServer(file); // medium
+    return uploadToS3Multipart(file); // large: chunked/multipart
+  }
+  ```
+- While `uploadFile` is resolving, the block shows an "Uploading…" state; if it rejects, a dismissible error message is shown instead and nothing is written to the document — the file input stays available to try again.
+- `maxFileSize` (bytes) only applies to the **built-in, zero-config `data:` URL fallback** — an oversized file is rejected with a clear error instead of silently bloating the document. It has no effect once `uploadFile` is configured, since the host's own function (or backend) is what decides what it can handle.
+- `useFileUpload()` exposes the same `{ uploadFile, maxFileSize }` to your own components, for building custom upload UI outside the `embed` block that still honors the same configuration.
+
 ## Live collaboration (experimental)
 
 Real-time multi-peer editing, built as a custom **block-tree CRDT** — not a generic text-CRDT library bolted on — so it stays true to the zero-runtime-dependency design. Peers connect directly over WebRTC; you bring your own signaling (a WebSocket relay, Firebase/Supabase realtime, or anything else that can pass small JSON messages between two peers) to bootstrap the connection.

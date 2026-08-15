@@ -136,6 +136,7 @@ export {
   useFieldTypeEditor,
   useBlockClassName,
   useShowLineNumbers,
+  useFileUpload,
 } from './react/EditorProvider.jsx';
 export { injectDefaultStyles } from './react/injectDefaultStyles.js';
 export { useBlock, useRun } from './react/useBlock.js';
