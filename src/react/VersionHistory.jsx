@@ -11,6 +11,8 @@ import { CommentAvatar } from './CommentAvatar.jsx';
 import { formatRelativeTime } from './commentFormatting.js';
 import { ClockHistoryIcon, RestoreIcon, XIcon } from './icons.jsx';
 
+const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
 function formatDayLabel(timestamp) {
   const d = new Date(timestamp);
   const now = new Date();
@@ -48,6 +50,7 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
   const [selectedId, setSelectedId] = useState(null);
   const [viewMode, setViewMode] = useState('changes'); // 'changes' | 'preview'
   const drawerRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
 
   useEffect(() => {
     if (typeof store.getHistoryLog !== 'function') return undefined; // needs a History instance, not a plain EditorStore
@@ -70,6 +73,23 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Same one-time move-in-on-open / move-back-out-on-close as Modal.jsx —
+  // this drawer is hand-rolled rather than built on Modal (it's a
+  // side-drawer, not a centered dialog), so it needs its own copy of the
+  // same focus handling instead of inheriting it for free.
+  useEffect(() => {
+    if (isOpen) {
+      previouslyFocusedRef.current = document.activeElement;
+      const drawer = drawerRef.current;
+      const focusable = drawer?.querySelector(FOCUSABLE_SELECTOR);
+      (focusable ?? drawer)?.focus();
+      return undefined;
+    }
+    previouslyFocusedRef.current?.focus?.();
+    previouslyFocusedRef.current = null;
+    return undefined;
   }, [isOpen]);
 
   const selectedIndex = versions.findIndex((v) => v.id === selectedId);
@@ -117,7 +137,7 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
         createPortal(
           <>
             <div className="be-version-history-backdrop" onClick={close} />
-            <div ref={drawerRef} className="be-version-history-drawer" role="dialog" aria-label="Version history">
+            <div ref={drawerRef} className="be-version-history-drawer" role="dialog" aria-modal="true" aria-label="Version history" tabIndex={-1}>
               <div className="be-version-history-header">
                 <span>{selected ? 'Preview' : 'Version history'}</span>
                 <button type="button" className="be-version-history-close" onClick={close} aria-label="Close">

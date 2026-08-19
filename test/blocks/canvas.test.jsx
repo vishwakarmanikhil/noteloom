@@ -2932,6 +2932,24 @@ describe('canvas block: resize handle (Phase 4)', () => {
     expect(store.getBlock(id).props.height).toBeGreaterThan(0);
   });
 
+  it('is keyboard-operable — Left/Right resize width, Up/Down resize height, Home resets to minimum', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createCanvasBlock());
+    const { container } = renderDoc(store);
+    const handle = container.querySelector(`[data-block-id="${id}"] .be-canvas-resize-handle`);
+    expect(handle.getAttribute('tabindex')).toBe('0');
+
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    expect(store.getBlock(id).props.width).toBe(DEFAULT_CANVAS_WIDTH + 24);
+
+    fireEvent.keyDown(handle, { key: 'ArrowDown', shiftKey: true }); // finer 4px step
+    expect(store.getBlock(id).props.height).toBe(DEFAULT_CANVAS_HEIGHT + 4);
+
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(store.getBlock(id).props.width).toBeGreaterThan(0);
+    expect(store.getBlock(id).props.height).toBeGreaterThan(0);
+  });
+
   it('existing strokes render correctly at any rendered size — resizing never touches stroke data (fixed normalized coordinate space)', () => {
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(store, createCanvasBlock());

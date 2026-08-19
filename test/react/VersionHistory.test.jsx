@@ -125,4 +125,22 @@ describe('VersionHistory', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(document.querySelector('.be-version-history-drawer')).toBeNull();
   });
+
+  it('is aria-modal, moves focus in on open, and restores it to the trigger on close', () => {
+    const history = new History(new EditorStore(makeDoc()));
+    const { getByText } = renderPanel(history, freshDocId());
+
+    const trigger = getByText('Version history').closest('button');
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    fireEvent.click(trigger);
+    const drawer = document.querySelector('.be-version-history-drawer');
+    expect(drawer.getAttribute('aria-modal')).toBe('true');
+    expect(drawer.contains(document.activeElement)).toBe(true);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(document.querySelector('.be-version-history-drawer')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
 });

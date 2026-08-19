@@ -20,11 +20,14 @@ import { useHoveredComment } from './EditorProvider.jsx';
  * every thread attached to the clicked/hovered run is shown, stacked,
  * inside one popover.
  */
+const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
 export function CommentPopover({ containerRef, store, authorId }) {
   const [target, setTarget] = useState(null); // { rect, commentIds } | null
   const [pinned, setPinned] = useState(false);
   const hideTimerRef = useRef(null);
   const popoverRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
   const [, setHoveredCommentId] = useHoveredComment();
 
   const clearHideTimer = useCallback(() => {
@@ -126,6 +129,34 @@ export function CommentPopover({ containerRef, store, authorId }) {
   const isOpen = Boolean(target);
   const position = useAutoAdjustedPosition(popoverRef, isOpen, target ? target.rect.bottom + 6 : null, target ? target.rect.left : null);
 
+  // Only a "pinned" (click-)opened popover takes focus — a hover preview
+  // must never steal focus away from wherever the user is actually typing
+  // just because their mouse passed over a comment highlight. Mirrors
+  // Modal.jsx's own one-time move-in-on-open / move-back-out-on-close
+  // (not a focus trap), keyed on `pinned` rather than a generic `isOpen`.
+  //
+  // Also depends on `position` (not just `pinned`) for the same reason the
+  // Select popover's own "focus the search input on open" effect needed a
+  // matching fix this session: `position` starts `null` and the popover
+  // returns nothing (see the `if (!isOpen || !position) return null` below)
+  // until useAutoAdjustedPosition resolves it, so `popoverRef.current` is
+  // still null on the exact render `pinned` first flips true. `didFocusRef`
+  // guards against re-running the actual focus-move once `position` is
+  // merely re-clamped afterward.
+  const didFocusRef = useRef(false);
+  useEffect(() => {
+    if (pinned && popoverRef.current && !didFocusRef.current) {
+      didFocusRef.current = true;
+      previouslyFocusedRef.current = document.activeElement;
+      const focusable = popoverRef.current.querySelector(FOCUSABLE_SELECTOR);
+      (focusable ?? popoverRef.current).focus();
+    } else if (!pinned && didFocusRef.current) {
+      didFocusRef.current = false;
+      previouslyFocusedRef.current?.focus?.();
+      previouslyFocusedRef.current = null;
+    }
+  }, [pinned, position]);
+
   if (!isOpen || !position) return null;
 
   const threads = target.commentIds.map((id) => store.getComment(id)).filter(Boolean);
@@ -139,6 +170,10 @@ export function CommentPopover({ containerRef, store, authorId }) {
       style={{ position: 'fixed', top: position.top, left: position.left }}
       onMouseEnter={clearHideTimer}
       onMouseLeave={scheduleHide}
+      role="dialog"
+      aria-modal={pinned || undefined}
+      aria-label={`Comments (${threads.length})`}
+      tabIndex={-1}
     >
       <CommentPopoverHeader title={`Comments (${threads.length})`} onClose={closePopover} />
       {threads.map((thread) => (

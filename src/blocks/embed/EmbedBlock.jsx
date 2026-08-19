@@ -210,6 +210,27 @@ export function EmbedBlock({ id }) {
     [setMedia],
   );
 
+  // The handle's `role="slider"` was previously mouse-only — announced as
+  // an operable slider to assistive tech, but Tab never reached it and
+  // arrow keys did nothing, an actively misleading gap for a keyboard-only
+  // user. Left/Right (Shift for a finer 1% step) and Home/End now actually
+  // work, matching what the ARIA role already promised.
+  const handleResizeKeyDown = useCallback(
+    (event) => {
+      const current = block?.props?.width ?? 100;
+      const step = event.shiftKey ? 1 : 5;
+      let next;
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = clampWidth(current - step);
+      else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = clampWidth(current + step);
+      else if (event.key === 'Home') next = MIN_WIDTH;
+      else if (event.key === 'End') next = MAX_WIDTH;
+      else return;
+      event.preventDefault();
+      setMedia({ width: next });
+    },
+    [block?.props?.width, setMedia],
+  );
+
   const className = useBlockClassName('be-embed', block);
 
   if (!block) return null;
@@ -272,7 +293,9 @@ export function EmbedBlock({ id }) {
               <div
                 className="be-embed-resize-handle"
                 onMouseDown={handleResizeStart}
+                onKeyDown={handleResizeKeyDown}
                 role="slider"
+                tabIndex={0}
                 aria-label={`Resize ${KIND_LABEL[kind]}`}
                 aria-valuemin={MIN_WIDTH}
                 aria-valuemax={MAX_WIDTH}

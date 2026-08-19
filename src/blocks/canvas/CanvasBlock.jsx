@@ -1952,6 +1952,28 @@ export function CanvasBlock({ id }) {
     [startResize, block],
   );
 
+  // Same gap/fix as EmbedBlock's and the table column's own resize handles
+  // (role="slider" alone isn't keyboard-operable): Left/Right resize width,
+  // Up/Down resize height (Shift for a finer 4px step instead of 24px),
+  // Home resets both to their minimum.
+  const handleResizeKeyDown = useCallback(
+    (event) => {
+      const currentWidth = block?.props?.width ?? DEFAULT_CANVAS_WIDTH;
+      const currentHeight = block?.props?.height ?? DEFAULT_CANVAS_HEIGHT;
+      const step = event.shiftKey ? 4 : 24;
+      let patch;
+      if (event.key === 'ArrowLeft') patch = { width: Math.max(MIN_CANVAS_WIDTH, currentWidth - step) };
+      else if (event.key === 'ArrowRight') patch = { width: currentWidth + step };
+      else if (event.key === 'ArrowUp') patch = { height: Math.max(MIN_CANVAS_HEIGHT, currentHeight - step) };
+      else if (event.key === 'ArrowDown') patch = { height: currentHeight + step };
+      else if (event.key === 'Home') patch = { width: MIN_CANVAS_WIDTH, height: MIN_CANVAS_HEIGHT };
+      else return;
+      event.preventDefault();
+      store.applyOperation(updateBlockProps(id, patch));
+    },
+    [store, id, block],
+  );
+
   if (!block) return null;
   const { strokes = [], shapes = [], width, height } = block.props;
   const effectiveWidth = dragSize?.width ?? width;
@@ -2508,8 +2530,10 @@ export function CanvasBlock({ id }) {
       <div
         className="be-canvas-resize-handle"
         onMouseDown={handleResizeStart}
+        onKeyDown={handleResizeKeyDown}
         role="slider"
-        aria-label="Resize canvas"
+        tabIndex={0}
+        aria-label="Resize canvas (Left/Right for width, Up/Down for height)"
         aria-valuemin={MIN_CANVAS_WIDTH}
         aria-valuenow={effectiveWidth}
         contentEditable={false}

@@ -247,6 +247,25 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
     [store, tableId, colIndex],
   );
 
+  // Same gap/fix as EmbedBlock's own resize handle: role="slider" alone
+  // doesn't make a mouse-only handle keyboard-operable — Left/Right (Shift
+  // for a finer 1px step) and Home/End now actually resize the column.
+  const handleResizeKeyDown = useCallback(
+    (event) => {
+      const current = column.width ?? MIN_COLUMN_WIDTH;
+      const step = event.shiftKey ? 1 : 16;
+      let next;
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = Math.max(MIN_COLUMN_WIDTH, current - step);
+      else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = Math.min(MAX_COLUMN_WIDTH_HINT, current + step);
+      else if (event.key === 'Home') next = MIN_COLUMN_WIDTH;
+      else if (event.key === 'End') next = MAX_COLUMN_WIDTH_HINT;
+      else return;
+      event.preventDefault();
+      setColumnWidth(store, tableId, colIndex, next);
+    },
+    [store, tableId, colIndex, column.width],
+  );
+
   return (
     <th ref={thRef} scope="col" className="be-table-header-cell" contentEditable={false}>
       <input
@@ -269,7 +288,9 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
       <div
         className="be-table-col-resize-handle"
         onMouseDown={handleResizeStart}
+        onKeyDown={handleResizeKeyDown}
         role="slider"
+        tabIndex={0}
         aria-label={`Resize column ${colIndex + 1}`}
         aria-valuemin={MIN_COLUMN_WIDTH}
         aria-valuemax={MAX_COLUMN_WIDTH_HINT}

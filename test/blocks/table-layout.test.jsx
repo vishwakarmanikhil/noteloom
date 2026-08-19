@@ -265,6 +265,27 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
     expect(Number(handle.getAttribute('aria-valuemax'))).toBeGreaterThan(Number(handle.getAttribute('aria-valuenow')));
   });
 
+  it('the column resize handle is keyboard-operable via Left/Right/Home/End, not mouse-drag-only', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    const handle = container.querySelector('.be-table-col-resize-handle');
+    expect(handle.getAttribute('tabindex')).toBe('0');
+
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    expect(store.getBlock(tableId).props.columns[0].width).toBe(DEFAULT_COLUMN_WIDTH + 16);
+
+    fireEvent.keyDown(handle, { key: 'ArrowLeft', shiftKey: true }); // finer 1px step
+    expect(store.getBlock(tableId).props.columns[0].width).toBe(DEFAULT_COLUMN_WIDTH + 15);
+
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(store.getBlock(tableId).props.columns[0].width).toBe(MIN_COLUMN_WIDTH);
+  });
+
   it('the column menu is keyboard-operable: opening focuses its first item, and Escape closes it and returns focus to the trigger', () => {
     const store = new EditorStore(emptyDoc());
     insertAtRoot(store, createTableBlock({ rows: 1, cols: 2 }));

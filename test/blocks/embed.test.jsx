@@ -474,6 +474,31 @@ describe('embed block: resize handle (image/video only)', () => {
     fireEvent.mouseUp(document, { clientX: -1000 }); // way past the left edge
     expect(store.getBlock(id).props.width).toBe(20);
   });
+
+  it('is keyboard-operable — not mouse-drag-only — via Left/Right/Home/End on the focused handle', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://x/a.png', width: 50 }));
+    const { container } = renderDoc(store);
+    const handle = container.querySelector(`[data-block-id="${id}"] .be-embed-resize-handle`);
+
+    expect(handle.getAttribute('tabindex')).toBe('0'); // reachable via Tab, not just clickable
+
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    expect(store.getBlock(id).props.width).toBe(55);
+
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(store.getBlock(id).props.width).toBe(45);
+
+    fireEvent.keyDown(handle, { key: 'ArrowRight', shiftKey: true }); // finer 1% step
+    expect(store.getBlock(id).props.width).toBe(46);
+
+    fireEvent.keyDown(handle, { key: 'End' });
+    expect(store.getBlock(id).props.width).toBe(100);
+
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(store.getBlock(id).props.width).toBe(20);
+  });
 });
 
 describe('embed block: clipboard round-trip', () => {

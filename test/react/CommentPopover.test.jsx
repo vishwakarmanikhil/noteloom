@@ -149,6 +149,49 @@ describe('CommentPopover', () => {
     expect(repliesContainer.textContent).toContain('a reply');
   });
 
+  it('a pinned (click-)opened popover has dialog semantics, moves focus in, and restores it on close', () => {
+    const store = new EditorStore(makeDoc());
+    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'x' });
+    const { container } = renderHarness(store, { authorId: 'alice' });
+
+    const outsideButton = document.createElement('button');
+    document.body.appendChild(outsideButton);
+    outsideButton.focus();
+    expect(document.activeElement).toBe(outsideButton);
+
+    fireEvent.click(getFirstRunEl(container));
+    const popover = document.querySelector('.be-comment-popover');
+    expect(popover.getAttribute('role')).toBe('dialog');
+    expect(popover.getAttribute('aria-modal')).toBe('true');
+    expect(popover.contains(document.activeElement)).toBe(true); // focus moved in, not left stranded on the run
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+    expect(document.querySelector('.be-comment-popover')).toBeNull();
+    expect(document.activeElement).toBe(outsideButton); // restored to whatever had focus before opening
+
+    document.body.removeChild(outsideButton);
+  });
+
+  it('a hover-only preview does not steal focus or claim aria-modal', () => {
+    const store = new EditorStore(makeDoc());
+    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'x' });
+    const { container } = renderHarness(store, { authorId: 'alice' });
+
+    const outsideButton = document.createElement('button');
+    document.body.appendChild(outsideButton);
+    outsideButton.focus();
+
+    fireEvent.mouseOver(getFirstRunEl(container));
+    const popover = document.querySelector('.be-comment-popover');
+    expect(popover).not.toBeNull();
+    expect(popover.hasAttribute('aria-modal')).toBe(false);
+    expect(document.activeElement).toBe(outsideButton); // untouched by a mere hover
+
+    document.body.removeChild(outsideButton);
+  });
+
   it('closes on an outside click', () => {
     const store = new EditorStore(makeDoc());
     addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'x' });
