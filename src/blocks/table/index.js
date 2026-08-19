@@ -1,7 +1,7 @@
 import { TableBlock } from './TableBlock.jsx';
 import { TableRowBlock } from './TableRowBlock.jsx';
 import { TableCellBlock } from './TableCellBlock.jsx';
-import { runToHTML, runToPlainText, escapeHTML } from '../../inline/marks.js';
+import { runToHTML, runToPlainText, runsToMarkdown, escapeHTML } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
@@ -18,6 +18,14 @@ function cellToHTML(block, ctx) {
 
 function cellToPlainText(block, ctx) {
   return block.contentIds.map((runId) => runToPlainText(ctx.store.getRun(runId), ctx)).join('');
+}
+
+// GFM table cells can't contain a literal "|" (breaks the row) or a real
+// newline (breaks the table entirely) — escape/replace those on top of the
+// normal inline-marks escaping runsToMarkdown already does.
+function cellToMarkdown(block, ctx) {
+  const raw = runsToMarkdown(block.contentIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  return raw.replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
 }
 
 function cellFromHTML(node, ctx) {
@@ -46,6 +54,14 @@ function rowToPlainText(block, ctx) {
       return ctx.registry.get(cellBlock.type).toPlainText(cellBlock, ctx);
     })
     .join('\t');
+}
+
+function rowToMarkdown(block, ctx) {
+  const cells = block.contentIds.map((cellId) => {
+    const cellBlock = ctx.store.getBlock(cellId);
+    return ctx.registry.get(cellBlock.type).toMarkdown(cellBlock, ctx);
+  });
+  return `| ${cells.join(' | ')} |`;
 }
 
 function rowFromHTML(node, ctx) {
@@ -94,6 +110,28 @@ function tableToPlainText(block, ctx) {
     .join('\n');
 }
 
+// GFM table syntax: a header row (from props.columns — every contentIds
+// row is a genuine data row, never consumed as the header, same as
+// tableToHTML's separate <thead>/<tbody> split above), a separator row,
+// then each data row. Column TYPE (select/date/etc.) has no Markdown
+// representation of its own — only the label makes it into the header;
+// each cell's own value still renders via cellToMarkdown regardless of
+// its column's type.
+function tableToMarkdown(block, ctx) {
+  const firstRow = block.contentIds[0] && ctx.store.getBlock(block.contentIds[0]);
+  const columns = resolveColumns(block, firstRow?.contentIds?.length ?? 0);
+  if (columns.length === 0) return '';
+  const headerRow = `| ${columns.map((c) => (c.label ?? '').replace(/\|/g, '\\|')).join(' | ')} |`;
+  const separatorRow = `| ${columns.map(() => '---').join(' | ')} |`;
+  const bodyRows = block.contentIds
+    .map((rowId) => {
+      const rowBlock = ctx.store.getBlock(rowId);
+      return ctx.registry.get(rowBlock.type).toMarkdown(rowBlock, ctx);
+    })
+    .join('\n');
+  return bodyRows ? `${headerRow}\n${separatorRow}\n${bodyRows}` : `${headerRow}\n${separatorRow}`;
+}
+
 function tableFromHTML(node, ctx) {
   if (node.tagName !== 'TABLE') return null;
 
@@ -138,6 +176,7 @@ export const tableCellBlockType = {
   defaultProps: {},
   toHTML: cellToHTML,
   toPlainText: cellToPlainText,
+  toMarkdown: cellToMarkdown,
   fromHTML: cellFromHTML,
 };
 
@@ -147,6 +186,7 @@ export const tableRowBlockType = {
   defaultProps: {},
   toHTML: rowToHTML,
   toPlainText: rowToPlainText,
+  toMarkdown: rowToMarkdown,
   fromHTML: rowFromHTML,
 };
 
@@ -156,6 +196,7 @@ export const tableBlockType = {
   defaultProps: {},
   toHTML: tableToHTML,
   toPlainText: tableToPlainText,
+  toMarkdown: tableToMarkdown,
   fromHTML: tableFromHTML,
   slashCommand: {
     label: 'Table',

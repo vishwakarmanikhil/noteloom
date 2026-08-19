@@ -3,24 +3,11 @@ import { useBlock } from '../../react/useBlock.js';
 import { useEditorStore, useBlockClassName, useFileUpload } from '../../react/EditorProvider.jsx';
 import { updateBlockProps } from '../../store/operations.js';
 import { Modal } from '../../react/Modal.jsx';
-import { PaperclipIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from '../../react/icons.jsx';
+import { PaperclipIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, LinkIcon } from '../../react/icons.jsx';
+import { resolveFileToSrc } from './resolveFileEmbed.js';
+import { resolveOEmbedUrl } from './oembedProviders.js';
 
-function readFileAsDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-const KIND_LABEL = { image: 'image', video: 'video', audio: 'audio', file: 'file' };
+const KIND_LABEL = { image: 'image', video: 'video', audio: 'audio', file: 'file', oembed: 'embed' };
 const KIND_ACCEPT = { image: 'image/*', video: 'video/*', audio: 'audio/*', file: '*/*' };
 const MIN_WIDTH = 20;
 const MAX_WIDTH = 100;
@@ -34,7 +21,7 @@ function clampWidth(pct) {
   return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(pct)));
 }
 
-function EmbedPreview({ kind, src, name, alt }) {
+function EmbedPreview({ kind, src, name, alt, provider }) {
   // Deliberately never falls back to `name` (the uploaded file's raw
   // filename, e.g. "IMG_2481.HEIC", or a pasted URL string) — neither is
   // meaningful alt text, and silently presenting one as if it were a real
@@ -42,6 +29,24 @@ function EmbedPreview({ kind, src, name, alt }) {
   if (kind === 'image') return <img className="be-embed-image" src={src} alt={alt || ''} />;
   if (kind === 'video') return <video className="be-embed-video" src={src} controls />;
   if (kind === 'audio') return <audio className="be-embed-audio" src={src} controls />;
+  if (kind === 'oembed') {
+    return (
+      <iframe
+        className="be-embed-oembed"
+        src={src}
+        title={provider ? `${provider} embed` : 'embed'}
+        // A fixed provider allowlist (see oembedProviders.js), never an
+        // arbitrary user-supplied origin, is what makes allow-scripts safe
+        // here — every embed URL is derived from a known provider's own
+        // documented iframe shape, same trust boundary as loading their
+        // official embed.js would be.
+        sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowFullScreen
+        loading="lazy"
+      />
+    );
+  }
   return (
     <a className="be-embed-file-link" href={src} download={name || undefined} target="_blank" rel="noopener noreferrer">
       <PaperclipIcon size={14} /> {name || src}
@@ -120,24 +125,15 @@ export function EmbedBlock({ id }) {
   const acceptFile = useCallback(
     async (file, kind) => {
       setUploadError(null);
-      if (uploadFile) {
-        setIsUploading(true);
-        try {
-          const result = await uploadFile(file, { kind });
-          setMedia({ src: result.src, name: result.name ?? file.name, mimeType: result.mimeType ?? file.type });
-        } catch (err) {
-          setUploadError(err?.message || 'Upload failed. Please try again.');
-        } finally {
-          setIsUploading(false);
-        }
-        return;
+      setIsUploading(true);
+      try {
+        const { src, name, mimeType } = await resolveFileToSrc(file, { uploadFile, maxFileSize, kind });
+        setMedia({ src, name, mimeType });
+      } catch (err) {
+        setUploadError(err?.message || 'Upload failed. Please try again.');
+      } finally {
+        setIsUploading(false);
       }
-      if (maxFileSize && file.size > maxFileSize) {
-        setUploadError(`This file is ${formatBytes(file.size)} — larger than the ${formatBytes(maxFileSize)} limit.`);
-        return;
-      }
-      const src = await readFileAsDataURL(file);
-      setMedia({ src, name: file.name, mimeType: file.type });
     },
     [uploadFile, maxFileSize, setMedia],
   );
@@ -168,14 +164,26 @@ export function EmbedBlock({ id }) {
 
   const handleDragLeave = useCallback(() => setIsDragOver(false), []);
 
+  // A pasted URL matching a known provider (see oembedProviders.js) always
+  // wins, regardless of which slash command created this block — pasting a
+  // YouTube link into an "/image" block's dropzone should still produce a
+  // real player, not a broken <img src="https://youtube.com/watch?...">.
   const commitUrl = useCallback(() => {
     const trimmed = urlInput.trim();
     if (!trimmed) return;
-    setMedia({ src: trimmed, name: trimmed });
+    const oembed = resolveOEmbedUrl(trimmed);
+    if (oembed) {
+      setMedia({ kind: 'oembed', src: oembed.embedUrl, name: trimmed, mimeType: '', provider: oembed.provider, originalUrl: trimmed });
+    } else {
+      setMedia({ src: trimmed, name: trimmed });
+    }
     setUrlInput('');
   }, [urlInput, setMedia]);
 
-  const clearMedia = useCallback(() => setMedia({ src: '', name: '', mimeType: '' }), [setMedia]);
+  const clearMedia = useCallback(
+    () => setMedia({ src: '', name: '', mimeType: '', provider: '', originalUrl: '' }),
+    [setMedia],
+  );
 
   const handleResizeStart = useCallback(
     (event) => {
@@ -205,9 +213,10 @@ export function EmbedBlock({ id }) {
   const className = useBlockClassName('be-embed', block);
 
   if (!block) return null;
-  const { kind = 'file', src, name, alt = '', align = 'left', width = 100 } = block.props;
-  const canResize = kind === 'image' || kind === 'video';
+  const { kind = 'file', src, name, alt = '', align = 'left', width = 100, provider = '', originalUrl = '' } = block.props;
+  const canResize = kind === 'image' || kind === 'video' || kind === 'oembed';
   const effectiveWidth = dragWidth ?? width;
+  const isOEmbed = kind === 'oembed';
 
   return (
     // tabIndex={-1}: focusable via .focus() (see setSelectedBlockId in
@@ -242,11 +251,23 @@ export function EmbedBlock({ id }) {
                   Alt text
                 </button>
               )}
+              {isOEmbed && originalUrl && (
+                <a
+                  className="be-embed-toolbar-btn be-embed-open-original"
+                  href={originalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open original link"
+                  aria-label="Open original link"
+                >
+                  <LinkIcon size={14} />
+                </a>
+              )}
               <button type="button" className="be-embed-remove" onClick={clearMedia} aria-label={`Remove ${KIND_LABEL[kind]}`}>
                 Remove
               </button>
             </div>
-            <EmbedPreview kind={kind} src={src} name={name} alt={alt} />
+            <EmbedPreview kind={kind} src={src} name={name} alt={alt} provider={provider} />
             {canResize && (
               <div
                 className="be-embed-resize-handle"
@@ -263,24 +284,28 @@ export function EmbedBlock({ id }) {
       ) : (
         <div
           className={`be-embed-dropzone${isDragOver ? ' be-embed-dropzone-active' : ''}`}
-          onDrop={isUploading ? undefined : handleDrop}
-          onDragOver={isUploading ? undefined : handleDragOver}
+          onDrop={isOEmbed || isUploading ? undefined : handleDrop}
+          onDragOver={isOEmbed || isUploading ? undefined : handleDragOver}
           onDragLeave={handleDragLeave}
         >
           {isUploading ? (
             <span className="be-embed-uploading">Uploading…</span>
           ) : (
             <>
-              <label className="be-embed-upload-btn">
-                Upload {KIND_LABEL[kind]}
-                <input type="file" accept={KIND_ACCEPT[kind]} onChange={handleFileChange} hidden />
-              </label>
-              <span className="be-embed-dropzone-hint">or drop a file, or paste a URL below</span>
+              {!isOEmbed && (
+                <>
+                  <label className="be-embed-upload-btn">
+                    Upload {KIND_LABEL[kind]}
+                    <input type="file" accept={KIND_ACCEPT[kind]} onChange={handleFileChange} hidden />
+                  </label>
+                  <span className="be-embed-dropzone-hint">or drop a file, or paste a URL below</span>
+                </>
+              )}
               <div className="be-embed-url-row">
                 <input
                   type="text"
                   className="be-embed-url-input"
-                  placeholder={`https://... ${KIND_LABEL[kind]} URL`}
+                  placeholder={isOEmbed ? 'Paste a YouTube, Vimeo, Loom, Figma, CodePen, or Spotify link' : `https://... ${KIND_LABEL[kind]} URL`}
                   value={urlInput}
                   onChange={(event) => setUrlInput(event.target.value)}
                   onKeyDown={(event) => event.key === 'Enter' && commitUrl()}

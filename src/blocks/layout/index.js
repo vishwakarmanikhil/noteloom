@@ -23,12 +23,27 @@ function containerToPlainText(block, ctx) {
     .join('\n');
 }
 
+// Markdown has no native side-by-side-columns syntax — columns are just
+// stacked one after another, each child still going through its own real
+// toMarkdown (not toPlainText) so formatting nested inside a layout isn't
+// silently lost.
+function containerToMarkdown(block, ctx) {
+  return block.contentIds
+    .map((childId) => {
+      const child = ctx.store.getBlock(childId);
+      const entry = ctx.registry.get(child.type);
+      return (entry.toMarkdown ?? entry.toPlainText)(child, ctx);
+    })
+    .join('\n\n');
+}
+
 export const layoutColumnBlockType = {
   component: LayoutColumnBlock,
   isLeaf: false,
   defaultProps: {},
   toHTML: containerToHTML('<div>', '</div>'),
   toPlainText: containerToPlainText,
+  toMarkdown: containerToMarkdown,
   // no fromHTML: a bare column has no distinct HTML representation of its
   // own outside a parent `layout`'s markup; layout.fromHTML would construct
   // both together if/when generic multi-column HTML import is added.
@@ -40,6 +55,7 @@ export const layoutBlockType = {
   defaultProps: {},
   toHTML: containerToHTML('<div style="display:flex;gap:1em">', '</div>'),
   toPlainText: containerToPlainText,
+  toMarkdown: containerToMarkdown,
   slashCommands: [2, 3, 4, 5].map((columns) => ({
     label: `${columns} columns`,
     icon: ColumnsIcon,

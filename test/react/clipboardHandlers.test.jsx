@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, fireEvent, act } from '@testing-library/react';
+import { render, fireEvent, act, waitFor } from '@testing-library/react';
 import { useRef } from 'react';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { History } from '../../src/store/history.js';
@@ -13,8 +13,9 @@ import { APP_MIME } from '../../src/clipboard/mimeType.js';
 import { serializeBlockRange } from '../../src/clipboard/serialize.js';
 
 class FakeDataTransfer {
-  constructor(initial = {}) {
+  constructor(initial = {}, files = []) {
     this._data = { ...initial };
+    this.files = files;
   }
   setData(type, value) {
     this._data[type] = value;
@@ -52,6 +53,16 @@ function renderHarness(store) {
       <Harness />
     </EditorProvider>,
   ), registry };
+}
+
+function renderHarnessWithUpload(store, uploadOptions) {
+  const registry = createBlockRegistry();
+  registerBuiltInBlocks(registry);
+  return render(
+    <EditorProvider store={store} registry={registry} {...uploadOptions}>
+      <Harness />
+    </EditorProvider>,
+  );
 }
 
 // Combines both hooks the way a real app does — needed for the whole-
@@ -257,6 +268,76 @@ describe('useClipboardHandlers: Paste replaces an active selection', () => {
     expect(store.getRun('r1').value).toBe('first line'); // untouched: not a simple single-run text paste
     const rootIds = store.getBlock('root').contentIds;
     expect(rootIds.length).toBe(4); // p1, p2, + 2 inserted list items
+  });
+});
+
+describe('useClipboardHandlers: pasting a raw file straight off the clipboard (screenshot, OS "Copy Image")', () => {
+  it('inserts an embed block via the data: URL fallback when no uploadFile is configured', async () => {
+    const store = new History(new EditorStore(makeTwoParagraphDoc()));
+    const { container } = renderHarness(store);
+    const r1Node = container.querySelector('[data-run-id="r1"]');
+
+    const range = document.createRange();
+    range.setStart(r1Node.firstChild, 5);
+    range.setEnd(r1Node.firstChild, 5);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    const file = new File(['fake-png-bytes'], 'screenshot.png', { type: 'image/png' });
+    const dt = new FakeDataTransfer({}, [file]);
+    const event = fireClipboardEvent(container.firstChild, 'paste', dt);
+
+    expect(event.defaultPrevented).toBe(true);
+    await waitFor(() => expect(store.getBlock('root').contentIds.length).toBe(3));
+    const insertedId = store.getBlock('root').contentIds[1];
+    const inserted = store.getBlock(insertedId);
+    expect(inserted.type).toBe('embed');
+    expect(inserted.props.kind).toBe('image');
+    expect(inserted.props.src).toMatch(/^data:image\/png/);
+
+    store.undo();
+    expect(store.getBlock('root').contentIds).toEqual(['p1', 'p2']);
+  });
+
+  it('routes through the configured uploadFile instead of a data: URL when one is set', async () => {
+    const store = new History(new EditorStore(makeTwoParagraphDoc()));
+    const uploadFile = async (file) => ({ src: `https://cdn.example.com/${file.name}` });
+    const { container } = renderHarnessWithUpload(store, { uploadFile });
+    const r1Node = container.querySelector('[data-run-id="r1"]');
+
+    const range = document.createRange();
+    range.setStart(r1Node.firstChild, 5);
+    range.setEnd(r1Node.firstChild, 5);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    const file = new File(['fake-png-bytes'], 'screenshot.png', { type: 'image/png' });
+    const dt = new FakeDataTransfer({}, [file]);
+    fireClipboardEvent(container.firstChild, 'paste', dt);
+
+    await waitFor(() => expect(store.getBlock('root').contentIds.length).toBe(3));
+    const insertedId = store.getBlock('root').contentIds[1];
+    expect(store.getBlock(insertedId).props.src).toBe('https://cdn.example.com/screenshot.png');
+  });
+
+  it('takes priority over text/html on the same clipboard event', async () => {
+    const store = new History(new EditorStore(makeTwoParagraphDoc()));
+    const { container } = renderHarness(store);
+    const r1Node = container.querySelector('[data-run-id="r1"]');
+
+    const range = document.createRange();
+    range.setStart(r1Node.firstChild, 5);
+    range.setEnd(r1Node.firstChild, 5);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    const file = new File(['fake-png-bytes'], 'screenshot.png', { type: 'image/png' });
+    const dt = new FakeDataTransfer({ 'text/html': '<ul><li>a</li><li>b</li></ul>' }, [file]);
+    fireClipboardEvent(container.firstChild, 'paste', dt);
+
+    await waitFor(() => expect(store.getBlock('root').contentIds.length).toBe(3));
+    const insertedId = store.getBlock('root').contentIds[1];
+    expect(store.getBlock(insertedId).type).toBe('embed'); // not the <ul>'s list items
   });
 });
 

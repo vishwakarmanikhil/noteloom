@@ -1,5 +1,5 @@
 import { HeadingBlock } from './HeadingBlock.jsx';
-import { runToHTML, runToPlainText } from '../../inline/marks.js';
+import { runToHTML, runToPlainText, runsToMarkdown } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
@@ -18,6 +18,12 @@ function toHTML(block, ctx) {
 
 function toPlainText(block, ctx) {
   return block.contentIds.map((runId) => runToPlainText(ctx.store.getRun(runId), ctx)).join('');
+}
+
+function toMarkdown(block, ctx) {
+  const level = block.props?.level ?? 3;
+  const text = runsToMarkdown(block.contentIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  return `${'#'.repeat(level)} ${text}`;
 }
 
 function fromHTML(node, ctx) {
@@ -40,6 +46,7 @@ export const headingBlockType = {
   defaultProps: { level: 3 },
   toHTML,
   toPlainText,
+  toMarkdown,
   fromHTML,
   slashCommands: [
     {

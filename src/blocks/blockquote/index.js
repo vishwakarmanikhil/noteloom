@@ -1,5 +1,5 @@
 import { BlockquoteBlock } from './BlockquoteBlock.jsx';
-import { runToHTML, runToPlainText } from '../../inline/marks.js';
+import { runToHTML, runToPlainText, runsToMarkdown } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
@@ -15,6 +15,16 @@ function toPlainText(block, ctx) {
   return block.contentIds.map((runId) => runToPlainText(ctx.store.getRun(runId), ctx)).join('');
 }
 
+// Consecutive blockquote sibling blocks (one per line, this editor's own
+// model — see clipboard/serialize.js's toHTML grouping) each get their own
+// leading "> " here; the top-level exportDocumentMarkdown joiner knows not
+// to insert a blank line between consecutive blockquote siblings, so they
+// read back as one continuous quote instead of separate ones.
+function toMarkdown(block, ctx) {
+  const text = runsToMarkdown(block.contentIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  return `> ${text}`;
+}
+
 function fromHTML(node, ctx) {
   if (node.tagName !== 'BLOCKQUOTE') return null;
   const runs = domInlineToRuns(node, ctx);
@@ -28,6 +38,7 @@ export const blockquoteBlockType = {
   defaultProps: {},
   toHTML,
   toPlainText,
+  toMarkdown,
   fromHTML,
   slashCommand: {
     label: 'Quote',

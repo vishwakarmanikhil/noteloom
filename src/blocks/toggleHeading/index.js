@@ -1,5 +1,5 @@
 import { ToggleHeadingBlock } from './ToggleHeadingBlock.jsx';
-import { runToHTML, runToPlainText } from '../../inline/marks.js';
+import { runToHTML, runToPlainText, runsToMarkdown } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
@@ -35,6 +35,24 @@ function toPlainText(block, ctx) {
     })
     .join('\n');
   return children ? `${title}\n${children}` : title;
+}
+
+// No native Markdown disclosure widget — degrades to a plain heading
+// followed by its children, same "no exact equivalent, fall back to
+// something readable" choice listItem's own toMarkdown makes for a
+// collapsed toggle list item.
+function toMarkdown(block, ctx) {
+  const { titleRunIds = [], level = 2 } = block.props;
+  const title = runsToMarkdown(titleRunIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  const heading = `${'#'.repeat(Math.min(6, level))} ${title}`;
+  const children = block.contentIds
+    .map((childId) => {
+      const child = ctx.store.getBlock(childId);
+      const entry = ctx.registry.get(child.type);
+      return (entry.toMarkdown ?? entry.toPlainText)(child, ctx);
+    })
+    .join('\n\n');
+  return children ? `${heading}\n\n${children}` : heading;
 }
 
 /** Only reconstructs top-level <p> children on paste (matches blockquote's fromHTML scope) — deeper nested block types fall back to a single blank paragraph. */
@@ -80,6 +98,7 @@ export const toggleHeadingBlockType = {
   defaultProps: { level: 2, collapsed: false, titleRunIds: [] },
   toHTML,
   toPlainText,
+  toMarkdown,
   fromHTML,
   slashCommands: [1, 2, 3].map((level) => ({
     label: `Toggle heading ${level}`,

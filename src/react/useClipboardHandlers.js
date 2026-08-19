@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useEditorStore, useBlockRegistry, useInlineRegistry, useWholeDocumentSelection, useBlockRangeSelection } from './EditorProvider.jsx';
+import { useEditorStore, useBlockRegistry, useInlineRegistry, useWholeDocumentSelection, useBlockRangeSelection, useFileUpload } from './EditorProvider.jsx';
 import { serializeBlockRange } from '../clipboard/serialize.js';
 import { deserializeClipboard } from '../clipboard/deserialize.js';
 import { APP_MIME } from '../clipboard/mimeType.js';
@@ -8,6 +8,7 @@ import { resolveMultiRunSelection, resolveCrossBlockSelection, resolveCollapsedC
 import { deleteRunRangeInBlock, deleteOverBlockRange, deleteEntireDocument } from '../inline/deleteCommands.js';
 import { deleteBlockRange } from '../blocks/shared/blockRangeActions.js';
 import { focusRunAtOffset } from './focusRun.js';
+import { resolveFileToEmbedInsert } from '../blocks/embed/resolveFileEmbed.js';
 
 function closestBlockId(node) {
   let el = node?.nodeType === 1 ? node : node?.parentElement;
@@ -77,6 +78,7 @@ export function useClipboardHandlers() {
   const store = useEditorStore();
   const registry = useBlockRegistry();
   const inlineRegistry = useInlineRegistry();
+  const { uploadFile, maxFileSize } = useFileUpload();
   const [isWholeDocumentSelected, setIsWholeDocumentSelected] = useWholeDocumentSelection();
   const [selectedBlockRange, setSelectedBlockRange] = useBlockRangeSelection();
 
@@ -126,8 +128,85 @@ export function useClipboardHandlers() {
     [onCopy, store, isWholeDocumentSelected, setIsWholeDocumentSelected, selectedBlockRange, setSelectedBlockRange],
   );
 
+  // A raw image/media file straight off the OS clipboard (a screenshot, an
+  // OS-level "Copy Image") — as opposed to copying an <img> from a webpage,
+  // which arrives as text/html and is handled by deserializeClipboard/
+  // embed's fromHTML instead. Goes through the exact same uploadFile/
+  // maxFileSize resolution as EmbedBlock's own dropzone (see
+  // resolveFileEmbed.js's doc comment), so a host's upload config behaves
+  // identically no matter which path triggered it. A file failing to
+  // resolve (oversized, or a rejected uploadFile call) is skipped rather
+  // than aborting the whole paste — the rest still land.
+  const insertPastedFiles = useCallback(
+    async (files) => {
+      const settled = await Promise.allSettled(files.map((file) => resolveFileToEmbedInsert(file, { uploadFile, maxFileSize })));
+      const inserts = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+      if (inserts.length === 0) return;
+
+      if (isWholeDocumentSelected) {
+        const rootId = store.getRootId();
+        const contentIds = store.getBlock(rootId)?.contentIds ?? [];
+        const ops = contentIds.map((id) => removeBlock(id));
+        let rootIndex = 0;
+        for (const { block, runs, subtreeBlocks = [] } of inserts) {
+          block.parentId = rootId;
+          ops.push(insertBlock(block, rootId, rootIndex, { blocks: [block, ...subtreeBlocks], runs }));
+          rootIndex += 1;
+        }
+        applyOps(store, ops);
+        setIsWholeDocumentSelected(false);
+        return;
+      }
+
+      if (selectedBlockRange.length > 0) {
+        const first = store.getBlock(selectedBlockRange[0]);
+        const parentId = first?.parentId ?? null;
+        const parent = parentId && store.getBlock(parentId);
+        let index = parent ? parent.contentIds.indexOf(selectedBlockRange[0]) : 0;
+
+        const ops = selectedBlockRange.map((id) => removeBlock(id));
+        for (const { block, runs, subtreeBlocks = [] } of inserts) {
+          block.parentId = parentId;
+          ops.push(insertBlock(block, parentId, index, { blocks: [block, ...subtreeBlocks], runs }));
+          index += 1;
+        }
+        applyOps(store, ops);
+        setSelectedBlockRange([]);
+        return;
+      }
+
+      const deleteResult = deleteCurrentSelection(store);
+      const atBlockId = deleteResult?.blockId ?? closestBlockId(window.getSelection?.()?.anchorNode);
+      if (!atBlockId) return;
+      const current = store.getBlock(atBlockId);
+      if (!current) return;
+      const parent = store.getBlock(current.parentId);
+      let index = parent.contentIds.indexOf(atBlockId) + 1;
+
+      const insertOps = [];
+      for (const { block, runs, subtreeBlocks = [] } of inserts) {
+        block.parentId = current.parentId;
+        insertOps.push(insertBlock(block, current.parentId, index, { blocks: [block, ...subtreeBlocks], runs }));
+        index += 1;
+      }
+      applyOps(store, insertOps);
+    },
+    [store, uploadFile, maxFileSize, isWholeDocumentSelected, setIsWholeDocumentSelected, selectedBlockRange, setSelectedBlockRange],
+  );
+
   const onPaste = useCallback(
     (event) => {
+      // A real file on the clipboard (as opposed to an <img> copied from a
+      // webpage, which arrives as text/html with no .files) is a strong,
+      // unambiguous signal of direct image/screenshot paste intent — takes
+      // priority over HTML/text deserialization below.
+      const files = Array.from(event.clipboardData?.files ?? []);
+      if (files.length > 0) {
+        event.preventDefault();
+        insertPastedFiles(files);
+        return;
+      }
+
       const inserts = deserializeClipboard(event.clipboardData, registry, inlineRegistry);
       if (inserts.length === 0) return;
 
@@ -220,7 +299,7 @@ export function useClipboardHandlers() {
 
       event.preventDefault();
     },
-    [store, registry, inlineRegistry, isWholeDocumentSelected, setIsWholeDocumentSelected, selectedBlockRange, setSelectedBlockRange],
+    [store, registry, inlineRegistry, isWholeDocumentSelected, setIsWholeDocumentSelected, selectedBlockRange, setSelectedBlockRange, insertPastedFiles],
   );
 
   return { onCopy, onCut, onPaste };

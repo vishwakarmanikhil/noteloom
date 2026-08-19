@@ -143,6 +143,69 @@ describe('embed block: pasting a URL', () => {
   });
 });
 
+describe('embed block: pasting a known-provider URL auto-converts to a rich embed', () => {
+  it('pasting a YouTube link into a video block switches kind to oembed and renders an iframe', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'video' }));
+    const { container } = renderDoc(store);
+
+    const input = container.querySelector(`[data-block-id="${id}"] .be-embed-url-input`);
+    fireEvent.change(input, { target: { value: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' } });
+    fireEvent.click(container.querySelector(`[data-block-id="${id}"] .be-embed-url-commit`));
+
+    const block = store.getBlock(id);
+    expect(block.props.kind).toBe('oembed');
+    expect(block.props.src).toBe('https://www.youtube.com/embed/dQw4w9WgXcQ');
+    expect(block.props.provider).toBe('youtube');
+    expect(block.props.originalUrl).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+
+    const iframe = container.querySelector(`[data-block-id="${id}"] iframe.be-embed-oembed`);
+    expect(iframe).not.toBeNull();
+    expect(iframe.getAttribute('src')).toBe('https://www.youtube.com/embed/dQw4w9WgXcQ');
+  });
+
+  it('a URL matching no known provider falls back to the plain src behavior', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'video' }));
+    const { container } = renderDoc(store);
+
+    const input = container.querySelector(`[data-block-id="${id}"] .be-embed-url-input`);
+    fireEvent.change(input, { target: { value: 'https://example.com/movie.mp4' } });
+    fireEvent.click(container.querySelector(`[data-block-id="${id}"] .be-embed-url-commit`));
+
+    const block = store.getBlock(id);
+    expect(block.props.kind).toBe('video');
+    expect(block.props.src).toBe('https://example.com/movie.mp4');
+  });
+
+  it('Remove clears provider/originalUrl along with src', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'oembed', src: 'https://www.youtube.com/embed/abc', provider: 'youtube', originalUrl: 'https://youtu.be/abc' }),
+    );
+    const { container } = renderDoc(store);
+
+    fireEvent.click(container.querySelector(`[data-block-id="${id}"] .be-embed-remove`));
+
+    const block = store.getBlock(id);
+    expect(block.props.src).toBe('');
+    expect(block.props.provider).toBe('');
+    expect(block.props.originalUrl).toBe('');
+  });
+
+  it('the "/Embed link" slash command starts an oembed-kind block with an oembed-specific placeholder', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'oembed' }));
+    const { container } = renderDoc(store);
+
+    const input = container.querySelector(`[data-block-id="${id}"] .be-embed-url-input`);
+    expect(input.getAttribute('placeholder')).toMatch(/YouTube/);
+    // no upload button for a link-only embed
+    expect(container.querySelector(`[data-block-id="${id}"] .be-embed-upload-btn`)).toBeNull();
+  });
+});
+
 describe('embed block: uploading a local file reads it into a data: URL (no backend needed)', () => {
   it('picking a file via the hidden file input sets props.src to a data URL and props.name to the filename', async () => {
     const store = new EditorStore(emptyDoc());
@@ -257,7 +320,7 @@ describe('embed block: uploadFile — sends the file to the host instead of inli
 });
 
 describe('embed block: maxFileSize (no uploadFile configured) -- caps the in-document data: URL fallback only', () => {
-  it('rejects a file over the limit with a clear error, writing nothing to the store', () => {
+  it('rejects a file over the limit with a clear error, writing nothing to the store', async () => {
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(store, createEmbedBlock({ kind: 'file' }));
     const { container } = renderDocWithUpload(store, { maxFileSize: 10 }); // 10 bytes
@@ -265,8 +328,11 @@ describe('embed block: maxFileSize (no uploadFile configured) -- caps the in-doc
     const file = new File(['this is way more than ten bytes'], 'doc.pdf', { type: 'application/pdf' });
     fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
 
-    const error = container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`);
-    expect(error).not.toBeNull();
+    const error = await waitFor(() => {
+      const el = container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`);
+      expect(el).not.toBeNull();
+      return el;
+    });
     expect(error.textContent).toMatch(/larger than the 10 B limit/);
     expect(store.getBlock(id).props.src).toBe('');
   });
@@ -494,6 +560,39 @@ describe('embed block: clipboard round-trip', () => {
     expect(fileInsert.block.props.kind).toBe('file');
 
     const [plainInsert] = walkDomToBlocks('<a href="https://x/a.pdf">a.pdf</a>', registry);
+    expect(plainInsert.block.type).toBe('paragraph'); // ordinary link, not an embed
+  });
+
+  it('oembed toHTML emits a marker-classed <a> (not the iframe) carrying the embed URL/provider as data attributes', () => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+
+    const rich = createEmbedBlock({
+      kind: 'oembed',
+      src: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      provider: 'youtube',
+      originalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    })('root').block;
+    expect(registry.get('embed').toHTML(rich)).toBe(
+      '<a class="be-embed-oembed-link" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" data-embed-url="https://www.youtube.com/embed/dQw4w9WgXcQ" data-embed-provider="youtube">https://www.youtube.com/watch?v=dQw4w9WgXcQ</a>',
+    );
+  });
+
+  it('walkDomToBlocks reconstructs an oembed block only from its marker-classed <a>, not an ordinary link', () => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+
+    const [richInsert] = walkDomToBlocks(
+      '<a class="be-embed-oembed-link" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" data-embed-url="https://www.youtube.com/embed/dQw4w9WgXcQ" data-embed-provider="youtube">https://www.youtube.com/watch?v=dQw4w9WgXcQ</a>',
+      registry,
+    );
+    expect(richInsert.block.type).toBe('embed');
+    expect(richInsert.block.props.kind).toBe('oembed');
+    expect(richInsert.block.props.src).toBe('https://www.youtube.com/embed/dQw4w9WgXcQ');
+    expect(richInsert.block.props.provider).toBe('youtube');
+    expect(richInsert.block.props.originalUrl).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+
+    const [plainInsert] = walkDomToBlocks('<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">a link</a>', registry);
     expect(plainInsert.block.type).toBe('paragraph'); // ordinary link, not an embed
   });
 });

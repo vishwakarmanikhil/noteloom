@@ -19,6 +19,10 @@ function toPlainText() {
   return '---';
 }
 
+function toMarkdown() {
+  return '---';
+}
+
 function fromHTML(node) {
   if (node.tagName !== 'HR') return null;
   return { block: { id: genId(), type: 'divider', parentId: null, contentIds: [], props: {} }, runs: [] };
@@ -30,6 +34,7 @@ export const dividerBlockType = {
   defaultProps: {},
   toHTML,
   toPlainText,
+  toMarkdown,
   fromHTML,
   slashCommand: {
     label: 'Divider',

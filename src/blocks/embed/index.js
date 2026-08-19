@@ -5,14 +5,20 @@ import { insertSiblingAfter, insertSiblingAfterAndFocus } from '../shared/blockC
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { createEmbedBlock } from './createEmbedBlock.js';
 import { updateRun } from '../../store/operations.js';
-import { ImageIcon, VideoIcon, AudioIcon, PaperclipIcon } from '../../react/icons.jsx';
+import { ImageIcon, VideoIcon, AudioIcon, PaperclipIcon, LinkIcon } from '../../react/icons.jsx';
 
-const KIND_ICONS = { image: ImageIcon, video: VideoIcon, audio: AudioIcon, file: PaperclipIcon };
+const KIND_ICONS = { image: ImageIcon, video: VideoIcon, audio: AudioIcon, file: PaperclipIcon, oembed: LinkIcon };
 
 // Distinctive marker class for the 'file' kind's <a> — same reasoning as
 // the button block: an ordinary pasted link must never be mistaken for a
 // file embed.
 const FILE_MARKER_CLASS = 'be-embed-file-link';
+
+// Same idea for 'oembed' (YouTube/Vimeo/Loom/Figma/CodePen/Spotify, see
+// oembedProviders.js) — the exported <a> stands in for the iframe (which
+// doesn't round-trip meaningfully through plain HTML clipboard/export), so
+// it needs its own marker to be recognized coming back in via fromHTML.
+const OEMBED_MARKER_CLASS = 'be-embed-oembed-link';
 
 // Only image/video kinds ever carry a non-default align/width (see
 // EmbedBlock's resize handle/alignment toolbar) — the inline `style`
@@ -20,7 +26,7 @@ const FILE_MARKER_CLASS = 'be-embed-file-link';
 // differs from the default, so a plain default-aligned embed's HTML output
 // is byte-identical to before this existed.
 function alignWidthStyle(kind, align, width) {
-  if (kind !== 'image' && kind !== 'video') return '';
+  if (kind !== 'image' && kind !== 'video' && kind !== 'oembed') return '';
   const declarations = [];
   if (width !== 100) declarations.push(`width:${width}%`);
   if (align === 'center') declarations.push('display:block', 'margin-left:auto', 'margin-right:auto');
@@ -38,7 +44,7 @@ function parseAlignWidth(node) {
 }
 
 function toHTML(block) {
-  const { kind, src, name, alt = '', align = 'left', width = 100 } = block.props;
+  const { kind, src, name, alt = '', align = 'left', width = 100, provider = '', originalUrl = '' } = block.props;
   if (!src) return '<p></p>'; // nothing embedded yet: nothing meaningful to export
   const style = alignWidthStyle(kind, align, width);
   // Deliberately `alt`, never `name` (the uploaded file's raw filename) —
@@ -47,12 +53,31 @@ function toHTML(block) {
   if (kind === 'image') return `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${style}>`;
   if (kind === 'video') return `<video src="${escapeAttr(src)}" controls${style}></video>`;
   if (kind === 'audio') return `<audio src="${escapeAttr(src)}" controls></audio>`;
+  if (kind === 'oembed') {
+    // An <a>, not the <iframe> itself — a raw iframe doesn't paste
+    // meaningfully into most other HTML consumers, and a plain link that
+    // still round-trips back into THIS editor (via the marker class,
+    // fromHTML below) is more useful than a broken third-party embed. Full
+    // in-app copy/paste (APP_MIME) carries the real block/props and never
+    // goes through this path at all.
+    return `<a class="${OEMBED_MARKER_CLASS}" href="${escapeAttr(originalUrl || src)}" data-embed-url="${escapeAttr(src)}" data-embed-provider="${escapeAttr(provider)}">${escapeHTML(originalUrl || src)}</a>`;
+  }
   return `<a class="${FILE_MARKER_CLASS}" href="${escapeAttr(src)}">${escapeHTML(name || src)}</a>`;
 }
 
 function toPlainText(block) {
-  const { kind, src, name } = block.props;
-  return src ? `[${kind}: ${name || src}]` : '';
+  const { kind, src, name, originalUrl = '' } = block.props;
+  if (!src) return '';
+  if (kind === 'oembed') return `[embed: ${originalUrl || src}]`;
+  return `[${kind}: ${name || src}]`;
+}
+
+function toMarkdown(block) {
+  const { kind, src, name, alt = '', originalUrl = '' } = block.props;
+  if (!src) return '';
+  if (kind === 'image') return `![${alt}](${src})`;
+  if (kind === 'oembed') return `[${originalUrl || src}](${originalUrl || src})`;
+  return `[${name || src}](${src})`; // video/audio/file: Markdown has no native player syntax, a link is the honest fallback
 }
 
 function fromHTML(node) {
@@ -73,15 +98,28 @@ function fromHTML(node) {
   if (node.tagName === 'AUDIO') {
     return blockOf('audio', node.getAttribute('src') ?? '', '');
   }
+  if (node.tagName === 'A' && node.classList.contains(OEMBED_MARKER_CLASS)) {
+    return blockOf('oembed', node.getAttribute('data-embed-url') ?? '', '', {
+      ...parseAlignWidth(node),
+      provider: node.getAttribute('data-embed-provider') ?? '',
+      originalUrl: node.getAttribute('href') ?? '',
+    });
+  }
   if (node.tagName === 'A' && node.classList.contains(FILE_MARKER_CLASS)) {
     return blockOf('file', node.getAttribute('href') ?? '', node.textContent ?? '');
   }
   return null;
 }
 
-function blockOf(kind, src, name, { align = 'left', width = 100, alt = '' } = {}) {
+function blockOf(kind, src, name, { align = 'left', width = 100, alt = '', provider = '', originalUrl = '' } = {}) {
   return {
-    block: { id: genId(), type: 'embed', parentId: null, contentIds: [], props: { kind, src, name, alt, align, width } },
+    block: {
+      id: genId(),
+      type: 'embed',
+      parentId: null,
+      contentIds: [],
+      props: { kind, src, name, alt, align, width, provider, originalUrl },
+    },
     runs: [],
   };
 }
@@ -101,14 +139,27 @@ function insertEmbedCommand(kind) {
 export const embedBlockType = {
   component: EmbedBlock,
   isLeaf: true, // contentIds always [] — a pure widget, same convention as divider
-  defaultProps: { kind: 'file', src: '', name: '', alt: '', mimeType: '', align: 'left', width: 100 },
+  defaultProps: { kind: 'file', src: '', name: '', alt: '', mimeType: '', align: 'left', width: 100, provider: '', originalUrl: '' },
   toHTML,
   toPlainText,
+  toMarkdown,
   fromHTML,
-  slashCommands: ['image', 'video', 'audio', 'file'].map((kind) => ({
-    label: kind.charAt(0).toUpperCase() + kind.slice(1),
-    icon: KIND_ICONS[kind],
-    keywords: ['embed', 'upload', 'insert', kind],
-    run: insertEmbedCommand(kind),
-  })),
+  slashCommands: [
+    ...['image', 'video', 'audio', 'file'].map((kind) => ({
+      label: kind.charAt(0).toUpperCase() + kind.slice(1),
+      icon: KIND_ICONS[kind],
+      keywords: ['embed', 'upload', 'insert', kind],
+      run: insertEmbedCommand(kind),
+    })),
+    {
+      label: 'Embed link',
+      icon: KIND_ICONS.oembed,
+      // A YouTube/Vimeo/Loom/Figma/CodePen/Spotify link pasted into an
+      // image/video/file block's own URL field is also auto-detected (see
+      // EmbedBlock.jsx's commitUrl) — this command just gets there in one
+      // step instead of via "/video" first.
+      keywords: ['embed', 'link', 'youtube', 'vimeo', 'loom', 'figma', 'codepen', 'spotify'],
+      run: insertEmbedCommand('oembed'),
+    },
+  ],
 };

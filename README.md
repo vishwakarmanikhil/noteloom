@@ -244,13 +244,15 @@ User-created types are persisted in the document's own `fieldTypes` collection (
 
 Once at least one is created this way, a table column set to "Select" type gets a **"Copy options from…"** dropdown in its own menu (alongside its usual "+ New field type" button) — pick one to seed the column's option list from it in one shot, instead of typing the same options out again by hand. It's a one-time copy, not a live link: renaming/adding/removing options on the column afterward never touches the source field type.
 
-## Exporting the document (JSON / HTML / plain text)
+## Exporting the document (JSON / HTML / Markdown / Word / PDF / plain text)
 
 ```js
-import { exportDocumentJSON, exportDocumentHTML, exportDocumentText } from 'noteloom';
+import { exportDocumentJSON, exportDocumentHTML, exportDocumentMarkdown, exportDocumentWordHTML, exportDocumentText } from 'noteloom';
 
 exportDocumentJSON(store); // a JSON *string* — JSON.parse() it to get { version, rootId, blocks, runs }, usable as useEditor({ doc })
 exportDocumentHTML(store, registry, inlineRegistry);
+exportDocumentMarkdown(store, registry, inlineRegistry); // headings, bold/italic/strike/code/links, lists (incl. GFM task lists), quotes, fenced code, tables
+exportDocumentWordHTML(store, registry, inlineRegistry); // exportDocumentHTML wrapped with the Word MSO namespace — save with a .doc extension and Word opens it directly
 exportDocumentText(store, registry, inlineRegistry);
 ```
 
@@ -262,7 +264,12 @@ import { DocumentExportButton } from 'noteloom';
 <DocumentExportButton label="View source" />
 ```
 
-It opens a modal with JSON/Simple JSON/HTML/Text tabs (reading live from the store every time it opens) and a Copy button — useful for debugging, or as a starting point for a real "export" feature.
+It opens a modal with JSON/Simple JSON/HTML/Markdown/Text tabs (reading live from the store every time it opens), a Copy button, and two direct-download actions:
+
+- **Print / Save as PDF** — calls the browser's own `window.print()`; "Save as PDF" is a standard destination in every major browser's print dialog, and the editor's own `@media print` stylesheet already hides all editor-only chrome (toolbars, menus, this modal itself), so what prints is just the document content. No PDF-writing code of any kind, in keeping with this package having zero runtime dependencies.
+- **Download Word (.doc)** — downloads `exportDocumentWordHTML`'s output with a `.doc` extension. Not a real `.docx` (that's a zip of XML files, and hand-writing a zip container is out of scope for this package) — Word opens Word-flavored HTML saved as `.doc` directly via MIME sniffing, a well-known, dependency-free trick.
+
+Useful for debugging, or as a starting point for a real "export" feature.
 
 ### A simpler JSON shape for storage/API/CRUD use
 
@@ -651,6 +658,8 @@ A few things worth knowing:
 - While `uploadFile` is resolving, the block shows an "Uploading…" state; if it rejects, a dismissible error message is shown instead and nothing is written to the document — the file input stays available to try again.
 - `maxFileSize` (bytes) only applies to the **built-in, zero-config `data:` URL fallback** — an oversized file is rejected with a clear error instead of silently bloating the document. It has no effect once `uploadFile` is configured, since the host's own function (or backend) is what decides what it can handle.
 - `useFileUpload()` exposes the same `{ uploadFile, maxFileSize }` to your own components, for building custom upload UI outside the `embed` block that still honors the same configuration.
+- **Pasting** a raw image/media file straight from the OS clipboard (a screenshot, an OS-level "Copy Image") works too, going through this exact same `uploadFile`/`maxFileSize` resolution and inserting an `embed` block — no separate configuration needed. (Copying an already-rendered `<img>`/`<video>`/`<audio>` *from a webpage* instead reconstructs it from the pasted HTML, unrelated to this upload path.)
+- **Rich link embeds**: pasting a YouTube, Vimeo, Loom, Figma, CodePen, or Spotify link into any embed block's URL field (or via the "Embed link" slash command) auto-detects it and renders a real interactive iframe instead of a broken `<img>`/`<video>` tag — no configuration needed, and no network fetch involved (pure URL pattern matching, see `src/blocks/embed/oembedProviders.js`).
 
 ## Live collaboration (experimental)
 

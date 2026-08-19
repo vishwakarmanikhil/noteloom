@@ -1,5 +1,5 @@
 import { ListItemBlock } from './ListItemBlock.jsx';
-import { runToHTML, runToPlainText } from '../../inline/marks.js';
+import { runToHTML, runToPlainText, runsToMarkdown } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
@@ -25,6 +25,36 @@ function toHTML(block, ctx) {
 function toPlainText(block, ctx) {
   const { titleRunIds = [] } = block.props;
   return titleRunIds.map((runId) => runToPlainText(ctx.store.getRun(runId), ctx)).join('');
+}
+
+/**
+ * Nested children are indented two spaces per level and recursed into
+ * directly here (rather than left to a container joiner) — same
+ * self-contained-nesting idea as this type's own toHTML building its
+ * nested `<ul>/<ol>` inline. `ordered` always emits "1." (Markdown
+ * renderers auto-number a list regardless of which digit each line uses,
+ * so there's no need to track this item's actual position among its
+ * siblings). `collapsed` (a toggle item) has no native Markdown disclosure
+ * widget, so it degrades to a plain bullet — same "no exact equivalent,
+ * fall back to something readable" choice `toggleHeading` makes in its own
+ * `toMarkdown` below.
+ */
+function toMarkdown(block, ctx) {
+  const { titleRunIds = [], ordered, checked } = block.props;
+  const marker = checked !== undefined ? (checked ? '- [x] ' : '- [ ] ') : ordered ? '1. ' : '- ';
+  const title = runsToMarkdown(titleRunIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  const childrenMd = block.contentIds
+    .map((childId) => {
+      const child = ctx.store.getBlock(childId);
+      const entry = ctx.registry.get(child.type);
+      const childMd = (entry.toMarkdown ?? entry.toPlainText)(child, ctx);
+      return childMd
+        .split('\n')
+        .map((line) => (line ? `  ${line}` : line))
+        .join('\n');
+    })
+    .join('\n');
+  return childrenMd ? `${marker}${title}\n${childrenMd}` : `${marker}${title}`;
 }
 
 /** Builds one list item block (+ its nested list items) from a single <li>. */
@@ -84,6 +114,7 @@ export const listItemBlockType = {
   defaultProps: { ordered: false, titleRunIds: [] },
   toHTML,
   toPlainText,
+  toMarkdown,
   fromHTML,
   slashCommands: [
     {

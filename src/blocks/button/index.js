@@ -1,5 +1,5 @@
 import { ButtonBlock } from './ButtonBlock.jsx';
-import { runToHTML, runToPlainText, escapeAttr } from '../../inline/marks.js';
+import { runToHTML, runToPlainText, runsToMarkdown, escapeAttr } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
@@ -30,6 +30,12 @@ function toPlainText(block, ctx) {
   return block.contentIds.map((runId) => runToPlainText(ctx.store.getRun(runId), ctx)).join('');
 }
 
+function toMarkdown(block, ctx) {
+  const href = block.props?.href ?? '';
+  const text = runsToMarkdown(block.contentIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  return `[${text || href}](${href})`;
+}
+
 function fromHTML(node, ctx) {
   if (node.tagName !== 'A' || !node.classList.contains(MARKER_CLASS)) return null;
   const runs = domInlineToRuns(node, ctx);
@@ -57,6 +63,7 @@ export const buttonBlockType = {
   defaultProps: { href: '', color: '', customAttrs: [] },
   toHTML,
   toPlainText,
+  toMarkdown,
   fromHTML,
   slashCommand: {
     label: 'Button',

@@ -732,6 +732,8 @@ export function textToParagraphs(...args: unknown[]): unknown;
 export function exportDocumentJSON(store: EditorStore | History, options?: { pretty?: boolean }): string;
 export function exportDocumentHTML(store: EditorStore | History, registry: BlockRegistry): string;
 export function exportDocumentText(store: EditorStore | History, registry: BlockRegistry): string;
+export function exportDocumentMarkdown(store: EditorStore | History, registry: BlockRegistry, inlineRegistry?: InlineRegistry): string;
+export function exportDocumentWordHTML(store: EditorStore | History, registry: BlockRegistry, inlineRegistry?: InlineRegistry): string;
 export function exportDocumentSimpleJSON(store: EditorStore | History, registry: BlockRegistry, inlineRegistry: InlineRegistry): unknown;
 export function importDocumentSimpleJSON(json: unknown, registry: BlockRegistry, inlineRegistry: InlineRegistry): DocumentJSON;
 export const DocumentExportButton: ComponentType<Record<string, unknown>>;

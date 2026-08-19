@@ -12,6 +12,7 @@
  *     toHTML(block, ctx),        // ctx: { store, registry } -> html string
  *     fromHTML(domNode, ctx),    // -> constructed { block, runs } | null if this type doesn't claim the node
  *     toPlainText(block, ctx),   // -> plain text string
+ *     toMarkdown(block, ctx),    // optional -> Markdown string; exportDocumentMarkdown falls back to toPlainText when absent
  *     slashCommand: { label, icon, keywords, run(store, atBlockId) } | undefined,
  *     slashCommands: [ { label, icon, keywords, run } ] | undefined  // for a type offering more than one variant (e.g. listItem: bulleted/numbered/to-do)
  *   }

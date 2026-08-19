@@ -16,6 +16,18 @@ function toPlainText(block, ctx) {
   return block.contentIds.map((runId) => runToPlainText(ctx.store.getRun(runId), ctx)).join('');
 }
 
+// A fenced code block, not runToMarkdown-per-run — code content is
+// rendered verbatim (marks inside a code block have no meaning here
+// anyway; CodeBlock never applies bold/italic to its own runs), so this
+// reads the raw run values directly rather than going through the
+// inline-marks Markdown path plain text already avoids the same way.
+function toMarkdown(block, ctx) {
+  const language = block.props?.language;
+  const fenceLang = language && language !== 'plaintext' ? language : '';
+  const code = block.contentIds.map((runId) => ctx.store.getRun(runId)?.value ?? '').join('');
+  return `\`\`\`${fenceLang}\n${code}\n\`\`\``;
+}
+
 function fromHTML(node, ctx) {
   if (node.tagName !== 'PRE') return null;
   const codeEl = node.querySelector('code') ?? node;
@@ -37,6 +49,7 @@ export const codeBlockType = {
   defaultProps: { language: 'plaintext' },
   toHTML,
   toPlainText,
+  toMarkdown,
   fromHTML,
   slashCommand: {
     label: 'Code',
