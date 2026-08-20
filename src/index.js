@@ -123,6 +123,9 @@ export {
 // replacement for the granular API.
 export { useEditor } from './react/useEditor.js';
 export { NoteloomEditor } from './react/NoteloomEditor.jsx';
+export { useFindInDocument } from './react/useFindInDocument.js';
+export { FindBar } from './react/FindBar.jsx';
+export { findMatches, replaceMatch, replaceAllMatches } from './search/findInDocument.js';
 
 export {
   EditorProvider,

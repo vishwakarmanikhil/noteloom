@@ -2477,6 +2477,124 @@ tr.be-table-row:hover .be-table-delete-row {
   margin: 0 4px;
 }
 
+.be-find-bar {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 900;
+  width: fit-content;
+  background: var(--noteloom-bg);
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-md);
+  box-shadow: var(--noteloom-shadow);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.be-find-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.be-find-bar-input {
+  border: 1px solid var(--noteloom-border);
+  border-radius: var(--noteloom-radius-sm);
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  color: var(--noteloom-text);
+  background: var(--noteloom-bg);
+  width: 180px;
+}
+
+.be-find-bar-input:focus {
+  outline: none;
+  border-color: var(--noteloom-accent);
+}
+
+.be-find-bar-count {
+  font-size: 0.78rem;
+  color: var(--noteloom-text-muted);
+  min-width: 44px;
+  text-align: center;
+}
+
+.be-find-bar-toggle,
+.be-find-bar-nav,
+.be-find-bar-close,
+.be-find-bar-replace-toggle {
+  border: none;
+  background: transparent;
+  color: var(--noteloom-text-muted);
+  border-radius: var(--noteloom-radius-sm);
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.be-find-bar-toggle:hover,
+.be-find-bar-nav:hover:not(:disabled),
+.be-find-bar-close:hover,
+.be-find-bar-replace-toggle:hover {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-find-bar-nav:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.be-find-bar-toggle-active {
+  background: var(--noteloom-accent-soft);
+  color: var(--noteloom-accent);
+}
+
+.be-find-bar-replace-toggle {
+  transition: transform 0.1s ease;
+}
+
+.be-find-bar-replace-toggle-open {
+  transform: rotate(90deg);
+}
+
+.be-find-bar-replace-btn {
+  border: none;
+  background: var(--noteloom-bg-subtle);
+  color: var(--noteloom-text);
+  border-radius: var(--noteloom-radius-sm);
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.be-find-bar-replace-btn:hover:not(:disabled) {
+  background: var(--noteloom-bg-hover);
+}
+
+.be-find-bar-replace-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* CSS Custom Highlight API — paints match highlights purely at the
+   rendering layer, never touching the contentEditable DOM tree itself
+   (see useFindInDocument.js's own doc comment for why). Unsupported
+   browsers (older Firefox) simply drop this whole rule; search/navigate/
+   replace still work, just without the visual highlight. */
+::highlight(be-find-match) {
+  background-color: rgba(250, 204, 21, 0.4);
+}
+
+::highlight(be-find-current) {
+  background-color: rgba(249, 115, 22, 0.55);
+}
+
 .be-floating-toolbar-picker-wrap {
   position: relative;
 }
@@ -3256,7 +3374,8 @@ tr.be-table-row:hover .be-table-delete-row {
   .be-export-trigger,
   .be-export-tabs,
   .be-trailing-space,
-  .be-select-popover {
+  .be-select-popover,
+  .be-find-bar {
     display: none !important;
   }
 

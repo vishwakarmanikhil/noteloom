@@ -906,3 +906,44 @@ export interface NoteloomEditorProps {
 
 /** Renders the object useEditor() returned, with every built-in interaction wired up. */
 export function NoteloomEditor(props: NoteloomEditorProps): ReactElement;
+
+export interface FindMatch {
+  blockId: string;
+  runId: string;
+  offset: number;
+  length: number;
+}
+
+/** Finds every occurrence of `query` in the document, in reading order — single-run matches only (see the implementation's own doc comment for scope). */
+export function findMatches(store: EditorStore | History, query: string, options?: { caseSensitive?: boolean; wholeWord?: boolean }): FindMatch[];
+/** Replaces one match's own slice of its run's text, one atomic write. */
+export function replaceMatch(store: EditorStore | History, match: FindMatch, replacement: string): void;
+/** Replaces every given match, one write per affected run, one atomic undo step. */
+export function replaceAllMatches(store: EditorStore | History, matches: FindMatch[], replacement: string): void;
+
+export interface UseFindInDocumentResult {
+  isOpen: boolean;
+  open: () => void;
+  close: () => void;
+  query: string;
+  setQuery: (value: string) => void;
+  caseSensitive: boolean;
+  setCaseSensitive: (value: boolean) => void;
+  wholeWord: boolean;
+  setWholeWord: (value: boolean) => void;
+  isReplaceOpen: boolean;
+  setIsReplaceOpen: (value: boolean) => void;
+  replacement: string;
+  setReplacement: (value: string) => void;
+  matches: FindMatch[];
+  currentIndex: number;
+  next: () => void;
+  prev: () => void;
+  replaceCurrent: () => void;
+  replaceAll: () => void;
+  queryInputRef: RefObject<HTMLInputElement | null>;
+}
+
+/** Ctrl/Cmd+F (while `containerRef` has focus) find/replace — see NoteloomEditor's own doc comment for scope. Pair with `<FindBar>`, or build custom chrome off this hook's returned state/actions directly. */
+export function useFindInDocument(containerRef: RefObject<HTMLElement | null>): UseFindInDocumentResult;
+export function FindBar(props: UseFindInDocumentResult): ReactElement | null;

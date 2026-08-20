@@ -490,15 +490,39 @@ A block's own `dir` wins over the document's; the block gutter menu also has a "
 
 This pass covers the reading/typing/gutter-position direction itself; a full logical-properties (`margin-inline-start` etc.) audit of every pixel value in `style.css` is deliberately out of scope for now — the highest-impact pieces (list/checkbox marker position, blockquote border side, block gutter position) already flip correctly.
 
+## Find & replace
+
+Built into `<NoteloomEditor>` — Ctrl/Cmd+F, while the editor has focus, opens a find bar with a live match count, Previous/Next (wraps around), Match case / Whole word toggles, and an optional Replace/Replace All row. Only intercepts the shortcut while this editor has focus, so a host page's own native browser find elsewhere on the page is untouched.
+
+Matches are scoped to a single text run — a search term split across a formatting boundary (e.g. half bold, half plain) or landing inside a non-text run (a select/date/mention chip) won't be found. Highlighting uses the [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API) rather than inserting elements into the document — it paints purely at the rendering layer, so it can never interfere with the editor's own precise contentEditable-to-data sync. Older Firefox (no support for that API) still gets fully working search/navigate/replace, just without the visual highlight.
+
+Building custom find UI, or using the granular API:
+
+```jsx
+import { useFindInDocument, FindBar, findMatches, replaceAllMatches } from 'noteloom';
+
+// Drop-in bar, same one NoteloomEditor already wires up:
+function MyEditorSurface({ containerRef }) {
+  const find = useFindInDocument(containerRef);
+  return <FindBar {...find} />;
+}
+
+// Or work with matches directly, headless:
+const matches = findMatches(store, 'hello', { caseSensitive: false, wholeWord: false });
+replaceAllMatches(store, matches, 'hi');
+```
+
 ## Printing & PDF
 
-`style.css` includes a built-in `@media print` stylesheet: every piece of editing chrome (the block gutter, all portaled menus, the floating toolbar, resize handles, the mobile action bar, etc.) is hidden automatically, and a block hidden via "Hide in preview" stays hidden in the printout too, regardless of whether the app happens to be toggled into preview mode at the moment you print — printing always behaves like preview mode.
+`style.css` includes a built-in `@media print` stylesheet: every piece of editing chrome (the block gutter, all portaled menus, the floating toolbar, resize handles, the find bar, the mobile action bar, etc.) is hidden automatically, and a block hidden via "Hide in preview" stays hidden in the printout too, regardless of whether the app happens to be toggled into preview mode at the moment you print — printing always behaves like preview mode.
 
 There's no bundled PDF-generation library (that would need a real dependency like jsPDF/pdfmake, conflicting with staying zero-runtime-dependency) — the browser's own print-to-PDF is the intended path:
 
 ```js
 window.print(); // Ctrl+P / Cmd+P works too — "Save as PDF" in the print dialog is your PDF export
 ```
+
+(`DocumentExportButton`'s own "Print / Save as PDF" button, see the exporting section above, is exactly this call.)
 
 This only cleans up the *editor's* own chrome. A host app's own outer UI (nav bar, sidebar, its own toolbar) needs its own `@media print` rules the same way — see `examples/basic/src/style.css` for a worked example, since that chrome lives entirely outside this package.
 

@@ -13,6 +13,8 @@ import { useEmojiMenuTrigger } from '../commands/useEmojiMenuTrigger.js';
 import { useAtMenuTrigger } from '../commands/useAtMenuTrigger.js';
 import { FloatingToolbar } from '../commands/FloatingToolbar.jsx';
 import { useFloatingToolbarTrigger } from '../commands/useFloatingToolbarTrigger.js';
+import { FindBar } from './FindBar.jsx';
+import { useFindInDocument } from './useFindInDocument.js';
 
 function EditorSurface({ store, rootId, onComment, commentAuthorId }) {
   const containerRef = useRef(null);
@@ -21,11 +23,13 @@ function EditorSurface({ store, rootId, onComment, commentAuthorId }) {
   const emojiMenu = useEmojiMenuTrigger(containerRef);
   const atMenu = useAtMenuTrigger(containerRef);
   const floatingToolbar = useFloatingToolbarTrigger(containerRef);
+  const findInDocument = useFindInDocument(containerRef);
   useEditorKeyboardShortcuts(containerRef);
   useBlockRangeDrag(containerRef);
 
   return (
     <div ref={containerRef} role="document" aria-label="Document editor" onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
+      <FindBar {...findInDocument} />
       <BlockRangeActionMenu />
       <BlockChildren parentId={rootId} isTopLevel />
       <EditorTrailingSpace />
@@ -110,6 +114,12 @@ function EditorSurface({ store, rootId, onComment, commentAuthorId }) {
  * `uploadFile`/`maxFileSize` forward straight to `EditorProvider` too — see
  * `useFileUpload`'s own doc comment for the full contract (wiring a picked/
  * dropped file to local disk, S3, or any other cloud storage).
+ *
+ * Ctrl/Cmd+F, while the editor has focus, opens a built-in find/replace bar
+ * (only while THIS editor has focus — a host page's own native find
+ * elsewhere is left alone). See `useFindInDocument`'s own doc comment for
+ * scope (single-run matches only, no cross-formatting-boundary search) and
+ * a host building custom chrome can use that hook + `<FindBar>` directly.
  */
 export function NoteloomEditor({
   editor,
