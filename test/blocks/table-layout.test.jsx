@@ -734,3 +734,82 @@ describe('select column: copying options from an already-created custom field ty
     expect(document.querySelector('input[placeholder="e.g. Priority, Status…"]')).not.toBeNull();
   });
 });
+
+function setCellText(store, tableId, rowIndex, colIndex, text) {
+  const rowId = store.getBlock(tableId).contentIds[rowIndex];
+  const cellId = store.getBlock(rowId).contentIds[colIndex];
+  const runId = store.getBlock(cellId).contentIds[0];
+  store.applyOperation({ type: 'updateRun', id: runId, patch: { value: text } });
+}
+
+describe('table sort/filter/aggregate (view features)', () => {
+  it('"Sort ascending"/"Sort descending" in the column menu physically reorders rows', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 3, cols: 1 }));
+    setCellText(store, tableId, 0, 0, 'banana');
+    setCellText(store, tableId, 1, 0, 'apple');
+    setCellText(store, tableId, 2, 0, 'cherry');
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    const sortAsc = [...document.querySelectorAll('.be-table-header-menu-item')].find((b) => b.textContent.includes('Sort ascending'));
+    fireEvent.click(sortAsc);
+
+    const cellTexts = [...container.querySelectorAll('.be-table-cell [data-run-id]')].map((el) => el.textContent);
+    expect(cellTexts).toEqual(['apple', 'banana', 'cherry']);
+  });
+
+  it('a column filter hides non-matching rows without deleting them from the document', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 3, cols: 1 }));
+    setCellText(store, tableId, 0, 0, 'apple pie');
+    setCellText(store, tableId, 1, 0, 'banana bread');
+    setCellText(store, tableId, 2, 0, 'apple juice');
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    const filterInput = document.querySelector('.be-table-header-menu-filter-input');
+    fireEvent.change(filterInput, { target: { value: 'apple' } });
+
+    const cellTexts = [...container.querySelectorAll('.be-table-cell [data-run-id]')].map((el) => el.textContent);
+    expect(cellTexts).toEqual(['apple pie', 'apple juice']); // "banana bread" hidden from view
+
+    // The document itself is untouched -- still all 3 rows in the store.
+    expect(store.getBlock(tableId).contentIds).toHaveLength(3);
+
+    // Clearing the filter shows every row again.
+    fireEvent.change(filterInput, { target: { value: '' } });
+    expect(container.querySelectorAll('.be-table-cell [data-run-id]')).toHaveLength(3);
+  });
+
+  it('a footer aggregate only renders once a column has one set, and reflects the currently-filtered rows', () => {
+    const store = new EditorStore(emptyDoc());
+    const tableId = insertAtRoot(store, createTableBlock({ rows: 3, cols: 1 }));
+    setCellText(store, tableId, 0, 0, '10');
+    setCellText(store, tableId, 1, 0, '20');
+    setCellText(store, tableId, 2, 0, '30');
+
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+    const { container } = renderDoc(store, registry);
+
+    expect(container.querySelector('.be-table-footer-row')).toBeNull(); // no aggregate set yet
+
+    fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
+    fireEvent.click(document.querySelector('.be-table-header-menu-aggregate .be-select-trigger'));
+    fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Sum'));
+
+    expect(container.querySelector('.be-table-footer-cell').textContent).toBe('Sum60');
+
+    // Filtering out the "30" row updates the sum to reflect only what's visible.
+    const filterInput = document.querySelector('.be-table-header-menu-filter-input');
+    fireEvent.change(filterInput, { target: { value: '1' } }); // matches only "10"... plus nothing else contains "1"
+    expect(container.querySelector('.be-table-footer-cell').textContent).toBe('Sum10');
+  });
+});

@@ -5,14 +5,25 @@ import { useFieldTypes } from '../../react/useFieldTypes.js';
 import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.js';
 import { useMenuKeyboardNav } from '../../react/useMenuKeyboardNav.js';
 import { useAutoAdjustedRightLeft } from '../../react/usePopoverEdgeClamp.js';
-import { insertColumnAfter, deleteColumn, renameColumn, setColumnType, setColumnOptions, setColumnWidth } from './tableEditCommands.js';
+import {
+  insertColumnAfter,
+  deleteColumn,
+  renameColumn,
+  setColumnType,
+  setColumnOptions,
+  setColumnWidth,
+  sortTableByColumn,
+  setColumnAggregate,
+} from './tableEditCommands.js';
 import { COLUMN_TYPES, MIN_COLUMN_WIDTH } from './tableColumns.js';
+import { AGGREGATE_TYPES, AGGREGATE_LABELS } from './tableView.js';
 import { genId } from '../../utils/idGen.js';
-import { XIcon } from '../../react/icons.jsx';
+import { XIcon, ArrowUpIcon, ArrowDownIcon } from '../../react/icons.jsx';
 import { Select } from '../../react/Select.jsx';
 import { pickTagColor } from './tagColors.js';
 
 const TYPE_LABELS = { text: 'Text', date: 'Date', checkbox: 'Checkbox', select: 'Select' };
+const AGGREGATE_OPTIONS = AGGREGATE_TYPES.map((value) => ({ value, label: AGGREGATE_LABELS[value] }));
 const TYPE_OPTIONS = COLUMN_TYPES.map((type) => ({ value: type, label: TYPE_LABELS[type] }));
 
 // A column's actual drag width is unbounded (no real max exists in
@@ -169,7 +180,7 @@ function SelectOptionsManager({ tableId, colIndex, options }) {
  * than discarding values — the actual gap this feature was built to close
  * versus the legacy notevo table it's modeled after.
  */
-function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
+function ColumnHeaderCell({ tableId, column, colIndex, colCount, filterValue, onFilterChange }) {
   const store = useEditorStore();
   const inlineRegistry = useInlineRegistry();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -213,6 +224,18 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
   const handleTypeChange = useCallback(
     (type) => setColumnType(store, tableId, colIndex, type, inlineRegistry),
     [store, tableId, colIndex, inlineRegistry],
+  );
+  const handleSortAsc = useCallback(() => {
+    sortTableByColumn(store, tableId, colIndex, 'asc', inlineRegistry);
+    closeMenu();
+  }, [store, tableId, colIndex, inlineRegistry, closeMenu]);
+  const handleSortDesc = useCallback(() => {
+    sortTableByColumn(store, tableId, colIndex, 'desc', inlineRegistry);
+    closeMenu();
+  }, [store, tableId, colIndex, inlineRegistry, closeMenu]);
+  const handleAggregateChange = useCallback(
+    (aggregate) => setColumnAggregate(store, tableId, colIndex, aggregate),
+    [store, tableId, colIndex],
   );
 
   // Live-updates the <colgroup>'s own <col> element directly during drag
@@ -323,6 +346,35 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
                 <SelectOptionsManager tableId={tableId} colIndex={colIndex} options={column.options ?? []} />
               </>
             )}
+            <div className="be-table-header-menu-sort">
+              <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleSortAsc}>
+                <ArrowUpIcon size={13} /> Sort ascending
+              </button>
+              <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleSortDesc}>
+                <ArrowDownIcon size={13} /> Sort descending
+              </button>
+            </div>
+            <label className="be-table-header-menu-filter">
+              <span>Filter</span>
+              <input
+                type="text"
+                className="be-table-header-menu-filter-input"
+                placeholder="Rows containing…"
+                value={filterValue ?? ''}
+                onChange={(event) => onFilterChange(column.id, event.target.value)}
+                aria-label={`Filter column ${colIndex + 1}`}
+              />
+            </label>
+            <div className="be-table-header-menu-type be-table-header-menu-aggregate">
+              <span id={`be-table-col-aggregate-${column.id}`}>Footer</span>
+              <Select
+                value={column.aggregate ?? 'none'}
+                options={AGGREGATE_OPTIONS}
+                onChange={handleAggregateChange}
+                ariaLabel="Column footer aggregate"
+                className=""
+              />
+            </div>
             <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleInsertLeft}>
               Insert column left
             </button>
@@ -353,12 +405,20 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount }) {
  * machinery of its own. A trailing spacer `<th>` keeps header columns
  * aligned with TableRowBlock's extra row-actions column.
  */
-export function TableHeaderRow({ tableId, columns }) {
+export function TableHeaderRow({ tableId, columns, filters, onFilterChange }) {
   return (
     <thead>
       <tr className="be-table-header-row">
         {columns.map((column, i) => (
-          <ColumnHeaderCell key={column.id} tableId={tableId} column={column} colIndex={i} colCount={columns.length} />
+          <ColumnHeaderCell
+            key={column.id}
+            tableId={tableId}
+            column={column}
+            colIndex={i}
+            colCount={columns.length}
+            filterValue={filters?.[column.id]}
+            onFilterChange={onFilterChange}
+          />
         ))}
         <th className="be-table-header-spacer" aria-hidden="true" />
       </tr>

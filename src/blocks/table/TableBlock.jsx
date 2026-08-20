@@ -1,15 +1,27 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { BlockChildren } from '../../react/BlockChildren.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useBlockClassName } from '../../react/EditorProvider.jsx';
+import { useEditorStore, useBlockClassName, useInlineRegistry } from '../../react/EditorProvider.jsx';
 import { insertRowAfter } from './tableEditCommands.js';
 import { resolveColumns } from './tableColumns.js';
+import { runPlainText, computeColumnAggregate, formatAggregateValue, AGGREGATE_SHORT_LABELS } from './tableView.js';
 import { TableHeaderRow } from './TableHeaderRow.jsx';
 import { PlusIcon } from '../../react/icons.jsx';
 
 export function TableBlock({ id }) {
   const store = useEditorStore();
+  const inlineRegistry = useInlineRegistry();
   const block = useBlock(id);
+  // Local, non-persisted view state — a filter query per column id. Never
+  // written to the document (no store operation, no undo step, not synced
+  // to collaborators): hiding a row from THIS view is display-only, same
+  // "don't touch real content for a view concern" reasoning as preview
+  // mode's own hidden-block filtering. Resets on reload/navigating away —
+  // a documented v1 limitation, not an oversight.
+  const [filters, setFilters] = useState({});
+  const handleFilterChange = useCallback((columnId, value) => {
+    setFilters((prev) => (value ? { ...prev, [columnId]: value } : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== columnId))));
+  }, []);
 
   const handleAddRow = useCallback(() => {
     const lastRowId = block?.contentIds?.[block.contentIds.length - 1];
@@ -18,10 +30,41 @@ export function TableBlock({ id }) {
 
   const className = useBlockClassName('be-table-wrapper', block);
 
+  const activeFilters = useMemo(() => Object.entries(filters).filter(([, q]) => q), [filters]);
+
+  // Cell run lookup shared by both filtering (below) and the footer
+  // aggregates — reads directly off the live store rather than through
+  // React state, so it's always exactly what's currently in the document.
+  const cellRun = useCallback(
+    (rowId, colIndex) => {
+      const row = store.getBlock(rowId);
+      const cell = row && store.getBlock(row.contentIds[colIndex]);
+      return cell ? store.getRun(cell.contentIds[0]) : null;
+    },
+    [store],
+  );
+
   if (!block) return null;
 
   const firstRow = store.getBlock(block.contentIds[0]);
   const columns = resolveColumns(block, firstRow?.contentIds?.length ?? 0);
+
+  // Every active filter must match (AND, not OR) — a row missing entirely
+  // from one filtered column's criteria is hidden regardless of how well
+  // it matches any other column's.
+  const visibleRowIds =
+    activeFilters.length === 0
+      ? block.contentIds
+      : block.contentIds.filter((rowId) =>
+          activeFilters.every(([columnId, query]) => {
+            const colIndex = columns.findIndex((c) => c.id === columnId);
+            if (colIndex === -1) return true;
+            const text = runPlainText(cellRun(rowId, colIndex), inlineRegistry);
+            return text.toLowerCase().includes(query.toLowerCase());
+          }),
+        );
+
+  const hasAggregates = columns.some((c) => c.aggregate && c.aggregate !== 'none');
 
   return (
     // be-table-scroll is a second, OUTER scroll boundary around
@@ -55,10 +98,31 @@ export function TableBlock({ id }) {
             ))}
             <col className="be-table-header-spacer-col" />
           </colgroup>
-          <TableHeaderRow tableId={id} columns={columns} />
+          <TableHeaderRow tableId={id} columns={columns} filters={filters} onFilterChange={handleFilterChange} />
           <tbody>
-            <BlockChildren parentId={id} />
+            <BlockChildren parentId={id} filterIds={visibleRowIds} />
           </tbody>
+          {hasAggregates && (
+            <tfoot>
+              <tr className="be-table-footer-row">
+                {columns.map((column, colIndex) => {
+                  const runs = visibleRowIds.map((rowId) => cellRun(rowId, colIndex));
+                  const value = computeColumnAggregate(runs, column.type, column.aggregate, inlineRegistry);
+                  return (
+                    <td key={column.id} className="be-table-footer-cell">
+                      {value != null && (
+                        <>
+                          <span className="be-table-footer-label">{AGGREGATE_SHORT_LABELS[column.aggregate]}</span>
+                          {formatAggregateValue(value)}
+                        </>
+                      )}
+                    </td>
+                  );
+                })}
+                <td className="be-table-footer-spacer" aria-hidden="true" />
+              </tr>
+            </tfoot>
+          )}
         </table>
         <button type="button" className="be-table-add-row" contentEditable={false} onClick={handleAddRow}>
           <PlusIcon size={14} /> Add row

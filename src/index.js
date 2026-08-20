@@ -205,7 +205,10 @@ export {
   setColumnType,
   setColumnOptions,
   setColumnWidth,
+  sortTableByColumn,
+  setColumnAggregate,
 } from './blocks/table/tableEditCommands.js';
+export { computeColumnAggregate, formatAggregateValue, AGGREGATE_TYPES, AGGREGATE_LABELS } from './blocks/table/tableView.js';
 export {
   resolveColumns,
   createDefaultColumns,

@@ -512,6 +512,22 @@ const matches = findMatches(store, 'hello', { caseSensitive: false, wholeWord: f
 replaceAllMatches(store, matches, 'hi');
 ```
 
+## Table sort, filter & footer aggregates
+
+Every table's column menu (the "⋮" trigger on each header cell) gains three extra tools, no configuration needed:
+
+- **Sort ascending / Sort descending** — a real, one-time row reorder (like a spreadsheet's "Sort A→Z"), type-aware per column (text sorts case-insensitively and numerically when the values look like numbers, date by its actual date, checkbox unchecked-before-checked, select by its label). Blank cells always sort to the end. It's undoable like any other edit, but not a continuously-reapplied live view — editing a cell afterward doesn't re-trigger the sort.
+- **Filter** — a text box; rows not containing the query are hidden from view. This is local, ephemeral UI state: nothing is written to the document, nothing syncs to collaborators, and it resets on reload — the real content is completely untouched, the same way `usePreviewMode`'s own "Hide in preview" is a display concern, not a data one.
+- **Footer aggregate** — Count / Count filled / Count empty / Sum / Average / Min / Max, shown in a footer row, recomputed from whatever rows are currently visible (so it reflects an active filter). There's no formula/expression engine behind this — deliberately out of scope for a zero-runtime-dependency package with no sandboxed code-execution story — `sum`/`average`/`min`/`max` just parse each cell's own plain text as a number and skip whatever doesn't parse, so a plain "text" column full of numbers aggregates correctly without needing a dedicated "number" column type.
+
+```js
+import { sortTableByColumn, setColumnAggregate, computeColumnAggregate } from 'noteloom';
+
+sortTableByColumn(store, tableId, colIndex, 'asc', inlineRegistry);
+setColumnAggregate(store, tableId, colIndex, 'sum'); // persisted column metadata — which aggregate to show
+computeColumnAggregate(runs, columnType, 'sum', inlineRegistry); // the actual computed value, given the runs you want to include
+```
+
 ## Printing & PDF
 
 `style.css` includes a built-in `@media print` stylesheet: every piece of editing chrome (the block gutter, all portaled menus, the floating toolbar, resize handles, the find bar, the mobile action bar, etc.) is hidden automatically, and a block hidden via "Hide in preview" stays hidden in the printout too, regardless of whether the app happens to be toggled into preview mode at the moment you print — printing always behaves like preview mode.

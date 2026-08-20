@@ -24,13 +24,23 @@ import { BlockGutterRow } from './BlockGutterRow.jsx';
  * top-level), rather than rendered dimmed the way edit mode shows it: the
  * whole point of "hidden" is that it disappears from what a reader
  * eventually sees.
+ *
+ * `filterIds`, if given, renders exactly this subset/order instead of the
+ * block's own `contentIds` — the real content is untouched either way;
+ * this only changes what's RENDERED. Used by TableBlock for its own
+ * (local, non-persisted) column filter: hiding a non-matching row from the
+ * table's own view without deleting it. Still calls `useBlockChildren`
+ * unconditionally (so this component re-renders when the underlying
+ * `contentIds` actually change, which is what `filterIds` is derived
+ * from), its own return value just isn't what gets rendered in that case.
  */
-export function BlockChildren({ parentId, isTopLevel = false }) {
+export function BlockChildren({ parentId, isTopLevel = false, filterIds }) {
   const contentIds = useBlockChildren(parentId);
   const store = useEditorStore();
   const [isPreviewMode] = usePreviewMode();
 
-  const visibleIds = isPreviewMode ? contentIds.filter((childId) => !store.getBlock(childId)?.props?.hidden) : contentIds;
+  const baseIds = filterIds ?? contentIds;
+  const visibleIds = isPreviewMode ? baseIds.filter((childId) => !store.getBlock(childId)?.props?.hidden) : baseIds;
 
   if (isTopLevel && !isPreviewMode) {
     return visibleIds.map((childId) => <BlockGutterRow key={childId} id={childId} />);

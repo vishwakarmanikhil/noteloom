@@ -11,7 +11,10 @@ import {
   renameColumn,
   setColumnType,
   setColumnOptions,
+  sortTableByColumn,
+  setColumnAggregate,
 } from '../../src/blocks/table/tableEditCommands.js';
+import { updateRun } from '../../src/store/operations.js';
 import { createInlineRegistry } from '../../src/registry/inlineRegistry.js';
 import { registerBuiltInInlineTypes } from '../../src/inlineTypes/index.js';
 
@@ -422,5 +425,57 @@ describe('setColumnOptions (select column shared option list)', () => {
 
     store.undo();
     expect(store.getBlock(block.id).props.columns[0].options).toEqual([]);
+  });
+});
+
+describe('sortTableByColumn', () => {
+  it('physically reorders contentIds by the given column, ascending or descending', () => {
+    const { store, tableId } = makeDocWithTable({ rows: 3, cols: 1 });
+    const [row0, row1, row2] = store.getBlock(tableId).contentIds;
+
+    const setCellText = (rowId, text) => {
+      const cellId = store.getBlock(rowId).contentIds[0];
+      const runId = store.getBlock(cellId).contentIds[0];
+      store.applyOperation(updateRun(runId, { value: text }));
+    };
+    setCellText(row0, 'banana');
+    setCellText(row1, 'apple');
+    setCellText(row2, 'cherry');
+
+    sortTableByColumn(store, tableId, 0, 'asc');
+    expect(store.getBlock(tableId).contentIds).toEqual([row1, row0, row2]); // apple, banana, cherry
+
+    sortTableByColumn(store, tableId, 0, 'desc');
+    expect(store.getBlock(tableId).contentIds).toEqual([row2, row0, row1]); // cherry, banana, apple
+  });
+
+  it('is one atomic, undoable step', () => {
+    const rawStore = new EditorStore({
+      rootId: 'root',
+      blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+      runs: [],
+    });
+    const store = new History(rawStore);
+    const { block, runs, subtreeBlocks } = createTableBlock({ rows: 2, cols: 1 })('root');
+    store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }));
+    const originalOrder = [...store.getBlock(block.id).contentIds];
+
+    sortTableByColumn(store, block.id, 0, 'asc');
+    store.undo();
+    expect(store.getBlock(block.id).contentIds).toEqual(originalOrder);
+  });
+});
+
+describe('setColumnAggregate', () => {
+  it('sets the column at colIndex own aggregate, one atomic undo step', () => {
+    const { store, tableId } = makeDocWithTable({ rows: 1, cols: 1 });
+    setColumnAggregate(store, tableId, 0, 'sum');
+    expect(store.getBlock(tableId).props.columns[0].aggregate).toBe('sum');
+  });
+
+  it('does nothing for an out-of-range colIndex', () => {
+    const { store, tableId } = makeDocWithTable({ rows: 1, cols: 1 });
+    setColumnAggregate(store, tableId, 5, 'sum'); // must not throw
+    expect(store.getBlock(tableId).props.columns[0].aggregate).toBeUndefined();
   });
 });

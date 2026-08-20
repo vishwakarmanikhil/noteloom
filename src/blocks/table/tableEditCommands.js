@@ -1,8 +1,9 @@
-import { removeBlock, insertBlock, updateBlockProps, setBlockRuns, updateRun } from '../../store/operations.js';
+import { removeBlock, insertBlock, updateBlockProps, setBlockRuns, updateRun, setBlockContentIds } from '../../store/operations.js';
 import { genId } from '../../utils/idGen.js';
 import { focusBlockStart } from '../shared/navigationCommands.js';
 import { ensureRootNonEmpty } from '../shared/ensureRootNonEmpty.js';
 import { resolveColumns, createCellForColumn, convertRunToType, DEFAULT_COLUMN_TYPE, DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from './tableColumns.js';
+import { sortRowIdsByColumn, runPlainText } from './tableView.js';
 
 function applyOps(store, ops) {
   if (typeof store.performBatch === 'function') store.performBatch(ops);
@@ -158,6 +159,44 @@ export function renameColumn(store, tableId, colIndex, label) {
   store.applyOperation(updateBlockProps(tableId, { columns: nextColumns }));
 }
 
+/**
+ * Physically reorders the table's rows by the column at `colIndex` — a
+ * one-time action (like a spreadsheet's "Sort A→Z"), not a live-maintained
+ * view: rows keep this order until sorted again, edited, or manually
+ * reordered, rather than continuously re-sorting as cell values change.
+ * One atomic undo step via `setBlockContentIds`, whose own inverse is the
+ * table's exact previous row order.
+ *
+ * Same collaboration scope as any other wholesale `contentIds` rewrite
+ * (see `SET_BLOCK_CONTENT_IDS` in EditorStore.js) — local-only for now, no
+ * live broadcast to already-connected peers; an already-open row order
+ * resyncs correctly on their next full-document reconnect.
+ */
+export function sortTableByColumn(store, tableId, colIndex, direction, inlineRegistry) {
+  const table = store.getBlock(tableId);
+  const rows = table.contentIds.map((rowId) => {
+    const row = store.getBlock(rowId);
+    const cell = store.getBlock(row.contentIds[colIndex]);
+    return { rowId, run: cell ? store.getRun(cell.contentIds[0]) : null };
+  });
+  const columns = resolveColumns(table, rows.length ? store.getBlock(table.contentIds[0]).contentIds.length : 0);
+  const columnType = columns[colIndex]?.type ?? DEFAULT_COLUMN_TYPE;
+
+  const orderedIds = sortRowIdsByColumn(rows, columnType, direction, inlineRegistry);
+  store.applyOperation(setBlockContentIds(tableId, orderedIds));
+}
+
+/** Sets the column at `colIndex`'s footer aggregate (see tableView.js's AGGREGATE_TYPES) — one atomic undo step. */
+export function setColumnAggregate(store, tableId, colIndex, aggregate) {
+  const table = store.getBlock(tableId);
+  const firstRow = store.getBlock(table.contentIds[0]);
+  const currentColumns = resolveColumns(table, firstRow ? firstRow.contentIds.length : 0);
+  if (!currentColumns[colIndex]) return;
+  const nextColumns = [...currentColumns];
+  nextColumns[colIndex] = { ...currentColumns[colIndex], aggregate };
+  store.applyOperation(updateBlockProps(tableId, { columns: nextColumns }));
+}
+
 function cellRunsForColumn(store, table, colIndex) {
   return table.contentIds.map((rowId) => {
     const row = store.getBlock(rowId);
@@ -165,13 +204,6 @@ function cellRunsForColumn(store, table, colIndex) {
     const cell = store.getBlock(cellId);
     return { cellId, run: store.getRun(cell.contentIds[0]) };
   });
-}
-
-function runPlainText(run, inlineRegistry) {
-  if (!run) return '';
-  if (run.type === 'text') return run.value ?? '';
-  const entry = inlineRegistry?.get(run.type);
-  return entry?.toPlainText ? entry.toPlainText(run) : '';
 }
 
 /**
