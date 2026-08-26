@@ -10,6 +10,24 @@ import { deleteBlockRange } from '../blocks/shared/blockRangeActions.js';
 import { focusRunAtOffset } from './focusRun.js';
 import { resolveFileToEmbedInsert } from '../blocks/embed/resolveFileEmbed.js';
 
+// Several plain `<input>`/`<textarea>` fields live inside the editor's own
+// DOM subtree — the embed block's URL field, FindBar's query/replace
+// inputs, LinkEditModal/ButtonEditModal/FieldTypeEditorModal's fields, the
+// comment composer's textarea, and more. None of them are portaled outside
+// NoteloomEditor's own container div, and React's synthetic copy/cut/paste
+// events bubble along the REACT tree (portals included) regardless of the
+// real DOM structure — so without this check, copying/cutting/pasting
+// inside any of those fields was hijacked by this hook's own block-range
+// logic instead of that field's native behavior (e.g. a paste into the
+// embed URL field landing as a brand-new paragraph elsewhere in the
+// document instead of into the field itself). This editor's own actual
+// text-editing surface is never a plain `<input>`/`<textarea>` — every run
+// is a `contentEditable` span — so this check cleanly separates "real
+// editor content" from every other field, present or future.
+function isPlainFormField(target) {
+  return target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
+}
+
 function closestBlockId(node) {
   let el = node?.nodeType === 1 ? node : node?.parentElement;
   while (el && typeof el.hasAttribute === 'function' && !el.hasAttribute('data-block-id')) {
@@ -84,6 +102,7 @@ export function useClipboardHandlers() {
 
   const onCopy = useCallback(
     (event) => {
+      if (isPlainFormField(event.target)) return; // let the field handle its own native copy
       // Priority: whole-document select-all > a drag-selected block range
       // (see useBlockRangeDrag) > the native browser Selection. Only one of
       // these is ever meaningfully active at once in practice (starting
@@ -110,6 +129,7 @@ export function useClipboardHandlers() {
   // atomic undo step for the deletion (copying doesn't touch the store).
   const onCut = useCallback(
     (event) => {
+      if (isPlainFormField(event.target)) return; // let the field handle its own native cut
       onCopy(event);
       if (isWholeDocumentSelected) {
         const result = deleteEntireDocument(store);
@@ -196,6 +216,7 @@ export function useClipboardHandlers() {
 
   const onPaste = useCallback(
     (event) => {
+      if (isPlainFormField(event.target)) return; // let the field handle its own native paste
       // A real file on the clipboard (as opposed to an <img> copied from a
       // webpage, which arrives as text/html with no .files) is a strong,
       // unambiguous signal of direct image/screenshot paste intent — takes

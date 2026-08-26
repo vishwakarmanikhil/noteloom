@@ -19,6 +19,10 @@ All notable changes to this project are documented here. Format loosely follows 
 - `CommentPopover` (the click-or-hover panel for viewing/replying to an existing comment thread) had no `role`, no `aria-modal`, and never moved focus in on open or restored it on close — a real gap for a panel that can be "pinned" open via click, not just glanced at on hover. A pinned (click-)opened popover now gets `role="dialog"`/`aria-modal="true"` and the same one-time focus-in/focus-out-on-close `Modal.jsx` already does; a hover-only preview deliberately does NOT take focus (or claim `aria-modal`) — a passing mouse-over must never steal focus from wherever the user is actually typing.
 - `VersionHistory`'s drawer is a hand-rolled `role="dialog"` (not built on `Modal.jsx`, since it's a side-drawer not a centered dialog) that already had Escape-to-close but no `aria-modal`, no focus-in on open, and no focus-restoration on close — a keyboard/screen-reader user lost their place after closing it. Now matches `Modal.jsx`'s own focus handling.
 
+### Fixed
+
+- Pasting into any plain `<input>`/`<textarea>` living inside the editor's own DOM subtree — the embed block's URL field, FindBar's query/replace fields, LinkEditModal/ButtonEditModal/FieldTypeEditorModal's fields, the comment composer's textarea — was hijacked by the document-level clipboard handler instead of landing in the field itself: React's synthetic copy/cut/paste events bubble along the *React* tree (portals included) regardless of the real DOM structure, and `useClipboardHandlers` never checked what the event's actual target was before treating it as a block-range paste, so the pasted text landed as a brand-new paragraph elsewhere in the document instead of in the field the user was actually typing into. `onCopy`/`onCut`/`onPaste` now bail out immediately whenever the event's target is a plain `<input>`/`<textarea>` (this editor's own real text-editing surface is never one of those — every run is a `contentEditable` span), letting the field's native copy/cut/paste behavior proceed untouched.
+
 ## [0.3.3] - 2026-08-16
 
 ### Added

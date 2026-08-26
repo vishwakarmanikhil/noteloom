@@ -11,6 +11,8 @@ import { useClipboardHandlers } from '../../src/react/useClipboardHandlers.js';
 import { useEditorKeyboardShortcuts } from '../../src/react/useEditorKeyboardShortcuts.js';
 import { APP_MIME } from '../../src/clipboard/mimeType.js';
 import { serializeBlockRange } from '../../src/clipboard/serialize.js';
+import { createEmbedBlock } from '../../src/blocks/embed/createEmbedBlock.js';
+import { insertBlock } from '../../src/store/operations.js';
 
 class FakeDataTransfer {
   constructor(initial = {}, files = []) {
@@ -338,6 +340,44 @@ describe('useClipboardHandlers: pasting a raw file straight off the clipboard (s
     await waitFor(() => expect(store.getBlock('root').contentIds.length).toBe(3));
     const insertedId = store.getBlock('root').contentIds[1];
     expect(store.getBlock(insertedId).type).toBe('embed'); // not the <ul>'s list items
+  });
+});
+
+describe('useClipboardHandlers: leaves plain <input>/<textarea> fields (embed URL box, FindBar, modals, ...) alone', () => {
+  it('pasting into the embed block\'s own URL input does not hijack it into inserting a new block elsewhere in the document', () => {
+    const store = new EditorStore(makeTwoParagraphDoc());
+    const { block, runs = [] } = createEmbedBlock({ kind: 'file' })('root');
+    store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block], runs }));
+    const { container } = renderHarness(store);
+
+    const urlInput = container.querySelector(`[data-block-id="${block.id}"] .be-embed-url-input`);
+    expect(urlInput).not.toBeNull();
+
+    const dt = new FakeDataTransfer({ 'text/plain': 'https://example.com/a.pdf' });
+    const event = fireClipboardEvent(urlInput, 'paste', dt);
+
+    // The browser's own native paste-into-<input> behavior is left to
+    // proceed (not hijacked into inserting a block), and nothing was
+    // inserted into the document as a side effect.
+    expect(event.defaultPrevented).toBe(false);
+    expect(store.getBlock('root').contentIds).toEqual([block.id, 'p1', 'p2']);
+  });
+
+  it('copying/cutting inside a plain input is also left alone (the field\'s own native selection, not a block-range serialization)', () => {
+    const store = new EditorStore(makeTwoParagraphDoc());
+    const { block, runs = [] } = createEmbedBlock({ kind: 'file' })('root');
+    store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block], runs }));
+    const { container } = renderHarness(store);
+    const urlInput = container.querySelector(`[data-block-id="${block.id}"] .be-embed-url-input`);
+
+    const copyDt = new FakeDataTransfer();
+    const copyEvent = fireClipboardEvent(urlInput, 'copy', copyDt);
+    expect(copyEvent.defaultPrevented).toBe(false);
+    expect(copyDt.getData('text/plain')).toBe(''); // never written to by our handler
+
+    const cutDt = new FakeDataTransfer();
+    fireClipboardEvent(urlInput, 'cut', cutDt);
+    expect(store.getBlock('root').contentIds).toEqual([block.id, 'p1', 'p2']); // nothing deleted from the document
   });
 });
 
