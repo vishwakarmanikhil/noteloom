@@ -26,7 +26,12 @@ npm run dev:collab              # examples/collab — real-time collaboration (B
 npm run dev:lan-collab          # examples/lan-collab — collaboration over a WebSocket relay (see tools/lan-relay-server/)
 npm run dev:offline-persist     # examples/offline-persist — IndexedDB persistence + PWA
 npm test                        # vitest (jsdom + @testing-library/react)
+npm run test:e2e                # Playwright: comments flow + golden-document regression gate
 npm run typecheck               # tsc --noEmit against src/index.d.ts
+npm run lint                    # eslint (warnings allowed; errors block CI)
+npm run format                  # prettier --write .
+npm run size                    # build + size-limit bundle budget
+npm run changeset               # record a release note for your change
 npm run build                   # library build -> dist/ (ESM + CJS + index.d.ts + style.css)
 ```
 
@@ -38,13 +43,16 @@ If you're working on the collaboration/sync layer (`src/sync/`, `src/crdt/`), th
 
 - **Run `npm test`.** CI runs the full suite on Node 18/20/22 on every push and PR (`.github/workflows/ci.yml`) — a red CI check is expected to be fixed before merge, not ignored.
 - **Add or update tests for behavior changes.** `test/` mirrors `src/`'s structure — find the sibling test file for whatever you touched.
-- **If you change the public API** (add/remove/rename an export in `src/index.js`), update `src/index.d.ts` to match and run `npm run typecheck` — it's hand-written, not generated, so nothing enforces this automatically.
+- **If you change the public API** (add/remove/rename an export in `src/index.js`), update `src/index.d.ts` to match and run `npm run typecheck` — it's hand-written, not generated, so nothing enforces this automatically. `test/publicApi.test.js` also holds a frozen list of every exported name; it will fail until you update that list in the same commit, which is the intended review signal for an API-surface change.
+- **`npm run test:e2e`** runs the Playwright suite: the comments flow, plus a golden-document regression gate (`test-e2e/golden-document.spec.js`) that renders a deterministic fixture and snapshots every serialization export + the editor DOM. If a change to rendering or export output is intentional, refresh the snapshots in the same commit with `npx playwright test golden-document --update-snapshots` — a snapshot diff you didn't expect is a regression.
 - **If you're touching `src/sync/` or `src/crdt/`, verify against a real scenario**, not just unit tests — the fake WebRTC/IndexedDB test harnesses (`test/sync/fakeWebrtc.js`, `fake-indexeddb`) are good for fast feedback, but this codebase's history includes several bugs (message chunking, backpressure, undo/remote-edit races) that only showed up under real browser + real network conditions.
 - **Keep the zero-runtime-dependency constraint intact.** Nothing in `src/` should end up requiring a new npm package at runtime for a consuming app — devDependencies (test tooling, example build tooling) are fine; runtime `dependencies` are not.
+- **Run `npm run lint`.** CI's `lint` job fails on ESLint *errors* (warnings are fine for now). If your change grows the bundle past the `.size-limit.json` budget, that job fails too — justify the increase or trim it.
+- **Add a changeset** (`npm run changeset`) for anything user-facing — it becomes the release note.
 
 ## Code style
 
-There's no linter configured yet, so these are conventions, not enforced rules:
+ESLint (`eslint.config.js`) and Prettier (`.prettierrc.json`) are configured. `npm run lint` currently allows warnings; beyond that, these conventions still apply:
 
 - Default to **no comments**. Add one only when it explains a non-obvious *why* — a hidden constraint, a workaround, a subtle invariant — not what the code visibly does.
 - Prefer editing/extending existing patterns over introducing a new one for the same problem (there's usually already a block/hook/utility doing something structurally similar — look for it first).

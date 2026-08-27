@@ -1,0 +1,20 @@
+Golden document
+A plain paragraph of text.
+Bold then italic then a link
+A block quote.
+💡 A callout box.
+const answer = 42;
+---
+Bulleted item
+Numbered item
+Completed to-do
+Parent item
+Toggle heading
+Content under the toggle heading.
+Visit example.com
+[image: demo image]
+Left column
+Right column
+Ada	Engineer
+Grace	Admiral
+Status In progress due Jul 11, 2026 [x] reviewed end.

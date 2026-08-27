@@ -9,6 +9,20 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    # Lint + format + bundle-size budget. One Node version — these don't vary
+    # across the engines range. See docs/repackaging-plan.md Phase 0.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run size
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -32,3 +46,21 @@ jobs:
       - run: npm test
       - run: npm run typecheck
       - run: npm run build
+
+  e2e:
+    # Playwright e2e: the comments flow + the golden-document regression gate
+    # (deterministic fixture whose serialized output is snapshotted — see
+    # docs/repackaging-plan.md). One Node version is enough; this guards
+    # rendering/serialization behavior, not the engines range.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "noteloom (ESM, gzip)",
+    "path": "dist/noteloom.es.js",
+    "limit": "140 kB",
+    "gzip": true
+  },
+  {
+    "name": "default theme CSS (gzip)",
+    "path": "dist/style.css",
+    "limit": "18 kB",
+    "gzip": true
+  }
+]

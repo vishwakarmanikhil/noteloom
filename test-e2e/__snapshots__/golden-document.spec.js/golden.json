@@ -1,0 +1,571 @@
+{
+  "version": 1,
+  "rootId": "root",
+  "blocks": [
+    {
+      "id": "root",
+      "type": "page",
+      "parentId": null,
+      "contentIds": [
+        "h1",
+        "pPlain",
+        "pMarks",
+        "quote",
+        "callout",
+        "code",
+        "divider",
+        "liBullet",
+        "liNumbered",
+        "liTodoDone",
+        "liParent",
+        "toggleHeading",
+        "button",
+        "embedImage",
+        "layout",
+        "table",
+        "pInline"
+      ],
+      "props": {}
+    },
+    {
+      "id": "h1",
+      "type": "heading",
+      "parentId": "root",
+      "contentIds": [
+        "rH1"
+      ],
+      "props": {
+        "level": 2
+      }
+    },
+    {
+      "id": "pPlain",
+      "type": "paragraph",
+      "parentId": "root",
+      "contentIds": [
+        "rPlain"
+      ],
+      "props": {}
+    },
+    {
+      "id": "pMarks",
+      "type": "paragraph",
+      "parentId": "root",
+      "contentIds": [
+        "rBold",
+        "rMid",
+        "rLink"
+      ],
+      "props": {}
+    },
+    {
+      "id": "quote",
+      "type": "blockquote",
+      "parentId": "root",
+      "contentIds": [
+        "rQuote"
+      ],
+      "props": {}
+    },
+    {
+      "id": "callout",
+      "type": "callout",
+      "parentId": "root",
+      "contentIds": [
+        "calloutP"
+      ],
+      "props": {
+        "icon": "💡"
+      }
+    },
+    {
+      "id": "calloutP",
+      "type": "paragraph",
+      "parentId": "callout",
+      "contentIds": [
+        "rCallout"
+      ],
+      "props": {}
+    },
+    {
+      "id": "code",
+      "type": "code",
+      "parentId": "root",
+      "contentIds": [
+        "rCode"
+      ],
+      "props": {
+        "language": "javascript"
+      }
+    },
+    {
+      "id": "divider",
+      "type": "divider",
+      "parentId": "root",
+      "contentIds": [],
+      "props": {}
+    },
+    {
+      "id": "liBullet",
+      "type": "listItem",
+      "parentId": "root",
+      "contentIds": [],
+      "props": {
+        "ordered": false,
+        "titleRunIds": [
+          "rLiBullet"
+        ]
+      }
+    },
+    {
+      "id": "liNumbered",
+      "type": "listItem",
+      "parentId": "root",
+      "contentIds": [],
+      "props": {
+        "ordered": true,
+        "titleRunIds": [
+          "rLiNumbered"
+        ]
+      }
+    },
+    {
+      "id": "liTodoDone",
+      "type": "listItem",
+      "parentId": "root",
+      "contentIds": [],
+      "props": {
+        "ordered": false,
+        "checked": true,
+        "titleRunIds": [
+          "rLiTodo"
+        ]
+      }
+    },
+    {
+      "id": "liParent",
+      "type": "listItem",
+      "parentId": "root",
+      "contentIds": [
+        "liChild"
+      ],
+      "props": {
+        "ordered": false,
+        "titleRunIds": [
+          "rLiParent"
+        ]
+      }
+    },
+    {
+      "id": "liChild",
+      "type": "listItem",
+      "parentId": "liParent",
+      "contentIds": [],
+      "props": {
+        "ordered": false,
+        "titleRunIds": [
+          "rLiChild"
+        ]
+      }
+    },
+    {
+      "id": "toggleHeading",
+      "type": "toggleHeading",
+      "parentId": "root",
+      "contentIds": [
+        "toggleHeadingChild"
+      ],
+      "props": {
+        "level": 2,
+        "collapsed": false,
+        "titleRunIds": [
+          "rToggleHeading"
+        ]
+      }
+    },
+    {
+      "id": "toggleHeadingChild",
+      "type": "paragraph",
+      "parentId": "toggleHeading",
+      "contentIds": [
+        "rToggleHeadingChild"
+      ],
+      "props": {}
+    },
+    {
+      "id": "button",
+      "type": "button",
+      "parentId": "root",
+      "contentIds": [
+        "rButton"
+      ],
+      "props": {
+        "href": "https://example.com"
+      }
+    },
+    {
+      "id": "embedImage",
+      "type": "embed",
+      "parentId": "root",
+      "contentIds": [],
+      "props": {
+        "kind": "image",
+        "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Crect width='120' height='60' fill='%232b6fd6'/%3E%3C/svg%3E",
+        "name": "demo image",
+        "mimeType": "image/svg+xml",
+        "alt": "A solid blue rectangle"
+      }
+    },
+    {
+      "id": "layout",
+      "type": "layout",
+      "parentId": "root",
+      "contentIds": [
+        "col1",
+        "col2"
+      ],
+      "props": {}
+    },
+    {
+      "id": "col1",
+      "type": "layoutColumn",
+      "parentId": "layout",
+      "contentIds": [
+        "colP1"
+      ],
+      "props": {}
+    },
+    {
+      "id": "colP1",
+      "type": "paragraph",
+      "parentId": "col1",
+      "contentIds": [
+        "rColP1"
+      ],
+      "props": {}
+    },
+    {
+      "id": "col2",
+      "type": "layoutColumn",
+      "parentId": "layout",
+      "contentIds": [
+        "colP2"
+      ],
+      "props": {}
+    },
+    {
+      "id": "colP2",
+      "type": "paragraph",
+      "parentId": "col2",
+      "contentIds": [
+        "rColP2"
+      ],
+      "props": {}
+    },
+    {
+      "id": "table",
+      "type": "table",
+      "parentId": "root",
+      "contentIds": [
+        "tr1",
+        "tr2"
+      ],
+      "props": {
+        "columns": [
+          {
+            "id": "colA",
+            "label": "Name",
+            "type": "text",
+            "width": 160
+          },
+          {
+            "id": "colB",
+            "label": "Role",
+            "type": "text",
+            "width": 160
+          }
+        ]
+      }
+    },
+    {
+      "id": "tr1",
+      "type": "tableRow",
+      "parentId": "table",
+      "contentIds": [
+        "tc1a",
+        "tc1b"
+      ],
+      "props": {}
+    },
+    {
+      "id": "tc1a",
+      "type": "tableCell",
+      "parentId": "tr1",
+      "contentIds": [
+        "rTc1a"
+      ],
+      "props": {}
+    },
+    {
+      "id": "tc1b",
+      "type": "tableCell",
+      "parentId": "tr1",
+      "contentIds": [
+        "rTc1b"
+      ],
+      "props": {}
+    },
+    {
+      "id": "tr2",
+      "type": "tableRow",
+      "parentId": "table",
+      "contentIds": [
+        "tc2a",
+        "tc2b"
+      ],
+      "props": {}
+    },
+    {
+      "id": "tc2a",
+      "type": "tableCell",
+      "parentId": "tr2",
+      "contentIds": [
+        "rTc2a"
+      ],
+      "props": {}
+    },
+    {
+      "id": "tc2b",
+      "type": "tableCell",
+      "parentId": "tr2",
+      "contentIds": [
+        "rTc2b"
+      ],
+      "props": {}
+    },
+    {
+      "id": "pInline",
+      "type": "paragraph",
+      "parentId": "root",
+      "contentIds": [
+        "rInlineBefore",
+        "chipSelect",
+        "rInlineMid1",
+        "chipDate",
+        "rInlineMid2",
+        "chipCheckbox",
+        "rInlineAfter"
+      ],
+      "props": {}
+    }
+  ],
+  "runs": [
+    {
+      "id": "rH1",
+      "type": "text",
+      "value": "Golden document",
+      "marks": {}
+    },
+    {
+      "id": "rPlain",
+      "type": "text",
+      "value": "A plain paragraph of text.",
+      "marks": {}
+    },
+    {
+      "id": "rBold",
+      "type": "text",
+      "value": "Bold",
+      "marks": {
+        "bold": true
+      }
+    },
+    {
+      "id": "rMid",
+      "type": "text",
+      "value": " then italic ",
+      "marks": {
+        "italic": true
+      }
+    },
+    {
+      "id": "rLink",
+      "type": "text",
+      "value": "then a link",
+      "marks": {
+        "link": {
+          "href": "https://example.com"
+        }
+      }
+    },
+    {
+      "id": "rQuote",
+      "type": "text",
+      "value": "A block quote.",
+      "marks": {}
+    },
+    {
+      "id": "rCallout",
+      "type": "text",
+      "value": "A callout box.",
+      "marks": {}
+    },
+    {
+      "id": "rCode",
+      "type": "text",
+      "value": "const answer = 42;",
+      "marks": {}
+    },
+    {
+      "id": "rLiBullet",
+      "type": "text",
+      "value": "Bulleted item",
+      "marks": {}
+    },
+    {
+      "id": "rLiNumbered",
+      "type": "text",
+      "value": "Numbered item",
+      "marks": {}
+    },
+    {
+      "id": "rLiTodo",
+      "type": "text",
+      "value": "Completed to-do",
+      "marks": {}
+    },
+    {
+      "id": "rLiChild",
+      "type": "text",
+      "value": "Nested item",
+      "marks": {}
+    },
+    {
+      "id": "rLiParent",
+      "type": "text",
+      "value": "Parent item",
+      "marks": {}
+    },
+    {
+      "id": "rToggleHeadingChild",
+      "type": "text",
+      "value": "Content under the toggle heading.",
+      "marks": {}
+    },
+    {
+      "id": "rToggleHeading",
+      "type": "text",
+      "value": "Toggle heading",
+      "marks": {}
+    },
+    {
+      "id": "rButton",
+      "type": "text",
+      "value": "Visit example.com",
+      "marks": {}
+    },
+    {
+      "id": "rColP1",
+      "type": "text",
+      "value": "Left column",
+      "marks": {}
+    },
+    {
+      "id": "rColP2",
+      "type": "text",
+      "value": "Right column",
+      "marks": {}
+    },
+    {
+      "id": "rTc1a",
+      "type": "text",
+      "value": "Ada",
+      "marks": {}
+    },
+    {
+      "id": "rTc1b",
+      "type": "text",
+      "value": "Engineer",
+      "marks": {}
+    },
+    {
+      "id": "rTc2a",
+      "type": "text",
+      "value": "Grace",
+      "marks": {}
+    },
+    {
+      "id": "rTc2b",
+      "type": "text",
+      "value": "Admiral",
+      "marks": {}
+    },
+    {
+      "id": "rInlineBefore",
+      "type": "text",
+      "value": "Status ",
+      "marks": {}
+    },
+    {
+      "id": "chipSelect",
+      "type": "select",
+      "value": "",
+      "marks": {},
+      "data": {
+        "options": [
+          {
+            "value": "todo",
+            "label": "To do"
+          },
+          {
+            "value": "doing",
+            "label": "In progress"
+          },
+          {
+            "value": "done",
+            "label": "Done"
+          }
+        ],
+        "selectedValue": "doing",
+        "placeholder": "Set status…"
+      }
+    },
+    {
+      "id": "rInlineMid1",
+      "type": "text",
+      "value": " due ",
+      "marks": {}
+    },
+    {
+      "id": "chipDate",
+      "type": "date",
+      "value": "",
+      "marks": {},
+      "data": {
+        "isoDate": "2026-07-11"
+      }
+    },
+    {
+      "id": "rInlineMid2",
+      "type": "text",
+      "value": " ",
+      "marks": {}
+    },
+    {
+      "id": "chipCheckbox",
+      "type": "checkbox",
+      "value": "",
+      "marks": {},
+      "data": {
+        "checked": true,
+        "label": "reviewed"
+      }
+    },
+    {
+      "id": "rInlineAfter",
+      "type": "text",
+      "value": " end.",
+      "marks": {}
+    }
+  ]
+}

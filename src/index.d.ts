@@ -953,3 +953,29 @@ export interface UseFindInDocumentResult {
 /** Ctrl/Cmd+F (while `containerRef` has focus) find/replace — see NoteloomEditor's own doc comment for scope. Pair with `<FindBar>`, or build custom chrome off this hook's returned state/actions directly. */
 export function useFindInDocument(containerRef: RefObject<HTMLElement | null>): UseFindInDocumentResult;
 export function FindBar(props: UseFindInDocumentResult): ReactElement | null;
+
+// ---------------------------------------------------------------------------
+// people/people.js, react/usePeople.js — a document's own people list
+// ---------------------------------------------------------------------------
+
+export interface Person {
+  id: string;
+  name: string;
+  color?: string;
+  [key: string]: unknown;
+}
+
+export function addPerson(store: EditorStore | History, person: { name: string; color?: string }): string;
+export function updatePerson(store: EditorStore | History, id: string, patch: Partial<Person>): void;
+export function removePerson(store: EditorStore | History, id: string): void;
+/** Reactive view of the document's `people` collection. */
+export function usePeople(): Person[];
+
+// ---------------------------------------------------------------------------
+// react/useSmartQuotes.js, react/useAutoPairBrackets.js — optional typing behaviors
+// ---------------------------------------------------------------------------
+
+/** Straight `"`/`'` typed while composing becomes the contextually correct curly quote (one char in, one out). */
+export function useSmartQuotes(): void;
+/** Typing `(`/`[`/`{` inserts the matching closer and puts the caret between them; excludes quotes (that's `useSmartQuotes`). Off inside `code` blocks. */
+export function useAutoPairBrackets(): void;
