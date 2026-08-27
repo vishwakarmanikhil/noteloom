@@ -70,8 +70,18 @@ describe('BlockRangeActionMenu: visibility', () => {
 
     const menu = document.querySelector('.be-block-range-menu');
     expect(menu).not.toBeNull();
-    const labels = [...menu.querySelectorAll('.be-block-range-menu-item')].map((el) => el.textContent.trim());
-    expect(labels).toEqual(['Copy', 'Cut', 'Move up', 'Move down', 'Hide in preview', 'Turn into', 'Delete']);
+    const labels = [...menu.querySelectorAll('.be-block-range-menu-item')].map((el) =>
+      el.textContent.trim(),
+    );
+    expect(labels).toEqual([
+      'Copy',
+      'Cut',
+      'Move up',
+      'Move down',
+      'Hide in preview',
+      'Turn into',
+      'Delete',
+    ]);
   });
 });
 
@@ -80,7 +90,13 @@ describe('BlockRangeActionMenu: Turn into', () => {
     return {
       rootId: 'root',
       blocks: [
-        { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'p2', 'divider1'], props: {} },
+        {
+          id: 'root',
+          type: 'page',
+          parentId: null,
+          contentIds: ['p1', 'p2', 'divider1'],
+          props: {},
+        },
         { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
         { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: ['r2'], props: {} },
         { id: 'divider1', type: 'divider', parentId: 'root', contentIds: [], props: {} },
@@ -96,7 +112,9 @@ describe('BlockRangeActionMenu: Turn into', () => {
     const store = new EditorStore(makeDocWithDivider());
     renderHarness(store, ['divider1']);
 
-    const labels = [...document.querySelectorAll('.be-block-range-menu-item')].map((el) => el.textContent.trim());
+    const labels = [...document.querySelectorAll('.be-block-range-menu-item')].map((el) =>
+      el.textContent.trim(),
+    );
     expect(labels).not.toContain('Turn into');
   });
 
@@ -136,7 +154,11 @@ describe('BlockRangeActionMenu: Delete', () => {
     const store = new History(new EditorStore(makeDoc()));
     renderHarness(store, ['p2', 'p3']);
 
-    fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.trim() === 'Delete'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-range-menu-item')].find(
+        (el) => el.textContent.trim() === 'Delete',
+      ),
+    );
 
     expect(store.getBlock('root').contentIds).toEqual(['p1', 'p4']);
     expect(document.querySelector('.be-block-range-menu')).toBeNull();
@@ -151,7 +173,11 @@ describe('BlockRangeActionMenu: Move up / Move down', () => {
     const store = new EditorStore(makeDoc());
     renderHarness(store, ['p3', 'p4']);
 
-    fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.trim() === 'Move up'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-range-menu-item')].find(
+        (el) => el.textContent.trim() === 'Move up',
+      ),
+    );
 
     expect(store.getBlock('root').contentIds).toEqual(['p1', 'p3', 'p4', 'p2']);
     // Every action closes the menu and clears the selection once it's done
@@ -163,7 +189,11 @@ describe('BlockRangeActionMenu: Move up / Move down', () => {
     const store = new EditorStore(makeDoc());
     renderHarness(store, ['p1', 'p2']);
 
-    fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.trim() === 'Move down'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-range-menu-item')].find(
+        (el) => el.textContent.trim() === 'Move down',
+      ),
+    );
 
     expect(store.getBlock('root').contentIds).toEqual(['p3', 'p1', 'p2', 'p4']);
     expect(document.querySelector('.be-block-range-menu')).toBeNull();
@@ -175,7 +205,11 @@ describe('BlockRangeActionMenu: Hide/Show in preview', () => {
     const store = new EditorStore(makeDoc());
     renderHarness(store, ['p2', 'p3']);
 
-    fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.includes('Hide')));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-range-menu-item')].find((el) =>
+        el.textContent.includes('Hide'),
+      ),
+    );
 
     expect(store.getBlock('p2').props.hidden).toBe(true);
     expect(store.getBlock('p3').props.hidden).toBe(true);
@@ -200,7 +234,11 @@ describe('BlockRangeActionMenu: Copy / Cut', () => {
       renderHarness(store, ['p2']);
 
       await act(async () => {
-        fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.trim() === 'Copy'));
+        fireEvent.click(
+          [...document.querySelectorAll('.be-block-range-menu-item')].find(
+            (el) => el.textContent.trim() === 'Copy',
+          ),
+        );
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
@@ -208,7 +246,10 @@ describe('BlockRangeActionMenu: Copy / Cut', () => {
       expect(store.getBlock('p2')).toBeDefined(); // untouched
       expect(document.querySelector('.be-block-range-menu')).toBeNull(); // closes after acting, like every other action
     } finally {
-      Object.defineProperty(navigator, 'clipboard', { value: originalClipboard, configurable: true });
+      Object.defineProperty(navigator, 'clipboard', {
+        value: originalClipboard,
+        configurable: true,
+      });
       global.ClipboardItem = originalClipboardItem;
     }
   });
@@ -229,7 +270,11 @@ describe('BlockRangeActionMenu: Copy / Cut', () => {
       renderHarness(store, ['p2', 'p3']);
 
       await act(async () => {
-        fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.trim() === 'Cut'));
+        fireEvent.click(
+          [...document.querySelectorAll('.be-block-range-menu-item')].find(
+            (el) => el.textContent.trim() === 'Cut',
+          ),
+        );
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
@@ -237,7 +282,10 @@ describe('BlockRangeActionMenu: Copy / Cut', () => {
       expect(store.getBlock('root').contentIds).toEqual(['p1', 'p4']);
       expect(document.querySelector('.be-block-range-menu')).toBeNull();
     } finally {
-      Object.defineProperty(navigator, 'clipboard', { value: originalClipboard, configurable: true });
+      Object.defineProperty(navigator, 'clipboard', {
+        value: originalClipboard,
+        configurable: true,
+      });
       global.ClipboardItem = originalClipboardItem;
     }
   });
@@ -260,7 +308,11 @@ describe('BlockRangeActionMenu: keyboard operability', () => {
     const store = new EditorStore(makeDoc());
     renderHarness(store, ['p3', 'p4']);
 
-    fireEvent.click([...document.querySelectorAll('.be-block-range-menu-item')].find((el) => el.textContent.trim() === 'Move up'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-range-menu-item')].find(
+        (el) => el.textContent.trim() === 'Move up',
+      ),
+    );
 
     expect(document.getElementById('be-live-region')).not.toBeNull();
   });
@@ -294,7 +346,7 @@ describe('BlockRangeActionMenu: dismissal', () => {
     expect(document.querySelector('.be-block-range-menu')).toBeNull();
   });
 
-  it('clicking a different block\'s gutter is NOT treated as an outside click (that gutter is meant to start its own drag — see useBlockRangeDrag.test.jsx for the full drag mechanic, not mounted in this harness)', () => {
+  it("clicking a different block's gutter is NOT treated as an outside click (that gutter is meant to start its own drag — see useBlockRangeDrag.test.jsx for the full drag mechanic, not mounted in this harness)", () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store, ['p2', 'p3']);
 
@@ -305,7 +357,15 @@ describe('BlockRangeActionMenu: dismissal', () => {
     // "clicked outside, clear everything" check regardless of whether a
     // drag hook happens to be mounted to also act on that same press
     expect(document.querySelector('.be-block-range-menu')).not.toBeNull();
-    expect(container.querySelector('[data-block-row-id="p2"]').classList.contains('be-block-row-range-selected')).toBe(true);
-    expect(container.querySelector('[data-block-row-id="p3"]').classList.contains('be-block-row-range-selected')).toBe(true);
+    expect(
+      container
+        .querySelector('[data-block-row-id="p2"]')
+        .classList.contains('be-block-row-range-selected'),
+    ).toBe(true);
+    expect(
+      container
+        .querySelector('[data-block-row-id="p3"]')
+        .classList.contains('be-block-row-range-selected'),
+    ).toBe(true);
   });
 });

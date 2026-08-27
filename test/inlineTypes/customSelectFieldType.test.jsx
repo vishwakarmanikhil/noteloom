@@ -33,19 +33,33 @@ function renderChip(run, entry) {
 
 describe('createSelectFieldType: triggers config', () => {
   it('defaults to slash-only: slashCommand present, atCommand absent', () => {
-    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', options: STATIC_OPTIONS });
+    const entry = createSelectFieldType({
+      type: 'priority',
+      label: 'Priority',
+      options: STATIC_OPTIONS,
+    });
     expect(entry.slashCommand).toBeDefined();
     expect(entry.atCommand).toBeUndefined();
   });
 
   it('triggers: ["at"] flips it to @-only: atCommand present, slashCommand absent', () => {
-    const entry = createSelectFieldType({ type: 'assignee', label: 'Assignee', options: STATIC_OPTIONS, triggers: ['at'] });
+    const entry = createSelectFieldType({
+      type: 'assignee',
+      label: 'Assignee',
+      options: STATIC_OPTIONS,
+      triggers: ['at'],
+    });
     expect(entry.atCommand).toBeDefined();
     expect(entry.slashCommand).toBeUndefined();
   });
 
   it('triggers: ["slash", "at"] populates both with the SAME command object (run behaves identically either way)', () => {
-    const entry = createSelectFieldType({ type: 'assignee', label: 'Assignee', options: STATIC_OPTIONS, triggers: ['slash', 'at'] });
+    const entry = createSelectFieldType({
+      type: 'assignee',
+      label: 'Assignee',
+      options: STATIC_OPTIONS,
+      triggers: ['slash', 'at'],
+    });
     expect(entry.slashCommand).toBeDefined();
     expect(entry.atCommand).toBeDefined();
     expect(entry.slashCommand).toBe(entry.atCommand);
@@ -54,7 +68,11 @@ describe('createSelectFieldType: triggers config', () => {
 
 describe('createSelectFieldType: command icon', () => {
   it('falls back to the built-in select type\'s own icon when the config gives none — no blank slot in the "/" menu', () => {
-    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', options: STATIC_OPTIONS });
+    const entry = createSelectFieldType({
+      type: 'priority',
+      label: 'Priority',
+      options: STATIC_OPTIONS,
+    });
     expect(entry.slashCommand.icon).toBe(SelectIcon);
   });
 
@@ -62,19 +80,32 @@ describe('createSelectFieldType: command icon', () => {
     function CustomIcon() {
       return null;
     }
-    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', options: STATIC_OPTIONS, icon: CustomIcon });
+    const entry = createSelectFieldType({
+      type: 'priority',
+      label: 'Priority',
+      options: STATIC_OPTIONS,
+      icon: CustomIcon,
+    });
     expect(entry.slashCommand.icon).toBe(CustomIcon);
   });
 });
 
 describe('createSelectFieldType: static options', () => {
   it('produces a full InlineRegistry entry and renders the shared option list as a tag select', () => {
-    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', variant: 'tag', options: STATIC_OPTIONS });
+    const entry = createSelectFieldType({
+      type: 'priority',
+      label: 'Priority',
+      variant: 'tag',
+      options: STATIC_OPTIONS,
+    });
     expect(entry.isAtomic).toBe(true);
     expect(typeof entry.component).toBe('function');
     expect(entry.slashCommand.label).toBe('Priority');
 
-    const { container } = renderChip({ id: 'run1', type: 'priority', value: '', marks: {}, data: {} }, entry);
+    const { container } = renderChip(
+      { id: 'run1', type: 'priority', value: '', marks: {}, data: {} },
+      entry,
+    );
     const chip = container.querySelector('[data-run-id="run1"]');
 
     fireEvent.click(chip.querySelector('.be-select-trigger'));
@@ -83,8 +114,16 @@ describe('createSelectFieldType: static options', () => {
   });
 
   it('picking an option writes selectedValue/selectedLabel/selectedColor onto the run (not the options list itself)', () => {
-    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', variant: 'tag', options: STATIC_OPTIONS });
-    const { store, container } = renderChip({ id: 'run1', type: 'priority', value: '', marks: {}, data: {} }, entry);
+    const entry = createSelectFieldType({
+      type: 'priority',
+      label: 'Priority',
+      variant: 'tag',
+      options: STATIC_OPTIONS,
+    });
+    const { store, container } = renderChip(
+      { id: 'run1', type: 'priority', value: '', marks: {}, data: {} },
+      entry,
+    );
     const chip = container.querySelector('[data-run-id="run1"]');
 
     fireEvent.click(chip.querySelector('.be-select-trigger'));
@@ -99,8 +138,18 @@ describe('createSelectFieldType: static options', () => {
   });
 
   it('toHTML/toPlainText/fromHTML round-trip via the resolved label only', () => {
-    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', options: STATIC_OPTIONS });
-    const run = { id: 'run1', type: 'priority', value: '', marks: {}, data: { selectedValue: 'hi', selectedLabel: 'High' } };
+    const entry = createSelectFieldType({
+      type: 'priority',
+      label: 'Priority',
+      options: STATIC_OPTIONS,
+    });
+    const run = {
+      id: 'run1',
+      type: 'priority',
+      value: '',
+      marks: {},
+      data: { selectedValue: 'hi', selectedLabel: 'High' },
+    };
 
     expect(entry.toPlainText(run)).toBe('High');
     const html = entry.toHTML(run);
@@ -124,7 +173,12 @@ describe('createSelectFieldType: static options', () => {
 
 describe('createSelectFieldType: auto-opens its picker on insertion (no second click needed)', () => {
   it('the slash command opens the popover and focuses the search input immediately, with no click', () => {
-    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', variant: 'tag', options: STATIC_OPTIONS });
+    const entry = createSelectFieldType({
+      type: 'priority',
+      label: 'Priority',
+      variant: 'tag',
+      options: STATIC_OPTIONS,
+    });
     const store = new EditorStore({
       rootId: 'root',
       blocks: [
@@ -157,7 +211,12 @@ describe('createSelectFieldType: auto-opens its picker on insertion (no second c
   });
 
   it('a chip rendered from existing (already-persisted) document content does NOT auto-open — only a fresh insertion does', () => {
-    const entry = createSelectFieldType({ type: 'priority', label: 'Priority', variant: 'tag', options: STATIC_OPTIONS });
+    const entry = createSelectFieldType({
+      type: 'priority',
+      label: 'Priority',
+      variant: 'tag',
+      options: STATIC_OPTIONS,
+    });
     renderChip({ id: 'run1', type: 'priority', value: '', marks: {}, data: {} }, entry);
     expect(document.querySelector('.be-select-popover')).toBeNull();
   });
@@ -168,8 +227,15 @@ describe('createSelectFieldType: dynamic (function) options', () => {
     vi.useFakeTimers();
     try {
       const resolver = vi.fn().mockResolvedValue([{ value: 'x', label: 'Async Option' }]);
-      const entry = createSelectFieldType({ type: 'assignee', label: 'Assignee', options: resolver });
-      const { container } = renderChip({ id: 'run1', type: 'assignee', value: '', marks: {}, data: {} }, entry);
+      const entry = createSelectFieldType({
+        type: 'assignee',
+        label: 'Assignee',
+        options: resolver,
+      });
+      const { container } = renderChip(
+        { id: 'run1', type: 'assignee', value: '', marks: {}, data: {} },
+        entry,
+      );
       const chip = container.querySelector('[data-run-id="run1"]');
 
       fireEvent.click(chip.querySelector('.be-select-trigger'));

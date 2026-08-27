@@ -40,14 +40,32 @@ export const goldenDoc = {
 
     { id: 'h1', type: 'heading', parentId: 'root', contentIds: ['rH1'], props: { level: 2 } },
     { id: 'pPlain', type: 'paragraph', parentId: 'root', contentIds: ['rPlain'], props: {} },
-    { id: 'pMarks', type: 'paragraph', parentId: 'root', contentIds: ['rBold', 'rMid', 'rLink'], props: {} },
+    {
+      id: 'pMarks',
+      type: 'paragraph',
+      parentId: 'root',
+      contentIds: ['rBold', 'rMid', 'rLink'],
+      props: {},
+    },
 
     { id: 'quote', type: 'blockquote', parentId: 'root', contentIds: ['rQuote'], props: {} },
 
-    { id: 'callout', type: 'callout', parentId: 'root', contentIds: ['calloutP'], props: { icon: '💡' } },
+    {
+      id: 'callout',
+      type: 'callout',
+      parentId: 'root',
+      contentIds: ['calloutP'],
+      props: { icon: '💡' },
+    },
     { id: 'calloutP', type: 'paragraph', parentId: 'callout', contentIds: ['rCallout'], props: {} },
 
-    { id: 'code', type: 'code', parentId: 'root', contentIds: ['rCode'], props: { language: 'javascript' } },
+    {
+      id: 'code',
+      type: 'code',
+      parentId: 'root',
+      contentIds: ['rCode'],
+      props: { language: 'javascript' },
+    },
     { id: 'divider', type: 'divider', parentId: 'root', contentIds: [], props: {} },
 
     {
@@ -101,7 +119,13 @@ export const goldenDoc = {
       props: {},
     },
 
-    { id: 'button', type: 'button', parentId: 'root', contentIds: ['rButton'], props: { href: 'https://example.com' } },
+    {
+      id: 'button',
+      type: 'button',
+      parentId: 'root',
+      contentIds: ['rButton'],
+      props: { href: 'https://example.com' },
+    },
 
     {
       id: 'embedImage',
@@ -146,7 +170,15 @@ export const goldenDoc = {
       id: 'pInline',
       type: 'paragraph',
       parentId: 'root',
-      contentIds: ['rInlineBefore', 'chipSelect', 'rInlineMid1', 'chipDate', 'rInlineMid2', 'chipCheckbox', 'rInlineAfter'],
+      contentIds: [
+        'rInlineBefore',
+        'chipSelect',
+        'rInlineMid1',
+        'chipDate',
+        'rInlineMid2',
+        'chipCheckbox',
+        'rInlineAfter',
+      ],
       props: {},
     },
   ],
@@ -157,7 +189,12 @@ export const goldenDoc = {
 
     { id: 'rBold', type: 'text', value: 'Bold', marks: { bold: true } },
     { id: 'rMid', type: 'text', value: ' then italic ', marks: { italic: true } },
-    { id: 'rLink', type: 'text', value: 'then a link', marks: { link: { href: 'https://example.com' } } },
+    {
+      id: 'rLink',
+      type: 'text',
+      value: 'then a link',
+      marks: { link: { href: 'https://example.com' } },
+    },
 
     { id: 'rQuote', type: 'text', value: 'A block quote.', marks: {} },
     { id: 'rCallout', type: 'text', value: 'A callout box.', marks: {} },
@@ -170,7 +207,12 @@ export const goldenDoc = {
     { id: 'rLiChild', type: 'text', value: 'Nested item', marks: {} },
 
     { id: 'rToggleHeading', type: 'text', value: 'Toggle heading', marks: {} },
-    { id: 'rToggleHeadingChild', type: 'text', value: 'Content under the toggle heading.', marks: {} },
+    {
+      id: 'rToggleHeadingChild',
+      type: 'text',
+      value: 'Content under the toggle heading.',
+      marks: {},
+    },
 
     { id: 'rButton', type: 'text', value: 'Visit example.com', marks: {} },
 
@@ -201,7 +243,13 @@ export const goldenDoc = {
     { id: 'rInlineMid1', type: 'text', value: ' due ', marks: {} },
     { id: 'chipDate', type: 'date', value: '', marks: {}, data: { isoDate: '2026-07-11' } },
     { id: 'rInlineMid2', type: 'text', value: ' ', marks: {} },
-    { id: 'chipCheckbox', type: 'checkbox', value: '', marks: {}, data: { checked: true, label: 'reviewed' } },
+    {
+      id: 'chipCheckbox',
+      type: 'checkbox',
+      value: '',
+      marks: {},
+      data: { checked: true, label: 'reviewed' },
+    },
     { id: 'rInlineAfter', type: 'text', value: ' end.', marks: {} },
   ],
 };

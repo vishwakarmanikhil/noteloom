@@ -74,7 +74,11 @@ describe('useAutoAdjustedPosition', () => {
     function NullHarness() {
       const localRef = useRef(null);
       const position = useAutoAdjustedPosition(localRef, true, null, null);
-      return <div ref={localRef} data-testid="menu2">{position ? 'has-position' : 'no-position'}</div>;
+      return (
+        <div ref={localRef} data-testid="menu2">
+          {position ? 'has-position' : 'no-position'}
+        </div>
+      );
     }
     const { getByTestId } = render(<NullHarness />);
     expect(getByTestId('menu2').textContent).toBe('no-position');

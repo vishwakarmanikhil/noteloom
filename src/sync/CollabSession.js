@@ -1,4 +1,13 @@
-import { MESSAGE_TYPE, encodeMessage, decodeMessage, helloMessage, opMessage, syncRequestMessage, syncResponseMessage, presenceMessage } from './syncProtocol.js';
+import {
+  MESSAGE_TYPE,
+  encodeMessage,
+  decodeMessage,
+  helloMessage,
+  opMessage,
+  syncRequestMessage,
+  syncResponseMessage,
+  presenceMessage,
+} from './syncProtocol.js';
 import { PeerConnection } from './peerConnection.js';
 
 const DEFAULT_PRESENCE_THROTTLE_MS = 100;
@@ -86,7 +95,8 @@ export class CollabSession {
     }
 
     return () => {
-      for (const methodName of Object.keys(originals)) this._history[methodName] = originals[methodName];
+      for (const methodName of Object.keys(originals))
+        this._history[methodName] = originals[methodName];
       this._store.applyOperation = originalApplyOperation;
     };
   }

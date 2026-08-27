@@ -35,7 +35,7 @@ describe('date inline type', () => {
     expect(input.value).toBe('2026-07-04');
   });
 
-  it('changing the date input updates the run\'s data', () => {
+  it("changing the date input updates the run's data", () => {
     const store = new EditorStore({
       rootId: 'root',
       blocks: [

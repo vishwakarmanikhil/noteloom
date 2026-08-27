@@ -12,7 +12,11 @@ import { mergeWithPreviousOrDelete } from '../../src/blocks/shared/mergeCommands
 import { walkDomToBlocks } from '../../src/clipboard/domWalk.js';
 
 function emptyDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function insertAtRoot(store, factory, index = 0) {
@@ -47,7 +51,9 @@ describe('button block: rendering', () => {
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(store, createButtonBlock({ href: 'https://example.com' }));
     const { container } = renderDoc(store);
-    expect(container.querySelector(`[data-block-id="${id}"] .be-button-block-open`).disabled).toBe(false);
+    expect(container.querySelector(`[data-block-id="${id}"] .be-button-block-open`).disabled).toBe(
+      false,
+    );
   });
 
   it('typing into the label updates only that run, same as a paragraph', () => {
@@ -113,7 +119,7 @@ describe('button block: editing the link is a separate control from clicking to 
 });
 
 describe('button block: Enter creates a plain paragraph sibling (not another button)', () => {
-  it('splits at the caret into a new paragraph, matching heading\'s own convention', () => {
+  it("splits at the caret into a new paragraph, matching heading's own convention", () => {
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(store, createButtonBlock({ label: 'Click me' }));
     const { container } = renderDoc(store);
@@ -131,7 +137,13 @@ describe('button block: Backspace-at-start (not a mergeable text type, matches t
   it('a non-empty button does not merge into a preceding paragraph', () => {
     const store = new EditorStore(emptyDoc());
     const beforeId = insertAtRoot(store, () => ({
-      block: { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
+      block: {
+        id: 'before',
+        type: 'paragraph',
+        parentId: 'root',
+        contentIds: ['r-before'],
+        props: {},
+      },
       runs: [{ id: 'r-before', type: 'text', value: 'before', marks: {} }],
     }));
     const id = insertAtRoot(store, createButtonBlock({ label: 'Click me' }), 1);
@@ -145,7 +157,13 @@ describe('button block: Backspace-at-start (not a mergeable text type, matches t
   it('an empty button is removed outright', () => {
     const store = new EditorStore(emptyDoc());
     const beforeId = insertAtRoot(store, () => ({
-      block: { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
+      block: {
+        id: 'before',
+        type: 'paragraph',
+        parentId: 'root',
+        contentIds: ['r-before'],
+        props: {},
+      },
       runs: [{ id: 'r-before', type: 'text', value: 'before', marks: {} }],
     }));
     const id = insertAtRoot(store, createButtonBlock({ label: '' }), 1);
@@ -171,7 +189,10 @@ describe('button block: clipboard round-trip', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
 
-    const inserts = walkDomToBlocks('<a class="be-button-block-link" href="https://example.com">Go</a>', registry);
+    const inserts = walkDomToBlocks(
+      '<a class="be-button-block-link" href="https://example.com">Go</a>',
+      registry,
+    );
     expect(inserts).toHaveLength(1);
     expect(inserts[0].block.type).toBe('button');
     expect(inserts[0].block.props.href).toBe('https://example.com');
@@ -192,7 +213,12 @@ describe('button block: clipboard round-trip', () => {
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(
       store,
-      createButtonBlock({ href: 'https://example.com', label: 'Go', color: '#e03131', customAttrs: [{ key: 'track', value: 'signup' }] }),
+      createButtonBlock({
+        href: 'https://example.com',
+        label: 'Go',
+        color: '#e03131',
+        customAttrs: [{ key: 'track', value: 'signup' }],
+      }),
     );
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
@@ -206,7 +232,10 @@ describe('button block: clipboard round-trip', () => {
 describe('button block: the edit modal (label/link/color/custom attributes in one place)', () => {
   it('opens pre-filled with the current label, href, and color', () => {
     const store = new EditorStore(emptyDoc());
-    insertAtRoot(store, createButtonBlock({ href: 'https://example.com', label: 'Go', color: '#e03131' }));
+    insertAtRoot(
+      store,
+      createButtonBlock({ href: 'https://example.com', label: 'Go', color: '#e03131' }),
+    );
     const { container } = renderDoc(store);
 
     fireEvent.click(container.querySelector('.be-button-block-settings'));
@@ -217,7 +246,7 @@ describe('button block: the edit modal (label/link/color/custom attributes in on
     expect(dialog.querySelector('.be-modal-color-swatch-active').title).toBe('Red');
   });
 
-  it('renaming the label via the modal replaces the block\'s runs with the new plain text', () => {
+  it("renaming the label via the modal replaces the block's runs with the new plain text", () => {
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(store, createButtonBlock({ label: 'Go' }));
     const { container } = renderDoc(store);
@@ -260,7 +289,9 @@ describe('button block: the edit modal (label/link/color/custom attributes in on
     fireEvent.change(valueInput, { target: { value: 'cta-42' } });
     fireEvent.click(dialog.querySelector('.be-modal-save'));
 
-    expect(store.getBlock(id).props.customAttrs).toEqual([{ key: 'analytics-id', value: 'cta-42' }]);
+    expect(store.getBlock(id).props.customAttrs).toEqual([
+      { key: 'analytics-id', value: 'cta-42' },
+    ]);
     const pill = container.querySelector('.be-button-block-pill');
     expect(pill.getAttribute('data-analytics-id')).toBe('cta-42');
   });
@@ -272,7 +303,9 @@ describe('button block: the edit modal (label/link/color/custom attributes in on
 
     fireEvent.click(container.querySelector('.be-button-block-settings'));
     const dialog = container.querySelector('[role="dialog"]');
-    fireEvent.change(dialog.querySelector('input[type="url"]'), { target: { value: 'https://changed.com' } });
+    fireEvent.change(dialog.querySelector('input[type="url"]'), {
+      target: { value: 'https://changed.com' },
+    });
     fireEvent.click(dialog.querySelector('.be-modal-cancel'));
 
     expect(store.getBlock(id).props.href).toBe('https://original.com');

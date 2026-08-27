@@ -14,7 +14,8 @@ const initialDoc = {
     {
       id: 'r1',
       type: 'text',
-      value: 'Select some text below and click the comment icon in the floating toolbar to leave feedback. Click highlighted text to view, reply, resolve, or delete a comment.',
+      value:
+        'Select some text below and click the comment icon in the floating toolbar to leave feedback. Click highlighted text to view, reply, resolve, or delete a comment.',
       marks: {},
     },
   ],
@@ -27,9 +28,10 @@ export function App() {
     <div style={{ maxWidth: 900, margin: '40px auto', padding: '0 24px' }}>
       <h1 style={{ margin: '0 0 12px', fontSize: 20 }}>Comments demo</h1>
       <p style={{ color: '#666', fontSize: 14, marginTop: 0 }}>
-        The whole experience here — the floating toolbar's Comment button, the popover that opens when you click or
-        hover over highlighted text, and the panel on the right — is built into the package. Nothing on this page
-        writes any comment UI of its own; it just sets <code>commentAuthorId</code> and <code>showCommentsPanel</code>.
+        The whole experience here — the floating toolbar's Comment button, the popover that opens
+        when you click or hover over highlighted text, and the panel on the right — is built into
+        the package. Nothing on this page writes any comment UI of its own; it just sets{' '}
+        <code>commentAuthorId</code> and <code>showCommentsPanel</code>.
       </p>
       {/* commentAuthorId enables the whole built-in comments UI with zero
           host code: the floating toolbar's Comment button opens a small

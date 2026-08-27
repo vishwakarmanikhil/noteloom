@@ -28,7 +28,10 @@ export function VoicePermissionModal({ voice }) {
 
   return (
     <Modal isOpen={isOpen} onClose={() => setDismissed(true)} title="Microphone access blocked">
-      <p>{voice?.error || 'Microphone access is blocked. Enable it in your browser\'s site settings, then try again.'}</p>
+      <p>
+        {voice?.error ||
+          "Microphone access is blocked. Enable it in your browser's site settings, then try again."}
+      </p>
       <div className="be-modal-actions">
         <button type="button" className="be-modal-cancel" onClick={() => setDismissed(true)}>
           Dismiss

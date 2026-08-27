@@ -7,7 +7,10 @@ import { EditorStore, captureBlockTemplate } from 'noteloom';
 function capture(blocks, runs, rootIds) {
   const store = new EditorStore({
     rootId: 'root',
-    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: rootIds, props: {} }, ...blocks],
+    blocks: [
+      { id: 'root', type: 'page', parentId: null, contentIds: rootIds, props: {} },
+      ...blocks,
+    ],
     runs,
   });
   return captureBlockTemplate(store, rootIds);
@@ -16,9 +19,27 @@ function capture(blocks, runs, rootIds) {
 const agenda = capture(
   [
     { id: 'heading1', type: 'heading', parentId: 'root', contentIds: ['r1'], props: { level: 2 } },
-    { id: 'item1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: true, titleRunIds: ['r2'] } },
-    { id: 'item2', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: true, titleRunIds: ['r3'] } },
-    { id: 'item3', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: true, titleRunIds: ['r4'] } },
+    {
+      id: 'item1',
+      type: 'listItem',
+      parentId: 'root',
+      contentIds: [],
+      props: { ordered: true, titleRunIds: ['r2'] },
+    },
+    {
+      id: 'item2',
+      type: 'listItem',
+      parentId: 'root',
+      contentIds: [],
+      props: { ordered: true, titleRunIds: ['r3'] },
+    },
+    {
+      id: 'item3',
+      type: 'listItem',
+      parentId: 'root',
+      contentIds: [],
+      props: { ordered: true, titleRunIds: ['r4'] },
+    },
   ],
   [
     { id: 'r1', type: 'text', value: 'Meeting agenda', marks: {} },
@@ -32,7 +53,13 @@ const agenda = capture(
 const actionItems = capture(
   [
     { id: 'heading2', type: 'heading', parentId: 'root', contentIds: ['r5'], props: { level: 2 } },
-    { id: 'todo1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, checked: false, titleRunIds: ['r6'] } },
+    {
+      id: 'todo1',
+      type: 'listItem',
+      parentId: 'root',
+      contentIds: [],
+      props: { ordered: false, checked: false, titleRunIds: ['r6'] },
+    },
   ],
   [
     { id: 'r5', type: 'text', value: 'Action items', marks: {} },
@@ -43,5 +70,10 @@ const actionItems = capture(
 
 export const blockSnippets = [
   { id: 'agenda', label: 'Meeting agenda', keywords: ['agenda', 'meeting'], roots: agenda.roots },
-  { id: 'action-items', label: 'Action items', keywords: ['todo', 'action'], roots: actionItems.roots },
+  {
+    id: 'action-items',
+    label: 'Action items',
+    keywords: ['todo', 'action'],
+    roots: actionItems.roots,
+  },
 ];

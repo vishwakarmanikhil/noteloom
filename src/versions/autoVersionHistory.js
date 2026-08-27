@@ -1,5 +1,9 @@
 import { exportDocumentJSON } from '../clipboard/exportDocument.js';
-import { saveDocumentVersion, listDocumentVersions, deleteDocumentVersion } from '../persistence/indexedDbPersistence.js';
+import {
+  saveDocumentVersion,
+  listDocumentVersions,
+  deleteDocumentVersion,
+} from '../persistence/indexedDbPersistence.js';
 
 const DEFAULT_IDLE_MS = 5 * 60 * 1000; // 5 minutes of inactivity closes a version, roughly matching how Google Docs groups edits into one revision
 const DEFAULT_MAX_VERSIONS = 200;
@@ -20,7 +24,14 @@ const DEFAULT_MAX_VERSIONS = 200;
  * still exists for callers who want to rename one afterward, but nothing
  * in this module asks for one.
  */
-export function createAutoVersionHistory({ store, docId, idleMs = DEFAULT_IDLE_MS, maxVersions = DEFAULT_MAX_VERSIONS, onSnapshot, onError }) {
+export function createAutoVersionHistory({
+  store,
+  docId,
+  idleMs = DEFAULT_IDLE_MS,
+  maxVersions = DEFAULT_MAX_VERSIONS,
+  onSnapshot,
+  onError,
+}) {
   let idleTimer = null;
   let windowStart = store.getHistoryLog().length; // index into historyLog where the current open window begins
   let hasPendingActivity = false;

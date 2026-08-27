@@ -1,7 +1,11 @@
 import { useCallback } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
+import {
+  useEditorStore,
+  useSelectedBlock,
+  useBlockClassName,
+} from '../../react/EditorProvider.jsx';
 import { insertSiblingSplitAtCaretAndFocus } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
@@ -24,7 +28,12 @@ export function BlockquoteBlock({ id }) {
   const { setSelectedBlockId } = useSelectedBlock();
 
   const handleEnter = useCallback(() => {
-    insertSiblingSplitAtCaretAndFocus(store, id, block?.contentIds ?? [], createTextLeafBlock('paragraph'));
+    insertSiblingSplitAtCaretAndFocus(
+      store,
+      id,
+      block?.contentIds ?? [],
+      createTextLeafBlock('paragraph'),
+    );
   }, [store, id, block]);
 
   const handleBackspaceAtStart = useCallback(() => {

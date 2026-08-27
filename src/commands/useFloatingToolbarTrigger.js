@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useEditorStore } from '../react/EditorProvider.jsx';
 import { resolveMultiRunSelection, resolveCrossBlockSelection } from '../react/selectionResolve.js';
-import { getMarksSummaryOverSelection, getMarksSummaryOverBlockRange } from '../inline/markCommands.js';
+import {
+  getMarksSummaryOverSelection,
+  getMarksSummaryOverBlockRange,
+} from '../inline/markCommands.js';
 
 /**
  * Shows a floating format toolbar whenever the current selection is a real
@@ -57,7 +60,14 @@ export function useFloatingToolbarTrigger(containerRef) {
       // zero rect keeps this hook's logic testable without a real layout
       // engine, the same way a zero-size rect from a real browser (a
       // genuinely empty range) is already handled fine by callers.
-      const rect = selection.getRangeAt(0).getBoundingClientRect?.() ?? { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0 };
+      const rect = selection.getRangeAt(0).getBoundingClientRect?.() ?? {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: 0,
+        height: 0,
+      };
 
       const sameBlock = resolveMultiRunSelection();
       if (sameBlock) {

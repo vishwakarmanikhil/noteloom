@@ -15,7 +15,10 @@ const EMPTY_CONTENT_IDS = [];
  */
 export function useBlockChildren(parentId) {
   const store = useEditorStore();
-  const subscribe = useCallback((onStoreChange) => store.subscribe(parentId, onStoreChange), [store, parentId]);
+  const subscribe = useCallback(
+    (onStoreChange) => store.subscribe(parentId, onStoreChange),
+    [store, parentId],
+  );
   const getSnapshot = useCallback(() => {
     const block = store.getBlock(parentId);
     return block ? block.contentIds : EMPTY_CONTENT_IDS;

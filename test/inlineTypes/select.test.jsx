@@ -52,7 +52,9 @@ describe('select inline type: rendering and choosing an existing option', () => 
     expect(chip.querySelector('.be-select-value').textContent).toBe('Influenza');
 
     fireEvent.click(chip.querySelector('.be-select-trigger'));
-    const option = [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'RSV');
+    const option = [...document.querySelectorAll('.be-select-option')].find(
+      (el) => el.textContent === 'RSV',
+    );
     fireEvent.mouseDown(option);
 
     expect(store.getRun('s1').data.selectedValue).toBe('rsv');
@@ -72,7 +74,11 @@ describe('select inline type: regression — mousedown on the chip must not let 
       type: 'select',
       value: '',
       marks: {},
-      data: { options: [{ value: 'flu', label: 'Influenza' }], selectedValue: 'flu', placeholder: 'Select…' },
+      data: {
+        options: [{ value: 'flu', label: 'Influenza' }],
+        selectedValue: 'flu',
+        placeholder: 'Select…',
+      },
     });
     const chip = container.querySelector('[data-run-id="s1"]');
 
@@ -88,7 +94,11 @@ describe('select inline type: no inline add/remove-option UI (renders only the S
       type: 'select',
       value: '',
       marks: {},
-      data: { options: [{ value: 'flu', label: 'Influenza' }], selectedValue: 'flu', placeholder: 'Select…' },
+      data: {
+        options: [{ value: 'flu', label: 'Influenza' }],
+        selectedValue: 'flu',
+        placeholder: 'Select…',
+      },
     });
     const chip = container.querySelector('[data-run-id="s1"]');
 
@@ -126,7 +136,12 @@ describe('select inline type: auto-opens its picker on insertion (no second clic
       runs: [{ id: 'r1', type: 'text', value: '/select', marks: {} }],
     });
 
-    selectInlineType.slashCommand.run(store, { blockId: 'p1', runId: 'r1', sliceStart: 0, sliceEnd: 7 });
+    selectInlineType.slashCommand.run(store, {
+      blockId: 'p1',
+      runId: 'r1',
+      sliceStart: 0,
+      sliceEnd: 7,
+    });
     const block = store.getBlock('p1');
     expect(block.contentIds).toHaveLength(3); // before(empty) / chip / after(empty)
     const chipRunId = block.contentIds[1];
@@ -153,7 +168,11 @@ describe('select inline type: auto-opens its picker on insertion (no second clic
       type: 'select',
       value: '',
       marks: {},
-      data: { options: [{ value: 'flu', label: 'Influenza' }], selectedValue: '', placeholder: 'Select…' },
+      data: {
+        options: [{ value: 'flu', label: 'Influenza' }],
+        selectedValue: '',
+        placeholder: 'Select…',
+      },
     });
     expect(container.querySelector('[data-run-id="s1"]')).not.toBeNull();
     expect(document.querySelector('.be-select-popover')).toBeNull();

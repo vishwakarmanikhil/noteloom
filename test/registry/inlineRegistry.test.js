@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { createInlineRegistry } from '../../src/registry/inlineRegistry.js';
 
 describe('InlineRegistry.listSlashCommands', () => {
-  it('includes a type\'s singular slashCommand', () => {
+  it("includes a type's singular slashCommand", () => {
     const registry = createInlineRegistry();
     registry.register('date', { slashCommand: { label: 'Date', keywords: [], run: () => {} } });
 
     expect(registry.listSlashCommands().map((c) => c.label)).toEqual(['Date']);
   });
 
-  it('includes every entry in a type\'s plural slashCommands array (regression: emoji needs many commands from one type)', () => {
+  it("includes every entry in a type's plural slashCommands array (regression: emoji needs many commands from one type)", () => {
     const registry = createInlineRegistry();
     registry.register('emoji', {
       slashCommands: [
@@ -39,7 +39,7 @@ describe('InlineRegistry.listSlashCommands', () => {
 });
 
 describe('InlineRegistry.listAtCommands', () => {
-  it('includes a type\'s singular atCommand, independent of slashCommand', () => {
+  it("includes a type's singular atCommand, independent of slashCommand", () => {
     const registry = createInlineRegistry();
     registry.register('assignee', {
       slashCommand: { label: 'Assignee (slash)', keywords: [], run: () => {} },
@@ -50,7 +50,7 @@ describe('InlineRegistry.listAtCommands', () => {
     expect(registry.listSlashCommands().map((c) => c.label)).toEqual(['Assignee (slash)']);
   });
 
-  it('includes every entry in a type\'s plural atCommands array', () => {
+  it("includes every entry in a type's plural atCommands array", () => {
     const registry = createInlineRegistry();
     registry.register('assignee', {
       atCommands: [

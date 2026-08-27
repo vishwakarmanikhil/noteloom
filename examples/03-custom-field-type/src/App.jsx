@@ -1,4 +1,9 @@
-import { useEditor, NoteloomEditor, registerBuiltInInlineTypes, createSelectFieldType } from 'noteloom';
+import {
+  useEditor,
+  NoteloomEditor,
+  registerBuiltInInlineTypes,
+  createSelectFieldType,
+} from 'noteloom';
 
 // createSelectFieldType() builds a full inline type from a plain config
 // object -- no component to write. Type "/status" (or "/Status") to insert it.

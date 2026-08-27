@@ -157,7 +157,8 @@ export function Select({
 
   const staticSelected = !isDynamic ? options.find((o) => o.value === value) : undefined;
   const selected = value
-    ? (staticSelected ?? (selectedLabel ? { value, label: selectedLabel, color: selectedColor } : undefined))
+    ? (staticSelected ??
+      (selectedLabel ? { value, label: selectedLabel, color: selectedColor } : undefined))
     : undefined;
 
   const filtered = useMemo(
@@ -172,7 +173,9 @@ export function Select({
   // blank list for one frame until the active-option effect below catches up.
   const maxScrollTop = Math.max(0, (filtered.length - 1) * rowHeight);
   const clampedScrollTop = Math.min(scrollTop, maxScrollTop);
-  const startIndex = filtered.length ? Math.max(0, Math.floor(clampedScrollTop / rowHeight) - OVERSCAN) : 0;
+  const startIndex = filtered.length
+    ? Math.max(0, Math.floor(clampedScrollTop / rowHeight) - OVERSCAN)
+    : 0;
   const visibleCount = Math.ceil(LIST_HEIGHT / rowHeight) + OVERSCAN * 2;
   const endIndex = Math.min(filtered.length, startIndex + visibleCount);
   const visibleOptions = filtered.slice(startIndex, endIndex);
@@ -321,7 +324,11 @@ export function Select({
           selected ? (
             <span
               className={`be-select-tag${mention ? ' be-select-tag-mention' : ''}`}
-              style={mention ? undefined : { background: selected.color?.bg, color: selected.color?.text }}
+              style={
+                mention
+                  ? undefined
+                  : { background: selected.color?.bg, color: selected.color?.text }
+              }
             >
               {mention ? `@${selected.label}` : selected.label}
             </span>
@@ -375,8 +382,12 @@ export function Select({
               onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
             >
               {isDynamic && isLoading && <div className="be-select-empty">Loading…</div>}
-              {isDynamic && !isLoading && loadError && <div className="be-select-empty be-select-error">Couldn't load options</div>}
-              {!isLoading && !loadError && filtered.length === 0 && <div className="be-select-empty">No results</div>}
+              {isDynamic && !isLoading && loadError && (
+                <div className="be-select-empty be-select-error">Couldn't load options</div>
+              )}
+              {!isLoading && !loadError && filtered.length === 0 && (
+                <div className="be-select-empty">No results</div>
+              )}
               {!isLoading && !loadError && filtered.length > 0 && (
                 <>
                   {topPadding > 0 && <div style={{ height: topPadding }} aria-hidden="true" />}
@@ -398,7 +409,10 @@ export function Select({
                         onMouseEnter={() => setActiveIndex(i)}
                       >
                         {isTag ? (
-                          <span className="be-select-tag" style={{ background: option.color?.bg, color: option.color?.text }}>
+                          <span
+                            className="be-select-tag"
+                            style={{ background: option.color?.bg, color: option.color?.text }}
+                          >
                             {option.label}
                           </span>
                         ) : (
@@ -407,7 +421,9 @@ export function Select({
                       </div>
                     );
                   })}
-                  {bottomPadding > 0 && <div style={{ height: bottomPadding }} aria-hidden="true" />}
+                  {bottomPadding > 0 && (
+                    <div style={{ height: bottomPadding }} aria-hidden="true" />
+                  )}
                 </>
               )}
             </div>

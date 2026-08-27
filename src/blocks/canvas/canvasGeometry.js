@@ -112,5 +112,10 @@ export function clampViewOffset(x, y, size, boundsSize) {
 
 /** True if two `{minX,minY,maxX,maxY}` boxes overlap, optionally padded outward by `padding` on both — used by the eraser's hit-test (a stroke's own half-width is a natural padding, so a thin eraser pass still catches thick ink). */
 export function boxesIntersect(a, b, padding = 0) {
-  return a.minX - padding <= b.maxX && a.maxX + padding >= b.minX && a.minY - padding <= b.maxY && a.maxY + padding >= b.minY;
+  return (
+    a.minX - padding <= b.maxX &&
+    a.maxX + padding >= b.minX &&
+    a.minY - padding <= b.maxY &&
+    a.maxY + padding >= b.minY
+  );
 }

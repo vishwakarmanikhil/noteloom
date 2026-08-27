@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { useEditorStore, useInlineRegistry, useFieldTypeEditor } from '../../react/EditorProvider.jsx';
+import {
+  useEditorStore,
+  useInlineRegistry,
+  useFieldTypeEditor,
+} from '../../react/EditorProvider.jsx';
 import { useFieldTypes } from '../../react/useFieldTypes.js';
 import { registerStoredFieldTypes } from './registerStoredFieldTypes.js';
 

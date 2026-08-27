@@ -10,7 +10,12 @@ import {
   TABLE_BLOCKS,
   LAYOUT_BLOCKS,
 } from '../../src/blocks/index.js';
-import { registerInlineTypes, registerBuiltInInlineTypes, selectInlineType, TABLE_SELECT_INLINE_TYPES } from '../../src/inlineTypes/index.js';
+import {
+  registerInlineTypes,
+  registerBuiltInInlineTypes,
+  selectInlineType,
+  TABLE_SELECT_INLINE_TYPES,
+} from '../../src/inlineTypes/index.js';
 
 describe('registerBlocks: opt-in subset registration', () => {
   it('registers only the named types, nothing else', () => {

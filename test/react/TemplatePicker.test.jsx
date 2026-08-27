@@ -4,7 +4,13 @@ import { TemplatePicker } from '../../src/react/TemplatePicker.jsx';
 
 function makeTemplates() {
   return [
-    { id: 't1', scope: 'document', name: 'Meeting notes', description: 'Agenda + action items', doc: { rootId: 'r1', blocks: [], runs: [] } },
+    {
+      id: 't1',
+      scope: 'document',
+      name: 'Meeting notes',
+      description: 'Agenda + action items',
+      doc: { rootId: 'r1', blocks: [], runs: [] },
+    },
     { id: 't2', scope: 'document', name: 'Blank', doc: { rootId: 'r2', blocks: [], runs: [] } },
   ];
 }

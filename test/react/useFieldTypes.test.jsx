@@ -6,7 +6,11 @@ import { useFieldTypes } from '../../src/react/useFieldTypes.js';
 import { addFieldType, removeFieldType } from '../../src/store/operations.js';
 
 function makeDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function Harness() {
@@ -17,7 +21,11 @@ function Harness() {
 describe('useFieldTypes', () => {
   it('re-renders with the updated list after add/remove, empty initially', () => {
     const store = new EditorStore(makeDoc());
-    const { getByTestId } = render(<EditorProvider store={store} registry={{}}><Harness /></EditorProvider>);
+    const { getByTestId } = render(
+      <EditorProvider store={store} registry={{}}>
+        <Harness />
+      </EditorProvider>,
+    );
 
     expect(getByTestId('labels').textContent).toBe('');
 

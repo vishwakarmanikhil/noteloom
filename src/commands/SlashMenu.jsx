@@ -59,7 +59,11 @@ export function SlashMenu({
   const activeItemRef = useRef(null);
   const menuRef = useRef(null);
   const keyboardInset = useVirtualKeyboardInset();
-  const adjustedLeft = useHorizontalAutoAdjustedLeft(menuRef, isOpen && commands.length > 0 && Boolean(rect), rect?.left);
+  const adjustedLeft = useHorizontalAutoAdjustedLeft(
+    menuRef,
+    isOpen && commands.length > 0 && Boolean(rect),
+    rect?.left,
+  );
 
   useEffect(() => {
     setActiveIndex(0);

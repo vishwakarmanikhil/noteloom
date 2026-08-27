@@ -16,7 +16,9 @@ import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 export function createToggleHeadingBlock({ level = 2, collapsed = false } = {}) {
   return function factory(parentId, initialRuns) {
     const blockId = genId();
-    const runs = initialRuns?.length ? initialRuns : [{ id: genId(), type: 'text', value: '', marks: {} }];
+    const runs = initialRuns?.length
+      ? initialRuns
+      : [{ id: genId(), type: 'text', value: '', marks: {} }];
     const { block: childBlock, runs: childRuns } = createTextLeafBlock('paragraph')(blockId);
     return {
       block: {

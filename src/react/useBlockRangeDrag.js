@@ -18,12 +18,17 @@ function computeRange(store, anchorId, hoverId) {
   const anchorIndex = ids.indexOf(anchorId);
   const hoverIndex = hoverId ? ids.indexOf(hoverId) : anchorIndex;
   if (anchorIndex === -1) return [anchorId];
-  const [from, to] = hoverIndex === -1 ? [anchorIndex, anchorIndex] : [Math.min(anchorIndex, hoverIndex), Math.max(anchorIndex, hoverIndex)];
+  const [from, to] =
+    hoverIndex === -1
+      ? [anchorIndex, anchorIndex]
+      : [Math.min(anchorIndex, hoverIndex), Math.max(anchorIndex, hoverIndex)];
   return ids.slice(from, to + 1);
 }
 
 function isCoarsePointer() {
-  return typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches === true;
+  return (
+    typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches === true
+  );
 }
 
 /**
@@ -89,7 +94,9 @@ export function useBlockRangeDrag(containerRef) {
       window.getSelection?.()?.removeAllRanges();
       event.preventDefault();
 
-      const el = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-block-row-id]');
+      const el = document
+        .elementFromPoint(event.clientX, event.clientY)
+        ?.closest('[data-block-row-id]');
       const hoverId = el?.getAttribute('data-block-row-id') ?? null;
       setSelectedBlockRange(computeRange(store, anchorIdRef.current, hoverId));
     },

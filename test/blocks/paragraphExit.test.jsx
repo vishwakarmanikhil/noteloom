@@ -22,7 +22,13 @@ describe('paragraph: Enter on an empty last line exits a callout/toggle-heading 
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['callout1'], props: {} },
-        { id: 'callout1', type: 'callout', parentId: 'root', contentIds: ['p1'], props: { icon: '💡' } },
+        {
+          id: 'callout1',
+          type: 'callout',
+          parentId: 'root',
+          contentIds: ['p1'],
+          props: { icon: '💡' },
+        },
         { id: 'p1', type: 'paragraph', parentId: 'callout1', contentIds: ['r1'], props: {} },
       ],
       runs: [{ id: 'r1', type: 'text', value: '', marks: {} }],
@@ -78,7 +84,13 @@ describe('paragraph: Enter on an empty last line exits a callout/toggle-heading 
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['callout1'], props: {} },
-        { id: 'callout1', type: 'callout', parentId: 'root', contentIds: ['p1', 'p2'], props: { icon: '💡' } },
+        {
+          id: 'callout1',
+          type: 'callout',
+          parentId: 'root',
+          contentIds: ['p1', 'p2'],
+          props: { icon: '💡' },
+        },
         { id: 'p1', type: 'paragraph', parentId: 'callout1', contentIds: ['r1'], props: {} },
         { id: 'p2', type: 'paragraph', parentId: 'callout1', contentIds: ['r2'], props: {} },
       ],
@@ -102,7 +114,13 @@ describe('paragraph: Enter on an empty last line exits a callout/toggle-heading 
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['callout1'], props: {} },
-        { id: 'callout1', type: 'callout', parentId: 'root', contentIds: ['p1'], props: { icon: '💡' } },
+        {
+          id: 'callout1',
+          type: 'callout',
+          parentId: 'root',
+          contentIds: ['p1'],
+          props: { icon: '💡' },
+        },
         { id: 'p1', type: 'paragraph', parentId: 'callout1', contentIds: ['r1'], props: {} },
       ],
       runs: [{ id: 'r1', type: 'text', value: 'has content', marks: {} }],

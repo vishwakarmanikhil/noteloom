@@ -10,7 +10,11 @@ describe('VoicePermissionModal', () => {
   });
 
   it('shows the dialog with the error message when permissionState is "denied"', () => {
-    const voice = { permissionState: 'denied', error: 'Microphone access is blocked.', start: vi.fn() };
+    const voice = {
+      permissionState: 'denied',
+      error: 'Microphone access is blocked.',
+      start: vi.fn(),
+    };
     render(<VoicePermissionModal voice={voice} />);
 
     const dialog = document.querySelector('[role="dialog"]');
@@ -21,14 +25,18 @@ describe('VoicePermissionModal', () => {
   it('falls back to a default message when voice.error is not set', () => {
     const voice = { permissionState: 'denied', error: null, start: vi.fn() };
     render(<VoicePermissionModal voice={voice} />);
-    expect(document.querySelector('[role="dialog"]').textContent).toMatch(/microphone access is blocked/i);
+    expect(document.querySelector('[role="dialog"]').textContent).toMatch(
+      /microphone access is blocked/i,
+    );
   });
 
   it('"Try again" calls voice.start()', () => {
     const voice = { permissionState: 'denied', error: 'blocked', start: vi.fn() };
     render(<VoicePermissionModal voice={voice} />);
 
-    fireEvent.click([...document.querySelectorAll('button')].find((el) => el.textContent.trim() === 'Try again'));
+    fireEvent.click(
+      [...document.querySelectorAll('button')].find((el) => el.textContent.trim() === 'Try again'),
+    );
     expect(voice.start).toHaveBeenCalledTimes(1);
   });
 
@@ -36,7 +44,9 @@ describe('VoicePermissionModal', () => {
     const voice = { permissionState: 'denied', error: 'blocked', start: vi.fn() };
     render(<VoicePermissionModal voice={voice} />);
 
-    fireEvent.click([...document.querySelectorAll('button')].find((el) => el.textContent.trim() === 'Dismiss'));
+    fireEvent.click(
+      [...document.querySelectorAll('button')].find((el) => el.textContent.trim() === 'Dismiss'),
+    );
     expect(document.querySelector('[role="dialog"]')).toBeNull();
     expect(voice.start).not.toHaveBeenCalled();
   });
@@ -45,7 +55,9 @@ describe('VoicePermissionModal', () => {
     const voice = { permissionState: 'denied', error: 'first denial', start: vi.fn() };
     const { rerender } = render(<VoicePermissionModal voice={voice} />);
 
-    fireEvent.click([...document.querySelectorAll('button')].find((el) => el.textContent.trim() === 'Dismiss'));
+    fireEvent.click(
+      [...document.querySelectorAll('button')].find((el) => el.textContent.trim() === 'Dismiss'),
+    );
     expect(document.querySelector('[role="dialog"]')).toBeNull();
 
     // A brand new attempt fails again with a fresh error — same shape a

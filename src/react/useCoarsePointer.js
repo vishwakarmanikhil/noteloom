@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 const TOUCH_INPUT_CLASS = 'be-touch-input';
 
 function matchesCoarsePointer() {
-  return typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches === true;
+  return (
+    typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches === true
+  );
 }
 
 /**

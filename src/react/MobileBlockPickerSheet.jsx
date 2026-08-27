@@ -23,7 +23,10 @@ export function MobileBlockPickerSheet({ isOpen, onClose, onSelectCommand }) {
   const inlineRegistry = useInlineRegistry();
 
   const commands = useMemo(
-    () => [...(registry?.listSlashCommands() ?? []), ...(inlineRegistry?.listSlashCommands() ?? [])],
+    () => [
+      ...(registry?.listSlashCommands() ?? []),
+      ...(inlineRegistry?.listSlashCommands() ?? []),
+    ],
     [registry, inlineRegistry],
   );
 

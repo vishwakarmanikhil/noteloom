@@ -6,14 +6,21 @@ function stroke(id, z) {
 }
 
 function shape(id, z) {
-  return z === undefined ? { id, type: 'rectangle', x: 0, y: 0, width: 10, height: 10 } : { id, type: 'rectangle', x: 0, y: 0, width: 10, height: 10, z };
+  return z === undefined
+    ? { id, type: 'rectangle', x: 0, y: 0, width: 10, height: 10 }
+    : { id, type: 'rectangle', x: 0, y: 0, width: 10, height: 10, z };
 }
 
 describe('orderedDrawables: legacy (no z) documents', () => {
   it('keeps every stroke below every shape, in their own array order — the old fixed two-layer behavior', () => {
     const strokes = [stroke('s1'), stroke('s2')];
     const shapes = [shape('h1'), shape('h2')];
-    expect(orderedDrawables(strokes, shapes).map((d) => d.item.id)).toEqual(['s1', 's2', 'h1', 'h2']);
+    expect(orderedDrawables(strokes, shapes).map((d) => d.item.id)).toEqual([
+      's1',
+      's2',
+      'h1',
+      'h2',
+    ]);
   });
 });
 

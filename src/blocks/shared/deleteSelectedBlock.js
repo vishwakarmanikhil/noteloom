@@ -30,7 +30,8 @@ export function deleteSelectedBlockAndRefocus(store, selectedId, setSelectedBloc
   const parent = store.getBlock(block.parentId);
   const idx = parent ? parent.contentIds.indexOf(selectedId) : -1;
   const prevId = idx > 0 ? parent.contentIds[idx - 1] : null;
-  const nextId = idx !== -1 && idx < parent.contentIds.length - 1 ? parent.contentIds[idx + 1] : null;
+  const nextId =
+    idx !== -1 && idx < parent.contentIds.length - 1 ? parent.contentIds[idx + 1] : null;
 
   store.applyOperation(removeBlock(selectedId));
   setSelectedBlockId(null);
@@ -46,6 +47,8 @@ export function deleteSelectedBlockAndRefocus(store, selectedId, setSelectedBloc
   }
 
   const titleRunIds = landBlock?.props?.titleRunIds;
-  const lastRunId = landBlock?.contentIds?.[landBlock.contentIds.length - 1] ?? titleRunIds?.[titleRunIds.length - 1];
+  const lastRunId =
+    landBlock?.contentIds?.[landBlock.contentIds.length - 1] ??
+    titleRunIds?.[titleRunIds.length - 1];
   if (lastRunId) focusRunEnd(lastRunId);
 }

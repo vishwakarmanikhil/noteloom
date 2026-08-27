@@ -13,7 +13,13 @@ export function createLayoutBlock({ columns = 2 } = {}) {
       const columnId = genId();
       // seed each column with one empty paragraph so there's somewhere to type
       const { block: paragraphBlock, runs } = createTextLeafBlock('paragraph')(columnId);
-      const columnBlock = { id: columnId, type: 'layoutColumn', parentId: layoutId, contentIds: [paragraphBlock.id], props: {} };
+      const columnBlock = {
+        id: columnId,
+        type: 'layoutColumn',
+        parentId: layoutId,
+        contentIds: [paragraphBlock.id],
+        props: {},
+      };
       subtreeBlocks.push(columnBlock, paragraphBlock);
       allRuns.push(...runs);
       columnIds.push(columnId);

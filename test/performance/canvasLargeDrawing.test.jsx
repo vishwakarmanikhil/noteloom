@@ -15,13 +15,25 @@ function makeManyStrokes(count) {
   for (let i = 0; i < count; i += 1) {
     const x = (i % 100) * 10;
     const y = Math.floor(i / 100) * 10;
-    strokes.push({ id: `s${i}`, points: [[x, y, 0.5], [x + 5, y + 5, 0.5]], color: '#000', size: 4 });
+    strokes.push({
+      id: `s${i}`,
+      points: [
+        [x, y, 0.5],
+        [x + 5, y + 5, 0.5],
+      ],
+      color: '#000',
+      size: 4,
+    });
   }
   return strokes;
 }
 
 function emptyDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function renderCanvasWithStrokes(strokeCount) {

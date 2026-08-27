@@ -59,7 +59,11 @@ export function useEditor({
     const inlineRegistry = createInlineRegistry();
     (customRegisterInlineTypes ?? registerBuiltInInlineTypes)(inlineRegistry);
     const store = new EditorStore(doc ?? defaultDoc());
-    return { store: history ? new History(store, { defaultActorId: currentUserId }) : store, registry, inlineRegistry };
+    return {
+      store: history ? new History(store, { defaultActorId: currentUserId }) : store,
+      registry,
+      inlineRegistry,
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

@@ -32,7 +32,10 @@ function toPlainText(block, ctx) {
 
 function toMarkdown(block, ctx) {
   const href = block.props?.href ?? '';
-  const text = runsToMarkdown(block.contentIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  const text = runsToMarkdown(
+    block.contentIds.map((runId) => ctx.store.getRun(runId)),
+    ctx,
+  );
   return `[${text || href}](${href})`;
 }
 
@@ -41,7 +44,8 @@ function fromHTML(node, ctx) {
   const runs = domInlineToRuns(node, ctx);
   const customAttrs = [];
   for (const attr of node.attributes) {
-    if (attr.name.startsWith('data-')) customAttrs.push({ key: attr.name.slice(5), value: attr.value });
+    if (attr.name.startsWith('data-'))
+      customAttrs.push({ key: attr.name.slice(5), value: attr.value });
   }
   const block = {
     id: genId(),

@@ -39,7 +39,13 @@ import { ChevronRightIcon } from './icons.jsx';
  * on-close behavior) — the standard nested-menu convention (most native OS
  * menus, and most block editors) alongside Escape/outside-click, which already worked.
  */
-export function TurnIntoSubmenu({ onSelect, onClose, containerRef, menuClassName = 'be-block-gutter-menu', itemClassName = 'be-block-gutter-menu-item' }) {
+export function TurnIntoSubmenu({
+  onSelect,
+  onClose,
+  containerRef,
+  menuClassName = 'be-block-gutter-menu',
+  itemClassName = 'be-block-gutter-menu-item',
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [rect, setRect] = useState(null);
   const triggerRef = useRef(null);
@@ -61,7 +67,12 @@ export function TurnIntoSubmenu({ onSelect, onClose, containerRef, menuClassName
   useOutsideClickAndEscape([triggerRef, menuRef], isOpen, close);
   useMenuKeyboardNav(menuRef, isOpen, close, triggerRef);
 
-  const position = useAutoAdjustedPosition(menuRef, isOpen, rect?.top, rect ? rect.right + 4 : null);
+  const position = useAutoAdjustedPosition(
+    menuRef,
+    isOpen,
+    rect?.top,
+    rect ? rect.right + 4 : null,
+  );
 
   const open = useCallback(() => {
     setRect(triggerRef.current?.getBoundingClientRect() ?? null);

@@ -18,7 +18,10 @@ const PEOPLE_KEY = '$people';
  */
 export function usePeople() {
   const store = useEditorStore();
-  const subscribe = useCallback((onStoreChange) => store.subscribe(PEOPLE_KEY, onStoreChange), [store]);
+  const subscribe = useCallback(
+    (onStoreChange) => store.subscribe(PEOPLE_KEY, onStoreChange),
+    [store],
+  );
   const getSnapshot = useCallback(() => store.getPeople(), [store]);
   return useSyncExternalStore(subscribe, getSnapshot);
 }

@@ -13,12 +13,18 @@ import { serializeBlockRange, remapSubtreeIds } from '../../src/clipboard/serial
 import { walkDomToBlocks } from '../../src/clipboard/domWalk.js';
 
 function emptyDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function insertAtRoot(store, factory, index = 0) {
   const { block, runs = [], subtreeBlocks = [] } = factory('root');
-  store.applyOperation(insertBlock(block, 'root', index, { blocks: [block, ...subtreeBlocks], runs }));
+  store.applyOperation(
+    insertBlock(block, 'root', index, { blocks: [block, ...subtreeBlocks], runs }),
+  );
   return block.id;
 }
 
@@ -67,7 +73,9 @@ describe('toggle heading: rendering', () => {
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(store, createToggleHeadingBlock({ level: 2 }));
     const { container } = renderDoc(store);
-    expect(container.querySelector(`[data-block-id="${id}"] .be-toggle-heading-marker`).disabled).toBe(false);
+    expect(
+      container.querySelector(`[data-block-id="${id}"] .be-toggle-heading-marker`).disabled,
+    ).toBe(false);
   });
 
   it('shows the empty-title placeholder text', () => {
@@ -133,13 +141,23 @@ describe('toggle heading: Backspace-at-start is safe (regression-consistent with
   it('an empty title with real nested content is left alone, not cascade-deleted', () => {
     const store = new EditorStore(emptyDoc());
     const beforeId = insertAtRoot(store, () => ({
-      block: { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
+      block: {
+        id: 'before',
+        type: 'paragraph',
+        parentId: 'root',
+        contentIds: ['r-before'],
+        props: {},
+      },
       runs: [{ id: 'r-before', type: 'text', value: 'before', marks: {} }],
     }));
     const id = insertAtRoot(store, createToggleHeadingBlock({ level: 2 }), 1);
     const childId = store.getBlock(id).contentIds[0];
     const childRunId = store.getBlock(childId).contentIds[0];
-    store.applyOperation({ type: 'updateRun', id: childRunId, patch: { value: 'important content' } });
+    store.applyOperation({
+      type: 'updateRun',
+      id: childRunId,
+      patch: { value: 'important content' },
+    });
 
     const result = mergeToggleHeadingOrNoop(store, id);
 
@@ -153,7 +171,13 @@ describe('toggle heading: Backspace-at-start is safe (regression-consistent with
   it('an empty title with literally no children at all is removed', () => {
     const store = new EditorStore(emptyDoc());
     const beforeId = insertAtRoot(store, () => ({
-      block: { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
+      block: {
+        id: 'before',
+        type: 'paragraph',
+        parentId: 'root',
+        contentIds: ['r-before'],
+        props: {},
+      },
       runs: [{ id: 'r-before', type: 'text', value: 'before', marks: {} }],
     }));
     const id = insertAtRoot(store, createToggleHeadingBlock({ level: 2 }), 1);
@@ -172,7 +196,13 @@ describe('toggle heading: Backspace-at-start is safe (regression-consistent with
     // heading could never actually be deleted via Backspace at all.
     const store = new EditorStore(emptyDoc());
     const beforeId = insertAtRoot(store, () => ({
-      block: { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
+      block: {
+        id: 'before',
+        type: 'paragraph',
+        parentId: 'root',
+        contentIds: ['r-before'],
+        props: {},
+      },
       runs: [{ id: 'r-before', type: 'text', value: 'before', marks: {} }],
     }));
     const id = insertAtRoot(store, createToggleHeadingBlock({ level: 2 }), 1); // still has its seeded child, untouched
@@ -202,7 +232,13 @@ describe('toggle heading: Backspace-at-start is safe (regression-consistent with
   it('end-to-end via the keyboard: Backspace on the seeded child pops back to the title, a second Backspace removes the whole toggle heading', () => {
     const rawStore = new EditorStore(emptyDoc());
     const beforeId = insertAtRoot(rawStore, () => ({
-      block: { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
+      block: {
+        id: 'before',
+        type: 'paragraph',
+        parentId: 'root',
+        contentIds: ['r-before'],
+        props: {},
+      },
       runs: [{ id: 'r-before', type: 'text', value: 'before', marks: {} }],
     }));
     const id = insertAtRoot(rawStore, createToggleHeadingBlock({ level: 2 }), 1);
@@ -239,7 +275,11 @@ describe('toggle heading: clipboard round-trip via semantic <details>/<summary>'
     const id = insertAtRoot(store, createToggleHeadingBlock({ level: 2 }));
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
-    store.applyOperation({ type: 'updateRun', id: store.getBlock(id).props.titleRunIds[0], patch: { value: 'Section' } });
+    store.applyOperation({
+      type: 'updateRun',
+      id: store.getBlock(id).props.titleRunIds[0],
+      patch: { value: 'Section' },
+    });
 
     const html = registry.get('toggleHeading').toHTML(store.getBlock(id), { store, registry });
     expect(html).toBe('<details open><summary><h2>Section</h2></summary><p></p></details>');
@@ -276,7 +316,10 @@ describe('toggle heading: clipboard round-trip via semantic <details>/<summary>'
   it('a <details> with no "open" attribute parses as collapsed', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
-    const inserts = walkDomToBlocks('<details><summary><h2>Closed</h2></summary><p>hidden</p></details>', registry);
+    const inserts = walkDomToBlocks(
+      '<details><summary><h2>Closed</h2></summary><p>hidden</p></details>',
+      registry,
+    );
     expect(inserts[0].block.props.collapsed).toBe(true);
   });
 

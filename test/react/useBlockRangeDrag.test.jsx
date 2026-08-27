@@ -56,7 +56,14 @@ function renderHarness(store) {
   // .be-block-row-content spans CONTENT_RECT's x-range within that y-slice.
   for (const [id, [top, bottom]] of Object.entries(ROW_Y)) {
     const row = rendered.container.querySelector(`[data-block-row-id="${id}"]`);
-    row.getBoundingClientRect = () => ({ left: 0, right: 600, top, bottom, width: 600, height: bottom - top });
+    row.getBoundingClientRect = () => ({
+      left: 0,
+      right: 600,
+      top,
+      bottom,
+      width: 600,
+      height: bottom - top,
+    });
     const content = row.querySelector('.be-block-row-content');
     content.getBoundingClientRect = () => ({ ...CONTENT_RECT, top, bottom });
   }
@@ -107,11 +114,15 @@ describe('useBlockRangeDrag: a plain click selects nothing — only a genuine dr
     fireEvent.mouseUp(document);
 
     expect(row2.classList.contains('be-block-row-range-selected')).toBe(true);
-    expect(container.querySelector('[data-block-row-id="p1"]').classList.contains('be-block-row-range-selected')).toBe(false);
+    expect(
+      container
+        .querySelector('[data-block-row-id="p1"]')
+        .classList.contains('be-block-row-range-selected'),
+    ).toBe(false);
   });
 });
 
-describe('useBlockRangeDrag: starting a drag from a row\'s own margin (packed gutter or empty space right of short content)', () => {
+describe("useBlockRangeDrag: starting a drag from a row's own margin (packed gutter or empty space right of short content)", () => {
   it('mousedown INSIDE the content rect does not start a drag (normal caret placement/editing is untouched)', () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store);
@@ -128,14 +139,17 @@ describe('useBlockRangeDrag: starting a drag from a row\'s own margin (packed gu
     const { container } = renderHarness(store);
     const row2 = container.querySelector('[data-block-row-id="p2"]');
 
-    fireEvent.mouseDown(row2.querySelector('[aria-label="Add block below"]'), { clientX: 50, clientY: 60 });
+    fireEvent.mouseDown(row2.querySelector('[aria-label="Add block below"]'), {
+      clientX: 50,
+      clientY: 60,
+    });
     fireEvent.mouseUp(document);
 
     expect(row2.classList.contains('be-block-row-range-selected')).toBe(false);
   });
 });
 
-describe('useBlockRangeDrag: starting a drag from the blank page margin outside every row\'s own box', () => {
+describe("useBlockRangeDrag: starting a drag from the blank page margin outside every row's own box", () => {
   it('dragging from a container-level element (not inside any row) selects the row under the Y-coordinate', () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store);
@@ -159,7 +173,7 @@ describe('useBlockRangeDrag: starting a drag from the blank page margin outside 
     expect(container.querySelectorAll('.be-block-row-range-selected')).toHaveLength(0);
   });
 
-  it('does nothing if no row\'s Y-range contains the click', () => {
+  it("does nothing if no row's Y-range contains the click", () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store);
 
@@ -184,7 +198,11 @@ describe('useBlockRangeDrag: dragging extends the range', () => {
     fireEvent.mouseUp(document);
 
     expect(row1.classList.contains('be-block-row-range-selected')).toBe(true);
-    expect(container.querySelector('[data-block-row-id="p2"]').classList.contains('be-block-row-range-selected')).toBe(true);
+    expect(
+      container
+        .querySelector('[data-block-row-id="p2"]')
+        .classList.contains('be-block-row-range-selected'),
+    ).toBe(true);
     expect(row3.classList.contains('be-block-row-range-selected')).toBe(true);
   });
 
@@ -200,7 +218,11 @@ describe('useBlockRangeDrag: dragging extends the range', () => {
     fireEvent.mouseUp(document);
 
     expect(row1.classList.contains('be-block-row-range-selected')).toBe(true);
-    expect(container.querySelector('[data-block-row-id="p2"]').classList.contains('be-block-row-range-selected')).toBe(true);
+    expect(
+      container
+        .querySelector('[data-block-row-id="p2"]')
+        .classList.contains('be-block-row-range-selected'),
+    ).toBe(true);
     expect(row3.classList.contains('be-block-row-range-selected')).toBe(true);
   });
 

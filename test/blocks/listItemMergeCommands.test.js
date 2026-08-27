@@ -23,7 +23,7 @@ function makeDoc() {
 }
 
 describe('mergeListItemOrOutdent', () => {
-  it('merges a non-empty item with no children into the previous sibling\'s title', () => {
+  it("merges a non-empty item with no children into the previous sibling's title", () => {
     const store = new EditorStore(makeDoc());
     const result = mergeListItemOrOutdent(store, 'li2');
 
@@ -81,7 +81,13 @@ describe('mergeListItemOrOutdent', () => {
     const store = new EditorStore({
       rootId: 'root',
       blocks: [
-        { id: 'root', type: 'page', parentId: null, contentIds: ['li1', 'divider1', 'li2'], props: {} },
+        {
+          id: 'root',
+          type: 'page',
+          parentId: null,
+          contentIds: ['li1', 'divider1', 'li2'],
+          props: {},
+        },
         li('li1', 'root', ['r1']),
         { id: 'divider1', type: 'divider', parentId: 'root', contentIds: [], props: {} },
         li('li2', 'root', ['r2']),
@@ -117,7 +123,13 @@ describe('mergeListItemOrOutdent', () => {
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1', 'toggle1'], props: {} },
         li('li1', 'root', ['r1']),
-        { id: 'toggle1', type: 'listItem', parentId: 'root', contentIds: ['p1'], props: { ordered: false, collapsed: false, titleRunIds: ['r2'] } },
+        {
+          id: 'toggle1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: ['p1'],
+          props: { ordered: false, collapsed: false, titleRunIds: ['r2'] },
+        },
         { id: 'p1', type: 'paragraph', parentId: 'toggle1', contentIds: [], props: {} },
       ],
       runs: [
@@ -139,7 +151,13 @@ describe('mergeListItemOrOutdent', () => {
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1', 'toggle1'], props: {} },
         li('li1', 'root', ['r1']),
-        { id: 'toggle1', type: 'listItem', parentId: 'root', contentIds: ['p1'], props: { ordered: false, collapsed: false, titleRunIds: ['r2'] } },
+        {
+          id: 'toggle1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: ['p1'],
+          props: { ordered: false, collapsed: false, titleRunIds: ['r2'] },
+        },
         { id: 'p1', type: 'paragraph', parentId: 'toggle1', contentIds: ['r3'], props: {} },
       ],
       runs: [
@@ -160,7 +178,13 @@ describe('mergeListItemOrOutdent', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['toggle1'], props: {} },
-        { id: 'toggle1', type: 'listItem', parentId: 'root', contentIds: ['p1'], props: { ordered: false, collapsed: false, titleRunIds: ['r1'] } },
+        {
+          id: 'toggle1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: ['p1'],
+          props: { ordered: false, collapsed: false, titleRunIds: ['r1'] },
+        },
         { id: 'p1', type: 'paragraph', parentId: 'toggle1', contentIds: [], props: {} },
       ],
       runs: [{ id: 'r1', type: 'text', value: '', marks: {} }],

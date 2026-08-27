@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
-import { insertSiblingAfterAndFocus, trimSlashQueryAndInsertAfter } from '../../src/blocks/shared/blockCommands.js';
+import {
+  insertSiblingAfterAndFocus,
+  trimSlashQueryAndInsertAfter,
+} from '../../src/blocks/shared/blockCommands.js';
 import { createTextLeafBlock } from '../../src/blocks/shared/leafBlockFactory.js';
 import { createListItemBlock } from '../../src/blocks/listItem/createListItemBlock.js';
 

@@ -155,7 +155,13 @@ describe('EditorStore structural operations', () => {
           contentIds: ['li2'], // a nested child list item — must be left untouched
           props: { ordered: false, titleRunIds: ['tr1'] },
         },
-        { id: 'li2', type: 'listItem', parentId: 'li1', contentIds: [], props: { ordered: false, titleRunIds: [] } },
+        {
+          id: 'li2',
+          type: 'listItem',
+          parentId: 'li1',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: [] },
+        },
       ],
       runs: [{ id: 'tr1', type: 'text', value: 'hello', marks: {} }],
     });
@@ -175,7 +181,7 @@ describe('EditorStore structural operations', () => {
     expect(store.getBlock('li1').contentIds).toEqual(['li2']);
   });
 
-  it('setBlockRuns wholesale replaces a leaf block\'s runs (contentIds path) and inverse restores the original list', () => {
+  it("setBlockRuns wholesale replaces a leaf block's runs (contentIds path) and inverse restores the original list", () => {
     const store = new EditorStore(makeDoc());
     const newRuns = [
       { id: 'nr1', type: 'text', value: 'goodbye', marks: {} },
@@ -206,7 +212,13 @@ describe('EditorStore structural operations', () => {
           contentIds: ['li2'],
           props: { ordered: false, titleRunIds: ['tr1'] },
         },
-        { id: 'li2', type: 'listItem', parentId: 'li1', contentIds: [], props: { ordered: false, titleRunIds: [] } },
+        {
+          id: 'li2',
+          type: 'listItem',
+          parentId: 'li1',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: [] },
+        },
       ],
       runs: [{ id: 'tr1', type: 'text', value: 'hello', marks: {} }],
     });
@@ -313,7 +325,12 @@ describe('EditorStore tombstone garbage collection', () => {
     expect(store.getBlock('root').contentIds).toEqual(['p2']);
 
     const p3 = { id: 'p3', type: 'paragraph', parentId: 'root', contentIds: ['r3'], props: {} };
-    store.applyOperation(insertBlock(p3, 'root', 0, { blocks: [p3], runs: [{ id: 'r3', type: 'text', value: 'new', marks: {} }] }));
+    store.applyOperation(
+      insertBlock(p3, 'root', 0, {
+        blocks: [p3],
+        runs: [{ id: 'r3', type: 'text', value: 'new', marks: {} }],
+      }),
+    );
     expect(store.getBlock('root').contentIds).toEqual(['p3', 'p2']);
   });
 

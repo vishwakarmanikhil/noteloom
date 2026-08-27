@@ -29,12 +29,21 @@ describe('convertBlockType: childless case is unchanged (regression lock)', () =
 
   it('paragraph -> heading behaves identically whether or not a registry is passed', () => {
     const storeA = new EditorStore(makeDoc());
-    const { ops: opsA, newBlockId: idA } = convertBlockType(storeA, 'p1', 'heading', { level: 2 }, ['r1']);
+    const { ops: opsA, newBlockId: idA } = convertBlockType(storeA, 'p1', 'heading', { level: 2 }, [
+      'r1',
+    ]);
     applyOps(storeA, opsA);
 
     const storeB = new EditorStore(makeDoc());
     const registry = makeRegistry();
-    const { ops: opsB, newBlockId: idB } = convertBlockType(storeB, 'p1', 'heading', { level: 2 }, ['r1'], registry);
+    const { ops: opsB, newBlockId: idB } = convertBlockType(
+      storeB,
+      'p1',
+      'heading',
+      { level: 2 },
+      ['r1'],
+      registry,
+    );
     applyOps(storeB, opsB);
 
     expect(storeA.getBlock(idA).type).toBe('heading');
@@ -119,8 +128,20 @@ describe('convertBlockType: children preservation (the bug this fixes)', () => {
           contentIds: ['child1', 'child2'],
           props: { ordered: false, titleRunIds: ['rTitle'] },
         },
-        { id: 'child1', type: 'listItem', parentId: 'li1', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
-        { id: 'child2', type: 'listItem', parentId: 'li1', contentIds: [], props: { ordered: false, titleRunIds: ['r2'] } },
+        {
+          id: 'child1',
+          type: 'listItem',
+          parentId: 'li1',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
+        {
+          id: 'child2',
+          type: 'listItem',
+          parentId: 'li1',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r2'] },
+        },
       ],
       runs: [
         { id: 'rTitle', type: 'text', value: 'Parent item', marks: {} },
@@ -154,7 +175,14 @@ describe('convertBlockType: children preservation (the bug this fixes)', () => {
   it('container -> leaf (toggleHeading -> heading, target cannot hold children) promotes children to siblings right after the new block, in order', () => {
     const store = new EditorStore(makeToggleHeadingDoc());
     const registry = makeRegistry();
-    const { ops, newBlockId } = convertBlockType(store, 'tg1', 'heading', { level: 2 }, ['rTitle'], registry);
+    const { ops, newBlockId } = convertBlockType(
+      store,
+      'tg1',
+      'heading',
+      { level: 2 },
+      ['rTitle'],
+      registry,
+    );
     applyOps(store, ops);
 
     const newBlock = store.getBlock(newBlockId);
@@ -175,13 +203,26 @@ describe('convertBlockType: children preservation (the bug this fixes)', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['tg1'], props: {} },
-        { id: 'tg1', type: 'toggleHeading', parentId: 'root', contentIds: [], props: { level: 2, collapsed: false, titleRunIds: ['rTitle'] } },
+        {
+          id: 'tg1',
+          type: 'toggleHeading',
+          parentId: 'root',
+          contentIds: [],
+          props: { level: 2, collapsed: false, titleRunIds: ['rTitle'] },
+        },
       ],
       runs: [{ id: 'rTitle', type: 'text', value: 'Empty section', marks: {} }],
     };
     const store = new EditorStore(doc);
     const registry = makeRegistry();
-    const { ops, newBlockId } = convertBlockType(store, 'tg1', 'heading', { level: 3 }, ['rTitle'], registry);
+    const { ops, newBlockId } = convertBlockType(
+      store,
+      'tg1',
+      'heading',
+      { level: 3 },
+      ['rTitle'],
+      registry,
+    );
     applyOps(store, ops);
 
     expect(store.getBlock('root').contentIds).toEqual([newBlockId]);

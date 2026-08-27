@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useEditorStore, useBlockRegistry, useInlineRegistry, useBlockRangeSelection } from './EditorProvider.jsx';
+import {
+  useEditorStore,
+  useBlockRegistry,
+  useInlineRegistry,
+  useBlockRangeSelection,
+} from './EditorProvider.jsx';
 import { copyBlockRangeToClipboard } from '../clipboard/copyBlockRange.js';
 import { useMenuKeyboardNav } from './useMenuKeyboardNav.js';
 import { useAutoAdjustedPosition } from './useAutoAdjustedPosition.js';
@@ -15,7 +20,15 @@ import {
   setBlockRangeHidden,
   convertBlockRangeType,
 } from '../blocks/shared/blockRangeActions.js';
-import { CopyIcon, ScissorsIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, EyeIcon, EyeOffIcon } from './icons.jsx';
+import {
+  CopyIcon,
+  ScissorsIcon,
+  TrashIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  EyeIcon,
+  EyeOffIcon,
+} from './icons.jsx';
 
 /**
  * The action menu that appears once a gutter-margin drag (see
@@ -48,7 +61,12 @@ export function BlockRangeActionMenu() {
   const turnIntoMenuRef = useRef(null);
 
   const isOpen = selectedBlockRange.length > 0;
-  const position = useAutoAdjustedPosition(menuRef, isOpen, rect?.bottom != null ? rect.bottom + 4 : null, rect?.left);
+  const position = useAutoAdjustedPosition(
+    menuRef,
+    isOpen,
+    rect?.bottom != null ? rect.bottom + 4 : null,
+    rect?.left,
+  );
   const clear = useCallback(() => setSelectedBlockRange([]), [setSelectedBlockRange]);
   // No single "trigger button" here (the menu appears after a drag gesture,
   // not a click) — passed as undefined, which the hook handles fine; this
@@ -168,7 +186,9 @@ export function BlockRangeActionMenu() {
     clear();
   }, [store, selectedBlockRange, isHidden, clear]);
 
-  const hasEligibleBlock = selectedBlockRange.some((id) => isTurnIntoEligible(store.getBlock(id)?.type));
+  const hasEligibleBlock = selectedBlockRange.some((id) =>
+    isTurnIntoEligible(store.getBlock(id)?.type),
+  );
   const handleTurnInto = useCallback(
     (target) => {
       const count = selectedBlockRange.length;
@@ -189,19 +209,44 @@ export function BlockRangeActionMenu() {
       className="be-block-range-menu"
       style={{ position: 'fixed', top: position.top, left: position.left }}
     >
-      <button type="button" role="menuitem" className="be-block-range-menu-item" onClick={handleCopy}>
+      <button
+        type="button"
+        role="menuitem"
+        className="be-block-range-menu-item"
+        onClick={handleCopy}
+      >
         <CopyIcon size={15} /> Copy
       </button>
-      <button type="button" role="menuitem" className="be-block-range-menu-item" onClick={handleCut}>
+      <button
+        type="button"
+        role="menuitem"
+        className="be-block-range-menu-item"
+        onClick={handleCut}
+      >
         <ScissorsIcon size={15} /> Cut
       </button>
-      <button type="button" role="menuitem" className="be-block-range-menu-item" onClick={handleMoveUp}>
+      <button
+        type="button"
+        role="menuitem"
+        className="be-block-range-menu-item"
+        onClick={handleMoveUp}
+      >
         <ArrowUpIcon size={15} /> Move up
       </button>
-      <button type="button" role="menuitem" className="be-block-range-menu-item" onClick={handleMoveDown}>
+      <button
+        type="button"
+        role="menuitem"
+        className="be-block-range-menu-item"
+        onClick={handleMoveDown}
+      >
         <ArrowDownIcon size={15} /> Move down
       </button>
-      <button type="button" role="menuitem" className="be-block-range-menu-item" onClick={handleToggleHidden}>
+      <button
+        type="button"
+        role="menuitem"
+        className="be-block-range-menu-item"
+        onClick={handleToggleHidden}
+      >
         {isHidden ? <EyeIcon size={15} /> : <EyeOffIcon size={15} />}
         {isHidden ? 'Show in preview' : 'Hide in preview'}
       </button>
@@ -214,7 +259,12 @@ export function BlockRangeActionMenu() {
           itemClassName="be-block-range-menu-item"
         />
       )}
-      <button type="button" role="menuitem" className="be-block-range-menu-item be-block-range-menu-item-danger" onClick={handleDelete}>
+      <button
+        type="button"
+        role="menuitem"
+        className="be-block-range-menu-item be-block-range-menu-item-danger"
+        onClick={handleDelete}
+      >
         <TrashIcon size={15} /> Delete
       </button>
     </div>,

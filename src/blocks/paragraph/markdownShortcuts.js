@@ -28,7 +28,11 @@ const RULES = [
   { re: /^(#{1,3})[  ]$/, type: 'heading', props: (m) => ({ level: m[1].length }) },
   { re: /^[-*][  ]$/, type: 'listItem', props: () => ({ ordered: false, titleRunIds: [] }) },
   { re: /^\d+\.[  ]$/, type: 'listItem', props: () => ({ ordered: true, titleRunIds: [] }) },
-  { re: /^\[\][  ]$/, type: 'listItem', props: () => ({ ordered: false, checked: false, titleRunIds: [] }) },
+  {
+    re: /^\[\][  ]$/,
+    type: 'listItem',
+    props: () => ({ ordered: false, checked: false, titleRunIds: [] }),
+  },
   { re: /^>[  ]$/, type: 'blockquote', props: () => ({}) },
   { re: /^```$/, type: 'code', props: () => ({ language: 'plaintext' }) },
 ];

@@ -24,7 +24,13 @@ function makeDoc() {
   return {
     rootId: 'root',
     blocks: [
-      { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'p2', 'p3', 'p4', 'p5'], props: {} },
+      {
+        id: 'root',
+        type: 'page',
+        parentId: null,
+        contentIds: ['p1', 'p2', 'p3', 'p4', 'p5'],
+        props: {},
+      },
       { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
       { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: ['r2'], props: {} },
       { id: 'p3', type: 'paragraph', parentId: 'root', contentIds: ['r3'], props: {} },
@@ -128,7 +134,9 @@ describe('convertBlockRangeType', () => {
   it('converts every eligible block in the range to the target type, as one undo step', () => {
     const store = new History(new EditorStore(makeDoc()));
     const registry = makeRegistry();
-    const headingTarget = TEXT_FAMILY_TARGETS.find((t) => t.type === 'heading' && t.props.level === 2);
+    const headingTarget = TEXT_FAMILY_TARGETS.find(
+      (t) => t.type === 'heading' && t.props.level === 2,
+    );
 
     convertBlockRangeType(store, registry, ['p2', 'p3'], headingTarget);
 
@@ -148,7 +156,13 @@ describe('convertBlockRangeType', () => {
   it('skips ineligible (structural) blocks in a mixed selection, converting only the eligible ones', () => {
     const doc = makeDoc();
     doc.blocks[0].contentIds.push('divider1');
-    doc.blocks.push({ id: 'divider1', type: 'divider', parentId: 'root', contentIds: [], props: {} });
+    doc.blocks.push({
+      id: 'divider1',
+      type: 'divider',
+      parentId: 'root',
+      contentIds: [],
+      props: {},
+    });
     const store = new EditorStore(doc);
     const registry = makeRegistry();
     const quoteTarget = TEXT_FAMILY_TARGETS.find((t) => t.type === 'blockquote');

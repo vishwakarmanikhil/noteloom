@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { injectDefaultStyles } from './injectDefaultStyles.js';
 
 const EditorContext = createContext(null);
@@ -138,7 +146,8 @@ export function EditorProvider({
   const setSelectedBlockId = useCallback((id) => {
     const prevId = selectedBlockIdRef.current;
     if (prevId === id) return;
-    if (prevId) document.querySelector(`[data-block-id="${prevId}"]`)?.classList.remove('be-block-selected');
+    if (prevId)
+      document.querySelector(`[data-block-id="${prevId}"]`)?.classList.remove('be-block-selected');
     selectedBlockIdRef.current = id;
     if (id) document.querySelector(`[data-block-id="${id}"]`)?.classList.add('be-block-selected');
   }, []);
@@ -403,7 +412,8 @@ export function useFileUpload() {
 }
 
 export function useFieldTypeEditor() {
-  const { fieldTypeEditorTarget, openCreateFieldType, openEditFieldType, closeFieldTypeEditor } = useEditorContext();
+  const { fieldTypeEditorTarget, openCreateFieldType, openEditFieldType, closeFieldTypeEditor } =
+    useEditorContext();
   return {
     target: fieldTypeEditorTarget,
     openCreate: openCreateFieldType,

@@ -92,7 +92,11 @@ describe('clipboard: copy -> same-editor APP_MIME -> paste (lossless path)', () 
     const registry = makeRegistry();
 
     const { json } = serializeBlockRange(store, registry, ['p1']);
-    const dt = new FakeDataTransfer({ [APP_MIME]: json, 'text/html': '<p>hello world</p>', 'text/plain': 'hello world' });
+    const dt = new FakeDataTransfer({
+      [APP_MIME]: json,
+      'text/html': '<p>hello world</p>',
+      'text/plain': 'hello world',
+    });
 
     const inserts = deserializeClipboard(dt, registry);
     expect(inserts).toHaveLength(1);
@@ -126,8 +130,20 @@ describe('clipboard: list-item grouping on copy', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1', 'li2'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
-        { id: 'li2', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r2'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
+        {
+          id: 'li2',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r2'] },
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'one', marks: {} },

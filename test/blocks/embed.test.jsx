@@ -11,7 +11,11 @@ import { mergeWithPreviousOrDelete } from '../../src/blocks/shared/mergeCommands
 import { walkDomToBlocks } from '../../src/clipboard/domWalk.js';
 
 function emptyDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function insertAtRoot(store, factory, index = 0) {
@@ -54,7 +58,10 @@ describe('embed block: rendering per kind', () => {
 
   it('renders an <img> once src is set (image kind)', () => {
     const store = new EditorStore(emptyDoc());
-    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://example.com/cat.png', name: 'cat' }));
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'image', src: 'https://example.com/cat.png', name: 'cat' }),
+    );
     const { container } = renderDoc(store);
 
     const img = container.querySelector(`[data-block-id="${id}"] img.be-embed-image`);
@@ -68,7 +75,10 @@ describe('embed block: rendering per kind', () => {
 
   it('sets a real, distinct alt text via the "Alt text" button, never falling back to the filename', () => {
     const store = new EditorStore(emptyDoc());
-    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://example.com/cat.png', name: 'cat.png' }));
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'image', src: 'https://example.com/cat.png', name: 'cat.png' }),
+    );
     const { container } = renderDoc(store);
     const wrapper = container.querySelector(`[data-block-id="${id}"]`);
 
@@ -84,7 +94,10 @@ describe('embed block: rendering per kind', () => {
 
   it('renders a <video> with controls (video kind)', () => {
     const store = new EditorStore(emptyDoc());
-    const id = insertAtRoot(store, createEmbedBlock({ kind: 'video', src: 'https://example.com/clip.mp4' }));
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'video', src: 'https://example.com/clip.mp4' }),
+    );
     const { container } = renderDoc(store);
     const video = container.querySelector(`[data-block-id="${id}"] video.be-embed-video`);
     expect(video).not.toBeNull();
@@ -93,14 +106,20 @@ describe('embed block: rendering per kind', () => {
 
   it('renders an <audio> with controls (audio kind)', () => {
     const store = new EditorStore(emptyDoc());
-    const id = insertAtRoot(store, createEmbedBlock({ kind: 'audio', src: 'https://example.com/track.mp3' }));
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'audio', src: 'https://example.com/track.mp3' }),
+    );
     const { container } = renderDoc(store);
     expect(container.querySelector(`[data-block-id="${id}"] audio.be-embed-audio`)).not.toBeNull();
   });
 
   it('renders a download link (file kind)', () => {
     const store = new EditorStore(emptyDoc());
-    const id = insertAtRoot(store, createEmbedBlock({ kind: 'file', src: 'https://example.com/report.pdf', name: 'report.pdf' }));
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'file', src: 'https://example.com/report.pdf', name: 'report.pdf' }),
+    );
     const { container } = renderDoc(store);
     const link = container.querySelector(`[data-block-id="${id}"] a.be-embed-file-link`);
     expect(link).not.toBeNull();
@@ -182,7 +201,12 @@ describe('embed block: pasting a known-provider URL auto-converts to a rich embe
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(
       store,
-      createEmbedBlock({ kind: 'oembed', src: 'https://www.youtube.com/embed/abc', provider: 'youtube', originalUrl: 'https://youtu.be/abc' }),
+      createEmbedBlock({
+        kind: 'oembed',
+        src: 'https://www.youtube.com/embed/abc',
+        provider: 'youtube',
+        originalUrl: 'https://youtu.be/abc',
+      }),
     );
     const { container } = renderDoc(store);
 
@@ -250,20 +274,28 @@ describe('embed block: uploadFile — sends the file to the host instead of inli
     const fileInput = container.querySelector(`[data-block-id="${id}"] input[type="file"]`);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    await waitFor(() => expect(store.getBlock(id).props.src).toBe('https://cdn.example.com/photo-abc123.png'));
+    await waitFor(() =>
+      expect(store.getBlock(id).props.src).toBe('https://cdn.example.com/photo-abc123.png'),
+    );
     // falls back to the file's own name/type since uploadFile didn't return them
     expect(store.getBlock(id).props.name).toBe('photo.png');
     expect(store.getBlock(id).props.mimeType).toBe('image/png');
   });
 
-  it('uploadFile\'s own returned name/mimeType win over the file\'s own, when given', async () => {
-    const uploadFile = async () => ({ src: 'https://cdn.example.com/x', name: 'renamed.png', mimeType: 'image/webp' });
+  it("uploadFile's own returned name/mimeType win over the file's own, when given", async () => {
+    const uploadFile = async () => ({
+      src: 'https://cdn.example.com/x',
+      name: 'renamed.png',
+      mimeType: 'image/webp',
+    });
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(store, createEmbedBlock({ kind: 'image' }));
     const { container } = renderDocWithUpload(store, { uploadFile });
 
     const file = new File(['bytes'], 'original.png', { type: 'image/png' });
-    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), {
+      target: { files: [file] },
+    });
 
     await waitFor(() => expect(store.getBlock(id).props.name).toBe('renamed.png'));
     expect(store.getBlock(id).props.mimeType).toBe('image/webp');
@@ -271,19 +303,28 @@ describe('embed block: uploadFile — sends the file to the host instead of inli
 
   it('shows "Uploading..." while the returned Promise is pending, then clears it', async () => {
     let resolveUpload;
-    const uploadFile = () => new Promise((resolve) => { resolveUpload = resolve; });
+    const uploadFile = () =>
+      new Promise((resolve) => {
+        resolveUpload = resolve;
+      });
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(store, createEmbedBlock({ kind: 'image' }));
     const { container } = renderDocWithUpload(store, { uploadFile });
 
     const file = new File(['bytes'], 'photo.png', { type: 'image/png' });
-    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), {
+      target: { files: [file] },
+    });
 
-    await waitFor(() => expect(container.querySelector(`[data-block-id="${id}"] .be-embed-uploading`)).not.toBeNull());
+    await waitFor(() =>
+      expect(container.querySelector(`[data-block-id="${id}"] .be-embed-uploading`)).not.toBeNull(),
+    );
     expect(container.querySelector(`[data-block-id="${id}"] input[type="file"]`)).toBeNull(); // upload UI hidden meanwhile
 
     resolveUpload({ src: 'https://cdn.example.com/done.png' });
-    await waitFor(() => expect(store.getBlock(id).props.src).toBe('https://cdn.example.com/done.png'));
+    await waitFor(() =>
+      expect(store.getBlock(id).props.src).toBe('https://cdn.example.com/done.png'),
+    );
     expect(container.querySelector(`[data-block-id="${id}"] .be-embed-uploading`)).toBeNull();
   });
 
@@ -296,13 +337,23 @@ describe('embed block: uploadFile — sends the file to the host instead of inli
     const { container } = renderDocWithUpload(store, { uploadFile });
 
     const file = new File(['bytes'], 'photo.png', { type: 'image/png' });
-    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), {
+      target: { files: [file] },
+    });
 
-    await waitFor(() => expect(container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`)).not.toBeNull());
-    expect(container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`).textContent).toContain('Network down');
+    await waitFor(() =>
+      expect(
+        container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`),
+      ).not.toBeNull(),
+    );
+    expect(
+      container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`).textContent,
+    ).toContain('Network down');
     expect(store.getBlock(id).props.src).toBe(''); // never written
 
-    fireEvent.click(container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error button`));
+    fireEvent.click(
+      container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error button`),
+    );
     expect(container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`)).toBeNull();
   });
 
@@ -313,7 +364,9 @@ describe('embed block: uploadFile — sends the file to the host instead of inli
     const { container } = renderDocWithUpload(store, { uploadFile, maxFileSize: 10 });
 
     const file = new File(['x'.repeat(1000)], 'big.zip', { type: 'application/zip' });
-    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), {
+      target: { files: [file] },
+    });
 
     await waitFor(() => expect(store.getBlock(id).props.src).toBe('https://cdn.example.com/big'));
   });
@@ -325,8 +378,12 @@ describe('embed block: maxFileSize (no uploadFile configured) -- caps the in-doc
     const id = insertAtRoot(store, createEmbedBlock({ kind: 'file' }));
     const { container } = renderDocWithUpload(store, { maxFileSize: 10 }); // 10 bytes
 
-    const file = new File(['this is way more than ten bytes'], 'doc.pdf', { type: 'application/pdf' });
-    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+    const file = new File(['this is way more than ten bytes'], 'doc.pdf', {
+      type: 'application/pdf',
+    });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), {
+      target: { files: [file] },
+    });
 
     const error = await waitFor(() => {
       const el = container.querySelector(`[data-block-id="${id}"] .be-embed-upload-error`);
@@ -343,7 +400,9 @@ describe('embed block: maxFileSize (no uploadFile configured) -- caps the in-doc
     const { container } = renderDocWithUpload(store, { maxFileSize: 10_000 });
 
     const file = new File(['small'], 'doc.pdf', { type: 'application/pdf' });
-    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), { target: { files: [file] } });
+    fireEvent.change(container.querySelector(`[data-block-id="${id}"] input[type="file"]`), {
+      target: { files: [file] },
+    });
 
     await waitFor(() => expect(store.getBlock(id).props.src).toMatch(/^data:application\/pdf/));
   });
@@ -352,7 +411,10 @@ describe('embed block: maxFileSize (no uploadFile configured) -- caps the in-doc
 describe('embed block: removing clears props back to the dropzone state', () => {
   it('clicking Remove resets src/name/mimeType', () => {
     const store = new EditorStore(emptyDoc());
-    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://example.com/x.png', name: 'x.png' }));
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'image', src: 'https://example.com/x.png', name: 'x.png' }),
+    );
     const { container } = renderDoc(store);
 
     fireEvent.click(container.querySelector(`[data-block-id="${id}"] .be-embed-remove`));
@@ -367,11 +429,20 @@ describe('embed block: removing clears props back to the dropzone state', () => 
 describe('embed block: contentless, same as divider (no runs at all)', () => {
   it('backspacing into it from a following block clears it as the nearest obstacle', () => {
     const store = new EditorStore(emptyDoc());
-    const embedId = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://example.com/x.png' }));
+    const embedId = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'image', src: 'https://example.com/x.png' }),
+    );
     const afterId = insertAtRoot(
       store,
       () => ({
-        block: { id: 'after', type: 'paragraph', parentId: 'root', contentIds: ['r-after'], props: {} },
+        block: {
+          id: 'after',
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: ['r-after'],
+          props: {},
+        },
         runs: [{ id: 'r-after', type: 'text', value: 'after', marks: {} }],
       }),
       1,
@@ -402,7 +473,9 @@ describe('embed block: alignment toolbar', () => {
 
     fireEvent.click(wrapper.querySelector('[aria-label="Align center"]'));
     expect(store.getBlock(id).props.align).toBe('center');
-    expect(wrapper.querySelector('[aria-label="Align center"]').getAttribute('aria-pressed')).toBe('true');
+    expect(wrapper.querySelector('[aria-label="Align center"]').getAttribute('aria-pressed')).toBe(
+      'true',
+    );
 
     fireEvent.click(wrapper.querySelector('[aria-label="Align right"]'));
     expect(store.getBlock(id).props.align).toBe('right');
@@ -410,30 +483,69 @@ describe('embed block: alignment toolbar', () => {
 
   it('the alignment toolbar is available for every kind, including audio/file', () => {
     const store = new EditorStore(emptyDoc());
-    const audioId = insertAtRoot(store, createEmbedBlock({ kind: 'audio', src: 'https://x/a.mp3' }), 0);
-    const fileId = insertAtRoot(store, createEmbedBlock({ kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' }), 1);
+    const audioId = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'audio', src: 'https://x/a.mp3' }),
+      0,
+    );
+    const fileId = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' }),
+      1,
+    );
     const { container } = renderDoc(store);
 
-    expect(container.querySelector(`[data-block-id="${audioId}"] [aria-label="Align center"]`)).not.toBeNull();
-    expect(container.querySelector(`[data-block-id="${fileId}"] [aria-label="Align center"]`)).not.toBeNull();
+    expect(
+      container.querySelector(`[data-block-id="${audioId}"] [aria-label="Align center"]`),
+    ).not.toBeNull();
+    expect(
+      container.querySelector(`[data-block-id="${fileId}"] [aria-label="Align center"]`),
+    ).not.toBeNull();
   });
 });
 
 describe('embed block: resize handle (image/video only)', () => {
   function stubRect(el, width) {
-    el.getBoundingClientRect = () => ({ width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0 });
+    el.getBoundingClientRect = () => ({
+      width,
+      height: 0,
+      top: 0,
+      left: 0,
+      right: width,
+      bottom: 0,
+      x: 0,
+      y: 0,
+    });
   }
 
   it('only image/video kinds render a resize handle — audio/file do not', () => {
     const store = new EditorStore(emptyDoc());
-    const imgId = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://x/a.png' }), 0);
-    const audioId = insertAtRoot(store, createEmbedBlock({ kind: 'audio', src: 'https://x/a.mp3' }), 1);
-    const fileId = insertAtRoot(store, createEmbedBlock({ kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' }), 2);
+    const imgId = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'image', src: 'https://x/a.png' }),
+      0,
+    );
+    const audioId = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'audio', src: 'https://x/a.mp3' }),
+      1,
+    );
+    const fileId = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' }),
+      2,
+    );
     const { container } = renderDoc(store);
 
-    expect(container.querySelector(`[data-block-id="${imgId}"] .be-embed-resize-handle`)).not.toBeNull();
-    expect(container.querySelector(`[data-block-id="${audioId}"] .be-embed-resize-handle`)).toBeNull();
-    expect(container.querySelector(`[data-block-id="${fileId}"] .be-embed-resize-handle`)).toBeNull();
+    expect(
+      container.querySelector(`[data-block-id="${imgId}"] .be-embed-resize-handle`),
+    ).not.toBeNull();
+    expect(
+      container.querySelector(`[data-block-id="${audioId}"] .be-embed-resize-handle`),
+    ).toBeNull();
+    expect(
+      container.querySelector(`[data-block-id="${fileId}"] .be-embed-resize-handle`),
+    ).toBeNull();
   });
 
   it('dragging the handle updates props.width once, on mouseup (not on every mousemove)', () => {
@@ -477,7 +589,10 @@ describe('embed block: resize handle (image/video only)', () => {
 
   it('is keyboard-operable — not mouse-drag-only — via Left/Right/Home/End on the focused handle', () => {
     const store = new EditorStore(emptyDoc());
-    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://x/a.png', width: 50 }));
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'image', src: 'https://x/a.png', width: 50 }),
+    );
     const { container } = renderDoc(store);
     const handle = container.querySelector(`[data-block-id="${id}"] .be-embed-resize-handle`);
 
@@ -511,30 +626,51 @@ describe('embed block: clipboard round-trip', () => {
     expect(registry.get('embed').toHTML(img)).toBe('<img src="https://x/a.png" alt="a">');
 
     const vid = createEmbedBlock({ kind: 'video', src: 'https://x/a.mp4' })('root').block;
-    expect(registry.get('embed').toHTML(vid)).toBe('<video src="https://x/a.mp4" controls></video>');
+    expect(registry.get('embed').toHTML(vid)).toBe(
+      '<video src="https://x/a.mp4" controls></video>',
+    );
 
     const aud = createEmbedBlock({ kind: 'audio', src: 'https://x/a.mp3' })('root').block;
-    expect(registry.get('embed').toHTML(aud)).toBe('<audio src="https://x/a.mp3" controls></audio>');
+    expect(registry.get('embed').toHTML(aud)).toBe(
+      '<audio src="https://x/a.mp3" controls></audio>',
+    );
 
-    const file = createEmbedBlock({ kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' })('root').block;
-    expect(registry.get('embed').toHTML(file)).toBe('<a class="be-embed-file-link" href="https://x/a.pdf">a.pdf</a>');
+    const file = createEmbedBlock({ kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' })(
+      'root',
+    ).block;
+    expect(registry.get('embed').toHTML(file)).toBe(
+      '<a class="be-embed-file-link" href="https://x/a.pdf">a.pdf</a>',
+    );
   });
 
   it('non-default align/width are emitted as an inline style on image/video only', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
 
-    const resized = createEmbedBlock({ kind: 'image', src: 'https://x/a.png', width: 60 })('root').block;
-    expect(registry.get('embed').toHTML(resized)).toBe('<img src="https://x/a.png" alt="" style="width:60%">');
+    const resized = createEmbedBlock({ kind: 'image', src: 'https://x/a.png', width: 60 })(
+      'root',
+    ).block;
+    expect(registry.get('embed').toHTML(resized)).toBe(
+      '<img src="https://x/a.png" alt="" style="width:60%">',
+    );
 
-    const centered = createEmbedBlock({ kind: 'video', src: 'https://x/a.mp4', align: 'center' })('root').block;
+    const centered = createEmbedBlock({ kind: 'video', src: 'https://x/a.mp4', align: 'center' })(
+      'root',
+    ).block;
     expect(registry.get('embed').toHTML(centered)).toBe(
       '<video src="https://x/a.mp4" controls style="display:block;margin-left:auto;margin-right:auto"></video>',
     );
 
     // audio has no visual width concept, so align/width never affect its HTML
-    const audio = createEmbedBlock({ kind: 'audio', src: 'https://x/a.mp3', align: 'center', width: 50 })('root').block;
-    expect(registry.get('embed').toHTML(audio)).toBe('<audio src="https://x/a.mp3" controls></audio>');
+    const audio = createEmbedBlock({
+      kind: 'audio',
+      src: 'https://x/a.mp3',
+      align: 'center',
+      width: 50,
+    })('root').block;
+    expect(registry.get('embed').toHTML(audio)).toBe(
+      '<audio src="https://x/a.mp3" controls></audio>',
+    );
   });
 
   it('walkDomToBlocks parses width/align back out of the inline style', () => {
@@ -580,7 +716,10 @@ describe('embed block: clipboard round-trip', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
 
-    const [fileInsert] = walkDomToBlocks('<a class="be-embed-file-link" href="https://x/a.pdf">a.pdf</a>', registry);
+    const [fileInsert] = walkDomToBlocks(
+      '<a class="be-embed-file-link" href="https://x/a.pdf">a.pdf</a>',
+      registry,
+    );
     expect(fileInsert.block.type).toBe('embed');
     expect(fileInsert.block.props.kind).toBe('file');
 
@@ -617,7 +756,10 @@ describe('embed block: clipboard round-trip', () => {
     expect(richInsert.block.props.provider).toBe('youtube');
     expect(richInsert.block.props.originalUrl).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 
-    const [plainInsert] = walkDomToBlocks('<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">a link</a>', registry);
+    const [plainInsert] = walkDomToBlocks(
+      '<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">a link</a>',
+      registry,
+    );
     expect(plainInsert.block.type).toBe('paragraph'); // ordinary link, not an embed
   });
 });

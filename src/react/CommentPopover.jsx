@@ -20,7 +20,8 @@ import { useHoveredComment } from './EditorProvider.jsx';
  * every thread attached to the clicked/hovered run is shown, stacked,
  * inside one popover.
  */
-const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE_SELECTOR =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 export function CommentPopover({ containerRef, store, authorId }) {
   const [target, setTarget] = useState(null); // { rect, commentIds } | null
@@ -61,7 +62,13 @@ export function CommentPopover({ containerRef, store, authorId }) {
       if (!found) return;
       clearHideTimer();
       setTarget((prev) =>
-        prev && prev.runEl === found.runEl ? prev : { rect: found.runEl.getBoundingClientRect(), commentIds: found.commentIds, runEl: found.runEl },
+        prev && prev.runEl === found.runEl
+          ? prev
+          : {
+              rect: found.runEl.getBoundingClientRect(),
+              commentIds: found.commentIds,
+              runEl: found.runEl,
+            },
       );
     };
     const handleMouseOut = () => scheduleHide();
@@ -75,7 +82,11 @@ export function CommentPopover({ containerRef, store, authorId }) {
       }
       clearHideTimer();
       setPinned(true);
-      setTarget({ rect: found.runEl.getBoundingClientRect(), commentIds: found.commentIds, runEl: found.runEl });
+      setTarget({
+        rect: found.runEl.getBoundingClientRect(),
+        commentIds: found.commentIds,
+        runEl: found.runEl,
+      });
     };
 
     container.addEventListener('mouseover', handleMouseOver);
@@ -127,7 +138,12 @@ export function CommentPopover({ containerRef, store, authorId }) {
   }, []);
 
   const isOpen = Boolean(target);
-  const position = useAutoAdjustedPosition(popoverRef, isOpen, target ? target.rect.bottom + 6 : null, target ? target.rect.left : null);
+  const position = useAutoAdjustedPosition(
+    popoverRef,
+    isOpen,
+    target ? target.rect.bottom + 6 : null,
+    target ? target.rect.left : null,
+  );
 
   // Only a "pinned" (click-)opened popover takes focus — a hover preview
   // must never steal focus away from wherever the user is actually typing

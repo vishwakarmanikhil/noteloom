@@ -18,7 +18,9 @@ export function insertSiblingAfter(store, currentBlockId, factory) {
   const parent = store.getBlock(parentId);
   const index = parent.contentIds.indexOf(currentBlockId) + 1;
   const { block, runs = [], subtreeBlocks = [] } = factory(parentId);
-  store.applyOperation(insertBlock(block, parentId, index, { blocks: [block, ...subtreeBlocks], runs }));
+  store.applyOperation(
+    insertBlock(block, parentId, index, { blocks: [block, ...subtreeBlocks], runs }),
+  );
   return block.id;
 }
 
@@ -46,7 +48,9 @@ export function insertSiblingAfterAndFocus(store, currentBlockId, factory) {
  */
 export function insertFirstChildAndFocus(store, parentBlockId, factory) {
   const { block, runs = [], subtreeBlocks = [] } = factory(parentBlockId);
-  store.applyOperation(insertBlock(block, parentBlockId, 0, { blocks: [block, ...subtreeBlocks], runs }));
+  store.applyOperation(
+    insertBlock(block, parentBlockId, 0, { blocks: [block, ...subtreeBlocks], runs }),
+  );
   focusBlockStart(store, block.id);
   return block.id;
 }
@@ -140,7 +144,13 @@ export function insertFirstChildSplitAtCaretAndFocus(store, blockId, currentRunI
   });
 }
 
-function splitAndInsertAtCaret(store, blockId, currentRunIds, factory, { insertParentId, insertIndex, fallback }) {
+function splitAndInsertAtCaret(
+  store,
+  blockId,
+  currentRunIds,
+  factory,
+  { insertParentId, insertIndex, fallback },
+) {
   const caret = resolveCollapsedCaret();
   if (!caret || caret.blockId !== blockId) return fallback();
 
@@ -158,7 +168,9 @@ function splitAndInsertAtCaret(store, blockId, currentRunIds, factory, { insertP
   // into it, every keystroke mints a brand-new run instead of updating one
   // in place (the same "characters double" bug this exact guard fixes for
   // removeRun/handleInput in EditableBlockContent).
-  const survivingLeftRuns = leftRuns.length ? leftRuns : [{ id: genId(), type: 'text', value: '', marks: {} }];
+  const survivingLeftRuns = leftRuns.length
+    ? leftRuns
+    : [{ id: genId(), type: 'text', value: '', marks: {} }];
 
   applyOps(store, [
     setBlockRuns(blockId, survivingLeftRuns),
@@ -217,7 +229,11 @@ function replaceBlockInPlace(store, blockId, factory) {
  * one the user actually meant to create. Otherwise, behaves as before:
  * trims the query and inserts+focuses the new block after the current one.
  */
-export function trimSlashQueryAndInsertAfter(store, { blockId, runId, sliceStart, sliceEnd }, factory) {
+export function trimSlashQueryAndInsertAfter(
+  store,
+  { blockId, runId, sliceStart, sliceEnd },
+  factory,
+) {
   const run = store.getRun(runId);
   const value = run?.value ?? '';
   const newValue = value.slice(0, sliceStart) + value.slice(sliceEnd);

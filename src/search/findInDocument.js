@@ -78,7 +78,8 @@ export function replaceMatch(store, match, replacement) {
   const run = store.getRun(match.runId);
   if (!run) return;
   const value = run.value ?? '';
-  const newValue = value.slice(0, match.offset) + replacement + value.slice(match.offset + match.length);
+  const newValue =
+    value.slice(0, match.offset) + replacement + value.slice(match.offset + match.length);
   store.applyOperation(updateRun(match.runId, { value: newValue }));
 }
 

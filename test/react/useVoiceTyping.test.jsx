@@ -77,7 +77,8 @@ FakeSpeechRecognition.instances = [];
 // handler never looks at anything before event.resultIndex anyway.
 function resultEvent(transcript, resultIndex, isFinal) {
   const results = [];
-  for (let i = 0; i < resultIndex; i += 1) results.push({ isFinal: true, 0: { transcript: '' }, length: 1 });
+  for (let i = 0; i < resultIndex; i += 1)
+    results.push({ isFinal: true, 0: { transcript: '' }, length: 1 });
   results.push({ isFinal, 0: { transcript }, length: 1 });
   return { resultIndex, results };
 }

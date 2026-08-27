@@ -18,7 +18,16 @@ import { focusAfterChip } from '../shared/advanceAfterPick.js';
  * table's select column works (one shared list, not one per cell). Only
  * the resolved selection is ever written back to the run.
  */
-export function CustomSelectInlineNode({ id, blockId, label, placeholder, variant, options, onManage, mention = false }) {
+export function CustomSelectInlineNode({
+  id,
+  blockId,
+  label,
+  placeholder,
+  variant,
+  options,
+  onManage,
+  mention = false,
+}) {
   const store = useEditorStore();
   const run = useRun(id);
   // Consumed at most once per mount — see pendingAutoOpen.js and

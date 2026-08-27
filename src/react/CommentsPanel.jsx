@@ -25,7 +25,10 @@ function scrollToComment(store, commentId, setHoveredCommentId) {
   if (!el) return;
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   setHoveredCommentId(commentId);
-  setTimeout(() => setHoveredCommentId((current) => (current === commentId ? null : current)), 1500);
+  setTimeout(
+    () => setHoveredCommentId((current) => (current === commentId ? null : current)),
+    1500,
+  );
 }
 
 /**
@@ -72,7 +75,11 @@ export function CommentsPanel({ authorId }) {
         // otherwise a single missing anchor at the very start would leave
         // `cursor` at -Infinity forever, propagating through every
         // following card too.
-        const natural = el ? el.getBoundingClientRect().top - listTop : Number.isFinite(cursor) ? cursor + 90 : 0;
+        const natural = el
+          ? el.getBoundingClientRect().top - listTop
+          : Number.isFinite(cursor)
+            ? cursor + 90
+            : 0;
         const top = Math.max(cursor, natural);
         next[thread.id] = top;
         cursor = top + 90; // rough per-card minimum before the next one can start, to avoid total overlap
@@ -100,7 +107,11 @@ export function CommentsPanel({ authorId }) {
     <div className="be-comments-panel" contentEditable={false}>
       <div ref={listRef} className="be-comments-panel-list" style={{ height: totalHeight }}>
         {sorted.map((thread) => (
-          <div key={thread.id} className="be-comments-panel-item" style={{ top: positions[thread.id] ?? 0 }}>
+          <div
+            key={thread.id}
+            className="be-comments-panel-item"
+            style={{ top: positions[thread.id] ?? 0 }}
+          >
             <CommentThreadCard
               store={store}
               thread={thread}

@@ -5,7 +5,14 @@ import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.j
 import { updateBlockProps } from '../../store/operations.js';
 import { genId } from '../../utils/idGen.js';
 import { getStrokeOutlinePath, strokeBoundingBox } from './strokeOutline.js';
-import { clientToLocal, boxesIntersect, localPixelScale, zoomAnchoredView, zoomCenteredView, clampViewOffset } from './canvasGeometry.js';
+import {
+  clientToLocal,
+  boxesIntersect,
+  localPixelScale,
+  zoomAnchoredView,
+  zoomCenteredView,
+  clampViewOffset,
+} from './canvasGeometry.js';
 import {
   arrowheadPoints,
   normalizeRect,
@@ -87,7 +94,12 @@ const PASTE_OFFSET = 24;
 // coarse nudge" convention.
 const NUDGE_STEP = 1;
 const NUDGE_STEP_LARGE = 10;
-const NUDGE_DELTAS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+const NUDGE_DELTAS = {
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+};
 // A freshly-placed text box's default size/font, in the same fixed
 // 0..1000 normalized space — no auto-grow-to-fit-content or a dedicated
 // font-size control in this pass (a deliberate v1 scope cut); the box can
@@ -199,7 +211,11 @@ function strokeNearPoint(stroke, x, y, tolerance) {
 const SHAPE_TOOLS = new Set(['rectangle', 'ellipse', 'arrow', 'diamond', 'triangle', 'star']);
 
 /** Maps a polygon-based shape type to its own vertex-generator function (see shapeGeometry.js) — the one place that association lives, reused by both rendering and hit-testing. */
-const POLYGON_POINTS_BY_TYPE = { diamond: diamondPoints, triangle: trianglePoints, star: starPoints };
+const POLYGON_POINTS_BY_TYPE = {
+  diamond: diamondPoints,
+  triangle: trianglePoints,
+  star: starPoints,
+};
 
 /** The 6 shape tools, folded into one popover (see the toolbar JSX) rather than 6 always-visible buttons — Pen/Select stay individual buttons since those are used far more often; Eraser gets its own small popover too (see ERASER_MODE_LIST) since it now has 2 modes. */
 const SHAPE_TOOL_LIST = [
@@ -239,9 +255,23 @@ const ERASER_MODE_LIST = [
  */
 function buildDraftShape(draft, color, strokeWidth, fillColor) {
   if (draft.type === 'arrow') {
-    return { type: 'arrow', x1: draft.x1, y1: draft.y1, x2: draft.x2, y2: draft.y2, color, strokeWidth };
+    return {
+      type: 'arrow',
+      x1: draft.x1,
+      y1: draft.y1,
+      x2: draft.x2,
+      y2: draft.y2,
+      color,
+      strokeWidth,
+    };
   }
-  return { type: draft.type, ...normalizeRect(draft.x1, draft.y1, draft.x2, draft.y2), color, strokeWidth, fillColor };
+  return {
+    type: draft.type,
+    ...normalizeRect(draft.x1, draft.y1, draft.x2, draft.y2),
+    color,
+    strokeWidth,
+    fillColor,
+  };
 }
 
 // Generous hit-test tolerance for the arrow tool (a thin line is otherwise
@@ -280,7 +310,9 @@ function hitTestOneShape(shape, x, y) {
   }
   const pointsFn = POLYGON_POINTS_BY_TYPE[shape.type];
   if (pointsFn) return pointInPolygon(testX, testY, pointsFn(rect));
-  return shape.type === 'ellipse' ? pointInEllipse(testX, testY, rect) : pointInRect(testX, testY, rect);
+  return shape.type === 'ellipse'
+    ? pointInEllipse(testX, testY, rect)
+    : pointInRect(testX, testY, rect);
 }
 
 function hitTestShapeAt(x, y, shapes) {
@@ -478,7 +510,9 @@ function hitTestHandle(x, y, shape) {
  */
 function buildResizedShape(shape, draft) {
   if (draft.mode === 'arrow-endpoint') {
-    return draft.endpoint === 'start' ? { ...shape, x1: draft.x, y1: draft.y } : { ...shape, x2: draft.x, y2: draft.y };
+    return draft.endpoint === 'start'
+      ? { ...shape, x1: draft.x, y1: draft.y }
+      : { ...shape, x2: draft.x, y2: draft.y };
   }
   if (draft.mode === 'rotate') {
     return { ...shape, rotation: draft.rotation };
@@ -536,7 +570,14 @@ function ShapeElement({ shape, opacity = 1 }) {
     const head = arrowheadPoints(shape.x1, shape.y1, shape.x2, shape.y2, headSize);
     return (
       <g opacity={opacity}>
-        <line x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} stroke={shape.color} strokeWidth={strokeWidth} />
+        <line
+          x1={shape.x1}
+          y1={shape.y1}
+          x2={shape.x2}
+          y2={shape.y2}
+          stroke={shape.color}
+          strokeWidth={strokeWidth}
+        />
         <polygon points={head.map(([x, y]) => `${x},${y}`).join(' ')} fill={shape.color} />
       </g>
     );
@@ -547,7 +588,13 @@ function ShapeElement({ shape, opacity = 1 }) {
     // auto-grow-to-fit: overflow is clipped to the box, same "resize the
     // box yourself" convention as every other shape's fixed bounding box.
     content = (
-      <foreignObject x={shape.x} y={shape.y} width={shape.width} height={shape.height} opacity={opacity}>
+      <foreignObject
+        x={shape.x}
+        y={shape.y}
+        width={shape.width}
+        height={shape.height}
+        opacity={opacity}
+      >
         <div
           // eslint-disable-next-line react/no-unknown-property
           xmlns="http://www.w3.org/1999/xhtml"
@@ -575,7 +622,13 @@ function ShapeElement({ shape, opacity = 1 }) {
       .map(([x, y]) => `${x},${y}`)
       .join(' ');
     content = (
-      <polygon points={points} fill={shape.fillColor ?? 'none'} stroke={shape.color} strokeWidth={strokeWidth} opacity={opacity} />
+      <polygon
+        points={points}
+        fill={shape.fillColor ?? 'none'}
+        stroke={shape.color}
+        strokeWidth={strokeWidth}
+        opacity={opacity}
+      />
     );
   }
   if (!shape.rotation) return content;
@@ -829,8 +882,14 @@ export function CanvasBlock({ id }) {
   // dragging the handle is purely "change how big this is drawn."
   const { dragValue: dragSize, startDrag: startResize } = useDragResize({
     compute: (event, start) => ({
-      width: Math.max(MIN_CANVAS_WIDTH, Math.round(start.startWidth + (event.clientX - start.startX))),
-      height: Math.max(MIN_CANVAS_HEIGHT, Math.round(start.startHeight + (event.clientY - start.startY))),
+      width: Math.max(
+        MIN_CANVAS_WIDTH,
+        Math.round(start.startWidth + (event.clientX - start.startX)),
+      ),
+      height: Math.max(
+        MIN_CANVAS_HEIGHT,
+        Math.round(start.startHeight + (event.clientY - start.startY)),
+      ),
     }),
     onCommit: (size) => store.applyOperation(updateBlockProps(id, size)),
   });
@@ -861,7 +920,13 @@ export function CanvasBlock({ id }) {
     // is needed here beyond just storing whatever points were captured.
     const currentStrokes = block?.props?.strokes ?? [];
     const currentShapes = block?.props?.shapes ?? [];
-    const newStroke = { id: genId(), points, color, size: strokeSize, z: nextZIndex(currentStrokes, currentShapes) };
+    const newStroke = {
+      id: genId(),
+      points,
+      color,
+      size: strokeSize,
+      z: nextZIndex(currentStrokes, currentShapes),
+    };
     store.applyOperation(updateBlockProps(id, { strokes: [...currentStrokes, newStroke] }));
   }, [store, id, block, color, strokeSize]);
 
@@ -912,13 +977,19 @@ export function CanvasBlock({ id }) {
         const padding = stroke.size / 2;
         const box = strokeBoundingBox(stroke.points);
         if (!boxesIntersect(box, eraserBox, padding)) continue; // cheap reject before the precise per-segment check
-        if (strokeNearPoint(stroke, x, y, radius + padding)) erasedStrokeIdsRef.current.add(stroke.id);
+        if (strokeNearPoint(stroke, x, y, radius + padding))
+          erasedStrokeIdsRef.current.add(stroke.id);
       }
       const shapes = block?.props?.shapes ?? [];
       for (const shape of shapes) {
         if (erasedShapeIdsRef.current.has(shape.id)) continue;
         const box = shapeBoundingBox(shape);
-        const shapeBox = { minX: box.x, minY: box.y, maxX: box.x + box.width, maxY: box.y + box.height };
+        const shapeBox = {
+          minX: box.x,
+          minY: box.y,
+          maxX: box.x + box.width,
+          maxY: box.y + box.height,
+        };
         if (boxesIntersect(shapeBox, eraserBox)) erasedShapeIdsRef.current.add(shape.id);
       }
       scheduleErasingPreview();
@@ -1046,7 +1117,12 @@ export function CanvasBlock({ id }) {
       setSelectedIds(new Set());
       return;
     }
-    const marqueeBox = { minX: rect.x, minY: rect.y, maxX: rect.x + rect.width, maxY: rect.y + rect.height };
+    const marqueeBox = {
+      minX: rect.x,
+      minY: rect.y,
+      maxX: rect.x + rect.width,
+      maxY: rect.y + rect.height,
+    };
     const strokes = block?.props?.strokes ?? [];
     const shapes = block?.props?.shapes ?? [];
     const hitIds = [];
@@ -1055,7 +1131,12 @@ export function CanvasBlock({ id }) {
     }
     for (const shape of shapes) {
       const box = shapeBoundingBox(shape);
-      const shapeBox = { minX: box.x, minY: box.y, maxX: box.x + box.width, maxY: box.y + box.height };
+      const shapeBox = {
+        minX: box.x,
+        minY: box.y,
+        maxX: box.x + box.width,
+        maxY: box.y + box.height,
+      };
       if (boxesIntersect(shapeBox, marqueeBox)) hitIds.push(shape.id);
     }
     setSelectedIds(new Set(hitIds)); // replaces the previous selection; an empty result clears it
@@ -1063,7 +1144,9 @@ export function CanvasBlock({ id }) {
 
   const copySelection = useCallback(() => {
     if (selectedIds.size === 0) return;
-    clipboardRef.current = [...selectedIds].map((selId) => findSelectable(block, selId)).filter(Boolean);
+    clipboardRef.current = [...selectedIds]
+      .map((selId) => findSelectable(block, selId))
+      .filter(Boolean);
   }, [block, selectedIds]);
 
   /**
@@ -1099,7 +1182,10 @@ export function CanvasBlock({ id }) {
       }
     }
     store.applyOperation(
-      updateBlockProps(id, { strokes: [...currentStrokes, ...newStrokes], shapes: [...currentShapes, ...newShapes] }),
+      updateBlockProps(id, {
+        strokes: [...currentStrokes, ...newStrokes],
+        shapes: [...currentShapes, ...newShapes],
+      }),
     );
     setSelectedIds(new Set(newIds));
     setTool('select');
@@ -1129,7 +1215,10 @@ export function CanvasBlock({ id }) {
       const zById = new Map(selectedOrdered.map(({ item }, i) => [item.id, baseZ + i]));
       const stampZ = (item) => (zById.has(item.id) ? { ...item, z: zById.get(item.id) } : item);
       store.applyOperation(
-        updateBlockProps(id, { strokes: currentStrokes.map(stampZ), shapes: currentShapes.map(stampZ) }),
+        updateBlockProps(id, {
+          strokes: currentStrokes.map(stampZ),
+          shapes: currentShapes.map(stampZ),
+        }),
       );
     },
     [store, id, block, selectedIds],
@@ -1192,7 +1281,9 @@ export function CanvasBlock({ id }) {
     const text = draft.text;
     if (!text.trim()) {
       if (draft.id) {
-        store.applyOperation(updateBlockProps(id, { shapes: currentShapes.filter((shape) => shape.id !== draft.id) }));
+        store.applyOperation(
+          updateBlockProps(id, { shapes: currentShapes.filter((shape) => shape.id !== draft.id) }),
+        );
         setSelectedIds(new Set());
       }
       // Restores real DOM focus to the <svg> now that the textarea (which
@@ -1333,8 +1424,12 @@ export function CanvasBlock({ id }) {
         const currentShapes = block?.props?.shapes ?? [];
         store.applyOperation(
           updateBlockProps(id, {
-            strokes: currentStrokes.map((stroke) => (selectedIds.has(stroke.id) ? applyStrokeOffset(stroke, dx, dy) : stroke)),
-            shapes: currentShapes.map((shape) => (selectedIds.has(shape.id) ? applyShapeOffset(shape, dx, dy) : shape)),
+            strokes: currentStrokes.map((stroke) =>
+              selectedIds.has(stroke.id) ? applyStrokeOffset(stroke, dx, dy) : stroke,
+            ),
+            shapes: currentShapes.map((shape) =>
+              selectedIds.has(shape.id) ? applyShapeOffset(shape, dx, dy) : shape,
+            ),
           }),
         );
         return;
@@ -1376,7 +1471,16 @@ export function CanvasBlock({ id }) {
         reorderSelection(key === ']');
       }
     },
-    [store, id, block, selectedIds, copySelection, pasteClipboard, reorderSelection, startExistingTextEdit],
+    [
+      store,
+      id,
+      block,
+      selectedIds,
+      copySelection,
+      pasteClipboard,
+      reorderSelection,
+      startExistingTextEdit,
+    ],
   );
 
   const currentView = { x: view.x, y: view.y, size: viewSize };
@@ -1394,7 +1498,12 @@ export function CanvasBlock({ id }) {
           const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev.zoom * zoomFactor));
           const nextSize = VIEW_SIZE / nextZoom;
           // keep the point under the cursor fixed on screen as the zoom changes
-          const { x, y } = zoomAnchoredView(event, svg, { x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom }, nextSize);
+          const { x, y } = zoomAnchoredView(
+            event,
+            svg,
+            { x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom },
+            nextSize,
+          );
           return { ...clampViewOffset(x, y, nextSize, VIEW_SIZE), zoom: nextZoom };
         });
         return;
@@ -1407,7 +1516,12 @@ export function CanvasBlock({ id }) {
       const scale = localPixelScale(svg, viewSize);
       setView((prev) => ({
         ...prev,
-        ...clampViewOffset(prev.x + event.deltaX / scale, prev.y + event.deltaY / scale, viewSize, VIEW_SIZE),
+        ...clampViewOffset(
+          prev.x + event.deltaX / scale,
+          prev.y + event.deltaY / scale,
+          viewSize,
+          VIEW_SIZE,
+        ),
       }));
     },
     [viewSize],
@@ -1435,7 +1549,10 @@ export function CanvasBlock({ id }) {
     setView((prev) => {
       const nextZoom = Math.min(MAX_ZOOM, prev.zoom * ZOOM_STEP);
       const nextSize = VIEW_SIZE / nextZoom;
-      const { x, y } = zoomCenteredView({ x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom }, nextSize);
+      const { x, y } = zoomCenteredView(
+        { x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom },
+        nextSize,
+      );
       return { ...clampViewOffset(x, y, nextSize, VIEW_SIZE), zoom: nextZoom };
     });
   }, []);
@@ -1444,7 +1561,10 @@ export function CanvasBlock({ id }) {
     setView((prev) => {
       const nextZoom = Math.max(MIN_ZOOM, prev.zoom / ZOOM_STEP);
       const nextSize = VIEW_SIZE / nextZoom;
-      const { x, y } = zoomCenteredView({ x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom }, nextSize);
+      const { x, y } = zoomCenteredView(
+        { x: prev.x, y: prev.y, size: VIEW_SIZE / prev.zoom },
+        nextSize,
+      );
       return { ...clampViewOffset(x, y, nextSize, VIEW_SIZE), zoom: nextZoom };
     });
   }, []);
@@ -1549,7 +1669,12 @@ export function CanvasBlock({ id }) {
               if (pointerId !== event.pointerId) cancelActiveSingleGesture(pointerId);
             }
             const center = touchCentroid(touchPointsRef.current);
-            touchPanRef.current = { startCenterX: center.x, startCenterY: center.y, startViewX: view.x, startViewY: view.y };
+            touchPanRef.current = {
+              startCenterX: center.x,
+              startCenterY: center.y,
+              startViewX: view.x,
+              startViewY: view.y,
+            };
           }
           return;
         }
@@ -1597,7 +1722,12 @@ export function CanvasBlock({ id }) {
         // comment for why this was chosen over a space-bar-held convention).
         event.preventDefault();
         svg.setPointerCapture?.(event.pointerId);
-        panRef.current = { startClientX: event.clientX, startClientY: event.clientY, startViewX: view.x, startViewY: view.y };
+        panRef.current = {
+          startClientX: event.clientX,
+          startClientY: event.clientY,
+          startViewX: view.x,
+          startViewY: view.y,
+        };
         return;
       }
       if (!event.isPrimary || (event.button !== undefined && event.button !== 0)) return;
@@ -1628,7 +1758,9 @@ export function CanvasBlock({ id }) {
         // shape (strokes were never resizable) — see the component doc
         // comment.
         const singleSelectedShape =
-          selectedIds.size === 1 ? shapesList.find((shape) => selectedIds.has(shape.id)) ?? null : null;
+          selectedIds.size === 1
+            ? (shapesList.find((shape) => selectedIds.has(shape.id)) ?? null)
+            : null;
         const handle = hitTestHandle(x, y, singleSelectedShape);
         if (handle) {
           // Grabbing a handle always takes priority over re-selecting/moving
@@ -1652,10 +1784,23 @@ export function CanvasBlock({ id }) {
               rotation: singleSelectedShape.rotation ?? 0,
             };
           } else if (singleSelectedShape.type === 'arrow') {
-            resizeDraftRef.current = { mode: 'arrow-endpoint', shapeId: singleSelectedShape.id, endpoint: handle, x, y };
+            resizeDraftRef.current = {
+              mode: 'arrow-endpoint',
+              shapeId: singleSelectedShape.id,
+              endpoint: handle,
+              x,
+              y,
+            };
           } else {
             const [fixedX, fixedY] = rectCorners(singleSelectedShape)[OPPOSITE_CORNER[handle]];
-            resizeDraftRef.current = { mode: 'rect-corner', shapeId: singleSelectedShape.id, fixedX, fixedY, x, y };
+            resizeDraftRef.current = {
+              mode: 'rect-corner',
+              shapeId: singleSelectedShape.id,
+              fixedX,
+              fixedY,
+              x,
+              y,
+            };
           }
           setResizePreviewShape(buildResizedShape(singleSelectedShape, resizeDraftRef.current));
           return;
@@ -1739,7 +1884,10 @@ export function CanvasBlock({ id }) {
           // within the same React batch, and touchPanRef.current may
           // already have been reset to null by a LATER pointerup/pointer-
           // cancel by the time this updater actually runs.
-          setView((prev) => ({ ...prev, ...clampViewOffset(startViewX - dx, startViewY - dy, viewSize, VIEW_SIZE) }));
+          setView((prev) => ({
+            ...prev,
+            ...clampViewOffset(startViewX - dx, startViewY - dy, viewSize, VIEW_SIZE),
+          }));
           return;
         }
       }
@@ -1757,7 +1905,10 @@ export function CanvasBlock({ id }) {
         // been reset to null by a subsequent pointerup/pointercancel
         // dispatched within the same batch (see the identical touch-pan
         // fix above, where this exact lazy-read pattern crashed).
-        setView((prev) => ({ ...prev, ...clampViewOffset(startViewX - dx, startViewY - dy, viewSize, VIEW_SIZE) }));
+        setView((prev) => ({
+          ...prev,
+          ...clampViewOffset(startViewX - dx, startViewY - dy, viewSize, VIEW_SIZE),
+        }));
         return;
       }
       if (shapeDraftRef.current) {
@@ -1817,7 +1968,18 @@ export function CanvasBlock({ id }) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [schedulePreviewUpdate, hitTestEraserAt, view.x, view.y, viewSize, strokeSize, color, fill, snapEnabled, block],
+    [
+      schedulePreviewUpdate,
+      hitTestEraserAt,
+      view.x,
+      view.y,
+      viewSize,
+      strokeSize,
+      color,
+      fill,
+      snapEnabled,
+      block,
+    ],
   );
 
   const releaseCapture = useCallback((event) => {
@@ -1962,9 +2124,11 @@ export function CanvasBlock({ id }) {
       const currentHeight = block?.props?.height ?? DEFAULT_CANVAS_HEIGHT;
       const step = event.shiftKey ? 4 : 24;
       let patch;
-      if (event.key === 'ArrowLeft') patch = { width: Math.max(MIN_CANVAS_WIDTH, currentWidth - step) };
+      if (event.key === 'ArrowLeft')
+        patch = { width: Math.max(MIN_CANVAS_WIDTH, currentWidth - step) };
       else if (event.key === 'ArrowRight') patch = { width: currentWidth + step };
-      else if (event.key === 'ArrowUp') patch = { height: Math.max(MIN_CANVAS_HEIGHT, currentHeight - step) };
+      else if (event.key === 'ArrowUp')
+        patch = { height: Math.max(MIN_CANVAS_HEIGHT, currentHeight - step) };
       else if (event.key === 'ArrowDown') patch = { height: currentHeight + step };
       else if (event.key === 'Home') patch = { width: MIN_CANVAS_WIDTH, height: MIN_CANVAS_HEIGHT };
       else return;
@@ -1996,7 +2160,13 @@ export function CanvasBlock({ id }) {
       } else if (kind === 'shape' && resizePreviewShape?.id === selId) {
         item = resizePreviewShape;
       }
-      return { id: selId, kind, item, box: selectableBoundingBox(kind, item), rotation: kind === 'shape' ? item.rotation : 0 };
+      return {
+        id: selId,
+        kind,
+        item,
+        box: selectableBoundingBox(kind, item),
+        rotation: kind === 'shape' ? item.rotation : 0,
+      };
     })
     .filter(Boolean);
 
@@ -2017,13 +2187,25 @@ export function CanvasBlock({ id }) {
           ['end', selectedDisplayShape.x2, selectedDisplayShape.y2],
         ]
       : selectedDisplayShape && !selectedDisplayShape.rotation
-        ? Object.entries(rectCorners(selectedDisplayShape)).map(([corner, [cx, cy]]) => [corner, cx, cy])
+        ? Object.entries(rectCorners(selectedDisplayShape)).map(([corner, [cx, cy]]) => [
+            corner,
+            cx,
+            cy,
+          ])
         : [];
   const rotateHandle =
-    selectedDisplayShape && selectedDisplayShape.type !== 'arrow' ? rotateHandlePoint(selectedDisplayShape) : null;
+    selectedDisplayShape && selectedDisplayShape.type !== 'arrow'
+      ? rotateHandlePoint(selectedDisplayShape)
+      : null;
 
   return (
-    <div className={className} data-block-id={id} data-tool={tool} contentEditable={false} tabIndex={-1}>
+    <div
+      className={className}
+      data-block-id={id}
+      data-tool={tool}
+      contentEditable={false}
+      tabIndex={-1}
+    >
       <div className="be-canvas-toolbar" contentEditable={false}>
         <button
           type="button"
@@ -2048,12 +2230,18 @@ export function CanvasBlock({ id }) {
             onClick={() => setIsEraserPickerOpen((open) => !open)}
           >
             {(() => {
-              const ActiveEraserIcon = ERASER_MODE_LIST.find((e) => e.mode === eraserMode)?.Icon ?? EraserIcon;
+              const ActiveEraserIcon =
+                ERASER_MODE_LIST.find((e) => e.mode === eraserMode)?.Icon ?? EraserIcon;
               return <ActiveEraserIcon size={14} />;
             })()}
           </button>
           {isEraserPickerOpen && (
-            <div ref={eraserPopoverRef} className="be-canvas-picker be-canvas-shape-picker" role="menu" aria-label="Eraser">
+            <div
+              ref={eraserPopoverRef}
+              className="be-canvas-picker be-canvas-shape-picker"
+              role="menu"
+              aria-label="Eraser"
+            >
               {ERASER_MODE_LIST.map(({ mode, label, Icon }) => (
                 <button
                   key={mode}
@@ -2134,11 +2322,14 @@ export function CanvasBlock({ id }) {
                   setTextFontSize(value);
                   // Live-updates the box actively being typed into, if any
                   // — see textFontSize's own doc comment above for why.
-                  if (textEditDraft) setTextEditDraft((prev) => (prev ? { ...prev, fontSize: value } : prev));
+                  if (textEditDraft)
+                    setTextEditDraft((prev) => (prev ? { ...prev, fontSize: value } : prev));
                 }}
                 aria-label="Font size"
               />
-              <span className="be-canvas-size-value">{textEditDraft ? textEditDraft.fontSize : textFontSize}px</span>
+              <span className="be-canvas-size-value">
+                {textEditDraft ? textEditDraft.fontSize : textFontSize}px
+              </span>
             </div>
           )}
         </div>
@@ -2176,12 +2367,19 @@ export function CanvasBlock({ id }) {
           >
             {(() => {
               const ActiveShapeIcon =
-                SHAPE_TOOL_LIST.find((s) => s.type === (SHAPE_TOOLS.has(tool) ? tool : lastShapeTool))?.Icon ?? SquareIcon;
+                SHAPE_TOOL_LIST.find(
+                  (s) => s.type === (SHAPE_TOOLS.has(tool) ? tool : lastShapeTool),
+                )?.Icon ?? SquareIcon;
               return <ActiveShapeIcon size={14} />;
             })()}
           </button>
           {isShapePickerOpen && (
-            <div ref={shapePopoverRef} className="be-canvas-picker be-canvas-shape-picker" role="menu" aria-label="Shape">
+            <div
+              ref={shapePopoverRef}
+              className="be-canvas-picker be-canvas-shape-picker"
+              role="menu"
+              aria-label="Shape"
+            >
               {SHAPE_TOOL_LIST.map(({ type, label, Icon }) => (
                 <button
                   key={type}
@@ -2218,7 +2416,12 @@ export function CanvasBlock({ id }) {
             <span className="be-canvas-color-trigger-dot" style={{ backgroundColor: color }} />
           </button>
           {isColorPickerOpen && (
-            <div ref={colorPopoverRef} className="be-canvas-picker be-canvas-color-picker" role="menu" aria-label="Pen color">
+            <div
+              ref={colorPopoverRef}
+              className="be-canvas-picker be-canvas-color-picker"
+              role="menu"
+              aria-label="Pen color"
+            >
               {COLOR_SWATCHES.map((swatch) => (
                 <button
                   key={swatch}
@@ -2235,8 +2438,16 @@ export function CanvasBlock({ id }) {
                   }}
                 />
               ))}
-              <label className="be-canvas-custom-swatch" title="Custom color" aria-label="Custom color">
-                <input type="color" value={color} onChange={(event) => setColor(event.target.value)} />
+              <label
+                className="be-canvas-custom-swatch"
+                title="Custom color"
+                aria-label="Custom color"
+              >
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(event) => setColor(event.target.value)}
+                />
               </label>
             </div>
           )}
@@ -2259,7 +2470,12 @@ export function CanvasBlock({ id }) {
             />
           </button>
           {isFillPickerOpen && (
-            <div ref={fillPopoverRef} className="be-canvas-picker be-canvas-color-picker" role="menu" aria-label="Shape fill">
+            <div
+              ref={fillPopoverRef}
+              className="be-canvas-picker be-canvas-color-picker"
+              role="menu"
+              aria-label="Shape fill"
+            >
               <button
                 type="button"
                 role="menuitem"
@@ -2288,8 +2504,16 @@ export function CanvasBlock({ id }) {
                   }}
                 />
               ))}
-              <label className="be-canvas-custom-swatch" title="Custom fill" aria-label="Custom fill">
-                <input type="color" value={fill ?? DEFAULT_COLOR} onChange={(event) => setFill(event.target.value)} />
+              <label
+                className="be-canvas-custom-swatch"
+                title="Custom fill"
+                aria-label="Custom fill"
+              >
+                <input
+                  type="color"
+                  value={fill ?? DEFAULT_COLOR}
+                  onChange={(event) => setFill(event.target.value)}
+                />
               </label>
             </div>
           )}
@@ -2312,9 +2536,17 @@ export function CanvasBlock({ id }) {
             />
           </button>
           {isSizePickerOpen && (
-            <div ref={sizePopoverRef} className="be-canvas-picker be-canvas-size-picker" role="dialog" aria-label="Stroke size">
+            <div
+              ref={sizePopoverRef}
+              className="be-canvas-picker be-canvas-size-picker"
+              role="dialog"
+              aria-label="Stroke size"
+            >
               <span className="be-canvas-size-preview" aria-hidden="true">
-                <span className="be-canvas-size-preview-dot" style={{ width: strokeSize, height: strokeSize }} />
+                <span
+                  className="be-canvas-size-preview-dot"
+                  style={{ width: strokeSize, height: strokeSize }}
+                />
               </span>
               <input
                 type="range"
@@ -2437,7 +2669,10 @@ export function CanvasBlock({ id }) {
             const stroke = item;
             const moved = moveOverride?.ids?.includes(stroke.id);
             const path = moved
-              ? getStrokeOutlinePath(applyStrokeOffset(stroke, moveOverride.dx, moveOverride.dy).points, { size: stroke.size })
+              ? getStrokeOutlinePath(
+                  applyStrokeOffset(stroke, moveOverride.dx, moveOverride.dy).points,
+                  { size: stroke.size },
+                )
               : getStrokePath(stroke);
             return (
               <path
@@ -2451,9 +2686,16 @@ export function CanvasBlock({ id }) {
           }
           const shape = item;
           let displayShape = shape;
-          if (moveOverride?.ids?.includes(shape.id)) displayShape = applyShapeOffset(shape, moveOverride.dx, moveOverride.dy);
+          if (moveOverride?.ids?.includes(shape.id))
+            displayShape = applyShapeOffset(shape, moveOverride.dx, moveOverride.dy);
           else if (resizePreviewShape?.id === shape.id) displayShape = resizePreviewShape;
-          return <ShapeElement key={shape.id} shape={displayShape} opacity={erasingShapeIds.has(shape.id) ? 0.25 : 1} />;
+          return (
+            <ShapeElement
+              key={shape.id}
+              shape={displayShape}
+              opacity={erasingShapeIds.has(shape.id) ? 0.25 : 1}
+            />
+          );
         })}
         {/* The in-progress pen/shape draft always renders on top of everything else while actively drawing. */}
         {previewPath && <path d={previewPath} fill={color} fillRule="nonzero" />}
@@ -2461,7 +2703,11 @@ export function CanvasBlock({ id }) {
         {selectionBoxes.map(({ id: selId, box, rotation }) => (
           <g
             key={selId}
-            transform={rotation ? `rotate(${rotation} ${box.x + box.width / 2} ${box.y + box.height / 2})` : undefined}
+            transform={
+              rotation
+                ? `rotate(${rotation} ${box.x + box.width / 2} ${box.y + box.height / 2})`
+                : undefined
+            }
           >
             <rect
               className="be-canvas-selection-box"
@@ -2501,7 +2747,12 @@ export function CanvasBlock({ id }) {
           />
         )}
         {textEditDraft && (
-          <foreignObject x={textEditDraft.x} y={textEditDraft.y} width={textEditDraft.width} height={textEditDraft.height}>
+          <foreignObject
+            x={textEditDraft.x}
+            y={textEditDraft.y}
+            width={textEditDraft.width}
+            height={textEditDraft.height}
+          >
             <textarea
               // eslint-disable-next-line react/no-unknown-property
               xmlns="http://www.w3.org/1999/xhtml"
@@ -2509,7 +2760,9 @@ export function CanvasBlock({ id }) {
               className="be-canvas-text-editor"
               value={textEditDraft.text}
               style={{ color: textEditDraft.color, fontSize: textEditDraft.fontSize }}
-              onChange={(event) => setTextEditDraft((prev) => (prev ? { ...prev, text: event.target.value } : prev))}
+              onChange={(event) =>
+                setTextEditDraft((prev) => (prev ? { ...prev, text: event.target.value } : prev))
+              }
               onBlur={() => commitTextEdit()}
               onKeyDown={(event) => {
                 // Escape discards the draft (a new box vanishes; an edit

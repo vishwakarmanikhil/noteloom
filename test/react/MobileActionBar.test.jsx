@@ -34,7 +34,9 @@ function baseDoc() {
 
 function insertAtRoot(store, factory, index) {
   const { block, runs = [], subtreeBlocks = [] } = factory('root');
-  store.applyOperation(insertBlock(block, 'root', index, { blocks: [block, ...subtreeBlocks], runs }));
+  store.applyOperation(
+    insertBlock(block, 'root', index, { blocks: [block, ...subtreeBlocks], runs }),
+  );
   return block.id;
 }
 
@@ -174,7 +176,13 @@ describe('MobileActionBar: context-aware quick actions', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
-        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r-c1'], props: { language: 'javascript' } },
+        {
+          id: 'c1',
+          type: 'code',
+          parentId: 'root',
+          contentIds: ['r-c1'],
+          props: { language: 'javascript' },
+        },
       ],
       runs: [{ id: 'r-c1', type: 'text', value: 'const x = 1;', marks: {} }],
     });
@@ -240,7 +248,11 @@ describe('MobileActionBar: Block options sheet (the moved-off-the-gutter menu)',
     collapseCaret(cellRunNode, 0);
 
     fireEvent.click(container.querySelector('[aria-label="Block options"]'));
-    fireEvent.click([...document.querySelectorAll('.be-mobile-picker-item')].find((el) => el.textContent.includes('Duplicate')));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-mobile-picker-item')].find((el) =>
+        el.textContent.includes('Duplicate'),
+      ),
+    );
 
     const rootIds = store.getBlock('root').contentIds;
     expect(rootIds.length).toBe(3); // p1, original table, duplicated table
@@ -260,7 +272,11 @@ describe('MobileActionBar: Block options sheet (the moved-off-the-gutter menu)',
 
     fireEvent.click(container.querySelector('[aria-label="Block options"]'));
     expect(container.ownerDocument.querySelector('.be-modal-sheet')).not.toBeNull();
-    fireEvent.click([...document.querySelectorAll('.be-mobile-picker-item')].find((el) => el.textContent.includes('Delete')));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-mobile-picker-item')].find((el) =>
+        el.textContent.includes('Delete'),
+      ),
+    );
 
     expect(store.getBlock('root').contentIds).toEqual(['p1']);
     expect(document.querySelector('.be-modal-sheet')).toBeNull();

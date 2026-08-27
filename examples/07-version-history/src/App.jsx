@@ -33,7 +33,11 @@ function makeInitialDoc() {
 }
 
 export function App() {
-  const editor = useEditor({ doc: makeInitialDoc(), registerBlocks: registerBuiltInBlocks, currentUserId: CURRENT_USER_ID });
+  const editor = useEditor({
+    doc: makeInitialDoc(),
+    registerBlocks: registerBuiltInBlocks,
+    currentUserId: CURRENT_USER_ID,
+  });
 
   return (
     <div style={{ maxWidth: 900, margin: '40px auto', padding: '0 24px' }}>
@@ -41,8 +45,9 @@ export function App() {
         <h1 style={{ margin: 0, fontSize: 20 }}>Version history demo</h1>
       </div>
       <p style={{ color: '#666', fontSize: 14 }}>
-        Type something, then pause for {IDLE_MS / 1000}s — a version is saved automatically, attributed to{' '}
-        <code>{CURRENT_USER_ID}</code>. Click "Version history" to browse, preview, and restore past versions.
+        Type something, then pause for {IDLE_MS / 1000}s — a version is saved automatically,
+        attributed to <code>{CURRENT_USER_ID}</code>. Click "Version history" to browse, preview,
+        and restore past versions.
       </p>
       <NoteloomEditor editor={editor}>
         <div style={{ position: 'fixed', top: 24, right: 24 }}>

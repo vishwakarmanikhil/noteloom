@@ -30,7 +30,8 @@ const PROVIDERS = [
   {
     name: 'figma',
     test: /figma\.com\/(?:file|design|proto)\/[\w-]+/,
-    embed: (_m, url) => `https://www.figma.com/embed?embed_host=noteloom&url=${encodeURIComponent(url)}`,
+    embed: (_m, url) =>
+      `https://www.figma.com/embed?embed_host=noteloom&url=${encodeURIComponent(url)}`,
   },
   {
     name: 'codepen',

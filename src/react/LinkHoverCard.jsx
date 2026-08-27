@@ -61,7 +61,9 @@ export function LinkHoverCard({ containerRef, store }) {
       const run = store.getRun(runId);
       if (!run?.marks?.link) return;
       clearHideTimer();
-      setHovered((prev) => (prev?.runId === runId ? prev : { runId, rect: runEl.getBoundingClientRect() }));
+      setHovered((prev) =>
+        prev?.runId === runId ? prev : { runId, rect: runEl.getBoundingClientRect() },
+      );
     };
     const handleMouseOut = () => scheduleHide();
 
@@ -86,7 +88,9 @@ export function LinkHoverCard({ containerRef, store }) {
       if (!hovered) return;
       const run = store.getRun(hovered.runId);
       if (!run) return;
-      store.applyOperation(updateRun(hovered.runId, { marks: { ...run.marks, link: { href, target } } }));
+      store.applyOperation(
+        updateRun(hovered.runId, { marks: { ...run.marks, link: { href, target } } }),
+      );
       closeModal();
     },
     [hovered, store, closeModal],
@@ -132,7 +136,13 @@ export function LinkHoverCard({ containerRef, store }) {
               >
                 {link.href}
               </a>
-              <button type="button" className="be-link-hover-card-btn" onClick={openModal} aria-label="Edit link" title="Edit link">
+              <button
+                type="button"
+                className="be-link-hover-card-btn"
+                onClick={openModal}
+                aria-label="Edit link"
+                title="Edit link"
+              >
                 <PencilIcon size={13} />
               </button>
               <button

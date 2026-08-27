@@ -7,7 +7,11 @@ import { FieldTypeEditorModal } from '../../src/inlineTypes/customSelect/FieldTy
 import { addFieldType } from '../../src/store/operations.js';
 
 function makeDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function Harness() {
@@ -43,10 +47,16 @@ describe('FieldTypeEditorModal: create flow', () => {
     fireEvent.click(getByText('open-create'));
     expect(document.querySelector('.be-modal-title').textContent).toBe('New field type');
 
-    fireEvent.change(document.querySelector('input[placeholder="e.g. Priority, Status…"]'), { target: { value: 'Priority' } });
-    fireEvent.change(document.querySelector('input[placeholder="New option…"]'), { target: { value: 'Low' } });
+    fireEvent.change(document.querySelector('input[placeholder="e.g. Priority, Status…"]'), {
+      target: { value: 'Priority' },
+    });
+    fireEvent.change(document.querySelector('input[placeholder="New option…"]'), {
+      target: { value: 'Low' },
+    });
     fireEvent.click(document.querySelector('.be-table-header-menu-option-add'));
-    fireEvent.change(document.querySelector('input[placeholder="New option…"]'), { target: { value: 'High' } });
+    fireEvent.change(document.querySelector('input[placeholder="New option…"]'), {
+      target: { value: 'High' },
+    });
     fireEvent.click(document.querySelector('.be-table-header-menu-option-add'));
 
     fireEvent.click(document.querySelector('.be-modal-save'));
@@ -68,7 +78,9 @@ describe('FieldTypeEditorModal: create flow', () => {
     const { getByText } = renderHarness(store);
 
     fireEvent.click(getByText('open-create'));
-    fireEvent.change(document.querySelector('input[placeholder="e.g. Priority, Status…"]'), { target: { value: 'Draft' } });
+    fireEvent.change(document.querySelector('input[placeholder="e.g. Priority, Status…"]'), {
+      target: { value: 'Draft' },
+    });
     fireEvent.click(document.querySelector('.be-modal-cancel'));
 
     expect(store.getFieldTypes()).toEqual([]);
@@ -96,10 +108,16 @@ describe('FieldTypeEditorModal: edit flow', () => {
 
     fireEvent.click(getByText('open-edit'));
     expect(document.querySelector('.be-modal-title').textContent).toBe('Edit field type');
-    expect(document.querySelector('input[placeholder="e.g. Priority, Status…"]').value).toBe('Priority');
-    expect(document.querySelectorAll('.be-table-header-menu-option-row').length).toBeGreaterThanOrEqual(1);
+    expect(document.querySelector('input[placeholder="e.g. Priority, Status…"]').value).toBe(
+      'Priority',
+    );
+    expect(
+      document.querySelectorAll('.be-table-header-menu-option-row').length,
+    ).toBeGreaterThanOrEqual(1);
 
-    fireEvent.change(document.querySelector('input[placeholder="e.g. Priority, Status…"]'), { target: { value: 'Urgency' } });
+    fireEvent.change(document.querySelector('input[placeholder="e.g. Priority, Status…"]'), {
+      target: { value: 'Urgency' },
+    });
     fireEvent.click(document.querySelector('.be-modal-save'));
 
     expect(store.getFieldType('ft1').label).toBe('Urgency');

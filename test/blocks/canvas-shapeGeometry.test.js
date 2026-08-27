@@ -80,7 +80,7 @@ describe('distanceToSegment / pointNearSegment', () => {
     expect(distanceToSegment(50, 10, 0, 0, 100, 0)).toBeCloseTo(10);
   });
 
-  it('clamps to the nearest endpoint beyond the segment\'s ends, not the infinite line', () => {
+  it("clamps to the nearest endpoint beyond the segment's ends, not the infinite line", () => {
     expect(distanceToSegment(150, 0, 0, 0, 100, 0)).toBeCloseTo(50); // 50 past the (100,0) end
     expect(distanceToSegment(-30, 0, 0, 0, 100, 0)).toBeCloseTo(30); // before the (0,0) start
   });
@@ -101,7 +101,7 @@ describe('arrowheadPoints', () => {
     expect(tip).toEqual([100, 0]);
   });
 
-  it('is symmetric around the segment\'s own direction for a horizontal arrow', () => {
+  it("is symmetric around the segment's own direction for a horizontal arrow", () => {
     const [, back1, back2] = arrowheadPoints(0, 0, 100, 0, 20);
     // both back corners sit at the same x (behind the tip along the direction of travel), mirrored in y
     expect(back1[0]).toBeCloseTo(back2[0]);
@@ -170,7 +170,7 @@ describe('pointInPolygon', () => {
     expect(pointInPolygon(150, 150, square)).toBe(false);
   });
 
-  it('correctly excludes a point inside a diamond\'s bounding box but outside the diamond itself — the whole reason this replaces the bounding-box fallback', () => {
+  it("correctly excludes a point inside a diamond's bounding box but outside the diamond itself — the whole reason this replaces the bounding-box fallback", () => {
     const rect = { x: 0, y: 0, width: 100, height: 100 };
     const diamond = diamondPoints(rect);
     // (5,5) is in the box's top-left corner region — inside the bbox, but well outside the diamond (whose nearest edge there runs from (50,0) to (0,50))

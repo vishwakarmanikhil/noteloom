@@ -24,7 +24,10 @@ const UNWRAP_WHEN_SOLE_CHILD_EMPTIED = new Set(['callout']);
 export const MERGEABLE_TEXT_TYPES = new Set(['paragraph', 'heading', 'blockquote']);
 
 export function canMergeTypes(prevType, blockType) {
-  return prevType === blockType || (MERGEABLE_TEXT_TYPES.has(prevType) && MERGEABLE_TEXT_TYPES.has(blockType));
+  return (
+    prevType === blockType ||
+    (MERGEABLE_TEXT_TYPES.has(prevType) && MERGEABLE_TEXT_TYPES.has(blockType))
+  );
 }
 
 /**
@@ -66,7 +69,9 @@ export function mergeWithPreviousOrDelete(store, blockId) {
 
   const parent = store.getBlock(block.parentId);
   const index = parent.contentIds.indexOf(blockId);
-  const isEmpty = block.contentIds.length === 0 || (block.contentIds.length === 1 && isBlankRun(store, block.contentIds[0]));
+  const isEmpty =
+    block.contentIds.length === 0 ||
+    (block.contentIds.length === 1 && isBlankRun(store, block.contentIds[0]));
 
   if (index <= 0) {
     if (!isEmpty) return null; // real content, nothing before it: no-op, as every other editor does
@@ -145,7 +150,8 @@ function unwrapEmptyContainer(store, container) {
   if (!grandParent) return null;
   const idx = grandParent.contentIds.indexOf(container.id);
   const prevId = idx > 0 ? grandParent.contentIds[idx - 1] : null;
-  const nextId = idx !== -1 && idx < grandParent.contentIds.length - 1 ? grandParent.contentIds[idx + 1] : null;
+  const nextId =
+    idx !== -1 && idx < grandParent.contentIds.length - 1 ? grandParent.contentIds[idx + 1] : null;
 
   applyOps(store, [removeBlock(container.id)]);
   const fallbackId = ensureRootNonEmpty(store);

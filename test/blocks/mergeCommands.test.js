@@ -54,7 +54,13 @@ describe('mergeWithPreviousOrDelete', () => {
     const store = new EditorStore({
       rootId: 'root',
       blocks: [
-        { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'divider1', 'p2'], props: {} },
+        {
+          id: 'root',
+          type: 'page',
+          parentId: null,
+          contentIds: ['p1', 'divider1', 'p2'],
+          props: {},
+        },
         { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
         { id: 'divider1', type: 'divider', parentId: 'root', contentIds: [], props: {} },
         { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: ['r2'], props: {} },

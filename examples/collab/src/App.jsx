@@ -77,7 +77,10 @@ function PeerCursors({ session }) {
         const host = document.querySelector(`[data-run-id="${data.runId}"]`);
         const textNode = host?.firstChild;
         if (!textNode) return null;
-        const safeOffset = Math.max(0, Math.min(data.offset ?? 0, textNode.textContent?.length ?? 0));
+        const safeOffset = Math.max(
+          0,
+          Math.min(data.offset ?? 0, textNode.textContent?.length ?? 0),
+        );
         const range = document.createRange();
         try {
           range.setStart(textNode, safeOffset);
@@ -92,7 +95,13 @@ function PeerCursors({ session }) {
           <div
             key={peerId}
             className="collab-peer-cursor"
-            style={{ position: 'fixed', top: rect.top, left: rect.left, height: rect.height || '1em', background: color }}
+            style={{
+              position: 'fixed',
+              top: rect.top,
+              left: rect.left,
+              height: rect.height || '1em',
+              background: color,
+            }}
           >
             <span className="collab-peer-cursor-label" style={{ background: color }}>
               {peerId.slice(0, 8)}
@@ -115,12 +124,23 @@ function makeStarterDoc() {
     rootId: 'root',
     blocks: [
       { id: 'root', type: 'page', parentId: null, contentIds: ['title', 'body'], props: {} },
-      { id: 'title', type: 'heading', parentId: 'root', contentIds: ['rTitle'], props: { level: 2 } },
+      {
+        id: 'title',
+        type: 'heading',
+        parentId: 'root',
+        contentIds: ['rTitle'],
+        props: { level: 2 },
+      },
       { id: 'body', type: 'paragraph', parentId: 'root', contentIds: ['rBody'], props: {} },
     ],
     runs: [
       { id: 'rTitle', type: 'text', value: 'Open this page in a second tab', marks: {} },
-      { id: 'rBody', type: 'text', value: 'Type here — edits sync live to every other tab connected to this room.', marks: {} },
+      {
+        id: 'rBody',
+        type: 'text',
+        value: 'Type here — edits sync live to every other tab connected to this room.',
+        marks: {},
+      },
     ],
   };
 }
@@ -153,7 +173,9 @@ function Toolbar() {
       <button type="button" disabled={!history.canRedo} onClick={history.redo}>
         Redo
       </button>
-      <span className="collab-toolbar-note">Undo only ever affects your own edits — never a peer's.</span>
+      <span className="collab-toolbar-note">
+        Undo only ever affects your own edits — never a peer's.
+      </span>
     </div>
   );
 }
@@ -179,7 +201,13 @@ function EditorSurface({ session }) {
   }, [session]);
 
   return (
-    <div ref={containerRef} className="collab-surface" onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
+    <div
+      ref={containerRef}
+      className="collab-surface"
+      onCopy={onCopy}
+      onCut={onCut}
+      onPaste={onPaste}
+    >
       <Toolbar />
       <BlockChildren parentId="root" />
       <SlashMenu
@@ -242,7 +270,9 @@ export function App() {
       // always agrees on which one that is, with no extra coordination.
       const initiator = signaling.localPeerId > remotePeerId;
       const peerConnection = session.connect(remotePeerId, { initiator });
-      peerConnection.onOpen(() => setConnectedPeerIds((ids) => [...new Set([...ids, remotePeerId])]));
+      peerConnection.onOpen(() =>
+        setConnectedPeerIds((ids) => [...new Set([...ids, remotePeerId])]),
+      );
       peerConnection.onClose(() => {
         knownPeerIds.delete(remotePeerId);
         setConnectedPeerIds((ids) => ids.filter((id) => id !== remotePeerId));
@@ -319,10 +349,19 @@ export function App() {
   }, []);
 
   return (
-    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store}>
+    <EditorProvider
+      store={store}
+      registry={registry}
+      inlineRegistry={inlineRegistry}
+      history={store}
+    >
       <div className="collab-page">
         <ConnectionStatus localPeerId={signaling.localPeerId} connectedPeerIds={connectedPeerIds} />
-        {isReady ? <EditorSurface session={session} /> : <p className="collab-loading">Joining room…</p>}
+        {isReady ? (
+          <EditorSurface session={session} />
+        ) : (
+          <p className="collab-loading">Joining room…</p>
+        )}
       </div>
     </EditorProvider>
   );

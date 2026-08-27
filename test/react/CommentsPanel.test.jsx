@@ -41,7 +41,9 @@ describe('CommentsPanel', () => {
     store.applyOperation(resolveComment(idA, true));
 
     const { container } = renderPanel(store, { authorId: 'alice' });
-    const texts = [...container.querySelectorAll('.be-comment-message-text')].map((el) => el.textContent);
+    const texts = [...container.querySelectorAll('.be-comment-message-text')].map(
+      (el) => el.textContent,
+    );
     expect(texts).toEqual(['B: unresolved', 'A: resolved']);
   });
 
@@ -50,8 +52,12 @@ describe('CommentsPanel', () => {
     const id = addComment(store, range, { authorId: 'alice', text: 'first' });
     const { container, rerender } = renderPanel(store, { authorId: 'bob' });
 
-    fireEvent.click([...container.querySelectorAll('button')].find((b) => b.textContent === 'Reply'));
-    fireEvent.change(container.querySelector('.be-comment-composer-textarea'), { target: { value: 'a reply' } });
+    fireEvent.click(
+      [...container.querySelectorAll('button')].find((b) => b.textContent === 'Reply'),
+    );
+    fireEvent.change(container.querySelector('.be-comment-composer-textarea'), {
+      target: { value: 'a reply' },
+    });
     fireEvent.click(container.querySelector('.be-comment-composer-submit'));
     expect(store.getComment(id).messages.map((m) => m.text)).toEqual(['first', 'a reply']);
 
@@ -60,7 +66,9 @@ describe('CommentsPanel', () => {
         <CommentsPanel authorId="bob" />
       </EditorProvider>,
     );
-    fireEvent.click([...container.querySelectorAll('button')].find((b) => b.textContent === 'Resolve'));
+    fireEvent.click(
+      [...container.querySelectorAll('button')].find((b) => b.textContent === 'Resolve'),
+    );
     expect(store.getComment(id).resolved).toBe(true);
 
     fireEvent.click(container.querySelector('.be-comment-thread-delete'));

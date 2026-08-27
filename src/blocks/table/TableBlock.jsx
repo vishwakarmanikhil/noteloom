@@ -1,10 +1,19 @@
 import { useCallback, useMemo, useState } from 'react';
 import { BlockChildren } from '../../react/BlockChildren.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useBlockClassName, useInlineRegistry } from '../../react/EditorProvider.jsx';
+import {
+  useEditorStore,
+  useBlockClassName,
+  useInlineRegistry,
+} from '../../react/EditorProvider.jsx';
 import { insertRowAfter } from './tableEditCommands.js';
 import { resolveColumns } from './tableColumns.js';
-import { runPlainText, computeColumnAggregate, formatAggregateValue, AGGREGATE_SHORT_LABELS } from './tableView.js';
+import {
+  runPlainText,
+  computeColumnAggregate,
+  formatAggregateValue,
+  AGGREGATE_SHORT_LABELS,
+} from './tableView.js';
 import { TableHeaderRow } from './TableHeaderRow.jsx';
 import { PlusIcon } from '../../react/icons.jsx';
 
@@ -20,7 +29,11 @@ export function TableBlock({ id }) {
   // a documented v1 limitation, not an oversight.
   const [filters, setFilters] = useState({});
   const handleFilterChange = useCallback((columnId, value) => {
-    setFilters((prev) => (value ? { ...prev, [columnId]: value } : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== columnId))));
+    setFilters((prev) =>
+      value
+        ? { ...prev, [columnId]: value }
+        : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== columnId)),
+    );
   }, []);
 
   const handleAddRow = useCallback(() => {
@@ -98,7 +111,12 @@ export function TableBlock({ id }) {
             ))}
             <col className="be-table-header-spacer-col" />
           </colgroup>
-          <TableHeaderRow tableId={id} columns={columns} filters={filters} onFilterChange={handleFilterChange} />
+          <TableHeaderRow
+            tableId={id}
+            columns={columns}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+          />
           <tbody>
             <BlockChildren parentId={id} filterIds={visibleRowIds} />
           </tbody>
@@ -107,12 +125,19 @@ export function TableBlock({ id }) {
               <tr className="be-table-footer-row">
                 {columns.map((column, colIndex) => {
                   const runs = visibleRowIds.map((rowId) => cellRun(rowId, colIndex));
-                  const value = computeColumnAggregate(runs, column.type, column.aggregate, inlineRegistry);
+                  const value = computeColumnAggregate(
+                    runs,
+                    column.type,
+                    column.aggregate,
+                    inlineRegistry,
+                  );
                   return (
                     <td key={column.id} className="be-table-footer-cell">
                       {value != null && (
                         <>
-                          <span className="be-table-footer-label">{AGGREGATE_SHORT_LABELS[column.aggregate]}</span>
+                          <span className="be-table-footer-label">
+                            {AGGREGATE_SHORT_LABELS[column.aggregate]}
+                          </span>
                           {formatAggregateValue(value)}
                         </>
                       )}
@@ -124,7 +149,12 @@ export function TableBlock({ id }) {
             </tfoot>
           )}
         </table>
-        <button type="button" className="be-table-add-row" contentEditable={false} onClick={handleAddRow}>
+        <button
+          type="button"
+          className="be-table-add-row"
+          contentEditable={false}
+          onClick={handleAddRow}
+        >
           <PlusIcon size={14} /> Add row
         </button>
       </div>

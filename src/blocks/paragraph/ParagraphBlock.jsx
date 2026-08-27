@@ -1,8 +1,15 @@
 import { useCallback } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
-import { insertSiblingSplitAtCaretAndFocus, insertSiblingAfterAndFocus } from '../shared/blockCommands.js';
+import {
+  useEditorStore,
+  useSelectedBlock,
+  useBlockClassName,
+} from '../../react/EditorProvider.jsx';
+import {
+  insertSiblingSplitAtCaretAndFocus,
+  insertSiblingAfterAndFocus,
+} from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
 import { isRunsEmpty } from '../shared/blockEmpty.js';
@@ -36,7 +43,12 @@ export function ParagraphBlock({ id }) {
       return;
     }
 
-    insertSiblingSplitAtCaretAndFocus(store, id, block?.contentIds ?? [], createTextLeafBlock('paragraph'));
+    insertSiblingSplitAtCaretAndFocus(
+      store,
+      id,
+      block?.contentIds ?? [],
+      createTextLeafBlock('paragraph'),
+    );
   }, [store, id, block]);
 
   const handleBackspaceAtStart = useCallback(() => {
@@ -64,7 +76,10 @@ export function ParagraphBlock({ id }) {
   const handleArrowUp = useCallback(() => focusAdjacentBlock(store, id, 'up'), [store, id]);
   const handleArrowDown = useCallback(() => focusAdjacentBlock(store, id, 'down'), [store, id]);
 
-  const handleAutoformat = useCallback((runs) => applyMarkdownShortcut(store, id, runs), [store, id]);
+  const handleAutoformat = useCallback(
+    (runs) => applyMarkdownShortcut(store, id, runs),
+    [store, id],
+  );
   const className = useBlockClassName('be-paragraph', block);
 
   if (!block) return null;

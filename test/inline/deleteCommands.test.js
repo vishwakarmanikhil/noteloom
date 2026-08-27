@@ -17,7 +17,12 @@ describe('deleteRunRangeInBlock', () => {
 
   it('deletes a middle slice of a single run and leaves the caret at the join', () => {
     const store = new EditorStore(makeDoc());
-    const result = deleteRunRangeInBlock(store, 'p1', { startRunId: 'r1', startOffset: 5, endRunId: 'r1', endOffset: 6 });
+    const result = deleteRunRangeInBlock(store, 'p1', {
+      startRunId: 'r1',
+      startOffset: 5,
+      endRunId: 'r1',
+      endOffset: 6,
+    });
 
     const contentIds = store.getBlock('p1').contentIds;
     expect(contentIds.length).toBe(1);
@@ -38,7 +43,12 @@ describe('deleteRunRangeInBlock', () => {
       ],
     });
 
-    deleteRunRangeInBlock(store, 'p1', { startRunId: 'r1', startOffset: 2, endRunId: 'r2', endOffset: 3 });
+    deleteRunRangeInBlock(store, 'p1', {
+      startRunId: 'r1',
+      startOffset: 2,
+      endRunId: 'r2',
+      endOffset: 3,
+    });
 
     const contentIds = store.getBlock('p1').contentIds;
     const text = contentIds.map((id) => store.getRun(id).value).join('');
@@ -50,7 +60,13 @@ describe('deleteRunRangeInBlock', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
-        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1', 'chip', 'r2'], props: {} },
+        {
+          id: 'p1',
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: ['r1', 'chip', 'r2'],
+          props: {},
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'before ', marks: {} },
@@ -59,7 +75,12 @@ describe('deleteRunRangeInBlock', () => {
       ],
     });
 
-    deleteRunRangeInBlock(store, 'p1', { startRunId: 'chip', startOffset: 0, endRunId: 'chip', endOffset: 1 });
+    deleteRunRangeInBlock(store, 'p1', {
+      startRunId: 'chip',
+      startOffset: 0,
+      endRunId: 'chip',
+      endOffset: 1,
+    });
 
     const contentIds = store.getBlock('p1').contentIds;
     expect(contentIds).toEqual(['r1', 'r2']);
@@ -67,7 +88,12 @@ describe('deleteRunRangeInBlock', () => {
 
   it('deleting everything in the block falls back to one blank run, not zero', () => {
     const store = new EditorStore(makeDoc());
-    const result = deleteRunRangeInBlock(store, 'p1', { startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 11 });
+    const result = deleteRunRangeInBlock(store, 'p1', {
+      startRunId: 'r1',
+      startOffset: 0,
+      endRunId: 'r1',
+      endOffset: 11,
+    });
 
     const contentIds = store.getBlock('p1').contentIds;
     expect(contentIds.length).toBe(1);
@@ -77,7 +103,12 @@ describe('deleteRunRangeInBlock', () => {
 
   it('is one atomic undo step through History', () => {
     const store = new History(new EditorStore(makeDoc()));
-    deleteRunRangeInBlock(store, 'p1', { startRunId: 'r1', startOffset: 5, endRunId: 'r1', endOffset: 6 });
+    deleteRunRangeInBlock(store, 'p1', {
+      startRunId: 'r1',
+      startOffset: 5,
+      endRunId: 'r1',
+      endOffset: 6,
+    });
     expect(store.getRun(store.getBlock('p1').contentIds[0]).value).toBe('helloworld');
 
     store.undo();
@@ -137,7 +168,13 @@ describe('deleteOverBlockRange', () => {
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'li1'], props: {} },
         { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r2'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r2'] },
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'hello world', marks: {} },

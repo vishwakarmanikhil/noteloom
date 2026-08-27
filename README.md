@@ -96,8 +96,8 @@ You don't need to import any CSS. The moment `<NoteloomEditor>` mounts, it injec
 
 ```css
 :root {
-  --noteloom-accent: #16a34a;      /* swap the indigo accent for green */
-  --noteloom-radius-md: 4px;       /* sharper corners */
+  --noteloom-accent: #16a34a; /* swap the indigo accent for green */
+  --noteloom-radius-md: 4px; /* sharper corners */
   --noteloom-font: 'Inter', sans-serif;
 }
 ```
@@ -112,7 +112,7 @@ Dark mode follows `prefers-color-scheme` automatically; to control it explicitly
 
 No wrapper `<div>` is added unless you pass one of these props, so existing usage is unaffected either way.
 
-**Opt out entirely** with `theme="none"` — nothing gets injected, and you take full responsibility for styling every `.be-*` class yourself (or import `noteloom/style.css` manually if you just want control over *when* it loads, e.g. before your own overrides in a specific `<link>` order):
+**Opt out entirely** with `theme="none"` — nothing gets injected, and you take full responsibility for styling every `.be-*` class yourself (or import `noteloom/style.css` manually if you just want control over _when_ it loads, e.g. before your own overrides in a specific `<link>` order):
 
 ```jsx
 <NoteloomEditor editor={editor} theme="none" />
@@ -123,7 +123,10 @@ No wrapper `<div>` is added unless you pass one of these props, so existing usag
 **Customize individual blocks**, not just the root, via `getBlockClassName`:
 
 ```jsx
-<NoteloomEditor editor={editor} getBlockClassName={(block) => (block.type === 'callout' ? 'my-callout' : undefined)} />
+<NoteloomEditor
+  editor={editor}
+  getBlockClassName={(block) => (block.type === 'callout' ? 'my-callout' : undefined)}
+/>
 ```
 
 Whatever string you return is appended onto that block's own root element's class list (`be-paragraph my-callout`, alongside the fixed base class) — `block` is the real block object (`type`, `id`, `props`), so you can target a type, a specific id, or a prop value (e.g. every red callout) as precisely as you like.
@@ -133,11 +136,23 @@ Whatever string you return is appended onto that block's own root element's clas
 `useEditor()` registers every built-in block/inline type by default — the fastest way to a fully-featured editor. If you'd rather ship only what you actually use, every built-in block/inline type is also exported individually, and `registerBlocks`/`registerInlineTypes` register just the ones you name, via `useEditor()`'s own `registerBlocks`/`registerInlineTypes` options:
 
 ```jsx
-import { useEditor, NoteloomEditor, registerBlocks, paragraphBlockType, headingBlockType, TABLE_BLOCKS } from 'noteloom';
+import {
+  useEditor,
+  NoteloomEditor,
+  registerBlocks,
+  paragraphBlockType,
+  headingBlockType,
+  TABLE_BLOCKS,
+} from 'noteloom';
 
 function Editor() {
   const editor = useEditor({
-    registerBlocks: (registry) => registerBlocks(registry, { paragraph: paragraphBlockType, heading: headingBlockType, ...TABLE_BLOCKS }),
+    registerBlocks: (registry) =>
+      registerBlocks(registry, {
+        paragraph: paragraphBlockType,
+        heading: headingBlockType,
+        ...TABLE_BLOCKS,
+      }),
   });
   return <NoteloomEditor editor={editor} />;
 }
@@ -168,7 +183,12 @@ function Editor() {
 `createSelectFieldType(config)` builds a full, ready-to-register inline type from a plain config object — this is how you add your own named dropdown ("Assignee", "Status", "Priority", ...) **without writing a component**:
 
 ```jsx
-import { useEditor, NoteloomEditor, registerBuiltInInlineTypes, createSelectFieldType } from 'noteloom';
+import {
+  useEditor,
+  NoteloomEditor,
+  registerBuiltInInlineTypes,
+  createSelectFieldType,
+} from 'noteloom';
 
 const statusFieldType = createSelectFieldType({
   type: 'status', // must match the key you register it under
@@ -195,7 +215,7 @@ function Editor() {
 
 `examples/03-custom-field-type/` is a complete runnable version of this pattern.
 
-Inserting one from "/" or "@" opens its picker immediately, focused and ready to search — no second click needed to actually pick something right after inserting it. Picking a value then moves focus straight on to the next block, so filling in a form-like document ("Diagnosis: [pick]", then the next line, then the next...) is a smooth insert → pick → keep-typing flow. Reopening an *existing* chip elsewhere to change its value later doesn't also jump away — this only applies right after a fresh insertion.
+Inserting one from "/" or "@" opens its picker immediately, focused and ready to search — no second click needed to actually pick something right after inserting it. Picking a value then moves focus straight on to the next block, so filling in a form-like document ("Diagnosis: [pick]", then the next line, then the next...) is a smooth insert → pick → keep-typing flow. Reopening an _existing_ chip elsewhere to change its value later doesn't also jump away — this only applies right after a fresh insertion.
 
 `options` can also be a **function** instead of a plain array — `(query) => Option[] | Promise<Option[]>` — for a real database/API-backed search (React Select's `loadOptions`, essentially):
 
@@ -247,7 +267,13 @@ Once at least one is created this way, a table column set to "Select" type gets 
 ## Exporting the document (JSON / HTML / Markdown / Word / PDF / plain text)
 
 ```js
-import { exportDocumentJSON, exportDocumentHTML, exportDocumentMarkdown, exportDocumentWordHTML, exportDocumentText } from 'noteloom';
+import {
+  exportDocumentJSON,
+  exportDocumentHTML,
+  exportDocumentMarkdown,
+  exportDocumentWordHTML,
+  exportDocumentText,
+} from 'noteloom';
 
 exportDocumentJSON(store); // a JSON *string* — JSON.parse() it to get { version, rootId, blocks, runs }, usable as useEditor({ doc })
 exportDocumentHTML(store, registry, inlineRegistry);
@@ -261,7 +287,7 @@ Or mount the ready-made button + modal instead of wiring your own UI:
 ```jsx
 import { DocumentExportButton } from 'noteloom';
 
-<DocumentExportButton label="View source" />
+<DocumentExportButton label="View source" />;
 ```
 
 It opens a modal with JSON/Simple JSON/HTML/Markdown/Text tabs (reading live from the store every time it opens), a Copy button, and two direct-download actions:
@@ -273,7 +299,7 @@ Useful for debugging, or as a starting point for a real "export" feature.
 
 ### A simpler JSON shape for storage/API/CRUD use
 
-`exportDocumentJSON()` above returns the *internal engine format* — the same normalized, id-referenced graph `EditorStore` operates on (blocks reference other blocks by id; text lives in a separate `runs` collection, not embedded inline). That shape is what makes per-run reactivity, O(1) structural edits, and real nesting (toggle lists, tables, inline atomic chips) work — it's not going to look like a simple flat document, on purpose.
+`exportDocumentJSON()` above returns the _internal engine format_ — the same normalized, id-referenced graph `EditorStore` operates on (blocks reference other blocks by id; text lives in a separate `runs` collection, not embedded inline). That shape is what makes per-run reactivity, O(1) structural edits, and real nesting (toggle lists, tables, inline atomic chips) work — it's not going to look like a simple flat document, on purpose.
 
 If you just want something simpler to store, send over an API, or hand-edit — self-contained blocks in an array, `children` for nesting, no id-references to resolve — use the second, optional export/import pair instead:
 
@@ -305,9 +331,9 @@ const editor2 = useEditor({ doc }); // or `new EditorStore(doc)` directly outsid
 
 Rich text (`data.text`) is an HTML string — the exact same per-run serialization every block type's own clipboard-copy `toHTML` already produces, so marks (bold/italic/underline/strike/code/sub/superscript/color/highlight/link) and atomic inline chips (checkbox/date/select/mention) round-trip through it the same way copy/paste already does. `table` is flattened specially (`data.columns` + `data.rows`, a 2D array) rather than exposing the internal table/row/cell block chain — the single biggest simplification versus the internal shape. Block/run ids are preserved on both export and import (useful for referencing/updating a specific block from an external system).
 
-One existing, by-design limitation carried over from clipboard paste: an atomic inline type's *core* value round-trips (a checkbox's checked state + label, a date's ISO value, a select's chosen value + label) but its full `options` list does not — only the currently-selected option survives, the same as pasting one of these chips into another instance of the editor today.
+One existing, by-design limitation carried over from clipboard paste: an atomic inline type's _core_ value round-trips (a checkbox's checked state + label, a date's ISO value, a select's chosen value + label) but its full `options` list does not — only the currently-selected option survives, the same as pasting one of these chips into another instance of the editor today.
 
-This is purely an additive, alternate *interchange* format — the internal engine format above is unaffected either way, and this is not a replacement for it.
+This is purely an additive, alternate _interchange_ format — the internal engine format above is unaffected either way, and this is not a replacement for it.
 
 ## Templates
 
@@ -316,7 +342,12 @@ Two kinds — a **document template** seeds a whole new editor (`useEditor({ doc
 **Block templates — reusable snippets, insertable via "/":**
 
 ```js
-import { EditorStore, captureBlockTemplate, registerBlockTemplates, registerBuiltInBlocks } from 'noteloom';
+import {
+  EditorStore,
+  captureBlockTemplate,
+  registerBlockTemplates,
+  registerBuiltInBlocks,
+} from 'noteloom';
 
 // Build once (a throwaway store is fine — only its content is captured):
 const draftStore = new EditorStore({
@@ -324,7 +355,13 @@ const draftStore = new EditorStore({
   blocks: [
     { id: 'root', type: 'page', parentId: null, contentIds: ['h1', 'li1'], props: {} },
     { id: 'h1', type: 'heading', parentId: 'root', contentIds: ['r1'], props: { level: 2 } },
-    { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: true, titleRunIds: ['r2'] } },
+    {
+      id: 'li1',
+      type: 'listItem',
+      parentId: 'root',
+      contentIds: [],
+      props: { ordered: true, titleRunIds: ['r2'] },
+    },
   ],
   runs: [
     { id: 'r1', type: 'text', value: 'Meeting agenda', marks: {} },
@@ -336,19 +373,28 @@ const agendaSnippet = captureBlockTemplate(draftStore, ['h1', 'li1']);
 const editor = useEditor({
   registerBlocks: (registry) => {
     registerBuiltInBlocks(registry);
-    registerBlockTemplates(registry, [{ id: 'agenda', label: 'Meeting agenda', keywords: ['agenda'], roots: agendaSnippet.roots }]);
+    registerBlockTemplates(registry, [
+      { id: 'agenda', label: 'Meeting agenda', keywords: ['agenda'], roots: agendaSnippet.roots },
+    ]);
   },
 });
 ```
 
-Typing "/agenda" now shows "Meeting agenda" in the slash menu, same as any built-in block — no changes needed to `SlashMenu`/`useSlashMenuTrigger`, since `registerBlockTemplates` registers under the hood exactly the way a real block type does (just one that's never actually rendered — only its *captured content*, which already has real block types, gets inserted). `insertBlockTemplate(store, template, { parentId, index })` does the same insertion directly, if you want a button instead of/alongside "/".
+Typing "/agenda" now shows "Meeting agenda" in the slash menu, same as any built-in block — no changes needed to `SlashMenu`/`useSlashMenuTrigger`, since `registerBlockTemplates` registers under the hood exactly the way a real block type does (just one that's never actually rendered — only its _captured content_, which already has real block types, gets inserted). `insertBlockTemplate(store, template, { parentId, index })` does the same insertion directly, if you want a button instead of/alongside "/".
 
-**Document templates — starter documents:** no new primitives needed — a document template *is* a `DocumentJSON`, so `useEditor({ doc: someTemplate.doc })` already covers "start a new editor from it." To apply one to an **already-mounted** editor instead, use `applyDocumentTemplate(store, doc)`.
+**Document templates — starter documents:** no new primitives needed — a document template _is_ a `DocumentJSON`, so `useEditor({ doc: someTemplate.doc })` already covers "start a new editor from it." To apply one to an **already-mounted** editor instead, use `applyDocumentTemplate(store, doc)`.
 
 **Saving/browsing a library of templates** (either kind), persisted so it survives reload:
 
 ```jsx
-import { useEditor, NoteloomEditor, useTemplates, TemplatePicker, saveTemplate, exportDocumentJSON } from 'noteloom';
+import {
+  useEditor,
+  NoteloomEditor,
+  useTemplates,
+  TemplatePicker,
+  saveTemplate,
+  exportDocumentJSON,
+} from 'noteloom';
 
 function NewDocumentScreen({ onPick }) {
   const { templates, isLoaded } = useTemplates({ scope: 'document' }); // or 'block', or omit for both
@@ -405,7 +451,14 @@ For the granular API, render the pieces yourself anywhere under an `<EditorProvi
 Pass `onComment` instead of `commentAuthorId` — it's called with the selected range and you decide what happens next (open your own modal, pick the author yourself):
 
 ```jsx
-import { addComment, replyToComment, resolveComment, deleteComment, useComments, resolveMultiRunSelection } from 'noteloom';
+import {
+  addComment,
+  replyToComment,
+  resolveComment,
+  deleteComment,
+  useComments,
+  resolveMultiRunSelection,
+} from 'noteloom';
 
 <NoteloomEditor
   editor={editor}
@@ -432,9 +485,21 @@ function CommentsSidebar({ store }) {
     <ul>
       {comments.map((thread) => (
         <li key={thread.id}>
-          {thread.messages.map((m) => <p key={m.id}>{m.authorId}: {m.text}</p>)}
-          <button onClick={() => replyToComment(store, thread.id, { authorId: currentUser.id, text: '...' })}>Reply</button>
-          <button onClick={() => resolveComment(store, thread.id, !thread.resolved)}>{thread.resolved ? 'Reopen' : 'Resolve'}</button>
+          {thread.messages.map((m) => (
+            <p key={m.id}>
+              {m.authorId}: {m.text}
+            </p>
+          ))}
+          <button
+            onClick={() =>
+              replyToComment(store, thread.id, { authorId: currentUser.id, text: '...' })
+            }
+          >
+            Reply
+          </button>
+          <button onClick={() => resolveComment(store, thread.id, !thread.resolved)}>
+            {thread.resolved ? 'Reopen' : 'Resolve'}
+          </button>
           <button onClick={() => deleteComment(store, thread.id)}>Delete</button>
         </li>
       ))}
@@ -447,7 +512,7 @@ function CommentsSidebar({ store }) {
 
 A comment thread is `{ id, blockId, anchorRunIds, resolved, messages: [{ id, authorId, text, createdAt }] }`. `CommentThreadCard`/`CommentComposer` (the pieces `CommentPopover`/`CommentsPanel` are built from) are exported too, for reusing the built-in look while customizing the surrounding layout.
 
-**Scope, stated plainly:** a thread's own metadata (text, author, replies, resolved flag) is fully collaboration-aware — it broadcasts live to connected peers and undoes/redoes normally. The *highlighted range* it's anchored to is local-only in collaboration for v1: a newly-joining peer sees it correctly (full document snapshots always include it), but an already-connected peer won't see someone else's brand-new highlight appear live until their next resync. This isn't a new gap introduced by comments — every other range-based formatting operation (bold, italic, highlight, ...) already has this exact scope today, since none of them have a CRDT-safe wire representation yet.
+**Scope, stated plainly:** a thread's own metadata (text, author, replies, resolved flag) is fully collaboration-aware — it broadcasts live to connected peers and undoes/redoes normally. The _highlighted range_ it's anchored to is local-only in collaboration for v1: a newly-joining peer sees it correctly (full document snapshots always include it), but an already-connected peer won't see someone else's brand-new highlight appear live until their next resync. This isn't a new gap introduced by comments — every other range-based formatting operation (bold, italic, highlight, ...) already has this exact scope today, since none of them have a CRDT-safe wire representation yet.
 
 `thread.anchorRunIds` is a creation-time hint only, meant for jumping to roughly where a comment was made — it is **not** re-validated after a later formatting edit splits or re-mints run ids in that range. To reliably find where a comment's highlight actually lives right now, look at which runs' `marks.commentIds` include it (exactly what `deleteComment` itself does internally via `removeCommentMarkEverywhere`), not `anchorRunIds`.
 
@@ -540,7 +605,7 @@ window.print(); // Ctrl+P / Cmd+P works too — "Save as PDF" in the print dialo
 
 (`DocumentExportButton`'s own "Print / Save as PDF" button, see the exporting section above, is exactly this call.)
 
-This only cleans up the *editor's* own chrome. A host app's own outer UI (nav bar, sidebar, its own toolbar) needs its own `@media print` rules the same way — see `examples/basic/src/style.css` for a worked example, since that chrome lives entirely outside this package.
+This only cleans up the _editor's_ own chrome. A host app's own outer UI (nav bar, sidebar, its own toolbar) needs its own `@media print` rules the same way — see `examples/basic/src/style.css` for a worked example, since that chrome lives entirely outside this package.
 
 ## Voice typing
 
@@ -560,7 +625,7 @@ function MicButton() {
 }
 ```
 
-No speech-to-text SDK is bundled (same zero-runtime-dependency reasoning as PDF export above) — this is built entirely on the browser's own `SpeechRecognition`/`webkitSpeechRecognition`, so `isSupported` is `false` wherever that API doesn't exist. A command is only recognized when an entire *finalized* spoken utterance (a natural pause before/after, as reported by the Speech API itself) matches a known phrase exactly — see `src/voice/voiceCommands.js` for the full table — so a command word merely mentioned mid-sentence while dictating prose is never misread as a command.
+No speech-to-text SDK is bundled (same zero-runtime-dependency reasoning as PDF export above) — this is built entirely on the browser's own `SpeechRecognition`/`webkitSpeechRecognition`, so `isSupported` is `false` wherever that API doesn't exist. A command is only recognized when an entire _finalized_ spoken utterance (a natural pause before/after, as reported by the Speech API itself) matches a known phrase exactly — see `src/voice/voiceCommands.js` for the full table — so a command word merely mentioned mid-sentence while dictating prose is never misread as a command.
 
 ## Mobile / touch support
 
@@ -570,7 +635,7 @@ Typing "/"/"@" still works on a phone keyboard, but it's not a reliable or disco
 import { MobileActionBar } from 'noteloom';
 
 // next to your other trigger hooks/components, same containerRef:
-<MobileActionBar containerRef={containerRef} />
+<MobileActionBar containerRef={containerRef} />;
 ```
 
 `examples/basic` has this fully wired up (run `npm run dev`, then resize to a narrow viewport or open it on a phone).
@@ -586,7 +651,7 @@ It renders nothing on a mouse/trackpad, and nothing until focus is actually insi
 
 Trigger-menu and `Select` popovers reposition above the caret instead of below it when there isn't room before the keyboard, via `useVirtualKeyboardInset()` (also exported, in case you're positioning your own UI against the keyboard).
 
-**Touch detection deliberately isn't a static `matchMedia('(pointer: coarse)')` check** (see `useCoarsePointer`, also exported) — a touchscreen laptop reports its trackpad as the "primary" pointer even though the touchscreen sitting right there can be used at any moment, so a pure media-query check would never show touch UI on that class of device. Instead, the media query only supplies the *initial* guess (correct pre-interaction, SSR-safe); every real `pointerdown` afterward overrides it with that event's own `pointerType`, so a 2-in-1 laptop correctly shows desktop UI while the trackpad is in use and mobile UI the instant the screen is tapped, live, no reload needed. The same signal is mirrored onto `<html class="be-touch-input">` so plain CSS (the gutter-hiding rule above) reacts to it too, not just `MobileActionBar` itself.
+**Touch detection deliberately isn't a static `matchMedia('(pointer: coarse)')` check** (see `useCoarsePointer`, also exported) — a touchscreen laptop reports its trackpad as the "primary" pointer even though the touchscreen sitting right there can be used at any moment, so a pure media-query check would never show touch UI on that class of device. Instead, the media query only supplies the _initial_ guess (correct pre-interaction, SSR-safe); every real `pointerdown` afterward overrides it with that event's own `pointerType`, so a 2-in-1 laptop correctly shows desktop UI while the trackpad is in use and mobile UI the instant the screen is tapped, live, no reload needed. The same signal is mirrored onto `<html class="be-touch-input">` so plain CSS (the gutter-hiding rule above) reacts to it too, not just `MobileActionBar` itself.
 
 **Not included**: a touch equivalent for dragging in the block gutter to select a range of blocks — most block editors keep that gesture desktop/mouse-only too.
 
@@ -627,14 +692,15 @@ const { isLoaded, save } = usePersistedDocument({
 ```
 
 Lower-level pieces, if `usePersistedDocument`'s all-in-one behavior doesn't fit (a non-React host app, custom load/save timing, etc.):
+
 - `savePersistedDocument(docId, doc)` / `loadPersistedDocument(docId)` / `deletePersistedDocument(docId)` / `listPersistedDocumentIds()` — the raw IndexedDB operations `usePersistedDocument` is built on.
 - `createAutoPersistence({ store, docId, debounceMs, onError })` — just the debounced auto-save half, if you want to handle the initial load yourself. Returns `{ stop, flush }` — `flush()` returns a Promise that resolves once the write actually lands (or immediately if there was nothing pending).
 
-This is standalone — works with a solo, non-collaborating store just as well as one wired to `CollabSession` (a collaborated-on document also gets saved locally, so it survives even after every peer disconnects). Note this only makes the *editing* work offline; if the app itself is loaded from a dev server or web host, opening it for the very first time (or after clearing cache) still needs that host to be reachable once — that's the separate concern the next section covers.
+This is standalone — works with a solo, non-collaborating store just as well as one wired to `CollabSession` (a collaborated-on document also gets saved locally, so it survives even after every peer disconnects). Note this only makes the _editing_ work offline; if the app itself is loaded from a dev server or web host, opening it for the very first time (or after clearing cache) still needs that host to be reachable once — that's the separate concern the next section covers.
 
 ### Offline app shell (PWA)
 
-`usePersistedDocument` makes the *document* offline-capable; it doesn't make the *app itself* loadable with no network — that needs a service worker precaching the HTML/JS/CSS, which is a build-level concern (the exact list of files to cache is whatever your bundler outputs), not something a runtime library can inject. This package doesn't ship a service worker implementation for that reason — instead:
+`usePersistedDocument` makes the _document_ offline-capable; it doesn't make the _app itself_ loadable with no network — that needs a service worker precaching the HTML/JS/CSS, which is a build-level concern (the exact list of files to cache is whatever your bundler outputs), not something a runtime library can inject. This package doesn't ship a service worker implementation for that reason — instead:
 
 - Use a standard Vite PWA setup — [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/) is the common choice, and requires no noteloom-specific configuration; a working example is in `examples/offline-persist/vite.config.js`.
 - `useServiceWorkerUpdate()` (exported from the package) is the one genuinely reusable piece: it watches for a newly-installed service worker sitting in the "waiting" state (the standard signal a fresh build is ready) and gives you a way to activate it —
@@ -684,7 +750,7 @@ A few things worth knowing:
     }).then((r) => r.json());
     await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
     return { src: publicUrl };
-  }
+  };
   ```
   Any other cloud storage (Cloudinary, Supabase Storage, R2, GCS, ...) is one of these two shapes — a single API call back with a hosted URL, or a signed-URL handshake — since this package only ever needs the final `{ src }`, not how it got there.
 - **Small/medium/large file handling** is entirely `uploadFile`'s own business, off `file.size` (bytes) — this package deliberately hardcodes no byte thresholds of its own, since what counts as "large" varies wildly by app:
@@ -693,12 +759,12 @@ A few things worth knowing:
     if (file.size < 200 * 1024) return { src: await inlineAsDataUrl(file) }; // small: keep it simple
     if (file.size < 25 * 1024 * 1024) return uploadToYourServer(file); // medium
     return uploadToS3Multipart(file); // large: chunked/multipart
-  }
+  };
   ```
 - While `uploadFile` is resolving, the block shows an "Uploading…" state; if it rejects, a dismissible error message is shown instead and nothing is written to the document — the file input stays available to try again.
 - `maxFileSize` (bytes) only applies to the **built-in, zero-config `data:` URL fallback** — an oversized file is rejected with a clear error instead of silently bloating the document. It has no effect once `uploadFile` is configured, since the host's own function (or backend) is what decides what it can handle.
 - `useFileUpload()` exposes the same `{ uploadFile, maxFileSize }` to your own components, for building custom upload UI outside the `embed` block that still honors the same configuration.
-- **Pasting** a raw image/media file straight from the OS clipboard (a screenshot, an OS-level "Copy Image") works too, going through this exact same `uploadFile`/`maxFileSize` resolution and inserting an `embed` block — no separate configuration needed. (Copying an already-rendered `<img>`/`<video>`/`<audio>` *from a webpage* instead reconstructs it from the pasted HTML, unrelated to this upload path.)
+- **Pasting** a raw image/media file straight from the OS clipboard (a screenshot, an OS-level "Copy Image") works too, going through this exact same `uploadFile`/`maxFileSize` resolution and inserting an `embed` block — no separate configuration needed. (Copying an already-rendered `<img>`/`<video>`/`<audio>` _from a webpage_ instead reconstructs it from the pasted HTML, unrelated to this upload path.)
 - **Rich link embeds**: pasting a YouTube, Vimeo, Loom, Figma, CodePen, or Spotify link into any embed block's URL field (or via the "Embed link" slash command) auto-detects it and renders a real interactive iframe instead of a broken `<img>`/`<video>` tag — no configuration needed, and no network fetch involved (pure URL pattern matching, see `src/blocks/embed/oembedProviders.js`).
 
 ## Live collaboration (experimental)
@@ -728,7 +794,7 @@ From then on, every edit made via `editor.store` (typing, inserting/moving/delet
 
 ### Signaling options
 
-`CollabSession` only needs *something* that can pass small JSON messages between two peers to bootstrap their WebRTC connection — it never needs to touch the internet itself. Two ready-to-use signaling backends:
+`CollabSession` only needs _something_ that can pass small JSON messages between two peers to bootstrap their WebRTC connection — it never needs to touch the internet itself. Two ready-to-use signaling backends:
 
 - **Same-browser demo, zero server** — `examples/collab/` uses the native `BroadcastChannel` API so every tab open on the same machine can find and sync with each other. Run `npm run dev:collab` and open the URL in two tabs. Good for trying the feature out; only works within one browser.
 - **Real multi-device collaboration — same WiFi/LAN, no internet required, or over the open internet if you point it at a public host** — `createWebSocketSignaling()` (exported from the package) connects to a small relay server that only ever sees connection-setup messages, never document content:
@@ -738,7 +804,7 @@ From then on, every edit made via `editor.store` (typing, inserting/moving/delet
 
   const signaling = createWebSocketSignaling({
     url: 'ws://192.168.1.5:8080', // a relay running on your LAN -- or any host, if you want internet-wide instead
-    roomId: 'my-document-id',      // anyone using the same roomId ends up in the same room
+    roomId: 'my-document-id', // anyone using the same roomId ends up in the same room
     peerId: crypto.randomUUID(),
   });
   const session = new CollabSession({ history: editor.store, signaling });
@@ -768,13 +834,14 @@ function PeerCursors({ session }) {
 }
 ```
 
-What presence *contains* is entirely up to you — a cursor position, a display name, a color, a "currently viewing" flag — `CollabSession` only relays the data, it never inspects or interprets it. A peer's entry disappears from `usePresence`'s map the instant they disconnect, and a newly-joining peer receives everyone's already-set presence immediately rather than waiting for their next move. `examples/collab/` renders this as live colored carets with peer-id labels, resolving `{runId, offset}` to an on-screen position the same way the editor's own selection code does (via the `[data-run-id]` DOM convention) — see `PeerCursors` in its `App.jsx` for the full (host-app-level, not package-level) rendering logic.
+What presence _contains_ is entirely up to you — a cursor position, a display name, a color, a "currently viewing" flag — `CollabSession` only relays the data, it never inspects or interprets it. A peer's entry disappears from `usePresence`'s map the instant they disconnect, and a newly-joining peer receives everyone's already-set presence immediately rather than waiting for their next move. `examples/collab/` renders this as live colored carets with peer-id labels, resolving `{runId, offset}` to an on-screen position the same way the editor's own selection code does (via the `[data-run-id]` DOM convention) — see `PeerCursors` in its `App.jsx` for the full (host-app-level, not package-level) rendering logic.
 
 **How conflicts resolve:**
+
 - Concurrent inserts (even at the same position) — both survive, converging to the same order on every peer.
 - Concurrent delete vs. edit of the same block — the delete wins.
 - Concurrent type-conversion of the same block ("Turn into") — one type wins deterministically (the same one, on every peer), not two duplicate blocks.
-- Concurrent edits to a run's text — merge at the *character* level (a real per-run CRDT, the same ordered-list mechanism blocks already use, just one level down): two peers editing different parts of the same run both survive, and two peers inserting at the exact same position both survive too, interleaved deterministically (identically on every peer) rather than one silently overwriting the other.
+- Concurrent edits to a run's text — merge at the _character_ level (a real per-run CRDT, the same ordered-list mechanism blocks already use, just one level down): two peers editing different parts of the same run both survive, and two peers inserting at the exact same position both survive too, interleaved deterministically (identically on every peer) rather than one silently overwriting the other.
 
 ### Tombstone garbage collection
 
@@ -784,7 +851,11 @@ Deleted blocks/runs are kept as "tombstones" rather than actually removed — ne
 import { useEditor, createPeriodicTombstoneGC } from 'noteloom';
 
 const editor = useEditor({ doc: myDoc });
-const gc = createPeriodicTombstoneGC({ store: editor.store, intervalMs: 60 * 60 * 1000, maxAgeMs: 24 * 60 * 60 * 1000 }); // hourly sweep, 24h retention (both defaults, shown explicitly)
+const gc = createPeriodicTombstoneGC({
+  store: editor.store,
+  intervalMs: 60 * 60 * 1000,
+  maxAgeMs: 24 * 60 * 60 * 1000,
+}); // hourly sweep, 24h retention (both defaults, shown explicitly)
 
 // later, when the store is no longer in use:
 gc.stop();
@@ -792,17 +863,18 @@ gc.stop();
 
 Or call `store.pruneTombstones({ maxAgeMs })` yourself on whatever schedule you want — `createPeriodicTombstoneGC` is just a thin timer wrapper around it. `store.getTombstoneCount()` tells you how many are currently being retained, if you want to observe growth before deciding on a policy. Both work identically whether `store` is a plain `EditorStore` or a `History` wrapping one, and pruning is never itself an undo step (it doesn't change the visible document — the pruned content was already invisible).
 
-**Why a time-based threshold is safe here specifically:** this only works because of how `CollabSession` reconnects — a peer rejoining after any absence gets a full document *snapshot* (`syncResponse`), never a replay of the ops it missed. That means a peer offline longer than the GC threshold never needs an old tombstone to resolve a stale reference; it just adopts the current state directly. The only residual risk is a single *already-connected* peer somehow stalling for exactly as long as the threshold and then delivering a queued message afterward — implausible for a live, reliable, ordered WebRTC data channel (which disconnects long before that under any real interruption), but not impossible, which is why this is opt-in rather than automatic.
+**Why a time-based threshold is safe here specifically:** this only works because of how `CollabSession` reconnects — a peer rejoining after any absence gets a full document _snapshot_ (`syncResponse`), never a replay of the ops it missed. That means a peer offline longer than the GC threshold never needs an old tombstone to resolve a stale reference; it just adopts the current state directly. The only residual risk is a single _already-connected_ peer somehow stalling for exactly as long as the threshold and then delivering a queued message afterward — implausible for a live, reliable, ordered WebRTC data channel (which disconnects long before that under any real interruption), but not impossible, which is why this is opt-in rather than automatic.
 
 ### Reconnecting reliably
 
 `CollabSession`/`createWebSocketSignaling` deliberately don't retry anything themselves (see the class doc comment) — a dropped connection is a transport-layer concern left to the host app, on purpose, so this stays a small library rather than growing an opinionated retry/backoff policy no two apps would agree on. `examples/lan-collab/` is a complete, runnable reference for the two pieces most apps end up needing on top:
 
 - **A watchdog that actually reconnects.** `createWebSocketSignaling` exposes no `close`/`error` event for the relay connection dying silently (a sleeping laptop, a WiFi drop, the relay restarting) — so periodically checking "do I currently have zero live peers, and has it been a while since I last tried" and, if so, tearing down and recreating the whole signaling + session is the only reliable way to notice and recover. Also worth reacting to the browser's own `online` event immediately, rather than waiting for the next timer tick.
-- **Actually catching up, not just resuming.** A reconnecting peer that keeps its existing (non-empty) store — the right default, so a solo editing session isn't wiped by a network blip — never re-triggers `CollabSession`'s adopt-a-snapshot path, since that only fires when a store is genuinely empty (see "A peer joining with their own existing document" below). Left alone, this peer silently misses everything the room changed while it was away. The fix: on a genuine *reconnect* (never the very first connection) where nothing was typed locally in the gap, reset the store back to that same empty shape first — the same field-level reset `usePersistedDocument` uses internally — so the ordinary adopt-on-empty flow does the catching-up. If local edits *were* made while disconnected, keep them as-is; there's no safe way to both preserve them and adopt someone else's snapshot without a real merge (see the next limitation).
+- **Actually catching up, not just resuming.** A reconnecting peer that keeps its existing (non-empty) store — the right default, so a solo editing session isn't wiped by a network blip — never re-triggers `CollabSession`'s adopt-a-snapshot path, since that only fires when a store is genuinely empty (see "A peer joining with their own existing document" below). Left alone, this peer silently misses everything the room changed while it was away. The fix: on a genuine _reconnect_ (never the very first connection) where nothing was typed locally in the gap, reset the store back to that same empty shape first — the same field-level reset `usePersistedDocument` uses internally — so the ordinary adopt-on-empty flow does the catching-up. If local edits _were_ made while disconnected, keep them as-is; there's no safe way to both preserve them and adopt someone else's snapshot without a real merge (see the next limitation).
 
 **Known limitations — read before relying on this in production:**
-- **Undo is local-only, and only ever touches your own edits.** Undo/redo of a text edit works by tombstoning/restoring the exact character ids *you* inserted/deleted (not by replaying an old whole-string snapshot), so undoing your own past edit to a run can never remove a peer's concurrent edit to that same run, no matter how they're interleaved. One narrower case remains open: concurrent *formatting* (bold/italic, which splits a run into new runs with new ids) racing a concurrent *edit* of the exact same run is a run-list-level (not character-level) concern this doesn't cover.
+
+- **Undo is local-only, and only ever touches your own edits.** Undo/redo of a text edit works by tombstoning/restoring the exact character ids _you_ inserted/deleted (not by replaying an old whole-string snapshot), so undoing your own past edit to a run can never remove a peer's concurrent edit to that same run, no matter how they're interleaved. One narrower case remains open: concurrent _formatting_ (bold/italic, which splits a run into new runs with new ids) racing a concurrent _edit_ of the exact same run is a run-list-level (not character-level) concern this doesn't cover.
 - **Deleted content isn't garbage-collected automatically, but can be — opt-in.** Tombstones are kept by default (needed so a late-arriving concurrent operation can still resolve correctly), which means unbounded memory growth over a long enough session unless you do something about it. `store.pruneTombstones({ maxAgeMs })` (default 24h) removes tombstones older than that safely — see "Tombstone garbage collection" above. Nothing calls this automatically; wire up `createPeriodicTombstoneGC` (or call it yourself) if you want it handled for you.
 - **A peer joining with their own existing (different) document does not merge with yours.** `CollabSession` only adopts a peer's document wholesale when your own side is still empty — the common "open a shared link and get the document" flow. Reconciling two independently-created, already-diverged documents on first contact is a fundamentally harder problem (no shared id space) and isn't attempted. This is also why the reconnect pattern above only ever resets a store that has no unsynced local edits of its own.
 - **Reconnecting after a dropped connection re-syncs the full document**, not just what was missed — simple and correct, at the cost of O(document size) traffic per reconnect. See "Reconnecting reliably" above for making the reconnect itself actually happen.
@@ -848,7 +920,9 @@ function Editor() {
           { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
           { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
         ],
-        runs: [{ id: 'r1', type: 'text', value: 'Hello — try typing "/" for commands.', marks: {} }],
+        runs: [
+          { id: 'r1', type: 'text', value: 'Hello — try typing "/" for commands.', marks: {} },
+        ],
       }),
     );
     return { store, registry, inlineRegistry };
@@ -859,7 +933,12 @@ function Editor() {
   useEditorKeyboardShortcuts(containerRef);
 
   return (
-    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store}>
+    <EditorProvider
+      store={store}
+      registry={registry}
+      inlineRegistry={inlineRegistry}
+      history={store}
+    >
       <div ref={containerRef} onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
         <BlockChildren parentId="root" />
         <SlashMenu
@@ -880,16 +959,28 @@ See `examples/basic` for a complete working app built this way (run `npm run dev
 
 ## Registering a brand-new block/inline type, from scratch
 
-The [Basic guide](#basic-guide) above covers *picking* existing types and *configuring* dropdown/mention field types via `createSelectFieldType` — no component required for either. Writing an entirely new block or inline type (its own React component, HTML/plain-text serialization, its own slash command) is the one thing that's inherently advanced regardless of which path built your registry:
+The [Basic guide](#basic-guide) above covers _picking_ existing types and _configuring_ dropdown/mention field types via `createSelectFieldType` — no component required for either. Writing an entirely new block or inline type (its own React component, HTML/plain-text serialization, its own slash command) is the one thing that's inherently advanced regardless of which path built your registry:
 
 ```js
 registry.register('myBlock', {
   component: MyBlockComponent, // receives only { id }
   isLeaf: true, // true if contentIds holds run ids, false if it holds child block ids
-  toHTML(block, ctx) { /* ... */ },
-  fromHTML(domNode, ctx) { /* ... or return null if this node isn't yours */ },
-  toPlainText(block, ctx) { /* ... */ },
-  slashCommand: { label: 'My Block', keywords: ['my'], run(store, ctx) { /* ... */ } },
+  toHTML(block, ctx) {
+    /* ... */
+  },
+  fromHTML(domNode, ctx) {
+    /* ... or return null if this node isn't yours */
+  },
+  toPlainText(block, ctx) {
+    /* ... */
+  },
+  slashCommand: {
+    label: 'My Block',
+    keywords: ['my'],
+    run(store, ctx) {
+      /* ... */
+    },
+  },
 });
 ```
 
@@ -917,6 +1008,6 @@ See `examples/README.md` for the rest of the runnable examples, and `CONTRIBUTIN
 - Cross-block mark toggling (bold/italic/underline over a selection spanning multiple blocks) applies as one store operation per block, not a single atomic undo step.
 - `select`'s option-adding UI and any `createSelectFieldType`-based type's options (e.g. an "Assignee" @-mention) are meant as a starting point — a real app will want to wire its own people/options source.
 - RTL support covers direction resolution (`dir="auto"` + per-block/document override) and the highest-impact visual pieces (list markers, blockquote border, block gutter position) — a full logical-properties rewrite of every hardcoded pixel value in `style.css` is a bigger follow-up, not yet done.
-- Voice typing (`useVoiceTyping`) only acts on *finalized* speech results, not interim/in-progress ones, and command detection requires a spoken command to be its own complete utterance — there's no explicit "command mode" trigger (push-to-command, wake phrase) yet, just pause-based auto-detection.
+- Voice typing (`useVoiceTyping`) only acts on _finalized_ speech results, not interim/in-progress ones, and command detection requires a spoken command to be its own complete utterance — there's no explicit "command mode" trigger (push-to-command, wake phrase) yet, just pause-based auto-detection.
 - Automated tests run under jsdom; there is no automated real-browser test suite. If you hit an edge case jsdom can't reproduce (anything involving actual native `contentEditable` browser quirks, or the real Web Speech API), please file an issue with the exact browser/OS and steps.
 - A comment's highlighted range is local-only in collaboration for v1 (same scope every other range-based formatting operation already has — see [Comments](#comments)); a comment thread's `anchorRunIds` is a creation-time hint only, not re-validated after later formatting edits reshape that range.

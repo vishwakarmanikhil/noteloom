@@ -41,7 +41,8 @@ describe('resolveOEmbedUrl', () => {
     const result = resolveOEmbedUrl('https://www.figma.com/file/abc123/My-Design');
     expect(result.provider).toBe('figma');
     expect(result.embedUrl).toBe(
-      'https://www.figma.com/embed?embed_host=noteloom&url=' + encodeURIComponent('https://www.figma.com/file/abc123/My-Design'),
+      'https://www.figma.com/embed?embed_host=noteloom&url=' +
+        encodeURIComponent('https://www.figma.com/file/abc123/My-Design'),
     );
   });
 

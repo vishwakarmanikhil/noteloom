@@ -2,7 +2,11 @@ import { useCallback } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { Select } from '../../react/Select.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useBlockClassName, useShowLineNumbers } from '../../react/EditorProvider.jsx';
+import {
+  useEditorStore,
+  useBlockClassName,
+  useShowLineNumbers,
+} from '../../react/EditorProvider.jsx';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
 import { isRunsEmpty } from '../shared/blockEmpty.js';
 import { focusRunEnd, focusRunAtOffset } from '../../react/focusRun.js';
@@ -12,7 +16,16 @@ import { focusAdjacentBlock } from '../shared/navigationCommands.js';
 import { deleteBlockAndFocusSibling } from '../shared/blockActions.js';
 import { TrashIcon } from '../../react/icons.jsx';
 
-export const LANGUAGES = ['plaintext', 'javascript', 'python', 'html', 'css', 'json', 'bash', 'sql'];
+export const LANGUAGES = [
+  'plaintext',
+  'javascript',
+  'python',
+  'html',
+  'css',
+  'json',
+  'bash',
+  'sql',
+];
 const LANGUAGE_OPTIONS = LANGUAGES.map((lang) => ({ value: lang, label: lang }));
 
 /**
@@ -89,7 +102,10 @@ export function CodeBlock({ id }) {
   // never stored. Counts '\n's inserted by handleEnter above (this block's
   // multi-line-within-one-run model), not separate line blocks.
   const lineCount = showLineNumbers
-    ? (block.contentIds.map((runId) => store.getRun(runId)?.value ?? '').join('').match(/\n/g)?.length ?? 0) + 1
+    ? (block.contentIds
+        .map((runId) => store.getRun(runId)?.value ?? '')
+        .join('')
+        .match(/\n/g)?.length ?? 0) + 1
     : 0;
 
   return (
@@ -102,7 +118,13 @@ export function CodeBlock({ id }) {
           onChange={handleLanguageChange}
           ariaLabel="Code language"
         />
-        <button type="button" className="be-code-block-delete" onClick={handleDelete} aria-label="Delete code block" title="Delete code block">
+        <button
+          type="button"
+          className="be-code-block-delete"
+          onClick={handleDelete}
+          aria-label="Delete code block"
+          title="Delete code block"
+        >
           <TrashIcon size={14} />
         </button>
       </div>

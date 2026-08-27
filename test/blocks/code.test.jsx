@@ -16,7 +16,13 @@ function makeDoc() {
     blocks: [
       { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'c1'], props: {} },
       { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r-p1'], props: {} },
-      { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r-c1'], props: { language: 'javascript' } },
+      {
+        id: 'c1',
+        type: 'code',
+        parentId: 'root',
+        contentIds: ['r-c1'],
+        props: { language: 'javascript' },
+      },
     ],
     runs: [
       { id: 'r-p1', type: 'text', value: 'before', marks: {} },
@@ -53,16 +59,22 @@ describe('code block: renders as a leaf inside <pre><code>, with a language sele
     expect(block.querySelector('pre')).not.toBeNull();
     expect(block.querySelector('code')).not.toBeNull();
     expect(block.textContent).toContain('const x = 1;');
-    expect(block.querySelector('.be-code-block-language .be-select-value').textContent).toBe('javascript');
+    expect(block.querySelector('.be-code-block-language .be-select-value').textContent).toBe(
+      'javascript',
+    );
   });
 
   it('changing the language dropdown updates props.language', () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderDoc(store);
 
-    const trigger = container.querySelector('[data-block-id="c1"] .be-code-block-language .be-select-trigger');
+    const trigger = container.querySelector(
+      '[data-block-id="c1"] .be-code-block-language .be-select-trigger',
+    );
     fireEvent.click(trigger);
-    const option = [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'python');
+    const option = [...document.querySelectorAll('.be-select-option')].find(
+      (el) => el.textContent === 'python',
+    );
     fireEvent.mouseDown(option);
 
     expect(store.getBlock('c1').props.language).toBe('python');
@@ -158,7 +170,13 @@ describe('code block: clipboard round-trip', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
-        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r1'], props: { language: 'plaintext' } },
+        {
+          id: 'c1',
+          type: 'code',
+          parentId: 'root',
+          contentIds: ['r1'],
+          props: { language: 'plaintext' },
+        },
       ],
       runs: [{ id: 'r1', type: 'text', value: 'plain', marks: {} }],
     });
@@ -190,7 +208,13 @@ describe('code block: clipboard round-trip', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
-        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r1'], props: { language: 'python' } },
+        {
+          id: 'c1',
+          type: 'code',
+          parentId: 'root',
+          contentIds: ['r1'],
+          props: { language: 'python' },
+        },
       ],
       runs: [{ id: 'r1', type: 'text', value: 'def f():\n    pass', marks: {} }],
     });
@@ -207,7 +231,10 @@ describe('code block: clipboard round-trip', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
 
-    const inserts = walkDomToBlocks('<pre><code data-language="javascript">line one\nline two</code></pre>', registry);
+    const inserts = walkDomToBlocks(
+      '<pre><code data-language="javascript">line one\nline two</code></pre>',
+      registry,
+    );
     expect(inserts).toHaveLength(1);
     expect(inserts[0].block.type).toBe('code');
     expect(inserts[0].block.props.language).toBe('javascript');

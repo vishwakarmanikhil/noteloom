@@ -19,14 +19,22 @@ export const ratingBlockType = {
     run(store, { runId, sliceStart, sliceEnd, blockId }) {
       const run = store.getRun(runId);
       const value = run?.value ?? '';
-      store.applyOperation(operations.updateRun(runId, { value: value.slice(0, sliceStart) + value.slice(sliceEnd) }));
+      store.applyOperation(
+        operations.updateRun(runId, { value: value.slice(0, sliceStart) + value.slice(sliceEnd) }),
+      );
 
       const current = store.getBlock(blockId);
       const parent = store.getBlock(current.parentId);
       const index = parent.contentIds.indexOf(blockId) + 1;
       store.applyOperation(
         operations.insertBlock(
-          { id: crypto.randomUUID(), type: 'rating', parentId: current.parentId, contentIds: [], props: { value: 0 } },
+          {
+            id: crypto.randomUUID(),
+            type: 'rating',
+            parentId: current.parentId,
+            contentIds: [],
+            props: { value: 0 },
+          },
           current.parentId,
           index,
         ),

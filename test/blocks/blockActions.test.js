@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { History } from '../../src/store/history.js';
-import { duplicateBlock, moveBlockUp, moveBlockDown, deleteBlockAndFocusSibling } from '../../src/blocks/shared/blockActions.js';
+import {
+  duplicateBlock,
+  moveBlockUp,
+  moveBlockDown,
+  deleteBlockAndFocusSibling,
+} from '../../src/blocks/shared/blockActions.js';
 
 function makeDoc() {
   return {
@@ -40,7 +45,13 @@ describe('duplicateBlock', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['callout1'], props: {} },
-        { id: 'callout1', type: 'callout', parentId: 'root', contentIds: ['inner1'], props: { icon: '💡' } },
+        {
+          id: 'callout1',
+          type: 'callout',
+          parentId: 'root',
+          contentIds: ['inner1'],
+          props: { icon: '💡' },
+        },
         { id: 'inner1', type: 'paragraph', parentId: 'callout1', contentIds: ['r1'], props: {} },
       ],
       runs: [{ id: 'r1', type: 'text', value: 'inside', marks: {} }],

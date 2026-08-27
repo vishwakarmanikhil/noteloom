@@ -157,7 +157,15 @@ describe('ListCrdtState — delete', () => {
   it('delete is a monotonic OR — merging a non-deleted slot after a local delete never un-deletes it', () => {
     const state = ListCrdtState.fromArray(['a', 'b']);
     state.delete('a');
-    state.merge([{ id: 'a', originId: null, peerId: 'peer-a', clock: { wallTime: 1, counter: 0, peerId: 'peer-a' }, deleted: false }]);
+    state.merge([
+      {
+        id: 'a',
+        originId: null,
+        peerId: 'peer-a',
+        clock: { wallTime: 1, counter: 0, peerId: 'peer-a' },
+        deleted: false,
+      },
+    ]);
     expect(state.isDeleted('a')).toBe(true);
     expect(state.toArray()).toEqual(['b']);
   });
@@ -282,7 +290,11 @@ describe('ListCrdtState — tombstone garbage collection', () => {
   it('never removes a slot that is not deleted, regardless of how old its clock is', () => {
     const state = ListCrdtState.fromArray(['a', 'b']);
     // fromArray seeds every slot with clock {wallTime: 0, ...} -- about as old as a clock can be
-    const removed = state.pruneTombstones({ wallTime: Number.MAX_SAFE_INTEGER, counter: 0, peerId: '' });
+    const removed = state.pruneTombstones({
+      wallTime: Number.MAX_SAFE_INTEGER,
+      counter: 0,
+      peerId: '',
+    });
     expect(removed).toBe(0);
     expect(state.toArray()).toEqual(['a', 'b']);
   });

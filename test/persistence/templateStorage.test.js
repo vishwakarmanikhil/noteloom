@@ -1,7 +1,15 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
-import { saveTemplate, loadTemplate, deleteTemplate, listTemplates } from '../../src/persistence/indexedDbPersistence.js';
-import { savePersistedDocument, loadPersistedDocument } from '../../src/persistence/indexedDbPersistence.js';
+import {
+  saveTemplate,
+  loadTemplate,
+  deleteTemplate,
+  listTemplates,
+} from '../../src/persistence/indexedDbPersistence.js';
+import {
+  savePersistedDocument,
+  loadPersistedDocument,
+} from '../../src/persistence/indexedDbPersistence.js';
 
 function makeTemplate(id, overrides = {}) {
   return {
@@ -9,7 +17,11 @@ function makeTemplate(id, overrides = {}) {
     scope: 'document',
     name: `Template ${id}`,
     description: 'a test template',
-    doc: { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] },
+    doc: {
+      rootId: 'root',
+      blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+      runs: [],
+    },
     ...overrides,
   };
 }
@@ -52,7 +64,15 @@ describe('template storage (separate object store from documents, same DB)', () 
   it('a block-scope template stores { roots } as its doc, round-tripping structurally', async () => {
     const blockTemplate = makeTemplate('block-one', {
       scope: 'block',
-      doc: { roots: [{ rootId: 'b1', blocks: [{ id: 'b1', type: 'paragraph', parentId: null, contentIds: [], props: {} }], runs: [] }] },
+      doc: {
+        roots: [
+          {
+            rootId: 'b1',
+            blocks: [{ id: 'b1', type: 'paragraph', parentId: null, contentIds: [], props: {} }],
+            runs: [],
+          },
+        ],
+      },
     });
     await saveTemplate(blockTemplate);
     const loaded = await loadTemplate('block-one');
@@ -61,7 +81,12 @@ describe('template storage (separate object store from documents, same DB)', () 
 
   it('is a separate store from documents -- saving a template does not affect a persisted document under the same id, and vice versa', async () => {
     const sharedId = 'shared-id';
-    await savePersistedDocument(sharedId, { rootId: 'docRoot', blocks: [], runs: [], marker: 'document' });
+    await savePersistedDocument(sharedId, {
+      rootId: 'docRoot',
+      blocks: [],
+      runs: [],
+      marker: 'document',
+    });
     await saveTemplate(makeTemplate(sharedId, { name: 'the-template' }));
 
     expect((await loadPersistedDocument(sharedId)).marker).toBe('document');

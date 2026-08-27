@@ -3,7 +3,12 @@ import { render, fireEvent } from '@testing-library/react';
 import { useRef } from 'react';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { History } from '../../src/store/history.js';
-import { captureBlockTemplate, insertBlockTemplate, applyDocumentTemplate, registerBlockTemplates } from '../../src/templates/blockTemplates.js';
+import {
+  captureBlockTemplate,
+  insertBlockTemplate,
+  applyDocumentTemplate,
+  registerBlockTemplates,
+} from '../../src/templates/blockTemplates.js';
 import { EditorProvider } from '../../src/react/EditorProvider.jsx';
 import { BlockChildren } from '../../src/react/BlockChildren.jsx';
 import { createBlockRegistry } from '../../src/registry/blockRegistry.js';
@@ -15,10 +20,28 @@ function makeDoc() {
   return {
     rootId: 'root',
     blocks: [
-      { id: 'root', type: 'page', parentId: null, contentIds: ['h1', 'li1', 'li2', 'p1'], props: {} },
+      {
+        id: 'root',
+        type: 'page',
+        parentId: null,
+        contentIds: ['h1', 'li1', 'li2', 'p1'],
+        props: {},
+      },
       { id: 'h1', type: 'heading', parentId: 'root', contentIds: ['rh1'], props: { level: 2 } },
-      { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['rli1'] } },
-      { id: 'li2', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['rli2'] } },
+      {
+        id: 'li1',
+        type: 'listItem',
+        parentId: 'root',
+        contentIds: [],
+        props: { ordered: false, titleRunIds: ['rli1'] },
+      },
+      {
+        id: 'li2',
+        type: 'listItem',
+        parentId: 'root',
+        contentIds: [],
+        props: { ordered: false, titleRunIds: ['rli2'] },
+      },
       { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['rp1'], props: {} },
     ],
     runs: [
@@ -60,9 +83,13 @@ describe('captureBlockTemplate / insertBlockTemplate', () => {
     expect(store.getBlock(insertedIds[0]).type).toBe('heading');
     expect(store.getRun(store.getBlock(insertedIds[0]).contentIds[0]).value).toBe('Agenda');
     expect(store.getBlock(insertedIds[1]).type).toBe('listItem');
-    expect(store.getRun(store.getBlock(insertedIds[1]).props.titleRunIds[0]).value).toBe('Item one');
+    expect(store.getRun(store.getBlock(insertedIds[1]).props.titleRunIds[0]).value).toBe(
+      'Item one',
+    );
     expect(store.getBlock(insertedIds[2]).type).toBe('listItem');
-    expect(store.getRun(store.getBlock(insertedIds[2]).props.titleRunIds[0]).value).toBe('Item two');
+    expect(store.getRun(store.getBlock(insertedIds[2]).props.titleRunIds[0]).value).toBe(
+      'Item two',
+    );
 
     // the original blocks are untouched
     expect(store.getBlock('h1')).toBeDefined();
@@ -90,7 +117,13 @@ describe('captureBlockTemplate / insertBlockTemplate', () => {
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['callout1'], props: {} },
         { id: 'callout1', type: 'callout', parentId: 'root', contentIds: ['inner1'], props: {} },
-        { id: 'inner1', type: 'paragraph', parentId: 'callout1', contentIds: ['rInner1'], props: {} },
+        {
+          id: 'inner1',
+          type: 'paragraph',
+          parentId: 'callout1',
+          contentIds: ['rInner1'],
+          props: {},
+        },
       ],
       runs: [{ id: 'rInner1', type: 'text', value: 'nested text', marks: {} }],
     };
@@ -125,7 +158,7 @@ describe('captureBlockTemplate / insertBlockTemplate', () => {
 });
 
 describe('applyDocumentTemplate', () => {
-  it('wholesale-replaces an already-mounted store\'s content', () => {
+  it("wholesale-replaces an already-mounted store's content", () => {
     const store = new EditorStore(makeDoc());
     const templateDoc = {
       rootId: 'newRoot',
@@ -145,7 +178,11 @@ describe('applyDocumentTemplate', () => {
 
   it('works through a History wrapper (unwraps to the underlying EditorStore)', () => {
     const store = new History(new EditorStore(makeDoc()));
-    const templateDoc = { rootId: 'r2', blocks: [{ id: 'r2', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+    const templateDoc = {
+      rootId: 'r2',
+      blocks: [{ id: 'r2', type: 'page', parentId: null, contentIds: [], props: {} }],
+      runs: [],
+    };
 
     applyDocumentTemplate(store, templateDoc);
 
@@ -159,7 +196,14 @@ function SlashHarness() {
   return (
     <div ref={containerRef}>
       <BlockChildren parentId="root" />
-      <SlashMenu isOpen={isOpen} rect={rect} commands={commands} runId={runId} onSelect={selectCommand} onClose={close} />
+      <SlashMenu
+        isOpen={isOpen}
+        rect={rect}
+        commands={commands}
+        runId={runId}
+        onSelect={selectCommand}
+        onClose={close}
+      />
     </div>
   );
 }
@@ -193,7 +237,9 @@ describe('registerBlockTemplates: discoverable and insertable via "/", no SlashM
 
     const sourceStore = new EditorStore(makeDoc());
     const template = captureBlockTemplate(sourceStore, ['h1', 'li1', 'li2']);
-    registerBlockTemplates(registry, [{ id: 'meeting-notes', label: 'Meeting notes', keywords: ['meeting'], roots: template.roots }]);
+    registerBlockTemplates(registry, [
+      { id: 'meeting-notes', label: 'Meeting notes', keywords: ['meeting'], roots: template.roots },
+    ]);
 
     return render(
       <EditorProvider store={store} registry={registry}>
@@ -209,7 +255,9 @@ describe('registerBlockTemplates: discoverable and insertable via "/", no SlashM
 
     typeIntoRun(runNode, '/meeting');
     const items = [...container.querySelectorAll('.be-slash-menu-item')];
-    expect(items.map((el) => el.querySelector('.be-slash-menu-item-label').textContent)).toEqual(['Meeting notes']);
+    expect(items.map((el) => el.querySelector('.be-slash-menu-item-label').textContent)).toEqual([
+      'Meeting notes',
+    ]);
   });
 
   it('selecting it clears the "/query" text and inserts the captured blocks as real, rendered siblings', () => {

@@ -73,7 +73,9 @@ describe('toggle list item: rendering', () => {
 
     expect(container.querySelector('[data-block-id="child1"]')).not.toBeNull();
     expect(container.textContent).toContain('hidden content');
-    expect(container.querySelector('.be-list-toggle-marker').getAttribute('aria-expanded')).toBe('true');
+    expect(container.querySelector('.be-list-toggle-marker').getAttribute('aria-expanded')).toBe(
+      'true',
+    );
   });
 
   it('hides children (no DOM at all) when collapsed: true', () => {
@@ -82,7 +84,9 @@ describe('toggle list item: rendering', () => {
 
     expect(container.querySelector('[data-block-id="child1"]')).toBeNull();
     expect(container.textContent).not.toContain('hidden content');
-    expect(container.querySelector('.be-list-toggle-marker').getAttribute('aria-expanded')).toBe('false');
+    expect(container.querySelector('.be-list-toggle-marker').getAttribute('aria-expanded')).toBe(
+      'false',
+    );
   });
 
   it('the triangle is never disabled — clicking a childless toggle bootstraps its first child instead of being a dead end (regression)', () => {
@@ -90,7 +94,13 @@ describe('toggle list item: rendering', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['t1'], props: {} },
-        { id: 't1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, collapsed: false, titleRunIds: ['r1'] } },
+        {
+          id: 't1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, collapsed: false, titleRunIds: ['r1'] },
+        },
       ],
       runs: [{ id: 'r1', type: 'text', value: 'empty toggle', marks: {} }],
     });
@@ -109,7 +119,7 @@ describe('toggle list item: rendering', () => {
   });
 });
 
-describe('toggle list item: clicking the triangle toggles collapsed, without touching the store\'s child data', () => {
+describe("toggle list item: clicking the triangle toggles collapsed, without touching the store's child data", () => {
   it('collapses on click, and the child block still exists in the store (only the DOM is gone)', () => {
     const rawStore = new EditorStore(makeDocWithToggle({ collapsed: false }));
     const store = new History(rawStore);
@@ -142,7 +152,13 @@ describe('toggle list item: Enter inheritance (new sibling/child stays a toggle,
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['t1'], props: {} },
-        { id: 't1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, collapsed: false, titleRunIds: ['r1'] } },
+        {
+          id: 't1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, collapsed: false, titleRunIds: ['r1'] },
+        },
       ],
       runs: [{ id: 'r1', type: 'text', value: 'toggle text', marks: {} }],
     });
@@ -170,7 +186,9 @@ describe('toggle list item: Enter inheritance (new sibling/child stays a toggle,
     expect(store.getBlock(newId).contentIds.length).toBe(1);
     const newChildId = store.getBlock(newId).contentIds[0];
     expect(store.getBlock(newChildId).type).toBe('paragraph');
-    expect(container.querySelector(`[data-block-id="${newId}"] .be-list-toggle-marker`).disabled).toBe(false);
+    expect(
+      container.querySelector(`[data-block-id="${newId}"] .be-list-toggle-marker`).disabled,
+    ).toBe(false);
   });
 
   it('Enter on a toggle title still creates a SIBLING even when it already has nested children (regression: was wrongly nesting as first child)', () => {
@@ -223,7 +241,13 @@ describe('toggle list item: Backspace on an empty title never deletes a non-empt
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['before', 't1'], props: {} },
         { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
-        { id: 't1', type: 'listItem', parentId: 'root', contentIds: ['child1'], props: { ordered: false, collapsed: false, titleRunIds: ['r1'] } },
+        {
+          id: 't1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: ['child1'],
+          props: { ordered: false, collapsed: false, titleRunIds: ['r1'] },
+        },
         { id: 'child1', type: 'paragraph', parentId: 't1', contentIds: ['r-child1'], props: {} },
       ],
       runs: [
@@ -247,7 +271,13 @@ describe('toggle list item: Backspace on an empty title never deletes a non-empt
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['before', 't1'], props: {} },
         { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
-        { id: 't1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, collapsed: false, titleRunIds: ['r1'] } },
+        {
+          id: 't1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, collapsed: false, titleRunIds: ['r1'] },
+        },
       ],
       runs: [
         { id: 'r-before', type: 'text', value: 'before', marks: {} },
@@ -277,7 +307,7 @@ describe('toggle list item: clipboard round-trip preserves collapsed children ev
     expect(runs.some((r) => r.value === 'hidden content')).toBe(true);
   });
 
-  it('toPlainText/toHTML still include a collapsed toggle\'s children (only the live DOM hides them, not serialization)', () => {
+  it("toPlainText/toHTML still include a collapsed toggle's children (only the live DOM hides them, not serialization)", () => {
     const store = new EditorStore(makeDocWithToggle({ collapsed: true }));
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
@@ -294,8 +324,20 @@ describe('toggle list item: indent/outdent work the same as any other list item'
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1', 't1'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
-        { id: 't1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, collapsed: false, titleRunIds: ['r2'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
+        {
+          id: 't1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, collapsed: false, titleRunIds: ['r2'] },
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'item', marks: {} },

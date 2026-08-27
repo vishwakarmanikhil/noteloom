@@ -111,7 +111,9 @@ describe('EditableBlockContent: empty-run placeholder (regression)', () => {
     // after the store update triggers TextRunSpan's re-render, the DOM's
     // raw text (placeholder + "k") must be left exactly as the browser put
     // it — no corrective rewrite, since it already matches "k" once stripped.
-    expect(container.querySelector('[data-run-id="r1"]').textContent).toBe(`${EMPTY_RUN_PLACEHOLDER}k`);
+    expect(container.querySelector('[data-run-id="r1"]').textContent).toBe(
+      `${EMPTY_RUN_PLACEHOLDER}k`,
+    );
   });
 
   it('emptying a run via backspace mutates the existing Text node in place instead of replacing it (mobile caret/keyboard-loss regression)', () => {
@@ -322,11 +324,23 @@ describe('EditableBlockContent: deleting an atomic inline run (regression)', () 
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
-        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1', 'chip', 'r2'], props: {} },
+        {
+          id: 'p1',
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: ['r1', 'chip', 'r2'],
+          props: {},
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'before ', marks: {} },
-        { id: 'chip', type: 'select', value: '', marks: {}, data: { options: [], selectedValue: '' } },
+        {
+          id: 'chip',
+          type: 'select',
+          value: '',
+          marks: {},
+          data: { options: [], selectedValue: '' },
+        },
         { id: 'r2', type: 'text', value: ' after', marks: {} },
       ],
     });
@@ -420,7 +434,7 @@ describe('EditableBlockContent: deleting an atomic inline run (regression)', () 
     expect(onBackspaceAtStart).not.toHaveBeenCalled();
   });
 
-  it('ignores a chip-shaped DOM node the store already deleted (holding Backspace outruns React\'s commit)', () => {
+  it("ignores a chip-shaped DOM node the store already deleted (holding Backspace outruns React's commit)", () => {
     // Holding Backspace down fires keydowns faster than React necessarily
     // commits the previous removal's DOM update, so a chip already gone
     // from the *logical* run list (removed by op #1) can still be
@@ -481,11 +495,23 @@ describe('EditableBlockContent: beforeinput over a selection spanning a chip (re
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
-        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1', 'chip', 'r2'], props: {} },
+        {
+          id: 'p1',
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: ['r1', 'chip', 'r2'],
+          props: {},
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'before ', marks: {} },
-        { id: 'chip', type: 'select', value: '', marks: {}, data: { options: [], selectedValue: '' } },
+        {
+          id: 'chip',
+          type: 'select',
+          value: '',
+          marks: {},
+          data: { options: [], selectedValue: '' },
+        },
         { id: 'r2', type: 'text', value: ' after', marks: {} },
       ],
     });
@@ -504,7 +530,12 @@ describe('EditableBlockContent: beforeinput over a selection spanning a chip (re
 
     fireEvent(
       editable,
-      new window.InputEvent('beforeinput', { inputType: 'insertText', data: 'X', bubbles: true, cancelable: true }),
+      new window.InputEvent('beforeinput', {
+        inputType: 'insertText',
+        data: 'X',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
 
     expect(store.getRun('chip')).toBeUndefined();
@@ -526,7 +557,11 @@ describe('EditableBlockContent: beforeinput over a selection spanning a chip (re
 
     fireEvent(
       editable,
-      new window.InputEvent('beforeinput', { inputType: 'deleteWordBackward', bubbles: true, cancelable: true }),
+      new window.InputEvent('beforeinput', {
+        inputType: 'deleteWordBackward',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
 
     expect(store.getRun('chip')).toBeUndefined();
@@ -545,7 +580,12 @@ describe('EditableBlockContent: beforeinput over a selection spanning a chip (re
 
     selectAcross(r1Node.firstChild, 1, r1Node.firstChild, 3); // "b|ef|ore " — no chip involved
 
-    const event = new window.InputEvent('beforeinput', { inputType: 'insertText', data: 'X', bubbles: true, cancelable: true });
+    const event = new window.InputEvent('beforeinput', {
+      inputType: 'insertText',
+      data: 'X',
+      bubbles: true,
+      cancelable: true,
+    });
     fireEvent(editable, event);
 
     expect(event.defaultPrevented).toBe(false); // untouched: falls through to native handling
@@ -553,7 +593,7 @@ describe('EditableBlockContent: beforeinput over a selection spanning a chip (re
   });
 });
 
-describe('EditableBlockContent: typing inside an atomic run\'s own nested control does not delete the chip (regression)', () => {
+describe("EditableBlockContent: typing inside an atomic run's own nested control does not delete the chip (regression)", () => {
   // Real bug report: place the caret inside the checkbox chip's own label
   // <input> and start typing — the chip vanished from the DOM and the
   // typed character appeared in its place. Cause: clicking to focus a
@@ -579,7 +619,13 @@ describe('EditableBlockContent: typing inside an atomic run\'s own nested contro
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'Task: ', marks: {} },
-        { id: 'chip', type: 'checkbox', value: '', marks: {}, data: { checked: false, label: 'Confirmed' } },
+        {
+          id: 'chip',
+          type: 'checkbox',
+          value: '',
+          marks: {},
+          data: { checked: false, label: 'Confirmed' },
+        },
       ],
     });
   }
@@ -611,7 +657,12 @@ describe('EditableBlockContent: typing inside an atomic run\'s own nested contro
 
     fireEvent(
       labelInput,
-      new window.InputEvent('beforeinput', { inputType: 'insertText', data: 'X', bubbles: true, cancelable: true }),
+      new window.InputEvent('beforeinput', {
+        inputType: 'insertText',
+        data: 'X',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
 
     expect(store.getRun('chip')).toBeDefined();
@@ -638,11 +689,21 @@ describe('EditableBlockContent: typing inside an atomic run\'s own nested contro
     // must not swallow.
     fireEvent(
       editable,
-      new window.InputEvent('beforeinput', { inputType: 'insertText', data: 'X', bubbles: true, cancelable: true }),
+      new window.InputEvent('beforeinput', {
+        inputType: 'insertText',
+        data: 'X',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
 
     expect(store.getRun('chip')).toBeUndefined();
-    expect(store.getBlock('p1').contentIds.map((id) => store.getRun(id).value).join('')).toBe('Task: X');
+    expect(
+      store
+        .getBlock('p1')
+        .contentIds.map((id) => store.getRun(id).value)
+        .join(''),
+    ).toBe('Task: X');
   });
 });
 
@@ -663,7 +724,15 @@ describe('EditableBlockContent: never leaves a block with zero runs (regression)
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
         { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['chip'], props: {} },
       ],
-      runs: [{ id: 'chip', type: 'select', value: '', marks: {}, data: { options: [], selectedValue: '' } }],
+      runs: [
+        {
+          id: 'chip',
+          type: 'select',
+          value: '',
+          marks: {},
+          data: { options: [], selectedValue: '' },
+        },
+      ],
     });
     const { container } = renderBlock(store);
     const editable = container.querySelector('[contenteditable]');

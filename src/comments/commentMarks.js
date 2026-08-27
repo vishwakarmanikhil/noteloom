@@ -65,13 +65,18 @@ function appendCommentToSingleRunOp(blockId, run, from, to, commentId) {
  * pre-existing local-only-in-collaboration scope (see EditorStore's
  * REPLACE_RUN_SPAN case) rather than a new op type.
  */
-export function addCommentMarkOverRange(store, { blockId, startRunId, startOffset, endRunId, endOffset }, commentId) {
+export function addCommentMarkOverRange(
+  store,
+  { blockId, startRunId, startOffset, endRunId, endOffset },
+  commentId,
+) {
   const runIds = getBlockRunIds(store, blockId);
   const startIndex = runIds.indexOf(startRunId);
   const endIndex = runIds.indexOf(endRunId);
   if (startIndex === -1 || endIndex === -1) return null;
 
-  const [fromIndex, toIndex] = startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+  const [fromIndex, toIndex] =
+    startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
   const fromOffset = startIndex <= endIndex ? startOffset : endOffset;
   const toOffset = startIndex <= endIndex ? endOffset : startOffset;
 
@@ -104,7 +109,12 @@ export function addCommentMarkOverRange(store, { blockId, startRunId, startOffse
     const after = run.value.slice(sliceEnd);
 
     if (before) newRuns.push({ id: genId(), type: 'text', value: before, marks: { ...run.marks } });
-    newRuns.push({ id: genId(), type: 'text', value: middle, marks: appendCommentMark(run.marks, commentId) });
+    newRuns.push({
+      id: genId(),
+      type: 'text',
+      value: middle,
+      marks: appendCommentMark(run.marks, commentId),
+    });
     if (after) newRuns.push({ id: genId(), type: 'text', value: after, marks: { ...run.marks } });
   });
 
@@ -128,7 +138,11 @@ export function removeCommentMarkEverywhere(store, commentId) {
   for (const runId of store.getAllRunIds()) {
     const run = store.getRun(runId);
     if (!run?.marks?.commentIds?.includes(commentId)) continue;
-    ops.push({ type: 'updateRun', id: runId, patch: { marks: removeCommentMark(run.marks, commentId) } });
+    ops.push({
+      type: 'updateRun',
+      id: runId,
+      patch: { marks: removeCommentMark(run.marks, commentId) },
+    });
   }
   return ops;
 }

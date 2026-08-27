@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { createBlockRegistry } from '../../src/registry/blockRegistry.js';
 import { registerBuiltInBlocks } from '../../src/blocks/index.js';
-import { TEXT_FAMILY_TARGETS, isTurnIntoEligible, turnBlockInto } from '../../src/blocks/shared/turnInto.js';
+import {
+  TEXT_FAMILY_TARGETS,
+  isTurnIntoEligible,
+  turnBlockInto,
+} from '../../src/blocks/shared/turnInto.js';
 
 function makeRegistry() {
   const registry = createBlockRegistry();
@@ -17,13 +21,30 @@ function applyOps(store, ops) {
 
 describe('isTurnIntoEligible', () => {
   it('is true for every text-family type', () => {
-    for (const type of ['paragraph', 'heading', 'listItem', 'toggleHeading', 'blockquote', 'callout', 'code']) {
+    for (const type of [
+      'paragraph',
+      'heading',
+      'listItem',
+      'toggleHeading',
+      'blockquote',
+      'callout',
+      'code',
+    ]) {
       expect(isTurnIntoEligible(type)).toBe(true);
     }
   });
 
   it('is false for every structural type', () => {
-    for (const type of ['table', 'tableRow', 'tableCell', 'layout', 'layoutColumn', 'embed', 'divider', 'button']) {
+    for (const type of [
+      'table',
+      'tableRow',
+      'tableCell',
+      'layout',
+      'layoutColumn',
+      'embed',
+      'divider',
+      'button',
+    ]) {
       expect(isTurnIntoEligible(type)).toBe(false);
     }
   });
@@ -94,7 +115,13 @@ describe('turnBlockInto', () => {
     };
     const store = new EditorStore(doc);
     const registry = makeRegistry();
-    const bulletTarget = TEXT_FAMILY_TARGETS.find((t) => t.type === 'listItem' && t.props.ordered === false && !('checked' in t.props) && !('collapsed' in t.props));
+    const bulletTarget = TEXT_FAMILY_TARGETS.find(
+      (t) =>
+        t.type === 'listItem' &&
+        t.props.ordered === false &&
+        !('checked' in t.props) &&
+        !('collapsed' in t.props),
+    );
 
     const first = turnBlockInto(store, registry, 'p1', bulletTarget);
     applyOps(store, first.ops);
@@ -119,7 +146,13 @@ describe('turnBlockInto', () => {
         rootId: 'root',
         blocks: [
           { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
-          { id: 'c1', type: 'callout', parentId: 'root', contentIds: ['child1'], props: { icon: '💡' } },
+          {
+            id: 'c1',
+            type: 'callout',
+            parentId: 'root',
+            contentIds: ['child1'],
+            props: { icon: '💡' },
+          },
           { id: 'child1', type: 'paragraph', parentId: 'c1', contentIds: ['r1'], props: {} },
         ],
         runs: [{ id: 'r1', type: 'text', value: 'Note text', marks: {} }],
@@ -129,7 +162,13 @@ describe('turnBlockInto', () => {
     it('callout -> listItem: titleRunIds ends up empty (not the child block id), children are preserved as nested list items', () => {
       const store = new EditorStore(makeCalloutDoc());
       const registry = makeRegistry();
-      const bulletTarget = TEXT_FAMILY_TARGETS.find((t) => t.type === 'listItem' && t.props.ordered === false && !('checked' in t.props) && !('collapsed' in t.props));
+      const bulletTarget = TEXT_FAMILY_TARGETS.find(
+        (t) =>
+          t.type === 'listItem' &&
+          t.props.ordered === false &&
+          !('checked' in t.props) &&
+          !('collapsed' in t.props),
+      );
 
       const { ops, newBlockId } = turnBlockInto(store, registry, 'c1', bulletTarget);
       applyOps(store, ops);

@@ -38,8 +38,14 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
 
   async function connectPair(historyA, historyB) {
     const network = makeFakeSignalingNetwork();
-    const sessionA = new CollabSession({ history: historyA, signaling: network.makeChannelFor('peer-a') });
-    const sessionB = new CollabSession({ history: historyB, signaling: network.makeChannelFor('peer-b') });
+    const sessionA = new CollabSession({
+      history: historyA,
+      signaling: network.makeChannelFor('peer-a'),
+    });
+    const sessionB = new CollabSession({
+      history: historyB,
+      signaling: network.makeChannelFor('peer-b'),
+    });
 
     const peerA = sessionA.connect('peer-b', { initiator: true });
     const peerB = sessionB.connect('peer-a', { initiator: false });
@@ -51,7 +57,7 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
     return { sessionA, sessionB };
   }
 
-  it('a peer joining empty adopts the other peer\'s existing document on connect', async () => {
+  it("a peer joining empty adopts the other peer's existing document on connect", async () => {
     const historyA = new History(new EditorStore(makeDoc()));
     const historyB = new History(new EditorStore(emptyDoc()));
 
@@ -79,7 +85,7 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
     sessionB.destroy();
   });
 
-  it('a remote edit is never added to the receiving peer\'s local undo stack', async () => {
+  it("a remote edit is never added to the receiving peer's local undo stack", async () => {
     const historyA = new History(new EditorStore(makeDoc()));
     const historyB = new History(new EditorStore(makeDoc()));
     const { sessionA, sessionB } = await connectPair(historyA, historyB);
@@ -94,19 +100,37 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
     sessionB.destroy();
   });
 
-  it('concurrent inserts from both peers, made before either sees the other\'s change, both survive and converge identically', async () => {
+  it("concurrent inserts from both peers, made before either sees the other's change, both survive and converge identically", async () => {
     const historyA = new History(new EditorStore(makeDoc()));
     const historyB = new History(new EditorStore(makeDoc()));
     const { sessionA, sessionB } = await connectPair(historyA, historyB);
 
     // simulate genuine concurrency: both perform before either broadcast is received
-    const fromA = { id: 'fromA', type: 'paragraph', parentId: 'root', contentIds: ['rFromA'], props: {} };
-    const fromB = { id: 'fromB', type: 'paragraph', parentId: 'root', contentIds: ['rFromB'], props: {} };
+    const fromA = {
+      id: 'fromA',
+      type: 'paragraph',
+      parentId: 'root',
+      contentIds: ['rFromA'],
+      props: {},
+    };
+    const fromB = {
+      id: 'fromB',
+      type: 'paragraph',
+      parentId: 'root',
+      contentIds: ['rFromB'],
+      props: {},
+    };
     historyA.performBatch([
-      insertBlock(fromA, 'root', 1, { blocks: [fromA], runs: [{ id: 'rFromA', type: 'text', value: 'From A', marks: {} }] }),
+      insertBlock(fromA, 'root', 1, {
+        blocks: [fromA],
+        runs: [{ id: 'rFromA', type: 'text', value: 'From A', marks: {} }],
+      }),
     ]);
     historyB.performBatch([
-      insertBlock(fromB, 'root', 1, { blocks: [fromB], runs: [{ id: 'rFromB', type: 'text', value: 'From B', marks: {} }] }),
+      insertBlock(fromB, 'root', 1, {
+        blocks: [fromB],
+        runs: [{ id: 'rFromB', type: 'text', value: 'From B', marks: {} }],
+      }),
     ]);
     await new Promise((resolve) => setTimeout(resolve, 0));
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -119,7 +143,7 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
     sessionB.destroy();
   });
 
-  it('concurrent edits to the SAME run, made before either sees the other\'s change, both survive (character-level merge, not whole-value LWW)', async () => {
+  it("concurrent edits to the SAME run, made before either sees the other's change, both survive (character-level merge, not whole-value LWW)", async () => {
     const historyA = new History(new EditorStore(makeDoc()));
     const historyB = new History(new EditorStore(makeDoc()));
     const { sessionA, sessionB } = await connectPair(historyA, historyB);
@@ -138,7 +162,7 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
     sessionB.destroy();
   });
 
-  it('undoing your own edit to a run never removes a peer\'s concurrent edit to that same run', async () => {
+  it("undoing your own edit to a run never removes a peer's concurrent edit to that same run", async () => {
     const historyA = new History(new EditorStore(makeDoc()));
     const historyB = new History(new EditorStore(makeDoc()));
     const { sessionA, sessionB } = await connectPair(historyA, historyB);
@@ -170,10 +194,19 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
     const historyB = new History(new EditorStore(makeDoc()));
     const { sessionA, sessionB } = await connectPair(historyA, historyB);
 
-    const replacement = { id: 'replacement', type: 'heading', parentId: 'root', contentIds: ['rReplacement'], props: { level: 1 } };
+    const replacement = {
+      id: 'replacement',
+      type: 'heading',
+      parentId: 'root',
+      contentIds: ['rReplacement'],
+      props: { level: 1 },
+    };
     historyA.performBatch([
       removeBlock('p1'),
-      insertBlock(replacement, 'root', 0, { blocks: [replacement], runs: [{ id: 'rReplacement', type: 'text', value: 'check', marks: {} }] }),
+      insertBlock(replacement, 'root', 0, {
+        blocks: [replacement],
+        runs: [{ id: 'rReplacement', type: 'text', value: 'check', marks: {} }],
+      }),
     ]);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -205,7 +238,7 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
   });
 
   describe('presence', () => {
-    it('setLocalPresence on A shows up in B\'s getPresence(), keyed by A\'s peer id', async () => {
+    it("setLocalPresence on A shows up in B's getPresence(), keyed by A's peer id", async () => {
       const historyA = new History(new EditorStore(makeDoc()));
       const historyB = new History(new EditorStore(makeDoc()));
       const { sessionA, sessionB } = await connectPair(historyA, historyB);
@@ -220,7 +253,7 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
       sessionB.destroy();
     });
 
-    it('onPresenceChange fires with a snapshot whenever a peer\'s presence updates', async () => {
+    it("onPresenceChange fires with a snapshot whenever a peer's presence updates", async () => {
       const historyA = new History(new EditorStore(makeDoc()));
       const historyB = new History(new EditorStore(makeDoc()));
       const { sessionA, sessionB } = await connectPair(historyA, historyB);
@@ -242,8 +275,15 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
       const historyA = new History(new EditorStore(makeDoc()));
       const historyB = new History(new EditorStore(makeDoc()));
       const network = makeFakeSignalingNetwork();
-      const sessionA = new CollabSession({ history: historyA, signaling: network.makeChannelFor('peer-a'), presenceThrottleMs: 1000 });
-      const sessionB = new CollabSession({ history: historyB, signaling: network.makeChannelFor('peer-b') });
+      const sessionA = new CollabSession({
+        history: historyA,
+        signaling: network.makeChannelFor('peer-a'),
+        presenceThrottleMs: 1000,
+      });
+      const sessionB = new CollabSession({
+        history: historyB,
+        signaling: network.makeChannelFor('peer-b'),
+      });
       const peerA = sessionA.connect('peer-b', { initiator: true });
       const peerB = sessionB.connect('peer-a', { initiator: false });
       await Promise.all([waitForOpen(peerA), waitForOpen(peerB)]);
@@ -274,10 +314,16 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
       const historyB = new History(new EditorStore(emptyDoc()));
 
       const network = makeFakeSignalingNetwork();
-      const sessionA = new CollabSession({ history: historyA, signaling: network.makeChannelFor('peer-a') });
+      const sessionA = new CollabSession({
+        history: historyA,
+        signaling: network.makeChannelFor('peer-a'),
+      });
       sessionA.setLocalPresence({ blockId: 'p1', offset: 0 }); // set BEFORE B ever connects
 
-      const sessionB = new CollabSession({ history: historyB, signaling: network.makeChannelFor('peer-b') });
+      const sessionB = new CollabSession({
+        history: historyB,
+        signaling: network.makeChannelFor('peer-b'),
+      });
       const peerA = sessionA.connect('peer-b', { initiator: true });
       const peerB = sessionB.connect('peer-a', { initiator: false });
       await Promise.all([waitForOpen(peerA), waitForOpen(peerB)]);
@@ -290,7 +336,7 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
       sessionB.destroy();
     });
 
-    it('a peer\'s presence is removed the moment they disconnect', async () => {
+    it("a peer's presence is removed the moment they disconnect", async () => {
       const historyA = new History(new EditorStore(makeDoc()));
       const historyB = new History(new EditorStore(makeDoc()));
       const { sessionA, sessionB } = await connectPair(historyA, historyB);

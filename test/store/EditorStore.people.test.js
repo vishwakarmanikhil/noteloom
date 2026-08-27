@@ -125,7 +125,12 @@ describe('EditorStore two-peer convergence: people list', () => {
   it('an update arriving before its person was ever added (out-of-order delivery) is silently dropped, not thrown', () => {
     const storeB = new EditorStore(makeDoc());
     expect(() =>
-      storeB.applyRemoteOperation({ kind: 'peopleWrite', op: 'update', id: 'never-arrived', patch: { name: 'Ghost' } }),
+      storeB.applyRemoteOperation({
+        kind: 'peopleWrite',
+        op: 'update',
+        id: 'never-arrived',
+        patch: { name: 'Ghost' },
+      }),
     ).not.toThrow();
     expect(storeB.getPerson('never-arrived')).toBeUndefined();
   });

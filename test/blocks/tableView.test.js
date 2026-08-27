@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { sortRowIdsByColumn, computeColumnAggregate, formatAggregateValue } from '../../src/blocks/table/tableView.js';
+import {
+  sortRowIdsByColumn,
+  computeColumnAggregate,
+  formatAggregateValue,
+} from '../../src/blocks/table/tableView.js';
 
 function textRun(value) {
   return { type: 'text', value, marks: {} };

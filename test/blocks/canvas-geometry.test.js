@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { clientToLocal, localPixelScale, zoomAnchoredView, boxesIntersect, clampViewOffset } from '../../src/blocks/canvas/canvasGeometry.js';
+import {
+  clientToLocal,
+  localPixelScale,
+  zoomAnchoredView,
+  boxesIntersect,
+  clampViewOffset,
+} from '../../src/blocks/canvas/canvasGeometry.js';
 
 // A plain object with just enough shape to stand in for the real <svg>
 // element — clientToLocal/localPixelScale/zoomAnchoredView only ever call
@@ -27,16 +33,24 @@ describe('clientToLocal: letterbox-aware mapping (regression — cursor/draw-poi
     expect(y).toBeCloseTo(500);
   });
 
-  it('a point on the wider axis outside the letterboxed (shorter-axis-limited) content still maps consistently with the browser\'s own centering', () => {
+  it("a point on the wider axis outside the letterboxed (shorter-axis-limited) content still maps consistently with the browser's own centering", () => {
     const svg = fakeSvg({ left: 0, top: 0, width: 480, height: 320 });
     // scale = min(480,320)/1000 = 0.32; offsetX = (480 - 1000*0.32)/2 = 80
-    const [xAtLeftEdgeOfContent] = clientToLocal({ clientX: 80, clientY: 0 }, svg, { x: 0, y: 0, size: 1000 });
+    const [xAtLeftEdgeOfContent] = clientToLocal({ clientX: 80, clientY: 0 }, svg, {
+      x: 0,
+      y: 0,
+      size: 1000,
+    });
     expect(xAtLeftEdgeOfContent).toBeCloseTo(0); // the left edge of the actually-drawn square, not the rect's own left edge
   });
 
   it('is unaffected by view.x/view.y translation (pan) — same relative mapping, shifted by the pan offset', () => {
     const svg = fakeSvg({ left: 0, top: 0, width: 400, height: 400 });
-    const [x, y] = clientToLocal({ clientX: 200, clientY: 200 }, svg, { x: 100, y: -50, size: 1000 });
+    const [x, y] = clientToLocal({ clientX: 200, clientY: 200 }, svg, {
+      x: 100,
+      y: -50,
+      size: 1000,
+    });
     expect(x).toBeCloseTo(600);
     expect(y).toBeCloseTo(450);
   });
@@ -48,7 +62,7 @@ describe('localPixelScale', () => {
     expect(localPixelScale(svg, 1000)).toBeCloseTo(0.4);
   });
 
-  it('uses the SMALLER of the two axes for a non-square rect (matching the browser\'s own letterboxing)', () => {
+  it("uses the SMALLER of the two axes for a non-square rect (matching the browser's own letterboxing)", () => {
     const svg = fakeSvg({ left: 0, top: 0, width: 480, height: 320 });
     expect(localPixelScale(svg, 1000)).toBeCloseTo(0.32);
   });

@@ -75,7 +75,9 @@ describe('BlockGutterRow: more-options menu', () => {
 
     const menu = document.querySelector('.be-block-gutter-menu');
     expect(menu).not.toBeNull();
-    const items = [...menu.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    const items = [...menu.querySelectorAll('.be-block-gutter-menu-item')].map((el) =>
+      el.textContent.trim(),
+    );
     expect(items).toEqual([
       'Duplicate',
       'Move up',
@@ -93,7 +95,11 @@ describe('BlockGutterRow: more-options menu', () => {
 
     const row = container.querySelector('[data-block-row-id="p2"]');
     fireEvent.click(row.querySelector('[aria-label="More options"]'));
-    fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Duplicate'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+        (el) => el.textContent.trim() === 'Duplicate',
+      ),
+    );
 
     const contentIds = store.getBlock('root').contentIds;
     expect(contentIds.length).toBe(4);
@@ -111,11 +117,19 @@ describe('BlockGutterRow: more-options menu', () => {
 
     const row = container.querySelector('[data-block-row-id="p2"]');
     fireEvent.click(row.querySelector('[aria-label="More options"]'));
-    fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Move up'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+        (el) => el.textContent.trim() === 'Move up',
+      ),
+    );
     expect(store.getBlock('root').contentIds).toEqual(['p2', 'p1', 'p3']);
 
     fireEvent.click(row.querySelector('[aria-label="More options"]'));
-    fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Move down'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+        (el) => el.textContent.trim() === 'Move down',
+      ),
+    );
     expect(store.getBlock('root').contentIds).toEqual(['p1', 'p2', 'p3']);
   });
 
@@ -125,7 +139,11 @@ describe('BlockGutterRow: more-options menu', () => {
 
     const row = container.querySelector('[data-block-row-id="p2"]');
     fireEvent.click(row.querySelector('[aria-label="More options"]'));
-    fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Delete'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+        (el) => el.textContent.trim() === 'Delete',
+      ),
+    );
 
     expect(store.getBlock('root').contentIds).toEqual(['p1', 'p3']);
     expect(store.getBlock('p2')).toBeUndefined();
@@ -176,7 +194,11 @@ describe('BlockGutterRow: more-options menu is keyboard-operable', () => {
 
     const row = container.querySelector('[data-block-row-id="p2"]');
     fireEvent.click(row.querySelector('[aria-label="More options"]'));
-    fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Duplicate'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+        (el) => el.textContent.trim() === 'Duplicate',
+      ),
+    );
 
     expect(document.getElementById('be-live-region')).not.toBeNull();
   });
@@ -201,7 +223,9 @@ describe('BlockGutterRow: text-direction toggle', () => {
     expect(row.getAttribute('dir')).toBe('rtl');
 
     fireEvent.click(row.querySelector('[aria-label="More options"]'));
-    const items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    const items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) =>
+      el.textContent.trim(),
+    );
     expect(items).toContain('Switch to left-to-right');
 
     fireEvent.click(
@@ -221,20 +245,30 @@ describe('BlockGutterRow: Hide/Show toggle + preview mode', () => {
 
     const row = container.querySelector('[data-block-row-id="p2"]');
     fireEvent.click(row.querySelector('[aria-label="More options"]'));
-    fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Hide in preview'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+        (el) => el.textContent.trim() === 'Hide in preview',
+      ),
+    );
 
     expect(store.getBlock('p2').props.hidden).toBe(true);
-    expect(container.querySelector('[data-block-row-id="p2"]').classList.contains('be-block-row-hidden')).toBe(true);
+    expect(
+      container.querySelector('[data-block-row-id="p2"]').classList.contains('be-block-row-hidden'),
+    ).toBe(true);
     // still fully in the DOM/editable — only dimmed via CSS (opacity), not removed
     expect(container.querySelector('[data-block-id="p2"]')).not.toBeNull();
 
     fireEvent.click(row.querySelector('[aria-label="More options"]'));
-    const items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    const items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) =>
+      el.textContent.trim(),
+    );
     expect(items).toContain('Show in preview'); // label flips once hidden
 
     fireEvent.click(document.querySelectorAll('.be-block-gutter-menu-item')[3]); // "Show in preview"
     expect(store.getBlock('p2').props.hidden).toBe(false);
-    expect(container.querySelector('[data-block-row-id="p2"]').classList.contains('be-block-row-hidden')).toBe(false);
+    expect(
+      container.querySelector('[data-block-row-id="p2"]').classList.contains('be-block-row-hidden'),
+    ).toBe(false);
   });
 
   it('is one atomic, undoable prop change', () => {
@@ -243,7 +277,11 @@ describe('BlockGutterRow: Hide/Show toggle + preview mode', () => {
 
     const row = container.querySelector('[data-block-row-id="p1"]');
     fireEvent.click(row.querySelector('[aria-label="More options"]'));
-    fireEvent.click([...document.querySelectorAll('.be-block-gutter-menu-item')].find((el) => el.textContent.trim() === 'Hide in preview'));
+    fireEvent.click(
+      [...document.querySelectorAll('.be-block-gutter-menu-item')].find(
+        (el) => el.textContent.trim() === 'Hide in preview',
+      ),
+    );
 
     expect(store.getBlock('p1').props.hidden).toBe(true);
   });
@@ -268,13 +306,17 @@ describe('BlockGutterRow: Turn into', () => {
 
     const paragraphRow = container.querySelector('[data-block-row-id="p1"]');
     fireEvent.click(paragraphRow.querySelector('[aria-label="More options"]'));
-    let items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    let items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) =>
+      el.textContent.trim(),
+    );
     expect(items).toContain('Turn into');
     fireEvent.keyDown(document, { key: 'Escape' });
 
     const dividerRow = container.querySelector('[data-block-row-id="divider1"]');
     fireEvent.click(dividerRow.querySelector('[aria-label="More options"]'));
-    items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    items = [...document.querySelectorAll('.be-block-gutter-menu-item')].map((el) =>
+      el.textContent.trim(),
+    );
     expect(items).not.toContain('Turn into');
   });
 
@@ -292,7 +334,9 @@ describe('BlockGutterRow: Turn into', () => {
     const menus = document.querySelectorAll('.be-block-gutter-menu');
     expect(menus.length).toBe(2); // the outer menu + the turn-into submenu
     const submenu = menus[1];
-    const submenuItems = [...submenu.querySelectorAll('.be-block-gutter-menu-item')].map((el) => el.textContent.trim());
+    const submenuItems = [...submenu.querySelectorAll('.be-block-gutter-menu-item')].map((el) =>
+      el.textContent.trim(),
+    );
     expect(submenuItems.some((t) => t.endsWith('Heading 1'))).toBe(true);
     expect(submenuItems.some((t) => t.endsWith('Bulleted list'))).toBe(true);
     expect(submenuItems.some((t) => t.endsWith('Code'))).toBe(true);
@@ -337,7 +381,9 @@ describe('BlockGutterRow: Turn into', () => {
     expect(document.querySelector('.be-block-gutter-menu[aria-label="Turn into"]')).toBeNull();
     expect(document.activeElement).toBe(turnIntoTrigger);
     // the outer menu itself stays open — only the submenu closed
-    expect(document.querySelector('.be-block-gutter-menu[aria-label="Block options"]')).not.toBeNull();
+    expect(
+      document.querySelector('.be-block-gutter-menu[aria-label="Block options"]'),
+    ).not.toBeNull();
   });
 });
 
@@ -397,4 +443,3 @@ describe('preview mode: hidden blocks are skipped entirely, not just dimmed', ()
     expect(container.querySelectorAll('[data-block-id]')).toHaveLength(3);
   });
 });
-

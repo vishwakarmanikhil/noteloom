@@ -34,10 +34,20 @@ function NewDocumentScreen({ onStart }) {
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         <button onClick={() => onStart(null)}>Blank document</button>
         <button onClick={() => fileInputRef.current.click()}>Import template from JSON…</button>
-        <input ref={fileInputRef} type="file" accept="application/json" onChange={handleImport} style={{ display: 'none' }} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          onChange={handleImport}
+          style={{ display: 'none' }}
+        />
       </div>
       {isLoaded && (
-        <TemplatePicker templates={templates} onSelect={(template) => onStart(template.doc)} emptyLabel="No saved document templates yet." />
+        <TemplatePicker
+          templates={templates}
+          onSelect={(template) => onStart(template.doc)}
+          emptyLabel="No saved document templates yet."
+        />
       )}
     </div>
   );
@@ -62,7 +72,12 @@ function EditorScreen({ initialDoc, onBack }) {
     if (!name) return;
     // exportDocumentJSON returns a JSON *string* (it's the "view source"/
     // copy-out format) -- parse it back into the plain object useEditor({doc}) wants.
-    await saveTemplate({ id: crypto.randomUUID(), scope: 'document', name, doc: JSON.parse(exportDocumentJSON(editor.store)) });
+    await saveTemplate({
+      id: crypto.randomUUID(),
+      scope: 'document',
+      name,
+      doc: JSON.parse(exportDocumentJSON(editor.store)),
+    });
     window.alert('Saved — go back to see it in the gallery.');
   }
 
@@ -72,7 +87,9 @@ function EditorScreen({ initialDoc, onBack }) {
         <button onClick={onBack}>&larr; Back</button>
         <button onClick={handleSaveAsTemplate}>Save as template</button>
       </div>
-      <p style={{ color: '#666', fontSize: 14 }}>Type "/agenda" or "/action" to insert a block snippet.</p>
+      <p style={{ color: '#666', fontSize: 14 }}>
+        Type "/agenda" or "/action" to insert a block snippet.
+      </p>
       <NoteloomEditor editor={editor} />
     </div>
   );
@@ -84,5 +101,11 @@ export function App() {
   if (!state.started) {
     return <NewDocumentScreen onStart={(doc) => setState({ started: true, doc })} />;
   }
-  return <EditorScreen key={state.doc ? 'from-template' : 'blank'} initialDoc={state.doc} onBack={() => setState({ started: false, doc: null })} />;
+  return (
+    <EditorScreen
+      key={state.doc ? 'from-template' : 'blank'}
+      initialDoc={state.doc}
+      onBack={() => setState({ started: false, doc: null })}
+    />
+  );
 }

@@ -100,7 +100,13 @@ describe('toggleMarkOverSelection: multi-run ranges within one block', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
-        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1', 'r2', 'r3'], props: {} },
+        {
+          id: 'p1',
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: ['r1', 'r2', 'r3'],
+          props: {},
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'hello ', marks: {} },
@@ -155,7 +161,12 @@ describe('toggleMarkOverSelection: multi-run ranges within one block', () => {
       ],
     });
 
-    toggleMarkOverSelection(store, 'p1', { startRunId: 'r1', startOffset: 0, endRunId: 'r2', endOffset: 3 }, 'bold');
+    toggleMarkOverSelection(
+      store,
+      'p1',
+      { startRunId: 'r1', startOffset: 0, endRunId: 'r2', endOffset: 3 },
+      'bold',
+    );
 
     const contentIds = store.getBlock('p1').contentIds;
     const runs = contentIds.map((id) => store.getRun(id));
@@ -167,16 +178,33 @@ describe('toggleMarkOverSelection: multi-run ranges within one block', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
-        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1', 'sel1', 'r2'], props: {} },
+        {
+          id: 'p1',
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: ['r1', 'sel1', 'r2'],
+          props: {},
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'pick ', marks: {} },
-        { id: 'sel1', type: 'select', value: '', marks: {}, data: { options: [], selectedValue: '' } },
+        {
+          id: 'sel1',
+          type: 'select',
+          value: '',
+          marks: {},
+          data: { options: [], selectedValue: '' },
+        },
         { id: 'r2', type: 'text', value: ' now', marks: {} },
       ],
     });
 
-    toggleMarkOverSelection(store, 'p1', { startRunId: 'r1', startOffset: 0, endRunId: 'r2', endOffset: 4 }, 'bold');
+    toggleMarkOverSelection(
+      store,
+      'p1',
+      { startRunId: 'r1', startOffset: 0, endRunId: 'r2', endOffset: 4 },
+      'bold',
+    );
 
     const contentIds = store.getBlock('p1').contentIds;
     const selectRun = contentIds.map((id) => store.getRun(id)).find((r) => r.type === 'select');
@@ -224,7 +252,15 @@ describe('toggleMarkOverBlockRange: selection spanning multiple sibling blocks',
     const store = new EditorStore(makeThreeParagraphDoc());
     toggleMarkOverBlockRange(
       store,
-      { blockIds: ['p1', 'p2', 'p3'], startBlockId: 'p2', startRunId: 'r2', startOffset: 0, endBlockId: 'p2', endRunId: 'r2', endOffset: 6 },
+      {
+        blockIds: ['p1', 'p2', 'p3'],
+        startBlockId: 'p2',
+        startRunId: 'r2',
+        startOffset: 0,
+        endBlockId: 'p2',
+        endRunId: 'r2',
+        endOffset: 6,
+      },
       'bold',
     );
     expect(store.getRun('r2').marks.bold).toBe(true);
@@ -277,7 +313,15 @@ describe('toggleMarkOverBlockRange: selection spanning multiple sibling blocks',
 
     toggleMarkOverBlockRange(
       store,
-      { blockIds: ['p1', 'p2'], startBlockId: 'p1', startRunId: 'r1', startOffset: 0, endBlockId: 'p2', endRunId: 'r2', endOffset: 3 },
+      {
+        blockIds: ['p1', 'p2'],
+        startBlockId: 'p1',
+        startRunId: 'r1',
+        startOffset: 0,
+        endBlockId: 'p2',
+        endRunId: 'r2',
+        endOffset: 3,
+      },
       'bold',
     );
 
@@ -312,7 +356,15 @@ describe('toggleMarkOverBlockRange: selection spanning multiple sibling blocks',
     const store = new EditorStore(makeThreeParagraphDoc());
     const result = toggleMarkOverBlockRange(
       store,
-      { blockIds: ['p1', 'p2'], startBlockId: 'p1', startRunId: 'r1', startOffset: 0, endBlockId: 'nonexistent', endRunId: 'x', endOffset: 1 },
+      {
+        blockIds: ['p1', 'p2'],
+        startBlockId: 'p1',
+        startRunId: 'r1',
+        startOffset: 0,
+        endBlockId: 'nonexistent',
+        endRunId: 'x',
+        endOffset: 1,
+      },
       'bold',
     );
     expect(result).toBeNull();
@@ -333,7 +385,12 @@ describe('setMarksOverSelection: value-based marks and multi-mark patches (regre
 
   it('sets an arbitrary color value (not just a boolean true) over the selection', () => {
     const store = new EditorStore(makeDoc());
-    setMarksOverSelection(store, 'p1', { startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { color: '#e03131' });
+    setMarksOverSelection(
+      store,
+      'p1',
+      { startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { color: '#e03131' },
+    );
 
     const contentIds = store.getBlock('p1').contentIds;
     const runs = contentIds.map((id) => store.getRun(id));
@@ -351,7 +408,12 @@ describe('setMarksOverSelection: value-based marks and multi-mark patches (regre
       runs: [{ id: 'r1', type: 'text', value: 'hello', marks: { highlight: '#fff3bf' } }],
     });
 
-    setMarksOverSelection(store, 'p1', { startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { highlight: null });
+    setMarksOverSelection(
+      store,
+      'p1',
+      { startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { highlight: null },
+    );
     expect(store.getRun('r1').marks.highlight).toBeUndefined();
   });
 
@@ -397,7 +459,15 @@ describe('setMarksOverBlockRange: value-based patch across sibling blocks', () =
 
     setMarksOverBlockRange(
       store,
-      { blockIds: ['p1', 'p2', 'p3'], startBlockId: 'p1', startRunId: 'r1', startOffset: 2, endBlockId: 'p3', endRunId: 'r3', endOffset: 3 },
+      {
+        blockIds: ['p1', 'p2', 'p3'],
+        startBlockId: 'p1',
+        startRunId: 'r1',
+        startOffset: 2,
+        endBlockId: 'p3',
+        endRunId: 'r3',
+        endOffset: 3,
+      },
       { color: '#1971c2' },
     );
 
@@ -423,10 +493,20 @@ describe('getMarksSummaryOverSelection: toolbar "is this button active" indicato
       ],
     });
 
-    const mixed = getMarksSummaryOverSelection(store, 'p1', { startRunId: 'r1', startOffset: 0, endRunId: 'r2', endOffset: 3 });
+    const mixed = getMarksSummaryOverSelection(store, 'p1', {
+      startRunId: 'r1',
+      startOffset: 0,
+      endRunId: 'r2',
+      endOffset: 3,
+    });
     expect(mixed.bold).toBe(false);
 
-    const uniform = getMarksSummaryOverSelection(store, 'p1', { startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 3 });
+    const uniform = getMarksSummaryOverSelection(store, 'p1', {
+      startRunId: 'r1',
+      startOffset: 0,
+      endRunId: 'r1',
+      endOffset: 3,
+    });
     expect(uniform.bold).toBe(true);
   });
 
@@ -443,11 +523,21 @@ describe('getMarksSummaryOverSelection: toolbar "is this button active" indicato
       ],
     });
 
-    const uniform = getMarksSummaryOverSelection(store, 'p1', { startRunId: 'r1', startOffset: 0, endRunId: 'r2', endOffset: 3 });
+    const uniform = getMarksSummaryOverSelection(store, 'p1', {
+      startRunId: 'r1',
+      startOffset: 0,
+      endRunId: 'r2',
+      endOffset: 3,
+    });
     expect(uniform.color).toBe('#e03131');
 
     store.applyOperation({ type: 'updateRun', id: 'r2', patch: { marks: { color: '#2f9e44' } } });
-    const mixed = getMarksSummaryOverSelection(store, 'p1', { startRunId: 'r1', startOffset: 0, endRunId: 'r2', endOffset: 3 });
+    const mixed = getMarksSummaryOverSelection(store, 'p1', {
+      startRunId: 'r1',
+      startOffset: 0,
+      endRunId: 'r2',
+      endOffset: 3,
+    });
     expect(mixed.color).toBeNull();
   });
 });

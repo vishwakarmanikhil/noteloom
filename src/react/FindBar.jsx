@@ -73,7 +73,9 @@ export function FindBar({
           onKeyDown={handleQueryKeyDown}
           aria-label="Find in document"
         />
-        <span className="be-find-bar-count">{matches.length === 0 ? '0/0' : `${currentIndex + 1}/${matches.length}`}</span>
+        <span className="be-find-bar-count">
+          {matches.length === 0 ? '0/0' : `${currentIndex + 1}/${matches.length}`}
+        </span>
         <button
           type="button"
           className={`be-find-bar-toggle${caseSensitive ? ' be-find-bar-toggle-active' : ''}`}
@@ -94,13 +96,30 @@ export function FindBar({
         >
           [Ab]
         </button>
-        <button type="button" className="be-find-bar-nav" onClick={prev} disabled={matches.length === 0} aria-label="Previous match">
+        <button
+          type="button"
+          className="be-find-bar-nav"
+          onClick={prev}
+          disabled={matches.length === 0}
+          aria-label="Previous match"
+        >
           <ArrowUpIcon size={14} />
         </button>
-        <button type="button" className="be-find-bar-nav" onClick={next} disabled={matches.length === 0} aria-label="Next match">
+        <button
+          type="button"
+          className="be-find-bar-nav"
+          onClick={next}
+          disabled={matches.length === 0}
+          aria-label="Next match"
+        >
           <ArrowDownIcon size={14} />
         </button>
-        <button type="button" className="be-find-bar-close" onClick={close} aria-label="Close find bar">
+        <button
+          type="button"
+          className="be-find-bar-close"
+          onClick={close}
+          aria-label="Close find bar"
+        >
           <XIcon size={14} />
         </button>
       </div>
@@ -115,10 +134,20 @@ export function FindBar({
             onKeyDown={handleReplaceKeyDown}
             aria-label="Replace with"
           />
-          <button type="button" className="be-find-bar-replace-btn" onClick={replaceCurrent} disabled={matches.length === 0}>
+          <button
+            type="button"
+            className="be-find-bar-replace-btn"
+            onClick={replaceCurrent}
+            disabled={matches.length === 0}
+          >
             Replace
           </button>
-          <button type="button" className="be-find-bar-replace-btn" onClick={replaceAll} disabled={matches.length === 0}>
+          <button
+            type="button"
+            className="be-find-bar-replace-btn"
+            onClick={replaceAll}
+            disabled={matches.length === 0}
+          >
             Replace All
           </button>
         </div>

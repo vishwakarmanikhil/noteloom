@@ -9,8 +9,20 @@ function makeDoc() {
       { id: 'root', type: 'page', parentId: null, contentIds: ['h1', 'p1', 'li1'], props: {} },
       { id: 'h1', type: 'heading', parentId: 'root', contentIds: ['r-h1'], props: { level: 2 } },
       { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r-p1'], props: {} },
-      { id: 'li1', type: 'listItem', parentId: 'root', contentIds: ['li1a'], props: { ordered: false, titleRunIds: ['r-li1'] } },
-      { id: 'li1a', type: 'listItem', parentId: 'li1', contentIds: [], props: { ordered: false, titleRunIds: ['r-li1a'] } },
+      {
+        id: 'li1',
+        type: 'listItem',
+        parentId: 'root',
+        contentIds: ['li1a'],
+        props: { ordered: false, titleRunIds: ['r-li1'] },
+      },
+      {
+        id: 'li1a',
+        type: 'listItem',
+        parentId: 'li1',
+        contentIds: [],
+        props: { ordered: false, titleRunIds: ['r-li1a'] },
+      },
     ],
     runs: [
       { id: 'r-h1', type: 'text', value: 'The Cat Sat', marks: {} },

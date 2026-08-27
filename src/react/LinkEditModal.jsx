@@ -8,7 +8,15 @@ import { Modal } from './Modal.jsx';
  * flows look and behave identically, rather than the hover card growing
  * its own smaller inline editor that drifts out of sync with this one.
  */
-export function LinkEditModal({ isOpen, initialHref, initialTarget, hasExistingLink, onSave, onRemove, onClose }) {
+export function LinkEditModal({
+  isOpen,
+  initialHref,
+  initialTarget,
+  hasExistingLink,
+  onSave,
+  onRemove,
+  onClose,
+}) {
   const [href, setHref] = useState('');
   const [target, setTarget] = useState('_self');
 

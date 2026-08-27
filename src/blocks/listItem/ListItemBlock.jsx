@@ -3,10 +3,22 @@ import { useBlock } from '../../react/useBlock.js';
 import { useBlockChildren } from '../../react/useBlockChildren.js';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { BlockChildren } from '../../react/BlockChildren.jsx';
-import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
-import { listItemDepth, orderedItemIndex, orderedMarkerText, bulletMarkerText } from './listMarkers.js';
+import {
+  useEditorStore,
+  useSelectedBlock,
+  useBlockClassName,
+} from '../../react/EditorProvider.jsx';
+import {
+  listItemDepth,
+  orderedItemIndex,
+  orderedMarkerText,
+  bulletMarkerText,
+} from './listMarkers.js';
 import { ChevronRightIcon, ChevronDownIcon } from '../../react/icons.jsx';
-import { insertSiblingSplitAtCaretAndFocus, insertFirstChildSplitAtCaretAndFocus } from '../shared/blockCommands.js';
+import {
+  insertSiblingSplitAtCaretAndFocus,
+  insertFirstChildSplitAtCaretAndFocus,
+} from '../shared/blockCommands.js';
 import { createListItemBlock } from './createListItemBlock.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { indentListItem, outdentListItem } from './indentCommands.js';
@@ -171,7 +183,13 @@ export function ListItemBlock({ id }) {
             className="be-list-toggle-marker"
             onClick={toggleCollapsed}
             aria-expanded={!collapsed}
-            aria-label={!hasNestedChildren ? 'Add content to toggle' : collapsed ? 'Expand toggle' : 'Collapse toggle'}
+            aria-label={
+              !hasNestedChildren
+                ? 'Add content to toggle'
+                : collapsed
+                  ? 'Expand toggle'
+                  : 'Collapse toggle'
+            }
           >
             {collapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}
           </button>
@@ -184,7 +202,10 @@ export function ListItemBlock({ id }) {
           // convention — see listMarkers.js.
           <span className="be-list-marker" aria-hidden="true">
             {ordered
-              ? orderedMarkerText(listItemDepth(store, block), orderedItemIndex(store, block, siblingIds))
+              ? orderedMarkerText(
+                  listItemDepth(store, block),
+                  orderedItemIndex(store, block, siblingIds),
+                )
               : bulletMarkerText(listItemDepth(store, block))}
           </span>
         )}

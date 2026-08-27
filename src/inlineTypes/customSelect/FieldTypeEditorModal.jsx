@@ -76,7 +76,14 @@ export function FieldTypeEditorModal() {
       store.applyOperation(updateFieldType(target, { label, options, mentionable }));
     } else {
       store.applyOperation(
-        addFieldType({ id: genId(), label, placeholder: 'Select…', variant: 'tag', options, mentionable }),
+        addFieldType({
+          id: genId(),
+          label,
+          placeholder: 'Select…',
+          variant: 'tag',
+          options,
+          mentionable,
+        }),
       );
     }
     close();
@@ -138,14 +145,23 @@ export function FieldTypeEditorModal() {
               }
             }}
           />
-          <button type="button" className="be-table-header-menu-option-add" onClick={handleAddOption} aria-label="Add option">
+          <button
+            type="button"
+            className="be-table-header-menu-option-add"
+            onClick={handleAddOption}
+            aria-label="Add option"
+          >
             +
           </button>
         </div>
       </div>
 
       <label className="be-modal-field be-modal-field-checkbox">
-        <input type="checkbox" checked={mentionable} onChange={(event) => setMentionable(event.target.checked)} />
+        <input
+          type="checkbox"
+          checked={mentionable}
+          onChange={(event) => setMentionable(event.target.checked)}
+        />
         <span>Also show in @ mentions</span>
       </label>
 

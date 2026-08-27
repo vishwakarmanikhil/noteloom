@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { History } from '../../src/store/history.js';
-import { addComment, replyToComment, resolveComment, deleteComment } from '../../src/comments/comments.js';
+import {
+  addComment,
+  replyToComment,
+  resolveComment,
+  deleteComment,
+} from '../../src/comments/comments.js';
 
 function makeDoc() {
   return {
@@ -47,7 +52,10 @@ describe('addComment / replyToComment / resolveComment / deleteComment (high-lev
     const commentId = addComment(history, range, { authorId: 'alice', text: 'check this' });
     replyToComment(history, commentId, { authorId: 'bob', text: 'looks fine' });
 
-    expect(history.getComment(commentId).messages.map((m) => m.text)).toEqual(['check this', 'looks fine']);
+    expect(history.getComment(commentId).messages.map((m) => m.text)).toEqual([
+      'check this',
+      'looks fine',
+    ]);
   });
 
   it('resolveComment flips the resolved flag, defaulting to true', () => {
@@ -64,7 +72,8 @@ describe('addComment / replyToComment / resolveComment / deleteComment (high-lev
 
     expect(history.getComment(commentId)).toBeUndefined();
     const runIds = history.getAllRunIds();
-    for (const id of runIds) expect(history.getRun(id).marks.commentIds ?? []).not.toContain(commentId);
+    for (const id of runIds)
+      expect(history.getRun(id).marks.commentIds ?? []).not.toContain(commentId);
 
     history.undo();
     expect(history.getComment(commentId)).toBeDefined();

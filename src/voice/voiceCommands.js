@@ -39,12 +39,20 @@ const COMMANDS = [
   {
     phrases: ['bulleted list', 'bullet point', 'bullet list'],
     description: 'Convert the current block to a bulleted list item',
-    action: { type: 'convertBlock', blockType: 'listItem', props: { ordered: false, titleRunIds: [] } },
+    action: {
+      type: 'convertBlock',
+      blockType: 'listItem',
+      props: { ordered: false, titleRunIds: [] },
+    },
   },
   {
     phrases: ['numbered list', 'ordered list'],
     description: 'Convert the current block to a numbered list item',
-    action: { type: 'convertBlock', blockType: 'listItem', props: { ordered: true, titleRunIds: [] } },
+    action: {
+      type: 'convertBlock',
+      blockType: 'listItem',
+      props: { ordered: true, titleRunIds: [] },
+    },
   },
   {
     phrases: ['checklist', 'to-do', 'to do', 'to-do list', 'to do list'],

@@ -3,7 +3,11 @@ import { arrowheadPoints, diamondPoints, trianglePoints, starPoints } from './sh
 import { escapeAttr, escapeHTML } from '../../inline/marks.js';
 import { orderedDrawables } from './zOrder.js';
 
-const POLYGON_POINTS_BY_TYPE = { diamond: diamondPoints, triangle: trianglePoints, star: starPoints };
+const POLYGON_POINTS_BY_TYPE = {
+  diamond: diamondPoints,
+  triangle: trianglePoints,
+  star: starPoints,
+};
 
 /**
  * Bakes one shape (rectangle/ellipse/arrow/text/diamond/triangle/star) to

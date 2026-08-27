@@ -11,12 +11,14 @@ import { CommentAvatar } from './CommentAvatar.jsx';
 import { formatRelativeTime } from './commentFormatting.js';
 import { ClockHistoryIcon, RestoreIcon, XIcon } from './icons.jsx';
 
-const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE_SELECTOR =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 function formatDayLabel(timestamp) {
   const d = new Date(timestamp);
   const now = new Date();
-  const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const startOfDay = (date) =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / (24 * 60 * 60 * 1000));
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
@@ -54,7 +56,13 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
 
   useEffect(() => {
     if (typeof store.getHistoryLog !== 'function') return undefined; // needs a History instance, not a plain EditorStore
-    const autoHistory = createAutoVersionHistory({ store, docId, idleMs, maxVersions, onSnapshot: refresh });
+    const autoHistory = createAutoVersionHistory({
+      store,
+      docId,
+      idleMs,
+      maxVersions,
+      onSnapshot: refresh,
+    });
     return () => autoHistory.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, docId]);
@@ -129,7 +137,12 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
 
   return (
     <>
-      <button type="button" className="be-version-history-trigger" onClick={() => setIsOpen(true)} title="Version history">
+      <button
+        type="button"
+        className="be-version-history-trigger"
+        onClick={() => setIsOpen(true)}
+        title="Version history"
+      >
         <ClockHistoryIcon size={15} />
         Version history
       </button>
@@ -137,10 +150,22 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
         createPortal(
           <>
             <div className="be-version-history-backdrop" onClick={close} />
-            <div ref={drawerRef} className="be-version-history-drawer" role="dialog" aria-modal="true" aria-label="Version history" tabIndex={-1}>
+            <div
+              ref={drawerRef}
+              className="be-version-history-drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Version history"
+              tabIndex={-1}
+            >
               <div className="be-version-history-header">
                 <span>{selected ? 'Preview' : 'Version history'}</span>
-                <button type="button" className="be-version-history-close" onClick={close} aria-label="Close">
+                <button
+                  type="button"
+                  className="be-version-history-close"
+                  onClick={close}
+                  aria-label="Close"
+                >
                   <XIcon size={14} />
                 </button>
               </div>
@@ -150,14 +175,20 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
                   <div className="be-version-history-preview-meta">
                     <CommentAvatar authorId={selected.authorId} size={24} />
                     <div>
-                      <div className="be-version-history-preview-author">{selected.authorId ?? 'Unknown'}</div>
+                      <div className="be-version-history-preview-author">
+                        {selected.authorId ?? 'Unknown'}
+                      </div>
                       <div className="be-version-history-preview-time">
                         {new Date(selected.timestamp).toLocaleString()} · {selected.summary}
                       </div>
                     </div>
                   </div>
 
-                  <div className="be-version-history-view-toggle" role="tablist" aria-label="View mode">
+                  <div
+                    className="be-version-history-view-toggle"
+                    role="tablist"
+                    aria-label="View mode"
+                  >
                     <button
                       type="button"
                       role="tab"
@@ -183,15 +214,25 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
                       <div className="be-version-history-diff-legend">
                         <span className="be-version-diff-added">Added</span>
                         <span className="be-version-diff-removed">Removed</span>
-                        {!previousVersion && <span className="be-version-history-diff-legend-note">First saved version — everything shown is new.</span>}
+                        {!previousVersion && (
+                          <span className="be-version-history-diff-legend-note">
+                            First saved version — everything shown is new.
+                          </span>
+                        )}
                       </div>
                       {/* Word-level diff against the previous version, rendered from plain text -- deliberately simpler than the live editor's own formatting (see diffDocumentsHTML). */}
-                      <div className="be-version-history-preview-body be-version-history-diff-body" dangerouslySetInnerHTML={{ __html: diffHtml }} />
+                      <div
+                        className="be-version-history-preview-body be-version-history-diff-body"
+                        dangerouslySetInnerHTML={{ __html: diffHtml }}
+                      />
                     </>
                   )}
                   {viewMode === 'preview' && (
                     // Static HTML from a throwaway store (see previewHtml above) -- inherently read-only, not a second live editor.
-                    <div className="be-version-history-preview-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    <div
+                      className="be-version-history-preview-body"
+                      dangerouslySetInnerHTML={{ __html: previewHtml }}
+                    />
                   )}
 
                   <div className="be-version-history-preview-actions">
@@ -204,7 +245,11 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
                     >
                       Back
                     </button>
-                    <button type="button" className="be-version-history-restore" onClick={handleRestore}>
+                    <button
+                      type="button"
+                      className="be-version-history-restore"
+                      onClick={handleRestore}
+                    >
                       <RestoreIcon size={13} />
                       Restore this version
                     </button>
@@ -214,16 +259,26 @@ export function VersionHistory({ docId, idleMs, maxVersions }) {
                 <div className="be-version-history-list">
                   {!isLoaded && <p className="be-version-history-empty">Loading…</p>}
                   {isLoaded && versions.length === 0 && (
-                    <p className="be-version-history-empty">No versions yet — one is saved automatically after you make some edits and pause.</p>
+                    <p className="be-version-history-empty">
+                      No versions yet — one is saved automatically after you make some edits and
+                      pause.
+                    </p>
                   )}
                   {groups.map((group) => (
                     <div key={group.label} className="be-version-history-group">
                       <div className="be-version-history-group-label">{group.label}</div>
                       {group.versions.map((version) => (
-                        <button key={version.id} type="button" className="be-version-history-item" onClick={() => setSelectedId(version.id)}>
+                        <button
+                          key={version.id}
+                          type="button"
+                          className="be-version-history-item"
+                          onClick={() => setSelectedId(version.id)}
+                        >
                           <CommentAvatar authorId={version.authorId} size={24} />
                           <div className="be-version-history-item-body">
-                            <div className="be-version-history-item-author">{version.authorId ?? 'Unknown'}</div>
+                            <div className="be-version-history-item-author">
+                              {version.authorId ?? 'Unknown'}
+                            </div>
                             <div className="be-version-history-item-meta">
                               {formatRelativeTime(version.timestamp)} · {version.summary}
                             </div>

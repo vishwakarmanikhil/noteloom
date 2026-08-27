@@ -57,7 +57,9 @@ export function useServiceWorkerUpdate() {
   const applyUpdate = useCallback(() => {
     if (!waitingWorker) return;
     const reloadOnceControllerChanges = () => window.location.reload();
-    navigator.serviceWorker.addEventListener('controllerchange', reloadOnceControllerChanges, { once: true });
+    navigator.serviceWorker.addEventListener('controllerchange', reloadOnceControllerChanges, {
+      once: true,
+    });
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
   }, [waitingWorker]);
 

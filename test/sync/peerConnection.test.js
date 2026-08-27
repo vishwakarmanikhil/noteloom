@@ -29,8 +29,16 @@ describe('PeerConnection — large message fragmentation', () => {
 
   async function connectPair() {
     const network = makeFakeSignalingNetwork();
-    const peerA = new PeerConnection({ signaling: network.makeChannelFor('peer-a'), remotePeerId: 'peer-b', initiator: true });
-    const peerB = new PeerConnection({ signaling: network.makeChannelFor('peer-b'), remotePeerId: 'peer-a', initiator: false });
+    const peerA = new PeerConnection({
+      signaling: network.makeChannelFor('peer-a'),
+      remotePeerId: 'peer-b',
+      initiator: true,
+    });
+    const peerB = new PeerConnection({
+      signaling: network.makeChannelFor('peer-b'),
+      remotePeerId: 'peer-a',
+      initiator: false,
+    });
     await Promise.all([waitForOpen(peerA), waitForOpen(peerB)]);
     return { peerA, peerB };
   }
@@ -52,7 +60,10 @@ describe('PeerConnection — large message fragmentation', () => {
     // ~1MB, well past MAX_CHUNK_PAYLOAD (16000) -- simulates a large
     // embedded file's data: URL riding inside an op envelope.
     const largePayload = 'x'.repeat(1_000_000);
-    const message = JSON.stringify({ type: 'op', envelope: { kind: 'fieldWrite', id: 'embed1', patch: { src: largePayload } } });
+    const message = JSON.stringify({
+      type: 'op',
+      envelope: { kind: 'fieldWrite', id: 'embed1', patch: { src: largePayload } },
+    });
 
     const received = waitForMessage(peerB);
     peerA.send(message);
@@ -73,7 +84,10 @@ describe('PeerConnection — large message fragmentation', () => {
     // the (real) data channel's send queue for large embeds like video.
     const { peerA, peerB } = await connectPair();
     const hugePayload = 'y'.repeat(3_000_000);
-    const message = JSON.stringify({ type: 'op', envelope: { kind: 'fieldWrite', id: 'video1', patch: { src: hugePayload } } });
+    const message = JSON.stringify({
+      type: 'op',
+      envelope: { kind: 'fieldWrite', id: 'video1', patch: { src: hugePayload } },
+    });
 
     const received = waitForMessage(peerB);
     peerA.send(message);

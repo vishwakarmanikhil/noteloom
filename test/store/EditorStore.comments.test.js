@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { History } from '../../src/store/history.js';
-import { addCommentThread, removeCommentThread, addCommentReply, resolveComment } from '../../src/store/operations.js';
+import {
+  addCommentThread,
+  removeCommentThread,
+  addCommentReply,
+  resolveComment,
+} from '../../src/store/operations.js';
 
 function makeDoc() {
   return {
@@ -51,7 +56,9 @@ describe('EditorStore comments CRUD', () => {
   it('addCommentReply appends a message without disturbing existing ones', () => {
     const store = new EditorStore(makeDoc());
     store.applyOperation(addCommentThread(makeThread()));
-    store.applyOperation(addCommentReply('c1', { id: 'm2', authorId: 'bob', text: 'yep', createdAt: 2 }));
+    store.applyOperation(
+      addCommentReply('c1', { id: 'm2', authorId: 'bob', text: 'yep', createdAt: 2 }),
+    );
     expect(store.getComment('c1').messages.map((m) => m.id)).toEqual(['m1', 'm2']);
   });
 
@@ -82,7 +89,9 @@ describe('EditorStore comments undo/redo (via History)', () => {
   it('undo/redo a full add-reply-resolve-remove sequence', () => {
     const history = new History(new EditorStore(makeDoc()));
     history.perform(addCommentThread(makeThread()));
-    history.perform(addCommentReply('c1', { id: 'm2', authorId: 'bob', text: 'yep', createdAt: 2 }));
+    history.perform(
+      addCommentReply('c1', { id: 'm2', authorId: 'bob', text: 'yep', createdAt: 2 }),
+    );
     history.perform(resolveComment('c1', true));
 
     expect(history.getComment('c1').resolved).toBe(true);
@@ -119,11 +128,29 @@ describe('EditorStore two-peer convergence: comment thread metadata', () => {
     const storeB = new EditorStore(makeDoc());
     applyAndBroadcast(storeA, addCommentThread(makeThread()), [storeB]);
 
-    applyAndBroadcast(storeA, addCommentReply('c1', { id: 'm2', authorId: 'bob', text: 'from A', createdAt: 2 }), [storeB]);
-    applyAndBroadcast(storeB, addCommentReply('c1', { id: 'm3', authorId: 'carol', text: 'from B', createdAt: 3 }), [storeA]);
+    applyAndBroadcast(
+      storeA,
+      addCommentReply('c1', { id: 'm2', authorId: 'bob', text: 'from A', createdAt: 2 }),
+      [storeB],
+    );
+    applyAndBroadcast(
+      storeB,
+      addCommentReply('c1', { id: 'm3', authorId: 'carol', text: 'from B', createdAt: 3 }),
+      [storeA],
+    );
 
-    expect(storeA.getComment('c1').messages.map((m) => m.id).sort()).toEqual(['m1', 'm2', 'm3']);
-    expect(storeB.getComment('c1').messages.map((m) => m.id).sort()).toEqual(['m1', 'm2', 'm3']);
+    expect(
+      storeA
+        .getComment('c1')
+        .messages.map((m) => m.id)
+        .sort(),
+    ).toEqual(['m1', 'm2', 'm3']);
+    expect(
+      storeB
+        .getComment('c1')
+        .messages.map((m) => m.id)
+        .sort(),
+    ).toEqual(['m1', 'm2', 'm3']);
   });
 
   it('duplicate delivery of the same reply envelope is a no-op (idempotent)', () => {
@@ -131,7 +158,9 @@ describe('EditorStore two-peer convergence: comment thread metadata', () => {
     const storeB = new EditorStore(makeDoc());
     applyAndBroadcast(storeA, addCommentThread(makeThread()), [storeB]);
 
-    storeA.applyOperation(addCommentReply('c1', { id: 'm2', authorId: 'bob', text: 'hi', createdAt: 2 }));
+    storeA.applyOperation(
+      addCommentReply('c1', { id: 'm2', authorId: 'bob', text: 'hi', createdAt: 2 }),
+    );
     const envelope = storeA.getLastEnvelope();
     storeB.applyRemoteOperation(envelope);
     storeB.applyRemoteOperation(envelope); // delivered twice
@@ -157,7 +186,14 @@ describe('EditorStore two-peer convergence: comment thread metadata', () => {
 
   it('a reply arriving before its thread (out-of-order delivery) is silently dropped, not thrown', () => {
     const storeB = new EditorStore(makeDoc());
-    expect(() => storeB.applyRemoteOperation({ kind: 'commentWrite', op: 'addReply', commentId: 'never-arrived', message: { id: 'm2', authorId: 'bob', text: 'hi', createdAt: 2 } })).not.toThrow();
+    expect(() =>
+      storeB.applyRemoteOperation({
+        kind: 'commentWrite',
+        op: 'addReply',
+        commentId: 'never-arrived',
+        message: { id: 'm2', authorId: 'bob', text: 'hi', createdAt: 2 },
+      }),
+    ).not.toThrow();
     expect(storeB.getComment('never-arrived')).toBeUndefined();
   });
 });

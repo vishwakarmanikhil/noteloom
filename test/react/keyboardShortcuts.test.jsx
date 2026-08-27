@@ -169,7 +169,12 @@ describe('useEditorKeyboardShortcuts: select-all (two-stage Ctrl+A)', () => {
 
     // Caret collapsed, nothing selected yet: our handler must not
     // preventDefault, so native Ctrl+A can select the current block itself.
-    const event = new window.KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true, cancelable: true });
+    const event = new window.KeyboardEvent('keydown', {
+      key: 'a',
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
     act(() => runNode.dispatchEvent(event));
     expect(event.defaultPrevented).toBe(false);
   });
@@ -193,7 +198,12 @@ describe('useEditorKeyboardShortcuts: select-all (two-stage Ctrl+A)', () => {
     selectWithinRunNode(r1Node, 0, 'first'.length); // whole first block already selected
     expect(getByTestId('whole-doc-selected').textContent).toBe('false');
 
-    const event = new window.KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true, cancelable: true });
+    const event = new window.KeyboardEvent('keydown', {
+      key: 'a',
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
     act(() => r1Node.dispatchEvent(event));
 
     expect(event.defaultPrevented).toBe(true);
@@ -238,7 +248,12 @@ describe('useEditorKeyboardShortcuts: select-all (two-stage Ctrl+A)', () => {
     selection.addRange(range);
     expect(getByTestId('whole-doc-selected').textContent).toBe('false');
 
-    const event = new window.KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true, cancelable: true });
+    const event = new window.KeyboardEvent('keydown', {
+      key: 'a',
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
     act(() => r1Node.dispatchEvent(event));
 
     expect(event.defaultPrevented).toBe(true);
@@ -267,7 +282,12 @@ describe('useEditorKeyboardShortcuts: select-all (two-stage Ctrl+A)', () => {
     selectWithinRunNode(r2Node, 0, 0);
     expect(getByTestId('whole-doc-selected').textContent).toBe('false');
 
-    const event = new window.KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true, cancelable: true });
+    const event = new window.KeyboardEvent('keydown', {
+      key: 'a',
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
     act(() => r2Node.dispatchEvent(event));
 
     expect(event.defaultPrevented).toBe(true);
@@ -292,10 +312,23 @@ describe('useEditorKeyboardShortcuts: select-all (two-stage Ctrl+A)', () => {
     const r1Node = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(r1Node, 0, 'first'.length);
-    act(() => r1Node.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true, cancelable: true })));
+    act(() =>
+      r1Node.dispatchEvent(
+        new window.KeyboardEvent('keydown', {
+          key: 'a',
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      ),
+    );
     expect(getByTestId('whole-doc-selected').textContent).toBe('true');
 
-    act(() => r1Node.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true })));
+    act(() =>
+      r1Node.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }),
+      ),
+    );
 
     expect(getByTestId('whole-doc-selected').textContent).toBe('false');
     const rootIds = store.getBlock('root').contentIds;
@@ -331,7 +364,11 @@ describe('useEditorKeyboardShortcuts: cross-block Backspace/Delete', () => {
     const r2Node = container.querySelector('[data-run-id="r2"]');
 
     selectAcrossRunNodes(r1Node, 6, r2Node, 6); // "line" (end of p1) through "second" (start of p2)
-    const event = new window.KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true });
+    const event = new window.KeyboardEvent('keydown', {
+      key: 'Backspace',
+      bubbles: true,
+      cancelable: true,
+    });
     act(() => r1Node.dispatchEvent(event));
 
     expect(event.defaultPrevented).toBe(true);
@@ -356,7 +393,11 @@ describe('useEditorKeyboardShortcuts: cross-block Backspace/Delete', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5); // "hello" within the same run — same-block, not cross-block
-    const event = new window.KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true });
+    const event = new window.KeyboardEvent('keydown', {
+      key: 'Backspace',
+      bubbles: true,
+      cancelable: true,
+    });
     act(() => runNode.dispatchEvent(event));
 
     // the global cross-block handler must not intervene here; it's left to

@@ -25,7 +25,9 @@ import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 export function createListItemBlock({ ordered = false, checked, collapsed } = {}) {
   return function factory(parentId, initialRuns) {
     const blockId = genId();
-    const runs = initialRuns?.length ? initialRuns : [{ id: genId(), type: 'text', value: '', marks: {} }];
+    const runs = initialRuns?.length
+      ? initialRuns
+      : [{ id: genId(), type: 'text', value: '', marks: {} }];
     const props = { ordered, titleRunIds: runs.map((r) => r.id) };
     if (checked !== undefined) props.checked = checked;
 

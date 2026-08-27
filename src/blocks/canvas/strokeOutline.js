@@ -172,7 +172,11 @@ function dotPath([x, y], radius) {
  * `smoothing` (0..1) controls how much the raw input jitter is smoothed out.
  */
 export function getStrokeOutlinePath(rawPoints, options = {}) {
-  const { size = DEFAULT_SIZE, thinning = DEFAULT_THINNING, smoothing = DEFAULT_SMOOTHING } = options;
+  const {
+    size = DEFAULT_SIZE,
+    thinning = DEFAULT_THINNING,
+    smoothing = DEFAULT_SMOOTHING,
+  } = options;
   if (!rawPoints || rawPoints.length === 0) return '';
 
   // Drop consecutive near-duplicate points — avoids zero-length tangents/

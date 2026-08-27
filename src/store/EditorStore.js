@@ -151,7 +151,10 @@ export class EditorStore {
     if (value === undefined) {
       const order = this._getRunOrder(runId);
       const chars = this._runChars.get(runId);
-      value = order.toArray().map((charId) => chars.get(charId)).join('');
+      value = order
+        .toArray()
+        .map((charId) => chars.get(charId))
+        .join('');
       this._runValueSnapshots.set(runId, value);
     }
     return value;
@@ -395,7 +398,10 @@ export class EditorStore {
           if (charEdit) {
             this._replayRunTextEdit(op.id, charEdit); // redo: reuse the exact ids from the first application
           } else {
-            const { oldValue, insertedChars, deletedCharIds, clock } = this._editRunText(op.id, op.patch.value);
+            const { oldValue, insertedChars, deletedCharIds, clock } = this._editRunText(
+              op.id,
+              op.patch.value,
+            );
             charEdit = { oldValue, insertedChars, deletedCharIds, clock };
             op._charEdit = charEdit; // cached on the op object itself so a future redo replays these same ids -- see _replayRunTextEdit
           }
@@ -425,7 +431,13 @@ export class EditorStore {
           this._fieldClocks.recordLocal(op.id, key, clocks[key]);
         }
         this.runs.set(op.id, { ...run, ...op.patch });
-        this._lastEnvelope = { kind: 'fieldWrite', target: 'run', id: op.id, patch: op.patch, clocks };
+        this._lastEnvelope = {
+          kind: 'fieldWrite',
+          target: 'run',
+          id: op.id,
+          patch: op.patch,
+          clocks,
+        };
         this._notify([op.id]);
         return updateRun(op.id, previousPatch);
       }
@@ -439,7 +451,13 @@ export class EditorStore {
         const run = this.runs.get(op.id);
         const newValue = this._materializeRunValue(op.id);
         this.runs.set(op.id, { ...run, value: newValue });
-        this._lastEnvelope = { kind: 'runCharEdit', runId: op.id, tombstoneIds: op.tombstoneIds, restoreIds: op.restoreIds, clock };
+        this._lastEnvelope = {
+          kind: 'runCharEdit',
+          runId: op.id,
+          tombstoneIds: op.tombstoneIds,
+          restoreIds: op.restoreIds,
+          clock,
+        };
         this._notify([op.id]);
         return editRunChars(op.id, op.restoreIds, op.tombstoneIds); // swapped -- this op is its own inverse shape
       }
@@ -454,7 +472,13 @@ export class EditorStore {
           this._fieldClocks.recordLocal(op.id, `props.${key}`, clocks[key]);
         }
         this.blocks.set(op.id, { ...block, props: { ...block.props, ...op.patch } });
-        this._lastEnvelope = { kind: 'fieldWrite', target: 'blockProps', id: op.id, patch: op.patch, clocks };
+        this._lastEnvelope = {
+          kind: 'fieldWrite',
+          target: 'blockProps',
+          id: op.id,
+          patch: op.patch,
+          clocks,
+        };
         this._notify([op.id]);
         return updateBlockProps(op.id, previousPatch);
       }
@@ -466,7 +490,14 @@ export class EditorStore {
         const clock = this._clock.tick();
         this._fieldClocks.recordLocal(op.id, 'type', clock);
         this.blocks.set(op.id, { ...block, type: op.blockType, props: op.props });
-        this._lastEnvelope = { kind: 'fieldWrite', target: 'blockType', id: op.id, blockType: op.blockType, props: op.props, clock };
+        this._lastEnvelope = {
+          kind: 'fieldWrite',
+          target: 'blockType',
+          id: op.id,
+          blockType: op.blockType,
+          props: op.props,
+          clock,
+        };
         this._notify([op.id]);
         return changeBlockType(op.id, previousType, previousProps);
       }
@@ -532,7 +563,10 @@ export class EditorStore {
         // contract, where toIndex already meant "position in the
         // resulting list").
         fromOrder.delete(op.id, this._clock.tick());
-        this.blocks.set(fromParentId, { ...this.blocks.get(fromParentId), contentIds: fromOrder.toArray() });
+        this.blocks.set(fromParentId, {
+          ...this.blocks.get(fromParentId),
+          contentIds: fromOrder.toArray(),
+        });
 
         const toOrder = this._getOrder(op.toParentId);
         const toArray = toOrder.toArray();
@@ -546,7 +580,10 @@ export class EditorStore {
         } else {
           toOrder.insert(op.id, afterId, ts, this._peerId);
         }
-        this.blocks.set(op.toParentId, { ...this.blocks.get(op.toParentId), contentIds: toOrder.toArray() });
+        this.blocks.set(op.toParentId, {
+          ...this.blocks.get(op.toParentId),
+          contentIds: toOrder.toArray(),
+        });
 
         this.blocks.set(op.id, { ...this.blocks.get(op.id), parentId: op.toParentId });
 
@@ -581,7 +618,7 @@ export class EditorStore {
         // heading, tableCell), or in props.titleRunIds for a listItem (whose
         // contentIds instead holds nested child list items).
         const inContentIds = block.contentIds.indexOf(op.oldRunIds[0]) !== -1;
-        const sourceArray = inContentIds ? block.contentIds : block.props?.titleRunIds ?? [];
+        const sourceArray = inContentIds ? block.contentIds : (block.props?.titleRunIds ?? []);
         const startIndex = sourceArray.indexOf(op.oldRunIds[0]);
 
         const removedRuns = op.oldRunIds.map((id) => this.runs.get(id));
@@ -594,7 +631,10 @@ export class EditorStore {
         if (inContentIds) {
           this.blocks.set(op.blockId, { ...block, contentIds: newArray });
         } else {
-          this.blocks.set(op.blockId, { ...block, props: { ...block.props, titleRunIds: newArray } });
+          this.blocks.set(op.blockId, {
+            ...block,
+            props: { ...block.props, titleRunIds: newArray },
+          });
         }
         this._lastEnvelope = null; // no CRDT-safe wire representation yet -- not broadcastable in Phase C
         this._notify([op.blockId, ...op.oldRunIds, ...op.newRuns.map((r) => r.id)]);
@@ -619,7 +659,10 @@ export class EditorStore {
         const newRunIds = op.runs.map((r) => r.id);
 
         if (usesTitleRunIds) {
-          this.blocks.set(op.blockId, { ...block, props: { ...block.props, titleRunIds: newRunIds } });
+          this.blocks.set(op.blockId, {
+            ...block,
+            props: { ...block.props, titleRunIds: newRunIds },
+          });
         } else {
           this.blocks.set(op.blockId, { ...block, contentIds: newRunIds });
         }
@@ -674,7 +717,12 @@ export class EditorStore {
         const thread = this.comments.get(op.commentId);
         this.comments.set(op.commentId, { ...thread, messages: [...thread.messages, op.message] });
         this._commentsSnapshot = null;
-        this._lastEnvelope = { kind: 'commentWrite', op: 'addReply', commentId: op.commentId, message: op.message };
+        this._lastEnvelope = {
+          kind: 'commentWrite',
+          op: 'addReply',
+          commentId: op.commentId,
+          message: op.message,
+        };
         this._notify([COMMENTS_KEY]);
         return removeCommentReply(op.commentId, op.message.id);
       }
@@ -682,9 +730,17 @@ export class EditorStore {
       case OP.REMOVE_COMMENT_REPLY: {
         const thread = this.comments.get(op.commentId);
         const removedMessage = thread.messages.find((m) => m.id === op.messageId);
-        this.comments.set(op.commentId, { ...thread, messages: thread.messages.filter((m) => m.id !== op.messageId) });
+        this.comments.set(op.commentId, {
+          ...thread,
+          messages: thread.messages.filter((m) => m.id !== op.messageId),
+        });
         this._commentsSnapshot = null;
-        this._lastEnvelope = { kind: 'commentWrite', op: 'removeReply', commentId: op.commentId, messageId: op.messageId };
+        this._lastEnvelope = {
+          kind: 'commentWrite',
+          op: 'removeReply',
+          commentId: op.commentId,
+          messageId: op.messageId,
+        };
         this._notify([COMMENTS_KEY]);
         return addCommentReply(op.commentId, removedMessage);
       }
@@ -694,7 +750,12 @@ export class EditorStore {
         const previousResolved = thread.resolved;
         this.comments.set(op.commentId, { ...thread, resolved: op.resolved });
         this._commentsSnapshot = null;
-        this._lastEnvelope = { kind: 'commentWrite', op: 'resolve', commentId: op.commentId, resolved: op.resolved };
+        this._lastEnvelope = {
+          kind: 'commentWrite',
+          op: 'resolve',
+          commentId: op.commentId,
+          resolved: op.resolved,
+        };
         this._notify([COMMENTS_KEY]);
         return resolveComment(op.commentId, previousResolved);
       }
@@ -760,7 +821,8 @@ export class EditorStore {
     if (!envelope) return;
     switch (envelope.kind) {
       case 'insertSlot': {
-        for (const b of envelope.subtree.blocks) if (!this.blocks.has(b.id)) this.blocks.set(b.id, b);
+        for (const b of envelope.subtree.blocks)
+          if (!this.blocks.has(b.id)) this.blocks.set(b.id, b);
         for (const r of envelope.subtree.runs) if (!this.runs.has(r.id)) this.runs.set(r.id, r);
         const order = this._getOrder(envelope.parentId);
         order.merge([envelope.slot]);
@@ -789,7 +851,10 @@ export class EditorStore {
         // timestamp for that specific fact, and it's close enough in time
         // to be a safe (if not perfectly precise) tombstone age.
         fromOrder.delete(envelope.blockId, envelope.slot?.clock);
-        this.blocks.set(envelope.fromParentId, { ...this.blocks.get(envelope.fromParentId), contentIds: fromOrder.toArray() });
+        this.blocks.set(envelope.fromParentId, {
+          ...this.blocks.get(envelope.fromParentId),
+          contentIds: fromOrder.toArray(),
+        });
 
         const toOrder = this._getOrder(envelope.toParentId);
         const hadSlot = toOrder.has(envelope.blockId);
@@ -799,11 +864,23 @@ export class EditorStore {
         // independently-evolved lists means). A remote MOVE needs the
         // actual reposition, applied only when the slot already existed
         // here before this merge.
-        if (hadSlot) toOrder.move(envelope.blockId, envelope.slot.originId, envelope.slot.clock, envelope.slot.peerId);
-        this.blocks.set(envelope.toParentId, { ...this.blocks.get(envelope.toParentId), contentIds: toOrder.toArray() });
+        if (hadSlot)
+          toOrder.move(
+            envelope.blockId,
+            envelope.slot.originId,
+            envelope.slot.clock,
+            envelope.slot.peerId,
+          );
+        this.blocks.set(envelope.toParentId, {
+          ...this.blocks.get(envelope.toParentId),
+          contentIds: toOrder.toArray(),
+        });
 
         if (this.blocks.has(envelope.blockId)) {
-          this.blocks.set(envelope.blockId, { ...this.blocks.get(envelope.blockId), parentId: envelope.toParentId });
+          this.blocks.set(envelope.blockId, {
+            ...this.blocks.get(envelope.blockId),
+            parentId: envelope.toParentId,
+          });
         }
         this._clock.receive(envelope.slot.clock);
         this._notify([envelope.blockId, envelope.fromParentId, envelope.toParentId]);
@@ -832,7 +909,8 @@ export class EditorStore {
             const patch = {};
             for (const key of Object.keys(envelope.patch)) {
               const remoteClock = envelope.clocks[key];
-              if (!this._fieldClocks.shouldApplyRemote(envelope.id, `props.${key}`, remoteClock)) continue;
+              if (!this._fieldClocks.shouldApplyRemote(envelope.id, `props.${key}`, remoteClock))
+                continue;
               patch[key] = envelope.patch[key];
               this._fieldClocks.recordRemote(envelope.id, `props.${key}`, remoteClock);
             }
@@ -845,7 +923,11 @@ export class EditorStore {
           const block = this.blocks.get(envelope.id);
           if (block && this._fieldClocks.shouldApplyRemote(envelope.id, 'type', envelope.clock)) {
             this._fieldClocks.recordRemote(envelope.id, 'type', envelope.clock);
-            this.blocks.set(envelope.id, { ...block, type: envelope.blockType, props: envelope.props });
+            this.blocks.set(envelope.id, {
+              ...block,
+              type: envelope.blockType,
+              props: envelope.props,
+            });
             this._notify([envelope.id]);
           }
         }
@@ -865,7 +947,10 @@ export class EditorStore {
         this._runValueSnapshots.delete(envelope.runId);
         const run = this.runs.get(envelope.runId);
         if (run) {
-          this.runs.set(envelope.runId, { ...run, value: this._materializeRunValue(envelope.runId) });
+          this.runs.set(envelope.runId, {
+            ...run,
+            value: this._materializeRunValue(envelope.runId),
+          });
           this._notify([envelope.runId]);
         }
         this._clock.receive(envelope.clock);
@@ -879,7 +964,10 @@ export class EditorStore {
         this._runValueSnapshots.delete(envelope.runId);
         const run = this.runs.get(envelope.runId);
         if (run) {
-          this.runs.set(envelope.runId, { ...run, value: this._materializeRunValue(envelope.runId) });
+          this.runs.set(envelope.runId, {
+            ...run,
+            value: this._materializeRunValue(envelope.runId),
+          });
           this._notify([envelope.runId]);
         }
         this._clock.receive(envelope.clock);
@@ -908,14 +996,20 @@ export class EditorStore {
         } else if (envelope.op === 'addReply') {
           const thread = this.comments.get(envelope.commentId);
           if (thread && !thread.messages.some((m) => m.id === envelope.message.id)) {
-            this.comments.set(envelope.commentId, { ...thread, messages: [...thread.messages, envelope.message] });
+            this.comments.set(envelope.commentId, {
+              ...thread,
+              messages: [...thread.messages, envelope.message],
+            });
             this._commentsSnapshot = null;
             this._notify([COMMENTS_KEY]);
           }
         } else if (envelope.op === 'removeReply') {
           const thread = this.comments.get(envelope.commentId);
           if (thread && thread.messages.some((m) => m.id === envelope.messageId)) {
-            this.comments.set(envelope.commentId, { ...thread, messages: thread.messages.filter((m) => m.id !== envelope.messageId) });
+            this.comments.set(envelope.commentId, {
+              ...thread,
+              messages: thread.messages.filter((m) => m.id !== envelope.messageId),
+            });
             this._commentsSnapshot = null;
             this._notify([COMMENTS_KEY]);
           }

@@ -15,7 +15,10 @@ const COMMENTS_KEY = '$comments';
  */
 export function useComments() {
   const store = useEditorStore();
-  const subscribe = useCallback((onStoreChange) => store.subscribe(COMMENTS_KEY, onStoreChange), [store]);
+  const subscribe = useCallback(
+    (onStoreChange) => store.subscribe(COMMENTS_KEY, onStoreChange),
+    [store],
+  );
   const getSnapshot = useCallback(() => store.getComments(), [store]);
   return useSyncExternalStore(subscribe, getSnapshot);
 }

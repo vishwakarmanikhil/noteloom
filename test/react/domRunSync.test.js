@@ -46,7 +46,9 @@ describe('reconcileDomToRuns: fast path (typing within existing spans)', () => {
   });
 
   it('never re-derives value for an atomic (non-text) run matched by id', () => {
-    const currentRuns = [{ id: 'sel1', type: 'select', value: 'internal', marks: {}, data: { label: 'Option A' } }];
+    const currentRuns = [
+      { id: 'sel1', type: 'select', value: 'internal', marks: {}, data: { label: 'Option A' } },
+    ];
     // DOM textContent for an atomic chip might render "Option A" — must not become the run's value
     const container = makeContainer([{ runId: 'sel1', text: 'Option A' }]);
 

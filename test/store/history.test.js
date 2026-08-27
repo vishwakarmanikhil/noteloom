@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { History } from '../../src/store/history.js';
-import { insertBlock, updateRun, removeBlock, setBlockContentIds } from '../../src/store/operations.js';
+import {
+  insertBlock,
+  updateRun,
+  removeBlock,
+  setBlockContentIds,
+} from '../../src/store/operations.js';
 
 function makeDoc() {
   return {
@@ -60,7 +65,11 @@ describe('History coalescing', () => {
 
     history.perform(updateRun('r1', { value: 'h' }), { timestamp: 1000 });
     history.perform(
-      insertBlock({ id: 'p2', type: 'paragraph', parentId: 'root', contentIds: [], props: {} }, 'root', 1),
+      insertBlock(
+        { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: [], props: {} },
+        'root',
+        1,
+      ),
       { timestamp: 1050 },
     );
     history.perform(updateRun('r1', { value: 'he' }), { timestamp: 1100 });
@@ -146,13 +155,24 @@ describe('History.getChangeLog (opt-in "what changed, from what to what" log)', 
     const history = new History(store, { trackChanges: true });
 
     history.performBatch(
-      [insertBlock({ id: 'p2', type: 'paragraph', parentId: 'root', contentIds: [], props: {} }, 'root', 1)],
+      [
+        insertBlock(
+          { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: [], props: {} },
+          'root',
+          1,
+        ),
+      ],
       { actorId: 'user-1', timestamp: 1000 },
     );
 
     const log = history.getChangeLog();
     expect(log).toHaveLength(1);
-    expect(log[0]).toMatchObject({ opType: 'insertBlock', id: 'p2', actorId: 'user-1', timestamp: 1000 });
+    expect(log[0]).toMatchObject({
+      opType: 'insertBlock',
+      id: 'p2',
+      actorId: 'user-1',
+      timestamp: 1000,
+    });
     expect(log[0].before).toBeUndefined();
     expect(log[0].after).toBeUndefined();
   });
@@ -244,7 +264,13 @@ describe('History.getPendingSelection (caret restore after undo/redo)', () => {
     const history = new History(store);
 
     history.performBatch(
-      [insertBlock({ id: 'p2', type: 'paragraph', parentId: 'root', contentIds: [], props: {} }, 'root', 1)],
+      [
+        insertBlock(
+          { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: [], props: {} },
+          'root',
+          1,
+        ),
+      ],
       { timestamp: 1000 },
     );
     history.undo();
@@ -265,7 +291,12 @@ describe('History audit log', () => {
 
     const log = history.getHistoryLog();
     expect(log).toHaveLength(1);
-    expect(log[0]).toMatchObject({ opType: 'updateRun', id: 'r1', actorId: 'user-1', timestamp: 1000 });
+    expect(log[0]).toMatchObject({
+      opType: 'updateRun',
+      id: 'r1',
+      actorId: 'user-1',
+      timestamp: 1000,
+    });
   });
 });
 

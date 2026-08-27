@@ -15,7 +15,11 @@ import { DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from '../../src/blocks/table/t
 import { FieldTypeEditorModal } from '../../src/inlineTypes/customSelect/FieldTypeEditorModal.jsx';
 
 function emptyDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function insertAtRoot(store, factory) {
@@ -67,7 +71,7 @@ describe('table block type reuses the leaf/container primitives', () => {
     }
   });
 
-  it('typing into one cell updates only that cell\'s run', () => {
+  it("typing into one cell updates only that cell's run", () => {
     const store = new EditorStore(emptyDoc());
     insertAtRoot(store, createTableBlock({ rows: 1, cols: 2 }));
 
@@ -101,7 +105,9 @@ describe('table block type reuses the leaf/container primitives', () => {
     store.applyOperation({ type: 'updateRun', id: runId, patch: { value: 'hi' } });
 
     const html = registry.get('table').toHTML(store.getBlock(tableId), { store, registry });
-    expect(html).toBe('<table><thead><tr><th>Column 1</th></tr></thead><tbody><tr><td>hi</td></tr></tbody></table>');
+    expect(html).toBe(
+      '<table><thead><tr><th>Column 1</th></tr></thead><tbody><tr><td>hi</td></tr></tbody></table>',
+    );
   });
 });
 
@@ -121,7 +127,7 @@ describe('table row add/delete UI', () => {
     expect(store.getBlock(rowIds[1]).contentIds.length).toBe(2);
   });
 
-  it('clicking a row\'s delete button removes just that row', () => {
+  it("clicking a row's delete button removes just that row", () => {
     const store = new EditorStore(emptyDoc());
     const tableId = insertAtRoot(store, createTableBlock({ rows: 2, cols: 2 }));
 
@@ -179,7 +185,10 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
     const secondLabel = container.querySelectorAll('.be-table-header-label')[1];
     fireEvent.change(secondLabel, { target: { value: 'Diagnosis' } });
 
-    expect(store.getBlock(tableId).props.columns.map((c) => c.label)).toEqual(['Column 1', 'Diagnosis']);
+    expect(store.getBlock(tableId).props.columns.map((c) => c.label)).toEqual([
+      'Column 1',
+      'Diagnosis',
+    ]);
   });
 
   it('the column menu inserts a column to the right and updates the cell grid', () => {
@@ -192,8 +201,8 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
 
     const firstHeaderCell = container.querySelectorAll('.be-table-header-cell')[0];
     fireEvent.click(firstHeaderCell.querySelector('.be-table-header-menu-trigger'));
-    const insertRightButton = [...document.querySelectorAll('.be-table-header-menu-item')].find((b) =>
-      b.textContent.includes('right'),
+    const insertRightButton = [...document.querySelectorAll('.be-table-header-menu-item')].find(
+      (b) => b.textContent.includes('right'),
     );
     fireEvent.click(insertRightButton);
 
@@ -236,7 +245,11 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
     const headerCell = container.querySelector('.be-table-header-cell');
     fireEvent.click(headerCell.querySelector('.be-table-header-menu-trigger'));
     fireEvent.click(document.querySelector('.be-table-header-menu-type .be-select-trigger'));
-    fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Checkbox'));
+    fireEvent.mouseDown(
+      [...document.querySelectorAll('.be-select-option')].find(
+        (el) => el.textContent === 'Checkbox',
+      ),
+    );
 
     expect(store.getBlock(tableId).props.columns[0].type).toBe('checkbox');
     const newRun = store.getRun(store.getBlock(cellId).contentIds[0]);
@@ -244,7 +257,9 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
     expect(newRun.data.label).toBe('Flu'); // converted, not wiped
 
     // the cell now actually renders the checkbox chip, not a plain text run
-    expect(container.querySelector(`[data-run-id="${newRun.id}"] input[type="checkbox"]`)).not.toBeNull();
+    expect(
+      container.querySelector(`[data-run-id="${newRun.id}"] input[type="checkbox"]`),
+    ).not.toBeNull();
     expect(container.querySelector('.be-inline-checkbox-label').value).toBe('Flu');
   });
 
@@ -262,7 +277,9 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
     expect(handle.getAttribute('role')).toBe('slider');
     expect(handle.getAttribute('aria-valuemin')).toBe(String(MIN_COLUMN_WIDTH));
     expect(handle.getAttribute('aria-valuenow')).toBe(String(DEFAULT_COLUMN_WIDTH));
-    expect(Number(handle.getAttribute('aria-valuemax'))).toBeGreaterThan(Number(handle.getAttribute('aria-valuenow')));
+    expect(Number(handle.getAttribute('aria-valuemax'))).toBeGreaterThan(
+      Number(handle.getAttribute('aria-valuenow')),
+    );
   });
 
   it('the column resize handle is keyboard-operable via Left/Right/Home/End, not mouse-drag-only', () => {
@@ -310,7 +327,7 @@ describe('table header row (column labels + insert/rename/delete column UI)', ()
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('arrow keys inside the column menu\'s own Type <Select> and rename <input> are not hijacked by menu navigation', () => {
+  it("arrow keys inside the column menu's own Type <Select> and rename <input> are not hijacked by menu navigation", () => {
     const store = new EditorStore(emptyDoc());
     insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
 
@@ -342,7 +359,7 @@ describe('table columns: default width + resizable via drag handle', () => {
     expect(cols[1].style.width).toBe(`${DEFAULT_COLUMN_WIDTH}px`);
   });
 
-  it('setColumnWidth updates just that column\'s stored width, clamped to MIN_COLUMN_WIDTH', () => {
+  it("setColumnWidth updates just that column's stored width, clamped to MIN_COLUMN_WIDTH", () => {
     const store = new EditorStore(emptyDoc());
     const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 2 }));
 
@@ -362,7 +379,16 @@ describe('table columns: default width + resizable via drag handle', () => {
     const { container } = renderDoc(store, registry);
 
     const th = container.querySelector('.be-table-header-cell');
-    th.getBoundingClientRect = () => ({ width: DEFAULT_COLUMN_WIDTH, height: 0, top: 0, left: 0, right: 0, bottom: 0, x: 0, y: 0 });
+    th.getBoundingClientRect = () => ({
+      width: DEFAULT_COLUMN_WIDTH,
+      height: 0,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      x: 0,
+      y: 0,
+    });
     const handle = container.querySelector('.be-table-col-resize-handle');
     const col = container.querySelector('colgroup col[data-col-index="0"]');
 
@@ -447,7 +473,10 @@ describe('table header menu: stays inside the viewport (autoAdjustOverflow)', ()
       expect(left - 180).toBeGreaterThanOrEqual(0);
     } finally {
       HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
-      Object.defineProperty(window, 'innerWidth', { value: originalInnerWidth, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: originalInnerWidth,
+        configurable: true,
+      });
     }
   });
 });
@@ -463,13 +492,17 @@ describe('table select column: shared options, managed from the column header (n
     const headerCell = container.querySelector('.be-table-header-cell');
     fireEvent.click(headerCell.querySelector('.be-table-header-menu-trigger'));
     fireEvent.click(document.querySelector('.be-table-header-menu-type .be-select-trigger'));
-    fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Select'));
+    fireEvent.mouseDown(
+      [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Select'),
+    );
 
     // re-open the menu (changing type may have re-rendered it closed) and add an option
     if (!document.querySelector('.be-table-header-menu')) {
       fireEvent.click(headerCell.querySelector('.be-table-header-menu-trigger'));
     }
-    const addInput = document.querySelector('.be-table-header-menu-option-input[placeholder="New option…"]');
+    const addInput = document.querySelector(
+      '.be-table-header-menu-option-input[placeholder="New option…"]',
+    );
     fireEvent.change(addInput, { target: { value: 'Open' } });
     fireEvent.click(document.querySelector('.be-table-header-menu-option-add'));
 
@@ -498,7 +531,7 @@ describe('table select column: shared options, managed from the column header (n
     expect(container.querySelector('.be-inline-select-add')).toBeNull();
   });
 
-  it('regression: mousedown on the cell\'s Select calls preventDefault so the cell\'s own caret can\'t win the focus race', () => {
+  it("regression: mousedown on the cell's Select calls preventDefault so the cell's own caret can't win the focus race", () => {
     const store = new EditorStore(emptyDoc());
     const tableId = insertAtRoot(store, createTableBlock({ rows: 1, cols: 1 }));
     const inlineRegistry = createInlineRegistry();
@@ -509,7 +542,9 @@ describe('table select column: shared options, managed from the column header (n
     registerBuiltInBlocks(registry);
     const { container } = renderDoc(store, registry);
 
-    const dispatched = fireEvent.mouseDown(container.querySelector('.be-inline-table-select .be-select-trigger'));
+    const dispatched = fireEvent.mouseDown(
+      container.querySelector('.be-inline-table-select .be-select-trigger'),
+    );
     expect(dispatched).toBe(false); // false means preventDefault was called
   });
 
@@ -525,7 +560,9 @@ describe('table select column: shared options, managed from the column header (n
     const { container } = renderDoc(store, registry);
 
     fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
-    const addInput = document.querySelector('.be-table-header-menu-option-input[placeholder="New option…"]');
+    const addInput = document.querySelector(
+      '.be-table-header-menu-option-input[placeholder="New option…"]',
+    );
     fireEvent.change(addInput, { target: { value: 'Urgent' } });
     fireEvent.click(document.querySelector('.be-table-header-menu-option-add'));
 
@@ -541,8 +578,12 @@ describe('table select column: shared options, managed from the column header (n
     // and the cell's own Select shows it as a colored pill, not plain text
     const trigger = container.querySelector('.be-inline-table-select .be-select-trigger');
     fireEvent.click(trigger);
-    fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Urgent'));
-    expect(container.querySelector('.be-inline-table-select .be-select-tag').textContent).toBe('Urgent');
+    fireEvent.mouseDown(
+      [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Urgent'),
+    );
+    expect(container.querySelector('.be-inline-table-select .be-select-tag').textContent).toBe(
+      'Urgent',
+    );
     expect(container.querySelector('.be-inline-table-select .be-select-chevron')).toBeNull();
   });
 });
@@ -567,7 +608,10 @@ describe('table HTML round-trip includes column labels', () => {
   it('external HTML with no <thead> at all still gets default column labels via resolveColumns', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
-    const dom = new DOMParser().parseFromString('<table><tr><td>a</td><td>b</td></tr></table>', 'text/html');
+    const dom = new DOMParser().parseFromString(
+      '<table><tr><td>a</td><td>b</td></tr></table>',
+      'text/html',
+    );
     const result = registry.get('table').fromHTML(dom.querySelector('table'), { registry });
 
     expect(result.block.props.columns).toBeUndefined();
@@ -576,22 +620,25 @@ describe('table HTML round-trip includes column labels', () => {
 });
 
 describe('layout block type reuses the page container mechanism', () => {
-  it.each([2, 3, 4, 5])('renders %i columns, each independently holding child blocks', (columns) => {
-    const store = new EditorStore(emptyDoc());
-    insertAtRoot(store, createLayoutBlock({ columns }));
+  it.each([2, 3, 4, 5])(
+    'renders %i columns, each independently holding child blocks',
+    (columns) => {
+      const store = new EditorStore(emptyDoc());
+      insertAtRoot(store, createLayoutBlock({ columns }));
 
-    const registry = createBlockRegistry();
-    registerBuiltInBlocks(registry);
-    const { container } = renderDoc(store, registry);
+      const registry = createBlockRegistry();
+      registerBuiltInBlocks(registry);
+      const { container } = renderDoc(store, registry);
 
-    const columnEls = container.querySelectorAll('.be-layout-column');
-    expect(columnEls.length).toBe(columns);
-    for (const column of columnEls) {
-      expect(column.querySelector('.be-paragraph')).not.toBeNull();
-    }
-  });
+      const columnEls = container.querySelectorAll('.be-layout-column');
+      expect(columnEls.length).toBe(columns);
+      for (const column of columnEls) {
+        expect(column.querySelector('.be-paragraph')).not.toBeNull();
+      }
+    },
+  );
 
-  it('typing in one column only updates that column\'s own run, siblings untouched', () => {
+  it("typing in one column only updates that column's own run, siblings untouched", () => {
     const store = new EditorStore(emptyDoc());
     insertAtRoot(store, createLayoutBlock({ columns: 3 }));
 
@@ -622,7 +669,10 @@ describe('layout block type reuses the page container mechanism', () => {
     registerBuiltInBlocks(registry);
     const command = registry.get('layout').slashCommands.find((c) => c.label === '4 columns');
 
-    const { block: p, runs } = { block: { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} }, runs: [{ id: 'r1', type: 'text', value: '', marks: {} }] };
+    const { block: p, runs } = {
+      block: { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+      runs: [{ id: 'r1', type: 'text', value: '', marks: {} }],
+    };
     store.applyOperation(insertBlock(p, 'root', 0, { blocks: [p], runs }));
 
     command.run(store, { blockId: 'p1', runId: 'r1', sliceStart: 0, sliceEnd: 0 });
@@ -647,7 +697,7 @@ describe('layout block type reuses the page container mechanism', () => {
 });
 
 describe('select column: copying options from an already-created custom field type', () => {
-  it('lists existing field types in the column menu and copies the picked one\'s options into the column (a one-time copy, not a live link)', () => {
+  it("lists existing field types in the column menu and copies the picked one's options into the column (a one-time copy, not a live link)", () => {
     const store = new EditorStore(emptyDoc());
     store.applyOperation(
       addFieldType({
@@ -675,7 +725,9 @@ describe('select column: copying options from an already-created custom field ty
     // The option list is portaled to document.body (see Select.jsx), not
     // nested under the trigger's own container -- query it unscoped, same
     // as every other Select-popover test in this file/codebase.
-    const optionLabels = [...document.querySelectorAll('.be-select-option')].map((o) => o.textContent);
+    const optionLabels = [...document.querySelectorAll('.be-select-option')].map(
+      (o) => o.textContent,
+    );
     expect(optionLabels).toEqual(['Priority']);
     fireEvent.mouseDown(document.querySelector('.be-select-option'));
 
@@ -687,7 +739,9 @@ describe('select column: copying options from an already-created custom field ty
 
     // it's a copy, not a live link: renaming an option on the column afterward
     // does not touch the original field type definition.
-    const renameInput = [...document.querySelectorAll('.be-table-header-menu-option-input')].find((el) => el.value === 'Low');
+    const renameInput = [...document.querySelectorAll('.be-table-header-menu-option-input')].find(
+      (el) => el.value === 'Low',
+    );
     fireEvent.change(renameInput, { target: { value: 'Chill' } });
     expect(store.getFieldType('ft-priority').options[0].label).toBe('Low'); // unchanged
     expect(store.getBlock(tableId).props.columns[0].options[0].label).toBe('Chill');
@@ -705,11 +759,13 @@ describe('select column: copying options from an already-created custom field ty
     const { container } = renderDoc(store, registry);
 
     fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
-    expect(document.querySelector('.be-table-header-menu-field-type .be-select-trigger')).toBeNull();
     expect(
-      [...document.querySelectorAll('.be-table-header-menu-field-type .be-table-header-menu-item')].some(
-        (b) => b.textContent === '+ New field type',
-      ),
+      document.querySelector('.be-table-header-menu-field-type .be-select-trigger'),
+    ).toBeNull();
+    expect(
+      [
+        ...document.querySelectorAll('.be-table-header-menu-field-type .be-table-header-menu-item'),
+      ].some((b) => b.textContent === '+ New field type'),
     ).toBe(true);
   });
 
@@ -725,9 +781,9 @@ describe('select column: copying options from an already-created custom field ty
     const { container } = renderDocWithFieldTypeEditor(store, registry);
 
     fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
-    const newFieldTypeButton = [...document.querySelectorAll('.be-table-header-menu-field-type .be-table-header-menu-item')].find(
-      (b) => b.textContent === '+ New field type',
-    );
+    const newFieldTypeButton = [
+      ...document.querySelectorAll('.be-table-header-menu-field-type .be-table-header-menu-item'),
+    ].find((b) => b.textContent === '+ New field type');
     fireEvent.click(newFieldTypeButton);
 
     expect(document.body.textContent).toContain('New field type');
@@ -755,10 +811,14 @@ describe('table sort/filter/aggregate (view features)', () => {
     const { container } = renderDoc(store, registry);
 
     fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
-    const sortAsc = [...document.querySelectorAll('.be-table-header-menu-item')].find((b) => b.textContent.includes('Sort ascending'));
+    const sortAsc = [...document.querySelectorAll('.be-table-header-menu-item')].find((b) =>
+      b.textContent.includes('Sort ascending'),
+    );
     fireEvent.click(sortAsc);
 
-    const cellTexts = [...container.querySelectorAll('.be-table-cell [data-run-id]')].map((el) => el.textContent);
+    const cellTexts = [...container.querySelectorAll('.be-table-cell [data-run-id]')].map(
+      (el) => el.textContent,
+    );
     expect(cellTexts).toEqual(['apple', 'banana', 'cherry']);
   });
 
@@ -777,7 +837,9 @@ describe('table sort/filter/aggregate (view features)', () => {
     const filterInput = document.querySelector('.be-table-header-menu-filter-input');
     fireEvent.change(filterInput, { target: { value: 'apple' } });
 
-    const cellTexts = [...container.querySelectorAll('.be-table-cell [data-run-id]')].map((el) => el.textContent);
+    const cellTexts = [...container.querySelectorAll('.be-table-cell [data-run-id]')].map(
+      (el) => el.textContent,
+    );
     expect(cellTexts).toEqual(['apple pie', 'apple juice']); // "banana bread" hidden from view
 
     // The document itself is untouched -- still all 3 rows in the store.
@@ -803,7 +865,9 @@ describe('table sort/filter/aggregate (view features)', () => {
 
     fireEvent.click(container.querySelector('.be-table-header-menu-trigger'));
     fireEvent.click(document.querySelector('.be-table-header-menu-aggregate .be-select-trigger'));
-    fireEvent.mouseDown([...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Sum'));
+    fireEvent.mouseDown(
+      [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'Sum'),
+    );
 
     expect(container.querySelector('.be-table-footer-cell').textContent).toBe('Sum60');
 

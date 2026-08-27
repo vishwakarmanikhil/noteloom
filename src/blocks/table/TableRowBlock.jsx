@@ -18,7 +18,13 @@ export function TableRowBlock({ id }) {
     <tr className={className} data-block-id={id}>
       <BlockChildren parentId={id} />
       <td className="be-table-row-actions" contentEditable={false}>
-        <button type="button" className="be-table-delete-row" onClick={handleDeleteRow} aria-label="Delete row" title="Delete row">
+        <button
+          type="button"
+          className="be-table-delete-row"
+          onClick={handleDeleteRow}
+          aria-label="Delete row"
+          title="Delete row"
+        >
           <XIcon size={14} />
         </button>
       </td>

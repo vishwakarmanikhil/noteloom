@@ -7,7 +7,13 @@ import { createEmbedBlock } from './createEmbedBlock.js';
 import { updateRun } from '../../store/operations.js';
 import { ImageIcon, VideoIcon, AudioIcon, PaperclipIcon, LinkIcon } from '../../react/icons.jsx';
 
-const KIND_ICONS = { image: ImageIcon, video: VideoIcon, audio: AudioIcon, file: PaperclipIcon, oembed: LinkIcon };
+const KIND_ICONS = {
+  image: ImageIcon,
+  video: VideoIcon,
+  audio: AudioIcon,
+  file: PaperclipIcon,
+  oembed: LinkIcon,
+};
 
 // Distinctive marker class for the 'file' kind's <a> — same reasoning as
 // the button block: an ordinary pasted link must never be mistaken for a
@@ -29,7 +35,8 @@ function alignWidthStyle(kind, align, width) {
   if (kind !== 'image' && kind !== 'video' && kind !== 'oembed') return '';
   const declarations = [];
   if (width !== 100) declarations.push(`width:${width}%`);
-  if (align === 'center') declarations.push('display:block', 'margin-left:auto', 'margin-right:auto');
+  if (align === 'center')
+    declarations.push('display:block', 'margin-left:auto', 'margin-right:auto');
   else if (align === 'right') declarations.push('display:block', 'margin-left:auto');
   return declarations.length ? ` style="${declarations.join(';')}"` : '';
 }
@@ -44,7 +51,16 @@ function parseAlignWidth(node) {
 }
 
 function toHTML(block) {
-  const { kind, src, name, alt = '', align = 'left', width = 100, provider = '', originalUrl = '' } = block.props;
+  const {
+    kind,
+    src,
+    name,
+    alt = '',
+    align = 'left',
+    width = 100,
+    provider = '',
+    originalUrl = '',
+  } = block.props;
   if (!src) return '<p></p>'; // nothing embedded yet: nothing meaningful to export
   const style = alignWidthStyle(kind, align, width);
   // Deliberately `alt`, never `name` (the uploaded file's raw filename) —
@@ -111,7 +127,12 @@ function fromHTML(node) {
   return null;
 }
 
-function blockOf(kind, src, name, { align = 'left', width = 100, alt = '', provider = '', originalUrl = '' } = {}) {
+function blockOf(
+  kind,
+  src,
+  name,
+  { align = 'left', width = 100, alt = '', provider = '', originalUrl = '' } = {},
+) {
   return {
     block: {
       id: genId(),
@@ -129,7 +150,9 @@ function insertEmbedCommand(kind) {
   return (store, { blockId, runId, sliceStart, sliceEnd }) => {
     const run = store.getRun(runId);
     const value = run?.value ?? '';
-    store.applyOperation(updateRun(runId, { value: value.slice(0, sliceStart) + value.slice(sliceEnd) }));
+    store.applyOperation(
+      updateRun(runId, { value: value.slice(0, sliceStart) + value.slice(sliceEnd) }),
+    );
     const embedId = insertSiblingAfter(store, blockId, createEmbedBlock({ kind }));
     insertSiblingAfterAndFocus(store, embedId, createTextLeafBlock('paragraph'));
     return embedId;
@@ -139,7 +162,17 @@ function insertEmbedCommand(kind) {
 export const embedBlockType = {
   component: EmbedBlock,
   isLeaf: true, // contentIds always [] — a pure widget, same convention as divider
-  defaultProps: { kind: 'file', src: '', name: '', alt: '', mimeType: '', align: 'left', width: 100, provider: '', originalUrl: '' },
+  defaultProps: {
+    kind: 'file',
+    src: '',
+    name: '',
+    alt: '',
+    mimeType: '',
+    align: 'left',
+    width: 100,
+    provider: '',
+    originalUrl: '',
+  },
   toHTML,
   toPlainText,
   toMarkdown,

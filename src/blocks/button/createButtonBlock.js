@@ -7,12 +7,25 @@ import { genId } from '../../utils/idGen.js';
  * concatenating a button's label into a preceding paragraph would silently
  * drop its href, so it's excluded the same way table/listItem/callout are.
  */
-export function createButtonBlock({ href = '', label = 'Button', color = '', customAttrs = [] } = {}) {
+export function createButtonBlock({
+  href = '',
+  label = 'Button',
+  color = '',
+  customAttrs = [],
+} = {}) {
   return function factory(parentId, initialRuns) {
     const blockId = genId();
-    const runs = initialRuns?.length ? initialRuns : [{ id: genId(), type: 'text', value: label, marks: {} }];
+    const runs = initialRuns?.length
+      ? initialRuns
+      : [{ id: genId(), type: 'text', value: label, marks: {} }];
     return {
-      block: { id: blockId, type: 'button', parentId, contentIds: runs.map((r) => r.id), props: { href, color, customAttrs } },
+      block: {
+        id: blockId,
+        type: 'button',
+        parentId,
+        contentIds: runs.map((r) => r.id),
+        props: { href, color, customAttrs },
+      },
       runs,
     };
   };

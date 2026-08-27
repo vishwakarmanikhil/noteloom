@@ -23,12 +23,24 @@ function makeStarterDoc() {
     rootId: 'root',
     blocks: [
       { id: 'root', type: 'page', parentId: null, contentIds: ['title', 'body'], props: {} },
-      { id: 'title', type: 'heading', parentId: 'root', contentIds: ['rTitle'], props: { level: 2 } },
+      {
+        id: 'title',
+        type: 'heading',
+        parentId: 'root',
+        contentIds: ['rTitle'],
+        props: { level: 2 },
+      },
       { id: 'body', type: 'paragraph', parentId: 'root', contentIds: ['rBody'], props: {} },
     ],
     runs: [
       { id: 'rTitle', type: 'text', value: 'Offline persistence demo', marks: {} },
-      { id: 'rBody', type: 'text', value: 'Type here, then reload this page (or close and reopen the tab) — your edits survive, entirely offline.', marks: {} },
+      {
+        id: 'rBody',
+        type: 'text',
+        value:
+          'Type here, then reload this page (or close and reopen the tab) — your edits survive, entirely offline.',
+        marks: {},
+      },
     ],
   };
 }
@@ -76,7 +88,13 @@ function EditorSurface() {
   useEditorKeyboardShortcuts(containerRef);
 
   return (
-    <div ref={containerRef} className="collab-surface" onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
+    <div
+      ref={containerRef}
+      className="collab-surface"
+      onCopy={onCopy}
+      onCut={onCut}
+      onPaste={onPaste}
+    >
       <BlockChildren parentId="root" />
       <SlashMenu
         isOpen={slashMenu.isOpen}
@@ -111,7 +129,12 @@ export function App() {
   });
 
   return (
-    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store}>
+    <EditorProvider
+      store={store}
+      registry={registry}
+      inlineRegistry={inlineRegistry}
+      history={store}
+    >
       <div className="collab-page">
         <Toolbar isLoaded={isLoaded} save={save} justSaved={justSaved} />
         {isLoaded ? <EditorSurface /> : <p className="collab-loading">Loading your document…</p>}

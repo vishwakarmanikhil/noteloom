@@ -159,7 +159,9 @@ describe('useFindInDocument + FindBar', () => {
 
     fireEvent.click(container.querySelector('.be-find-bar-replace-toggle'));
     fireEvent.change(container.querySelector('.be-find-bar-input'), { target: { value: 'the' } });
-    fireEvent.change(container.querySelectorAll('.be-find-bar-input')[1], { target: { value: 'THE' } });
+    fireEvent.change(container.querySelectorAll('.be-find-bar-input')[1], {
+      target: { value: 'THE' },
+    });
     fireEvent.click(container.querySelectorAll('.be-find-bar-replace-btn')[1]); // Replace All
 
     expect(store.getRun('r1').value).toBe('THE cat sat');

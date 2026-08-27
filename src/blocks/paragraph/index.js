@@ -16,13 +16,22 @@ function toPlainText(block, ctx) {
 }
 
 function toMarkdown(block, ctx) {
-  return runsToMarkdown(block.contentIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  return runsToMarkdown(
+    block.contentIds.map((runId) => ctx.store.getRun(runId)),
+    ctx,
+  );
 }
 
 function fromHTML(node, ctx) {
   if (node.tagName !== 'P') return null;
   const runs = domInlineToRuns(node, ctx);
-  const block = { id: genId(), type: 'paragraph', parentId: null, contentIds: runs.map((r) => r.id), props: {} };
+  const block = {
+    id: genId(),
+    type: 'paragraph',
+    parentId: null,
+    contentIds: runs.map((r) => r.id),
+    props: {},
+  };
   return { block, runs };
 }
 

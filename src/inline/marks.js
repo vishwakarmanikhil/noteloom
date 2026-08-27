@@ -35,9 +35,11 @@ export function runToHTML(run, ctx) {
   if (marks.subscript) html = `<sub>${html}</sub>`;
   if (marks.superscript) html = `<sup>${html}</sup>`;
   if (marks.color) html = `<span style="color:${escapeAttr(marks.color)}">${html}</span>`;
-  if (marks.highlight) html = `<span style="background-color:${escapeAttr(marks.highlight)}">${html}</span>`;
+  if (marks.highlight)
+    html = `<span style="background-color:${escapeAttr(marks.highlight)}">${html}</span>`;
   if (marks.link?.href) {
-    const targetAttrs = marks.link.target === '_blank' ? ' target="_blank" rel="noopener noreferrer"' : '';
+    const targetAttrs =
+      marks.link.target === '_blank' ? ' target="_blank" rel="noopener noreferrer"' : '';
     html = `<a href="${escapeAttr(marks.link.href)}"${targetAttrs}>${html}</a>`;
   }
   return html;
@@ -99,7 +101,8 @@ export function runToMarkdown(run, ctx) {
   if (marks.subscript) md = `<sub>${md}</sub>`;
   if (marks.superscript) md = `<sup>${md}</sup>`;
   if (marks.color) md = `<span style="color:${escapeAttr(marks.color)}">${md}</span>`;
-  if (marks.highlight) md = `<span style="background-color:${escapeAttr(marks.highlight)}">${md}</span>`;
+  if (marks.highlight)
+    md = `<span style="background-color:${escapeAttr(marks.highlight)}">${md}</span>`;
   if (marks.link?.href) md = `[${md}](${marks.link.href})`;
   return md;
 }

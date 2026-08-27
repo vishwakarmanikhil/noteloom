@@ -168,7 +168,11 @@ describe('undo/redo restores the caret to where the edit happened, not just the 
     const { container } = renderHarness(store);
 
     store.performBatch([
-      insertBlock({ id: 'p3', type: 'paragraph', parentId: 'root', contentIds: [], props: {} }, 'root', 2),
+      insertBlock(
+        { id: 'p3', type: 'paragraph', parentId: 'root', contentIds: [], props: {} },
+        'root',
+        2,
+      ),
     ]);
 
     focusRunEnd.mockClear();

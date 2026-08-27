@@ -21,7 +21,11 @@ function makeFakeSession(initial = new Map()) {
 
 function Harness({ session }) {
   const presence = usePresence(session);
-  return <div data-testid="entries">{[...presence.entries()].map(([id, data]) => `${id}:${data.offset}`).join(',')}</div>;
+  return (
+    <div data-testid="entries">
+      {[...presence.entries()].map(([id, data]) => `${id}:${data.offset}`).join(',')}
+    </div>
+  );
 }
 
 describe('usePresence', () => {
@@ -30,7 +34,7 @@ describe('usePresence', () => {
     expect(getByTestId('entries').textContent).toBe('');
   });
 
-  it('returns the session\'s current presence immediately on mount', () => {
+  it("returns the session's current presence immediately on mount", () => {
     const session = makeFakeSession(new Map([['peer-a', { offset: 1 }]]));
     const { getByTestId } = render(<Harness session={session} />);
     expect(getByTestId('entries').textContent).toBe('peer-a:1');
@@ -47,7 +51,12 @@ describe('usePresence', () => {
     expect(getByTestId('entries').textContent).toBe('peer-a:5');
 
     act(() => {
-      session._emit(new Map([['peer-a', { offset: 5 }], ['peer-b', { offset: 9 }]]));
+      session._emit(
+        new Map([
+          ['peer-a', { offset: 5 }],
+          ['peer-b', { offset: 9 }],
+        ]),
+      );
     });
     expect(getByTestId('entries').textContent).toBe('peer-a:5,peer-b:9');
   });

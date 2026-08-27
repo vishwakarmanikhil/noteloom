@@ -164,7 +164,10 @@ describe('blockquote block: clipboard round-trip', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
 
-    const inserts = walkDomToBlocks('<blockquote><p>line one</p><p>line two</p></blockquote>', registry);
+    const inserts = walkDomToBlocks(
+      '<blockquote><p>line one</p><p>line two</p></blockquote>',
+      registry,
+    );
     expect(inserts).toHaveLength(2);
     expect(inserts.every((i) => i.block.type === 'blockquote')).toBe(true);
     expect(inserts.map((i) => i.runs[0].value)).toEqual(['line one', 'line two']);

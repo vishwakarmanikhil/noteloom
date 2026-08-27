@@ -16,7 +16,12 @@ function parsePoints(d) {
 function bbox(points) {
   const xs = points.map((p) => p[0]);
   const ys = points.map((p) => p[1]);
-  return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+  };
 }
 
 describe('getStrokeOutlinePath', () => {
@@ -97,15 +102,27 @@ describe('computeRadii', () => {
   });
 
   it('gives higher pressure a larger radius at the same (zero) speed', () => {
-    const lightPressure = [[0, 0, 0.1], [10, 0, 0.1], [20, 0, 0.1]];
-    const heavyPressure = [[0, 0, 0.1], [10, 0, 0.9], [20, 0, 0.9]];
+    const lightPressure = [
+      [0, 0, 0.1],
+      [10, 0, 0.1],
+      [20, 0, 0.1],
+    ];
+    const heavyPressure = [
+      [0, 0, 0.1],
+      [10, 0, 0.9],
+      [20, 0, 0.9],
+    ];
     const lightRadii = computeRadii(lightPressure, { size: 20, thinning: 0 });
     const heavyRadii = computeRadii(heavyPressure, { size: 20, thinning: 0 });
     expect(heavyRadii[1]).toBeGreaterThan(lightRadii[1]);
   });
 
   it('renders at the FULL nominal width for plain mouse/touch input (uniform default 0.5 pressure, zero speed) — matching a same-size shape outline, not a fraction of it', () => {
-    const points = [[0, 0, 0.5], [0, 0, 0.5], [0, 0, 0.5]]; // zero movement -> exactly zero speedFactor
+    const points = [
+      [0, 0, 0.5],
+      [0, 0, 0.5],
+      [0, 0, 0.5],
+    ]; // zero movement -> exactly zero speedFactor
     const radii = computeRadii(points, { size: 20, thinning: 0.5 });
     expect(radii[1]).toBeCloseTo(10); // size/2, i.e. full width — not 0.7x like the old pressure-factor default
   });
@@ -113,15 +130,32 @@ describe('computeRadii', () => {
 
 describe('hasRealPressureVariation', () => {
   it('is false when every point reports the plain default (0.5) — a mouse/touchscreen stroke', () => {
-    expect(hasRealPressureVariation([[0, 0, 0.5], [1, 1, 0.5], [2, 2, 0.5]])).toBe(false);
+    expect(
+      hasRealPressureVariation([
+        [0, 0, 0.5],
+        [1, 1, 0.5],
+        [2, 2, 0.5],
+      ]),
+    ).toBe(false);
   });
 
   it('is true when any point reports something other than the default — real stylus pressure data', () => {
-    expect(hasRealPressureVariation([[0, 0, 0.5], [1, 1, 0.9], [2, 2, 0.5]])).toBe(true);
+    expect(
+      hasRealPressureVariation([
+        [0, 0, 0.5],
+        [1, 1, 0.9],
+        [2, 2, 0.5],
+      ]),
+    ).toBe(true);
   });
 
   it('is true for a uniformly-non-default pressure too (e.g. every point at 0.1)', () => {
-    expect(hasRealPressureVariation([[0, 0, 0.1], [1, 1, 0.1]])).toBe(true);
+    expect(
+      hasRealPressureVariation([
+        [0, 0, 0.1],
+        [1, 1, 0.1],
+      ]),
+    ).toBe(true);
   });
 });
 

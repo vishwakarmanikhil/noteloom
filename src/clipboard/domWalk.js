@@ -58,7 +58,13 @@ export function walkDomToBlocks(html, registry, inlineRegistry) {
     return paragraphs.map((p) => {
       const runs = domInlineToRuns(p, ctx);
       return {
-        block: { id: genId(), type: 'blockquote', parentId: null, contentIds: runs.map((r) => r.id), props: {} },
+        block: {
+          id: genId(),
+          type: 'blockquote',
+          parentId: null,
+          contentIds: runs.map((r) => r.id),
+          props: {},
+        },
         runs,
       };
     });
@@ -96,7 +102,13 @@ export function walkDomToBlocks(html, registry, inlineRegistry) {
     } else if (node.textContent.trim()) {
       const runs = domInlineToRuns(node, ctx);
       results.push({
-        block: { id: genId(), type: 'paragraph', parentId: null, contentIds: runs.map((r) => r.id), props: {} },
+        block: {
+          id: genId(),
+          type: 'paragraph',
+          parentId: null,
+          contentIds: runs.map((r) => r.id),
+          props: {},
+        },
         runs,
       });
     }

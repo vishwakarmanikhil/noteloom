@@ -54,9 +54,21 @@ export function blankRunForType(type) {
     case 'date':
       return { id: genId(), type: 'date', value: '', marks: {}, data: { isoDate: '' } };
     case 'checkbox':
-      return { id: genId(), type: 'checkbox', value: '', marks: {}, data: { checked: false, label: '' } };
+      return {
+        id: genId(),
+        type: 'checkbox',
+        value: '',
+        marks: {},
+        data: { checked: false, label: '' },
+      };
     case 'select':
-      return { id: genId(), type: 'tableSelect', value: '', marks: {}, data: { selectedValue: '', selectedLabel: '' } };
+      return {
+        id: genId(),
+        type: 'tableSelect',
+        value: '',
+        marks: {},
+        data: { selectedValue: '', selectedLabel: '' },
+      };
     default:
       return { id: genId(), type: 'text', value: '', marks: {} };
   }
@@ -65,7 +77,10 @@ export function blankRunForType(type) {
 /** A fresh empty cell block + its one run, matching `column`'s type — the single "create a table cell" primitive every row/column insert path shares. */
 export function createCellForColumn(parentId, column) {
   const run = blankRunForType(column?.type);
-  return { block: { id: genId(), type: 'tableCell', parentId, contentIds: [run.id], props: {} }, run };
+  return {
+    block: { id: genId(), type: 'tableCell', parentId, contentIds: [run.id], props: {} },
+    run,
+  };
 }
 
 /**
@@ -98,11 +113,18 @@ export function convertRunToType(run, newType, inlineRegistry) {
 
   if (newType === 'date') {
     const parsed = text ? new Date(text) : null;
-    const isoDate = parsed && !Number.isNaN(parsed.getTime()) ? parsed.toISOString().slice(0, 10) : '';
+    const isoDate =
+      parsed && !Number.isNaN(parsed.getTime()) ? parsed.toISOString().slice(0, 10) : '';
     return { id: genId(), type: 'date', value: '', marks: {}, data: { isoDate } };
   }
   if (newType === 'checkbox') {
-    return { id: genId(), type: 'checkbox', value: '', marks: {}, data: { checked: false, label: text } };
+    return {
+      id: genId(),
+      type: 'checkbox',
+      value: '',
+      marks: {},
+      data: { checked: false, label: text },
+    };
   }
   return { id: genId(), type: 'text', value: text, marks: {} };
 }

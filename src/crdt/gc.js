@@ -12,7 +12,13 @@ const DEFAULT_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
  * `History` wrapping one). Returns `{ stop }` — call it when the store is
  * no longer in use to clear the timer.
  */
-export function createPeriodicTombstoneGC({ store, intervalMs = DEFAULT_INTERVAL_MS, maxAgeMs = DEFAULT_MAX_AGE_MS, onPrune, onError }) {
+export function createPeriodicTombstoneGC({
+  store,
+  intervalMs = DEFAULT_INTERVAL_MS,
+  maxAgeMs = DEFAULT_MAX_AGE_MS,
+  onPrune,
+  onError,
+}) {
   const timer = setInterval(() => {
     try {
       const removed = store.pruneTombstones({ maxAgeMs });

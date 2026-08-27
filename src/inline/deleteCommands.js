@@ -36,7 +36,8 @@ export function deleteRunRangeInBlock(store, blockId, selection) {
   const endIndex = runIds.indexOf(endRunId);
   if (startIndex === -1 || endIndex === -1) return null;
 
-  const [fromIndex, toIndex] = startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+  const [fromIndex, toIndex] =
+    startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
   const fromOffset = startIndex <= endIndex ? startOffset : endOffset;
   const toOffset = startIndex <= endIndex ? endOffset : startOffset;
 
@@ -135,7 +136,8 @@ export function deleteRunRangeInBlock(store, blockId, selection) {
  * resulting caret position, or null if the range didn't resolve.
  */
 export function deleteOverBlockRange(store, crossSelection) {
-  const { blockIds, startBlockId, startRunId, startOffset, endBlockId, endRunId, endOffset } = crossSelection;
+  const { blockIds, startBlockId, startRunId, startOffset, endBlockId, endRunId, endOffset } =
+    crossSelection;
   if (!blockIds || blockIds.length === 0) return null;
 
   const startBlockIndex = blockIds.indexOf(startBlockId);
@@ -143,7 +145,9 @@ export function deleteOverBlockRange(store, crossSelection) {
   if (startBlockIndex === -1 || endBlockIndex === -1) return null;
 
   const [fromBlockIndex, toBlockIndex] =
-    startBlockIndex <= endBlockIndex ? [startBlockIndex, endBlockIndex] : [endBlockIndex, startBlockIndex];
+    startBlockIndex <= endBlockIndex
+      ? [startBlockIndex, endBlockIndex]
+      : [endBlockIndex, startBlockIndex];
   const firstIsStart = startBlockIndex <= endBlockIndex;
   const firstRunId = firstIsStart ? startRunId : endRunId;
   const firstOffset = firstIsStart ? startOffset : endOffset;
@@ -169,7 +173,9 @@ export function deleteOverBlockRange(store, crossSelection) {
   const firstPrefixRuns = firstRunIds.slice(0, firstIdx).map((id) => store.getRun(id));
   const firstRun = store.getRun(firstRunId);
   const firstPrefixSurvivor =
-    firstRun.type === 'text' && firstOffset > 0 ? { ...firstRun, value: firstRun.value.slice(0, firstOffset) } : null;
+    firstRun.type === 'text' && firstOffset > 0
+      ? { ...firstRun, value: firstRun.value.slice(0, firstOffset) }
+      : null;
 
   const lastRunIds = getBlockRunIds(store, lastBlockId);
   const lastIdx = lastRunIds.indexOf(lastRunId);
@@ -180,7 +186,10 @@ export function deleteOverBlockRange(store, crossSelection) {
       ? { id: genId(), type: 'text', value: lastRun.value.slice(lastOffset), marks: lastRun.marks }
       : null;
 
-  const firstSurvivors = [...firstPrefixRuns, ...(firstPrefixSurvivor ? [firstPrefixSurvivor] : [])];
+  const firstSurvivors = [
+    ...firstPrefixRuns,
+    ...(firstPrefixSurvivor ? [firstPrefixSurvivor] : []),
+  ];
   const lastSurvivors = [...(lastSuffixSurvivor ? [lastSuffixSurvivor] : []), ...lastSuffixRuns];
 
   const ops = [];
@@ -208,7 +217,13 @@ export function deleteOverBlockRange(store, crossSelection) {
 
     if (merged.length === 0 && wouldBeOnlyChild && firstBlock.type !== 'paragraph') {
       const { block: fallbackBlock, runs } = createTextLeafBlock('paragraph')(parent.id);
-      ops.push({ type: 'insertBlock', block: fallbackBlock, parentId: parent.id, index: 0, subtree: { blocks: [fallbackBlock], runs } });
+      ops.push({
+        type: 'insertBlock',
+        block: fallbackBlock,
+        parentId: parent.id,
+        index: 0,
+        subtree: { blocks: [fallbackBlock], runs },
+      });
       ops.push(removeBlock(firstBlockId));
       ops.push(removeBlock(lastBlockId));
       applyOps(store, ops);
@@ -287,5 +302,9 @@ export function deleteEntireDocument(store, replacementText = '') {
   ops.push(insertBlock(fallbackBlock, rootId, 0, { blocks: [fallbackBlock], runs }));
 
   applyOps(store, ops);
-  return { blockId: fallbackBlock.id, runId: fallbackBlock.contentIds[0], offset: replacementText.length };
+  return {
+    blockId: fallbackBlock.id,
+    runId: fallbackBlock.contentIds[0],
+    offset: replacementText.length,
+  };
 }

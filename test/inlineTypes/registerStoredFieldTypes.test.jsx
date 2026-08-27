@@ -8,14 +8,34 @@ import { registerStoredFieldTypes } from '../../src/inlineTypes/customSelect/reg
 import { addFieldType } from '../../src/store/operations.js';
 
 function makeDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 describe('registerStoredFieldTypes: outside-React rehydration', () => {
   it('registers every persisted field type into the inline registry by its stored id', () => {
     const store = new EditorStore(makeDoc());
-    store.applyOperation(addFieldType({ id: 'ft1', label: 'Priority', placeholder: 'Select…', variant: 'tag', options: [] }));
-    store.applyOperation(addFieldType({ id: 'ft2', label: 'Status', placeholder: 'Select…', variant: 'tag', options: [] }));
+    store.applyOperation(
+      addFieldType({
+        id: 'ft1',
+        label: 'Priority',
+        placeholder: 'Select…',
+        variant: 'tag',
+        options: [],
+      }),
+    );
+    store.applyOperation(
+      addFieldType({
+        id: 'ft2',
+        label: 'Status',
+        placeholder: 'Select…',
+        variant: 'tag',
+        options: [],
+      }),
+    );
 
     const inlineRegistry = createInlineRegistry();
     registerStoredFieldTypes(store, inlineRegistry);
@@ -48,8 +68,20 @@ describe('registerStoredFieldTypes: outside-React rehydration', () => {
     const inlineRegistry = createInlineRegistry();
     registerStoredFieldTypes(store, inlineRegistry, { onManage: (id) => seen.push(id) });
 
-    store.blocks.set('root', { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} });
-    store.blocks.set('p1', { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['run1'], props: {} });
+    store.blocks.set('root', {
+      id: 'root',
+      type: 'page',
+      parentId: null,
+      contentIds: ['p1'],
+      props: {},
+    });
+    store.blocks.set('p1', {
+      id: 'p1',
+      type: 'paragraph',
+      parentId: 'root',
+      contentIds: ['run1'],
+      props: {},
+    });
     store.runs.set('run1', { id: 'run1', type: 'ft1', value: '', marks: {}, data: {} });
 
     const { container } = render(

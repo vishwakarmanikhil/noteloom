@@ -1,7 +1,11 @@
 import { useCallback, useState } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { useBlock } from '../../react/useBlock.js';
-import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
+import {
+  useEditorStore,
+  useSelectedBlock,
+  useBlockClassName,
+} from '../../react/EditorProvider.jsx';
 import { insertSiblingSplitAtCaretAndFocus } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
@@ -42,7 +46,12 @@ export function ButtonBlock({ id }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleEnter = useCallback(() => {
-    insertSiblingSplitAtCaretAndFocus(store, id, block?.contentIds ?? [], createTextLeafBlock('paragraph'));
+    insertSiblingSplitAtCaretAndFocus(
+      store,
+      id,
+      block?.contentIds ?? [],
+      createTextLeafBlock('paragraph'),
+    );
   }, [store, id, block]);
 
   const handleBackspaceAtStart = useCallback(() => {
@@ -75,7 +84,11 @@ export function ButtonBlock({ id }) {
   return (
     <div className={className} data-block-id={id} dir={dir}>
       <div className="be-button-block-pill" style={{ backgroundColor: color }} {...dataAttrs}>
-        <span className="be-button-block-label" data-empty={isEmpty ? '' : undefined} data-placeholder="Button">
+        <span
+          className="be-button-block-label"
+          data-empty={isEmpty ? '' : undefined}
+          data-placeholder="Button"
+        >
           <EditableBlockContent
             blockId={id}
             runIds={block.contentIds}
@@ -106,7 +119,12 @@ export function ButtonBlock({ id }) {
           ⚙
         </button>
       </div>
-      <ButtonEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} store={store} blockId={id} />
+      <ButtonEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        store={store}
+        blockId={id}
+      />
     </div>
   );
 }

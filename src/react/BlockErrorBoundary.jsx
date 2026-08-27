@@ -25,7 +25,11 @@ export class BlockErrorBoundary extends Component {
   componentDidCatch(error, info) {
     if (process.env.NODE_ENV !== 'production') {
       // eslint-disable-next-line no-console
-      console.error('[block-editor] a block failed to render; recovering by remounting it:', error, info);
+      console.error(
+        '[block-editor] a block failed to render; recovering by remounting it:',
+        error,
+        info,
+      );
     }
     this.props.onError?.(error, info);
     queueMicrotask(() => this.setState((s) => ({ hasError: false, nonce: s.nonce + 1 })));

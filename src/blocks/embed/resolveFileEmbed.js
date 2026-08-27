@@ -50,10 +50,16 @@ export function kindForMimeType(mimeType) {
 export async function resolveFileToSrc(file, { uploadFile, maxFileSize, kind }) {
   if (uploadFile) {
     const result = await uploadFile(file, { kind });
-    return { src: result.src, name: result.name ?? file.name, mimeType: result.mimeType ?? file.type };
+    return {
+      src: result.src,
+      name: result.name ?? file.name,
+      mimeType: result.mimeType ?? file.type,
+    };
   }
   if (maxFileSize && file.size > maxFileSize) {
-    throw new Error(`This file is ${formatBytes(file.size)} — larger than the ${formatBytes(maxFileSize)} limit.`);
+    throw new Error(
+      `This file is ${formatBytes(file.size)} — larger than the ${formatBytes(maxFileSize)} limit.`,
+    );
   }
   const src = await readFileAsDataURL(file);
   return { src, name: file.name, mimeType: file.type };
@@ -72,7 +78,13 @@ export async function resolveFileToEmbedInsert(file, uploadConfig) {
   const kind = kindForMimeType(file.type);
   const { src, name, mimeType } = await resolveFileToSrc(file, { ...uploadConfig, kind });
   return {
-    block: { id: genId(), type: 'embed', parentId: null, contentIds: [], props: { kind, src, name, mimeType, align: 'left', width: 100 } },
+    block: {
+      id: genId(),
+      type: 'embed',
+      parentId: null,
+      contentIds: [],
+      props: { kind, src, name, mimeType, align: 'left', width: 100 },
+    },
     runs: [],
     subtreeBlocks: [],
   };

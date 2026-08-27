@@ -9,7 +9,9 @@ import { genId } from '../../utils/idGen.js';
 export function createTextLeafBlock(type, props = {}) {
   return function factory(parentId, initialRuns) {
     const blockId = genId();
-    const runs = initialRuns?.length ? initialRuns : [{ id: genId(), type: 'text', value: '', marks: {} }];
+    const runs = initialRuns?.length
+      ? initialRuns
+      : [{ id: genId(), type: 'text', value: '', marks: {} }];
     return {
       block: { id: blockId, type, parentId, contentIds: runs.map((r) => r.id), props },
       runs,

@@ -34,8 +34,18 @@ export const TEXT_FAMILY_TARGETS = [
   { type: 'heading', props: { level: 1 }, label: 'Heading 1', icon: Heading1Icon },
   { type: 'heading', props: { level: 2 }, label: 'Heading 2', icon: Heading2Icon },
   { type: 'heading', props: { level: 3 }, label: 'Heading 3', icon: Heading3Icon },
-  { type: 'listItem', props: { ordered: false, titleRunIds: [] }, label: 'Bulleted list', icon: BulletedListIcon },
-  { type: 'listItem', props: { ordered: true, titleRunIds: [] }, label: 'Numbered list', icon: NumberedListIcon },
+  {
+    type: 'listItem',
+    props: { ordered: false, titleRunIds: [] },
+    label: 'Bulleted list',
+    icon: BulletedListIcon,
+  },
+  {
+    type: 'listItem',
+    props: { ordered: true, titleRunIds: [] },
+    label: 'Numbered list',
+    icon: NumberedListIcon,
+  },
   {
     type: 'listItem',
     props: { ordered: false, checked: false, titleRunIds: [] },
@@ -109,7 +119,8 @@ export function turnBlockInto(store, registry, blockId, target) {
   if (target.type === 'code') {
     for (const runId of runIds) {
       const run = store.getRun(runId);
-      if (run?.marks && Object.keys(run.marks).length > 0) ops.push(updateRun(runId, { marks: {} }));
+      if (run?.marks && Object.keys(run.marks).length > 0)
+        ops.push(updateRun(runId, { marks: {} }));
     }
   }
 
@@ -119,6 +130,13 @@ export function turnBlockInto(store, registry, blockId, target) {
   // here would mean every block converted via the same menu entry ends up
   // pointing at the exact same props object.
   const props = { ...target.props };
-  const { ops: convertOps, newBlockId } = convertBlockType(store, blockId, target.type, props, runIds, registry);
+  const { ops: convertOps, newBlockId } = convertBlockType(
+    store,
+    blockId,
+    target.type,
+    props,
+    runIds,
+    registry,
+  );
   return { ops: [...ops, ...convertOps], newBlockId };
 }

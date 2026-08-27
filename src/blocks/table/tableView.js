@@ -40,7 +40,10 @@ function compareValues(a, b, columnType) {
  * direction doesn't make empty rows jump from the bottom to the top.
  */
 export function sortRowIdsByColumn(rows, columnType, direction, inlineRegistry) {
-  const withKeys = rows.map(({ rowId, run }) => ({ rowId, key: sortKeyForColumn(run, columnType, inlineRegistry) }));
+  const withKeys = rows.map(({ rowId, run }) => ({
+    rowId,
+    key: sortKeyForColumn(run, columnType, inlineRegistry),
+  }));
   const isEmptyKey = (key) => key === '' || key == null;
 
   withKeys.sort((a, b) => {
@@ -56,7 +59,16 @@ export function sortRowIdsByColumn(rows, columnType, direction, inlineRegistry) 
   return withKeys.map((r) => r.rowId);
 }
 
-export const AGGREGATE_TYPES = ['none', 'count', 'count-values', 'count-empty', 'sum', 'average', 'min', 'max'];
+export const AGGREGATE_TYPES = [
+  'none',
+  'count',
+  'count-values',
+  'count-empty',
+  'sum',
+  'average',
+  'min',
+  'max',
+];
 
 export const AGGREGATE_LABELS = {
   none: 'None',

@@ -27,7 +27,13 @@ export function createCanvasBlock({
 } = {}) {
   return function factory(parentId) {
     return {
-      block: { id: genId(), type: 'canvas', parentId, contentIds: [], props: { strokes, shapes, width, height } },
+      block: {
+        id: genId(),
+        type: 'canvas',
+        parentId,
+        contentIds: [],
+        props: { strokes, shapes, width, height },
+      },
       runs: [],
     };
   };

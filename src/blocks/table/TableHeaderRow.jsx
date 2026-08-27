@@ -1,6 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useEditorStore, useInlineRegistry, useFieldTypeEditor } from '../../react/EditorProvider.jsx';
+import {
+  useEditorStore,
+  useInlineRegistry,
+  useFieldTypeEditor,
+} from '../../react/EditorProvider.jsx';
 import { useFieldTypes } from '../../react/useFieldTypes.js';
 import { useOutsideClickAndEscape } from '../../react/useOutsideClickAndEscape.js';
 import { useMenuKeyboardNav } from '../../react/useMenuKeyboardNav.js';
@@ -23,7 +27,10 @@ import { Select } from '../../react/Select.jsx';
 import { pickTagColor } from './tagColors.js';
 
 const TYPE_LABELS = { text: 'Text', date: 'Date', checkbox: 'Checkbox', select: 'Select' };
-const AGGREGATE_OPTIONS = AGGREGATE_TYPES.map((value) => ({ value, label: AGGREGATE_LABELS[value] }));
+const AGGREGATE_OPTIONS = AGGREGATE_TYPES.map((value) => ({
+  value,
+  label: AGGREGATE_LABELS[value],
+}));
 const TYPE_OPTIONS = COLUMN_TYPES.map((type) => ({ value: type, label: TYPE_LABELS[type] }));
 
 // A column's actual drag width is unbounded (no real max exists in
@@ -96,12 +103,23 @@ function SelectOptionsManager({ tableId, colIndex, options }) {
 
   const handleRename = useCallback(
     (optionValue, label) => {
-      setColumnOptions(store, tableId, colIndex, options.map((o) => (o.value === optionValue ? { ...o, label } : o)));
+      setColumnOptions(
+        store,
+        tableId,
+        colIndex,
+        options.map((o) => (o.value === optionValue ? { ...o, label } : o)),
+      );
     },
     [store, tableId, colIndex, options],
   );
   const handleRemove = useCallback(
-    (optionValue) => setColumnOptions(store, tableId, colIndex, options.filter((o) => o.value !== optionValue)),
+    (optionValue) =>
+      setColumnOptions(
+        store,
+        tableId,
+        colIndex,
+        options.filter((o) => o.value !== optionValue),
+      ),
     [store, tableId, colIndex, options],
   );
   const handleAdd = useCallback(() => {
@@ -112,7 +130,10 @@ function SelectOptionsManager({ tableId, colIndex, options }) {
     // position at render time — so it stays the same tag color even after
     // other options are reordered/removed — a tag's color is fixed once
     // you pick/create it.
-    setColumnOptions(store, tableId, colIndex, [...options, { value: genId(), label, color: pickTagColor(options.length) }]);
+    setColumnOptions(store, tableId, colIndex, [
+      ...options,
+      { value: genId(), label, color: pickTagColor(options.length) },
+    ]);
   }, [store, tableId, colIndex, options, draft]);
 
   return (
@@ -154,7 +175,12 @@ function SelectOptionsManager({ tableId, colIndex, options }) {
             }
           }}
         />
-        <button type="button" className="be-table-header-menu-option-add" onClick={handleAdd} aria-label="Add option">
+        <button
+          type="button"
+          className="be-table-header-menu-option-add"
+          onClick={handleAdd}
+          aria-label="Add option"
+        >
           +
         </button>
       </div>
@@ -251,7 +277,8 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount, filterValue, on
       const startWidth = thRef.current.getBoundingClientRect().width;
       const startX = event.clientX;
 
-      const computeWidth = (moveEvent) => Math.max(MIN_COLUMN_WIDTH, Math.round(startWidth + (moveEvent.clientX - startX)));
+      const computeWidth = (moveEvent) =>
+        Math.max(MIN_COLUMN_WIDTH, Math.round(startWidth + (moveEvent.clientX - startX)));
 
       const handleMouseMove = (moveEvent) => {
         const width = computeWidth(moveEvent);
@@ -278,8 +305,10 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount, filterValue, on
       const current = column.width ?? MIN_COLUMN_WIDTH;
       const step = event.shiftKey ? 1 : 16;
       let next;
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = Math.max(MIN_COLUMN_WIDTH, current - step);
-      else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = Math.min(MAX_COLUMN_WIDTH_HINT, current + step);
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowDown')
+        next = Math.max(MIN_COLUMN_WIDTH, current - step);
+      else if (event.key === 'ArrowRight' || event.key === 'ArrowUp')
+        next = Math.min(MAX_COLUMN_WIDTH_HINT, current + step);
       else if (event.key === 'Home') next = MIN_COLUMN_WIDTH;
       else if (event.key === 'End') next = MAX_COLUMN_WIDTH_HINT;
       else return;
@@ -328,7 +357,12 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount, filterValue, on
             role="menu"
             aria-label={`Column ${colIndex + 1} options`}
             className="be-table-header-menu"
-            style={{ position: 'fixed', top: rect.bottom + 4, left: rightLeft, transform: 'translateX(-100%)' }}
+            style={{
+              position: 'fixed',
+              top: rect.bottom + 4,
+              left: rightLeft,
+              transform: 'translateX(-100%)',
+            }}
           >
             <div className="be-table-header-menu-type">
               <span id={`be-table-col-type-${column.id}`}>Type</span>
@@ -343,14 +377,28 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount, filterValue, on
             {column.type === 'select' && (
               <>
                 <ColumnFieldTypePicker tableId={tableId} colIndex={colIndex} />
-                <SelectOptionsManager tableId={tableId} colIndex={colIndex} options={column.options ?? []} />
+                <SelectOptionsManager
+                  tableId={tableId}
+                  colIndex={colIndex}
+                  options={column.options ?? []}
+                />
               </>
             )}
             <div className="be-table-header-menu-sort">
-              <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleSortAsc}>
+              <button
+                type="button"
+                role="menuitem"
+                className="be-table-header-menu-item"
+                onClick={handleSortAsc}
+              >
                 <ArrowUpIcon size={13} /> Sort ascending
               </button>
-              <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleSortDesc}>
+              <button
+                type="button"
+                role="menuitem"
+                className="be-table-header-menu-item"
+                onClick={handleSortDesc}
+              >
                 <ArrowDownIcon size={13} /> Sort descending
               </button>
             </div>
@@ -375,10 +423,20 @@ function ColumnHeaderCell({ tableId, column, colIndex, colCount, filterValue, on
                 className=""
               />
             </div>
-            <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleInsertLeft}>
+            <button
+              type="button"
+              role="menuitem"
+              className="be-table-header-menu-item"
+              onClick={handleInsertLeft}
+            >
               Insert column left
             </button>
-            <button type="button" role="menuitem" className="be-table-header-menu-item" onClick={handleInsertRight}>
+            <button
+              type="button"
+              role="menuitem"
+              className="be-table-header-menu-item"
+              onClick={handleInsertRight}
+            >
               Insert column right
             </button>
             <button

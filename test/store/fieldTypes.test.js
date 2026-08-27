@@ -4,7 +4,11 @@ import { History } from '../../src/store/history.js';
 import { addFieldType, updateFieldType, removeFieldType } from '../../src/store/operations.js';
 
 function makeDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 describe('EditorStore fieldTypes collection', () => {
@@ -17,7 +21,13 @@ describe('EditorStore fieldTypes collection', () => {
 
   it('addFieldType adds a record, retrievable by id, and returns removeFieldType as its inverse', () => {
     const store = new EditorStore(makeDoc());
-    const fieldType = { id: 'ft1', label: 'Priority', placeholder: 'Select…', variant: 'tag', options: [] };
+    const fieldType = {
+      id: 'ft1',
+      label: 'Priority',
+      placeholder: 'Select…',
+      variant: 'tag',
+      options: [],
+    };
     const before = store.getFieldTypes();
 
     const inverse = store.applyOperation(addFieldType(fieldType));
@@ -36,7 +46,9 @@ describe('EditorStore fieldTypes collection', () => {
     const store = new EditorStore(makeDoc());
     store.applyOperation(addFieldType({ id: 'ft1', label: 'Priority', options: [] }));
 
-    const inverse = store.applyOperation(updateFieldType('ft1', { label: 'Urgency', options: [{ value: 'v1', label: 'High' }] }));
+    const inverse = store.applyOperation(
+      updateFieldType('ft1', { label: 'Urgency', options: [{ value: 'v1', label: 'High' }] }),
+    );
 
     expect(store.getFieldType('ft1').label).toBe('Urgency');
     expect(store.getFieldType('ft1').options).toEqual([{ value: 'v1', label: 'High' }]);
@@ -75,7 +87,9 @@ describe('EditorStore fieldTypes collection', () => {
 
   it('round-trips through toJSON/fromJSON', () => {
     const store = new EditorStore(makeDoc());
-    store.applyOperation(addFieldType({ id: 'ft1', label: 'Priority', options: [{ value: 'v1', label: 'High' }] }));
+    store.applyOperation(
+      addFieldType({ id: 'ft1', label: 'Priority', options: [{ value: 'v1', label: 'High' }] }),
+    );
 
     const restored = EditorStore.fromJSON(store.toJSON());
     expect(restored.getFieldType('ft1')).toEqual(store.getFieldType('ft1'));

@@ -6,17 +6,27 @@ import { BlockChildren } from '../../src/react/BlockChildren.jsx';
 import { createBlockRegistry } from '../../src/registry/blockRegistry.js';
 import { registerBuiltInBlocks } from '../../src/blocks/index.js';
 import { insertBlock, updateBlockProps } from '../../src/store/operations.js';
-import { createCanvasBlock, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from '../../src/blocks/canvas/createCanvasBlock.js';
+import {
+  createCanvasBlock,
+  DEFAULT_CANVAS_WIDTH,
+  DEFAULT_CANVAS_HEIGHT,
+} from '../../src/blocks/canvas/createCanvasBlock.js';
 import { canvasBlockType } from '../../src/blocks/canvas/index.js';
 import { orderedDrawables } from '../../src/blocks/canvas/zOrder.js';
 
 /** Front/back reordering now stamps a `z` on the affected items instead of physically reordering `props.strokes`/`props.shapes` (see zOrder.js) — this resolves the actual effective bottom-to-top order, spanning both arrays, the same way rendering/hit-testing/export do. */
 function zOrderIds(block) {
-  return orderedDrawables(block.props.strokes ?? [], block.props.shapes ?? []).map(({ item }) => item.id);
+  return orderedDrawables(block.props.strokes ?? [], block.props.shapes ?? []).map(
+    ({ item }) => item.id,
+  );
 }
 
 function emptyDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function insertAtRoot(store, factory, index = 0) {
@@ -81,7 +91,16 @@ describe('canvas block: static rendering (Phase 1 — no drawing interaction yet
     store.applyOperation(
       updateBlockProps(id, {
         strokes: [
-          { id: 's1', points: [[0, 0, 0.5], [500, 500, 0.5], [1000, 0, 0.5]], color: '#ff0000', size: 8 },
+          {
+            id: 's1',
+            points: [
+              [0, 0, 0.5],
+              [500, 500, 0.5],
+              [1000, 0, 0.5],
+            ],
+            color: '#ff0000',
+            size: 8,
+          },
           { id: 's2', points: [[100, 900, 0.5]], color: '#00ff00', size: 6 },
         ],
       }),
@@ -103,16 +122,32 @@ describe('canvas block: static rendering (Phase 1 — no drawing interaction yet
 
     act(() => {
       store.applyOperation(
-        updateBlockProps(id, { strokes: [{ id: 's1', points: [[0, 0, 0.5], [1000, 1000, 0.5]], color: '#000', size: 8 }] }),
+        updateBlockProps(id, {
+          strokes: [
+            {
+              id: 's1',
+              points: [
+                [0, 0, 0.5],
+                [1000, 1000, 0.5],
+              ],
+              color: '#000',
+              size: 8,
+            },
+          ],
+        }),
       );
     });
-    expect(container.querySelectorAll(`[data-block-id="${id}"] .be-canvas-surface path`)).toHaveLength(1);
+    expect(
+      container.querySelectorAll(`[data-block-id="${id}"] .be-canvas-surface path`),
+    ).toHaveLength(1);
 
     // simulate "undo" by writing back to empty
     act(() => {
       store.applyOperation(updateBlockProps(id, { strokes: [] }));
     });
-    expect(container.querySelectorAll(`[data-block-id="${id}"] .be-canvas-surface path`)).toHaveLength(0);
+    expect(
+      container.querySelectorAll(`[data-block-id="${id}"] .be-canvas-surface path`),
+    ).toHaveLength(0);
   });
 });
 
@@ -123,7 +158,18 @@ describe('canvas block: static shape rendering (shapes phase — no drawing inte
     act(() => {
       store.applyOperation(
         updateBlockProps(id, {
-          shapes: [{ id: 'r1', type: 'rectangle', x: 100, y: 150, width: 200, height: 100, color: '#e03131', strokeWidth: 4 }],
+          shapes: [
+            {
+              id: 'r1',
+              type: 'rectangle',
+              x: 100,
+              y: 150,
+              width: 200,
+              height: 100,
+              color: '#e03131',
+              strokeWidth: 4,
+            },
+          ],
         }),
       );
     });
@@ -132,7 +178,9 @@ describe('canvas block: static shape rendering (shapes phase — no drawing inte
     // excludes the snap-to-grid visual overlay's own <rect> (on by
     // default — see the "canvas block: snapping (grid)" describe block),
     // which is not the shape this test cares about
-    const rect = container.querySelector(`[data-block-id="${id}"] svg.be-canvas-surface rect:not(.be-canvas-grid-background)`);
+    const rect = container.querySelector(
+      `[data-block-id="${id}"] svg.be-canvas-surface rect:not(.be-canvas-grid-background)`,
+    );
     expect(rect).not.toBeNull();
     expect(rect.getAttribute('x')).toBe('100');
     expect(rect.getAttribute('y')).toBe('150');
@@ -149,13 +197,26 @@ describe('canvas block: static shape rendering (shapes phase — no drawing inte
     act(() => {
       store.applyOperation(
         updateBlockProps(id, {
-          shapes: [{ id: 'e1', type: 'ellipse', x: 100, y: 100, width: 200, height: 100, color: '#1971c2', strokeWidth: 4 }],
+          shapes: [
+            {
+              id: 'e1',
+              type: 'ellipse',
+              x: 100,
+              y: 100,
+              width: 200,
+              height: 100,
+              color: '#1971c2',
+              strokeWidth: 4,
+            },
+          ],
         }),
       );
     });
     const { container } = renderDoc(store);
 
-    const ellipse = container.querySelector(`[data-block-id="${id}"] svg.be-canvas-surface ellipse`);
+    const ellipse = container.querySelector(
+      `[data-block-id="${id}"] svg.be-canvas-surface ellipse`,
+    );
     expect(ellipse).not.toBeNull();
     expect(ellipse.getAttribute('cx')).toBe('200');
     expect(ellipse.getAttribute('cy')).toBe('150');
@@ -170,7 +231,18 @@ describe('canvas block: static shape rendering (shapes phase — no drawing inte
     act(() => {
       store.applyOperation(
         updateBlockProps(id, {
-          shapes: [{ id: 'a1', type: 'arrow', x1: 100, y1: 100, x2: 400, y2: 100, color: '#2f9e44', strokeWidth: 4 }],
+          shapes: [
+            {
+              id: 'a1',
+              type: 'arrow',
+              x1: 100,
+              y1: 100,
+              x2: 400,
+              y2: 100,
+              color: '#2f9e44',
+              strokeWidth: 4,
+            },
+          ],
         }),
       );
     });
@@ -180,7 +252,9 @@ describe('canvas block: static shape rendering (shapes phase — no drawing inte
     expect(line).not.toBeNull();
     expect(line.getAttribute('x1')).toBe('100');
     expect(line.getAttribute('x2')).toBe('400');
-    const polygon = container.querySelector(`[data-block-id="${id}"] svg.be-canvas-surface polygon`);
+    const polygon = container.querySelector(
+      `[data-block-id="${id}"] svg.be-canvas-surface polygon`,
+    );
     expect(polygon).not.toBeNull();
     expect(polygon.getAttribute('points')).toContain('400,100'); // the tip sits exactly at the end point
   });
@@ -191,8 +265,29 @@ describe('canvas block: static shape rendering (shapes phase — no drawing inte
     act(() => {
       store.applyOperation(
         updateBlockProps(id, {
-          strokes: [{ id: 's1', points: [[0, 0, 0.5], [100, 100, 0.5]], color: '#000', size: 8 }],
-          shapes: [{ id: 'r1', type: 'rectangle', x: 500, y: 500, width: 100, height: 100, color: '#000', strokeWidth: 4 }],
+          strokes: [
+            {
+              id: 's1',
+              points: [
+                [0, 0, 0.5],
+                [100, 100, 0.5],
+              ],
+              color: '#000',
+              size: 8,
+            },
+          ],
+          shapes: [
+            {
+              id: 'r1',
+              type: 'rectangle',
+              x: 500,
+              y: 500,
+              width: 100,
+              height: 100,
+              color: '#000',
+              strokeWidth: 4,
+            },
+          ],
         }),
       );
     });
@@ -222,11 +317,26 @@ describe('canvas block: drawing shape tools (rectangle/ellipse/arrow)', () => {
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
-  const SHAPE_TOOL_LABELS = new Set(['Rectangle', 'Ellipse', 'Arrow', 'Diamond', 'Triangle', 'Star']);
+  const SHAPE_TOOL_LABELS = new Set([
+    'Rectangle',
+    'Ellipse',
+    'Arrow',
+    'Diamond',
+    'Triangle',
+    'Star',
+  ]);
 
   function setup(store, toolLabel) {
     const { container } = renderDoc(store);
@@ -315,7 +425,7 @@ describe('canvas block: drawing shape tools (rectangle/ellipse/arrow)', () => {
     });
   });
 
-  it('a click without dragging draws no shape at all (unlike the pen tool\'s tap-draws-a-dot behavior)', () => {
+  it("a click without dragging draws no shape at all (unlike the pen tool's tap-draws-a-dot behavior)", () => {
     withMockedRect(() => {
       const store = new EditorStore(emptyDoc());
       const id = insertAtRoot(store, createCanvasBlock());
@@ -387,11 +497,26 @@ describe('canvas block: more shapes — diamond, triangle, star', () => {
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
-  const SHAPE_TOOL_LABELS = new Set(['Rectangle', 'Ellipse', 'Arrow', 'Diamond', 'Triangle', 'Star']);
+  const SHAPE_TOOL_LABELS = new Set([
+    'Rectangle',
+    'Ellipse',
+    'Arrow',
+    'Diamond',
+    'Triangle',
+    'Star',
+  ]);
 
   function setup(store, toolLabel) {
     const { container } = renderDoc(store);
@@ -412,35 +537,38 @@ describe('canvas block: more shapes — diamond, triangle, star', () => {
     ['Diamond', 'diamond'],
     ['Triangle', 'triangle'],
     ['Star', 'star'],
-  ])('drawing a %s commits exactly one op per gesture, with the correct bounding box', (toolLabel, type) => {
-    withMockedRect(() => {
-      const store = new EditorStore(emptyDoc());
-      const id = insertAtRoot(store, createCanvasBlock());
-      const { svg } = setup(store, toolLabel);
+  ])(
+    'drawing a %s commits exactly one op per gesture, with the correct bounding box',
+    (toolLabel, type) => {
+      withMockedRect(() => {
+        const store = new EditorStore(emptyDoc());
+        const id = insertAtRoot(store, createCanvasBlock());
+        const { svg } = setup(store, toolLabel);
 
-      // local (0..1000) -> client (400x400 square rect): local = client*2.5
-      act(() => {
-        firePointerEvent(svg, 'pointerdown', { clientX: 40, clientY: 40 }); // local (100,100)
-      });
-      expect(store.getBlock(id).props.shapes).toHaveLength(0);
+        // local (0..1000) -> client (400x400 square rect): local = client*2.5
+        act(() => {
+          firePointerEvent(svg, 'pointerdown', { clientX: 40, clientY: 40 }); // local (100,100)
+        });
+        expect(store.getBlock(id).props.shapes).toHaveLength(0);
 
-      act(() => {
-        firePointerEvent(svg, 'pointermove', { clientX: 120, clientY: 120 }); // local (300,300)
-      });
-      expect(store.getBlock(id).props.shapes).toHaveLength(0); // still no store write mid-drag
+        act(() => {
+          firePointerEvent(svg, 'pointermove', { clientX: 120, clientY: 120 }); // local (300,300)
+        });
+        expect(store.getBlock(id).props.shapes).toHaveLength(0); // still no store write mid-drag
 
-      act(() => {
-        firePointerEvent(svg, 'pointerup', { clientX: 120, clientY: 120 });
+        act(() => {
+          firePointerEvent(svg, 'pointerup', { clientX: 120, clientY: 120 });
+        });
+        const shapes = store.getBlock(id).props.shapes;
+        expect(shapes).toHaveLength(1);
+        expect(shapes[0].type).toBe(type);
+        expect(shapes[0].x).toBeCloseTo(100);
+        expect(shapes[0].y).toBeCloseTo(100);
+        expect(shapes[0].width).toBeCloseTo(200);
+        expect(shapes[0].height).toBeCloseTo(200);
       });
-      const shapes = store.getBlock(id).props.shapes;
-      expect(shapes).toHaveLength(1);
-      expect(shapes[0].type).toBe(type);
-      expect(shapes[0].x).toBeCloseTo(100);
-      expect(shapes[0].y).toBeCloseTo(100);
-      expect(shapes[0].width).toBeCloseTo(200);
-      expect(shapes[0].height).toBeCloseTo(200);
-    });
-  });
+    },
+  );
 
   it('the select tool distinguishes "inside the diamond" from "inside its bounding box but outside the diamond" — the whole point of the precise hit-test', () => {
     withMockedRect(() => {
@@ -449,7 +577,18 @@ describe('canvas block: more shapes — diamond, triangle, star', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 'd1', type: 'diamond', x: 100, y: 100, width: 200, height: 200, color: '#000', strokeWidth: 4 }],
+            shapes: [
+              {
+                id: 'd1',
+                type: 'diamond',
+                x: 100,
+                y: 100,
+                width: 200,
+                height: 200,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
       });
@@ -487,7 +626,18 @@ describe('canvas block: more shapes — diamond, triangle, star', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 'd1', type: 'diamond', x: 100, y: 100, width: 200, height: 200, color: '#000', strokeWidth: 4 }],
+            shapes: [
+              {
+                id: 'd1',
+                type: 'diamond',
+                x: 100,
+                y: 100,
+                width: 200,
+                height: 200,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
       });
@@ -531,9 +681,36 @@ describe('canvas block: more shapes — diamond, triangle, star', () => {
       props: {
         strokes: [],
         shapes: [
-          { id: 'd1', type: 'diamond', x: 0, y: 0, width: 100, height: 100, color: '#000', strokeWidth: 4 },
-          { id: 't1', type: 'triangle', x: 0, y: 0, width: 100, height: 100, color: '#000', strokeWidth: 4 },
-          { id: 's1', type: 'star', x: 0, y: 0, width: 100, height: 100, color: '#000', strokeWidth: 4 },
+          {
+            id: 'd1',
+            type: 'diamond',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            color: '#000',
+            strokeWidth: 4,
+          },
+          {
+            id: 't1',
+            type: 'triangle',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            color: '#000',
+            strokeWidth: 4,
+          },
+          {
+            id: 's1',
+            type: 'star',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            color: '#000',
+            strokeWidth: 4,
+          },
         ],
         width: 480,
         height: 320,
@@ -617,7 +794,15 @@ describe('canvas block: select tool — hit-testing, selection overlay, move', (
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -639,7 +824,16 @@ describe('canvas block: select tool — hit-testing, selection overlay, move', (
   it('clicking inside a shape selects it (shows the dashed selection overlay); clicking empty space deselects', () => {
     withMockedRect(() => {
       const { wrapper, svg } = setupWithShapes([
-        { id: 'r1', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, color: '#000', strokeWidth: 4 },
+        {
+          id: 'r1',
+          type: 'rectangle',
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 100,
+          color: '#000',
+          strokeWidth: 4,
+        },
       ]);
 
       // local (150,150) -> client (60,60) at scale 0.4
@@ -661,8 +855,26 @@ describe('canvas block: select tool — hit-testing, selection overlay, move', (
   it('picks the topmost (last-drawn) shape when two overlap', () => {
     withMockedRect(() => {
       const { id, svg } = setupWithShapes([
-        { id: 'bottom', type: 'rectangle', x: 100, y: 100, width: 200, height: 200, color: '#000', strokeWidth: 4 },
-        { id: 'top', type: 'rectangle', x: 150, y: 150, width: 100, height: 100, color: '#000', strokeWidth: 4 },
+        {
+          id: 'bottom',
+          type: 'rectangle',
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 200,
+          color: '#000',
+          strokeWidth: 4,
+        },
+        {
+          id: 'top',
+          type: 'rectangle',
+          x: 150,
+          y: 150,
+          width: 100,
+          height: 100,
+          color: '#000',
+          strokeWidth: 4,
+        },
       ]);
 
       // local (200,200) -> client (80,80): inside both, but "top" was drawn last
@@ -677,10 +889,19 @@ describe('canvas block: select tool — hit-testing, selection overlay, move', (
     });
   });
 
-  it('dragging a selected shape\'s body moves it, committing exactly once on release with zero writes mid-drag', () => {
+  it("dragging a selected shape's body moves it, committing exactly once on release with zero writes mid-drag", () => {
     withMockedRect(() => {
       const { store, id, svg } = setupWithShapes([
-        { id: 'r1', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, color: '#000', strokeWidth: 4 },
+        {
+          id: 'r1',
+          type: 'rectangle',
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 100,
+          color: '#000',
+          strokeWidth: 4,
+        },
       ]);
 
       // local (150,150) -> client (60,60)
@@ -709,7 +930,16 @@ describe('canvas block: select tool — hit-testing, selection overlay, move', (
   it('moving an arrow translates both endpoints by the same offset', () => {
     withMockedRect(() => {
       const { store, id, svg } = setupWithShapes([
-        { id: 'a1', type: 'arrow', x1: 100, y1: 100, x2: 300, y2: 100, color: '#000', strokeWidth: 4 },
+        {
+          id: 'a1',
+          type: 'arrow',
+          x1: 100,
+          y1: 100,
+          x2: 300,
+          y2: 100,
+          color: '#000',
+          strokeWidth: 4,
+        },
       ]);
 
       // local (200,100) -> client (80,40): on the segment
@@ -730,7 +960,16 @@ describe('canvas block: select tool — hit-testing, selection overlay, move', (
   it('a click-without-drag on an already-selected shape re-selects it but writes nothing to the store', () => {
     withMockedRect(() => {
       const { store, id, svg } = setupWithShapes([
-        { id: 'r1', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, color: '#000', strokeWidth: 4 },
+        {
+          id: 'r1',
+          type: 'rectangle',
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 100,
+          color: '#000',
+          strokeWidth: 4,
+        },
       ]);
 
       act(() => {
@@ -761,7 +1000,15 @@ describe('canvas block: multi-select (marquee, shift-click, group move/delete)',
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -781,8 +1028,26 @@ describe('canvas block: multi-select (marquee, shift-click, group move/delete)',
   }
 
   // Scale is 0.4 (mockRect is 400x400 for a 1000x1000 local space) throughout.
-  const SHAPE_A = { id: 'r1', type: 'rectangle', x: 100, y: 100, width: 100, height: 100, color: '#000', strokeWidth: 4 };
-  const SHAPE_B = { id: 'r2', type: 'rectangle', x: 300, y: 100, width: 100, height: 100, color: '#000', strokeWidth: 4 };
+  const SHAPE_A = {
+    id: 'r1',
+    type: 'rectangle',
+    x: 100,
+    y: 100,
+    width: 100,
+    height: 100,
+    color: '#000',
+    strokeWidth: 4,
+  };
+  const SHAPE_B = {
+    id: 'r2',
+    type: 'rectangle',
+    x: 300,
+    y: 100,
+    width: 100,
+    height: 100,
+    color: '#000',
+    strokeWidth: 4,
+  };
   const STROKE_A = { id: 's1', points: [[700, 700, 0.5]], color: '#000', size: 8 };
 
   function marqueeSelectBoth(svg) {
@@ -870,7 +1135,9 @@ describe('canvas block: multi-select (marquee, shift-click, group move/delete)',
         firePointerEvent(svg, 'pointermove', { clientX: 360, clientY: 360 });
         firePointerEvent(svg, 'pointerup', { clientX: 360, clientY: 360 });
       });
-      expect(store.getBlock(id).props.shapes.length + store.getBlock(id).props.strokes.length).toBe(3);
+      expect(store.getBlock(id).props.shapes.length + store.getBlock(id).props.strokes.length).toBe(
+        3,
+      );
 
       act(() => {
         firePointerEvent(svg, 'keydown', { key: 'Delete' });
@@ -1158,7 +1425,15 @@ describe('canvas block: shape resize (rect/ellipse corner) + arrow endpoint-drag
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -1175,10 +1450,19 @@ describe('canvas block: shape resize (rect/ellipse corner) + arrow endpoint-drag
       wrapper.querySelector('[aria-label="Select"]').click();
     });
     // select it: click the shape's body once first
-    const bodyLocal = shape.type === 'arrow' ? [(shape.x1 + shape.x2) / 2, (shape.y1 + shape.y2) / 2] : [shape.x + 5, shape.y + 5];
+    const bodyLocal =
+      shape.type === 'arrow'
+        ? [(shape.x1 + shape.x2) / 2, (shape.y1 + shape.y2) / 2]
+        : [shape.x + 5, shape.y + 5];
     act(() => {
-      firePointerEvent(svg, 'pointerdown', { clientX: bodyLocal[0] * 0.4, clientY: bodyLocal[1] * 0.4 });
-      firePointerEvent(svg, 'pointerup', { clientX: bodyLocal[0] * 0.4, clientY: bodyLocal[1] * 0.4 });
+      firePointerEvent(svg, 'pointerdown', {
+        clientX: bodyLocal[0] * 0.4,
+        clientY: bodyLocal[1] * 0.4,
+      });
+      firePointerEvent(svg, 'pointerup', {
+        clientX: bodyLocal[0] * 0.4,
+        clientY: bodyLocal[1] * 0.4,
+      });
     });
     return { store, id, wrapper, svg };
   }
@@ -1247,7 +1531,7 @@ describe('canvas block: shape resize (rect/ellipse corner) + arrow endpoint-drag
     });
   });
 
-  it('dragging an arrow\'s end-point handle moves only that endpoint, committing exactly once on release', () => {
+  it("dragging an arrow's end-point handle moves only that endpoint, committing exactly once on release", () => {
     withMockedRect(() => {
       const { store, id, svg } = setupSelected({
         id: 'a1',
@@ -1329,7 +1613,15 @@ describe('canvas block: rotation (rect/ellipse/diamond/triangle/star, single-sel
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -1345,10 +1637,19 @@ describe('canvas block: rotation (rect/ellipse/diamond/triangle/star, single-sel
     act(() => {
       wrapper.querySelector('[aria-label="Select"]').click();
     });
-    const bodyLocal = shape.type === 'arrow' ? [(shape.x1 + shape.x2) / 2, (shape.y1 + shape.y2) / 2] : [shape.x + 5, shape.y + 5];
+    const bodyLocal =
+      shape.type === 'arrow'
+        ? [(shape.x1 + shape.x2) / 2, (shape.y1 + shape.y2) / 2]
+        : [shape.x + 5, shape.y + 5];
     act(() => {
-      firePointerEvent(svg, 'pointerdown', { clientX: bodyLocal[0] * 0.4, clientY: bodyLocal[1] * 0.4 });
-      firePointerEvent(svg, 'pointerup', { clientX: bodyLocal[0] * 0.4, clientY: bodyLocal[1] * 0.4 });
+      firePointerEvent(svg, 'pointerdown', {
+        clientX: bodyLocal[0] * 0.4,
+        clientY: bodyLocal[1] * 0.4,
+      });
+      firePointerEvent(svg, 'pointerup', {
+        clientX: bodyLocal[0] * 0.4,
+        clientY: bodyLocal[1] * 0.4,
+      });
     });
     return { store, id, wrapper, svg };
   }
@@ -1549,7 +1850,15 @@ describe('canvas block: text tool', () => {
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -1648,7 +1957,19 @@ describe('canvas block: text tool', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 't1', type: 'text', x: 100, y: 100, width: 220, height: 60, text: 'existing', color: '#000', fontSize: 28 }],
+            shapes: [
+              {
+                id: 't1',
+                type: 'text',
+                x: 100,
+                y: 100,
+                width: 220,
+                height: 60,
+                text: 'existing',
+                color: '#000',
+                fontSize: 28,
+              },
+            ],
           }),
         );
         wrapper.querySelector('[aria-label="Select"]').click();
@@ -1675,7 +1996,19 @@ describe('canvas block: text tool', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 't1', type: 'text', x: 100, y: 100, width: 220, height: 60, text: 'existing', color: '#000', fontSize: 28 }],
+            shapes: [
+              {
+                id: 't1',
+                type: 'text',
+                x: 100,
+                y: 100,
+                width: 220,
+                height: 60,
+                text: 'existing',
+                color: '#000',
+                fontSize: 28,
+              },
+            ],
           }),
         );
         wrapper.querySelector('[aria-label="Select"]').click();
@@ -1697,7 +2030,18 @@ describe('canvas block: text tool', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 'r1', type: 'rectangle', x: 100, y: 100, width: 100, height: 100, color: '#000', strokeWidth: 4 }],
+            shapes: [
+              {
+                id: 'r1',
+                type: 'rectangle',
+                x: 100,
+                y: 100,
+                width: 100,
+                height: 100,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
         wrapper.querySelector('[aria-label="Select"]').click();
@@ -1718,7 +2062,9 @@ describe('canvas block: text tool', () => {
         firePointerEvent(svg, 'pointerup', { clientX: 40, clientY: 40 });
       });
       act(() => {
-        fireEvent.change(wrapper.querySelector('.be-canvas-text-editor'), { target: { value: 'hello' } });
+        fireEvent.change(wrapper.querySelector('.be-canvas-text-editor'), {
+          target: { value: 'hello' },
+        });
         fireEvent.blur(wrapper.querySelector('.be-canvas-text-editor'));
       });
       expect(store.getBlock(id).props.shapes).toHaveLength(1); // committed, selected, tool back to 'select'
@@ -1740,7 +2086,19 @@ describe('canvas block: text tool', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 't1', type: 'text', x: 100, y: 100, width: 220, height: 60, text: 'existing', color: '#000', fontSize: 28 }],
+            shapes: [
+              {
+                id: 't1',
+                type: 'text',
+                x: 100,
+                y: 100,
+                width: 220,
+                height: 60,
+                text: 'existing',
+                color: '#000',
+                fontSize: 28,
+              },
+            ],
           }),
         );
         wrapper.querySelector('[aria-label="Select"]').click();
@@ -1778,7 +2136,19 @@ describe('canvas block: text tool', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 't1', type: 'text', x: 100, y: 100, width: 220, height: 60, text: 'existing', color: '#000', fontSize: 28 }],
+            shapes: [
+              {
+                id: 't1',
+                type: 'text',
+                x: 100,
+                y: 100,
+                width: 220,
+                height: 60,
+                text: 'existing',
+                color: '#000',
+                fontSize: 28,
+              },
+            ],
           }),
         );
         wrapper.querySelector('[aria-label="Select"]').click();
@@ -1810,7 +2180,19 @@ describe('canvas block: text tool', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 't1', type: 'text', x: 100, y: 100, width: 220, height: 60, text: 'hi', color: '#000', fontSize: 28 }],
+            shapes: [
+              {
+                id: 't1',
+                type: 'text',
+                x: 100,
+                y: 100,
+                width: 220,
+                height: 60,
+                text: 'hi',
+                color: '#000',
+                fontSize: 28,
+              },
+            ],
           }),
         );
         wrapper.querySelector('[aria-label="Select"]').click();
@@ -1843,7 +2225,9 @@ describe('canvas block: text tool', () => {
         firePointerEvent(svg, 'pointerup', { clientX: 40, clientY: 40 });
       });
       act(() => {
-        fireEvent.change(wrapper.querySelector('.be-canvas-text-editor'), { target: { value: 'first box' } });
+        fireEvent.change(wrapper.querySelector('.be-canvas-text-editor'), {
+          target: { value: 'first box' },
+        });
       });
 
       // click elsewhere on the canvas — local (300,300) -> client (120,120) — WITHOUT ever blurring the textarea directly
@@ -1903,7 +2287,9 @@ describe('canvas block: text tool', () => {
   it('the font-size picker defaults to 28px and applies to newly placed text boxes', () => {
     withMockedRect(() => {
       const { store, id, wrapper, svg } = setup();
-      expect(wrapper.querySelector('[aria-label^="Font size:"]').getAttribute('aria-label')).toBe('Font size: 28');
+      expect(wrapper.querySelector('[aria-label^="Font size:"]').getAttribute('aria-label')).toBe(
+        'Font size: 28',
+      );
 
       act(() => {
         wrapper.querySelector('[aria-label^="Font size:"]').click();
@@ -1917,7 +2303,9 @@ describe('canvas block: text tool', () => {
         firePointerEvent(svg, 'pointerup', { clientX: 40, clientY: 40 });
       });
       act(() => {
-        fireEvent.change(wrapper.querySelector('.be-canvas-text-editor'), { target: { value: 'big text' } });
+        fireEvent.change(wrapper.querySelector('.be-canvas-text-editor'), {
+          target: { value: 'big text' },
+        });
         fireEvent.blur(wrapper.querySelector('.be-canvas-text-editor'));
       });
       expect(store.getBlock(id).props.shapes[0].fontSize).toBe(48);
@@ -1932,7 +2320,9 @@ describe('canvas block: text tool', () => {
         firePointerEvent(svg, 'pointerup', { clientX: 40, clientY: 40 });
       });
       act(() => {
-        fireEvent.change(wrapper.querySelector('.be-canvas-text-editor'), { target: { value: 'resize me' } });
+        fireEvent.change(wrapper.querySelector('.be-canvas-text-editor'), {
+          target: { value: 'resize me' },
+        });
       });
 
       act(() => {
@@ -1947,7 +2337,9 @@ describe('canvas block: text tool', () => {
       });
       expect(store.getBlock(id).props.shapes[0].fontSize).toBe(64);
       // the new default persists for the NEXT box too
-      expect(wrapper.querySelector('[aria-label^="Font size:"]').getAttribute('aria-label')).toBe('Font size: 64');
+      expect(wrapper.querySelector('[aria-label^="Font size:"]').getAttribute('aria-label')).toBe(
+        'Font size: 64',
+      );
     });
   });
 });
@@ -1969,7 +2361,15 @@ describe('canvas block: snapping (grid)', () => {
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -2057,7 +2457,18 @@ describe('canvas block: snapping (grid)', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 'r1', type: 'rectangle', x: 100, y: 100, width: 100, height: 100, color: '#000', strokeWidth: 4 }],
+            shapes: [
+              {
+                id: 'r1',
+                type: 'rectangle',
+                x: 100,
+                y: 100,
+                width: 100,
+                height: 100,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
       });
@@ -2087,7 +2498,18 @@ describe('canvas block: snapping (grid)', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 'r1', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, color: '#000', strokeWidth: 4 }],
+            shapes: [
+              {
+                id: 'r1',
+                type: 'rectangle',
+                x: 100,
+                y: 100,
+                width: 200,
+                height: 100,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
       });
@@ -2121,7 +2543,18 @@ describe('canvas block: snapping (grid)', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 'r1', type: 'rectangle', x: 400, y: 400, width: 200, height: 200, color: '#000', strokeWidth: 4 }],
+            shapes: [
+              {
+                id: 'r1',
+                type: 'rectangle',
+                x: 400,
+                y: 400,
+                width: 200,
+                height: 200,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
       });
@@ -2169,7 +2602,15 @@ describe('canvas block: Delete/Backspace removes the selected shape', () => {
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -2181,8 +2622,26 @@ describe('canvas block: Delete/Backspace removes the selected shape', () => {
         store.applyOperation(
           updateBlockProps(id, {
             shapes: [
-              { id: 'r1', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, color: '#000', strokeWidth: 4 },
-              { id: 'r2', type: 'rectangle', x: 500, y: 500, width: 100, height: 100, color: '#000', strokeWidth: 4 },
+              {
+                id: 'r1',
+                type: 'rectangle',
+                x: 100,
+                y: 100,
+                width: 200,
+                height: 100,
+                color: '#000',
+                strokeWidth: 4,
+              },
+              {
+                id: 'r2',
+                type: 'rectangle',
+                x: 500,
+                y: 500,
+                width: 100,
+                height: 100,
+                color: '#000',
+                strokeWidth: 4,
+              },
             ],
           }),
         );
@@ -2219,7 +2678,18 @@ describe('canvas block: Delete/Backspace removes the selected shape', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 'r1', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, color: '#000', strokeWidth: 4 }],
+            shapes: [
+              {
+                id: 'r1',
+                type: 'rectangle',
+                x: 100,
+                y: 100,
+                width: 200,
+                height: 100,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
       });
@@ -2242,7 +2712,18 @@ describe('canvas block: Delete/Backspace removes the selected shape', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 'r1', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, color: '#000', strokeWidth: 4 }],
+            shapes: [
+              {
+                id: 'r1',
+                type: 'rectangle',
+                x: 100,
+                y: 100,
+                width: 200,
+                height: 100,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
       });
@@ -2274,7 +2755,17 @@ describe('canvas block: toHTML / toPlainText / fromHTML (v1 scope)', () => {
   it('toHTML bakes an inline <svg> with one <path> per stroke when there is content', () => {
     const block = {
       props: {
-        strokes: [{ id: 's1', points: [[0, 0, 0.5], [1000, 1000, 0.5]], color: '#000', size: 8 }],
+        strokes: [
+          {
+            id: 's1',
+            points: [
+              [0, 0, 0.5],
+              [1000, 1000, 0.5],
+            ],
+            color: '#000',
+            size: 8,
+          },
+        ],
         width: 480,
         height: 320,
       },
@@ -2289,9 +2780,36 @@ describe('canvas block: toHTML / toPlainText / fromHTML (v1 scope)', () => {
       props: {
         strokes: [],
         shapes: [
-          { id: 'r1', type: 'rectangle', x: 10, y: 20, width: 100, height: 50, color: '#e03131', strokeWidth: 4 },
-          { id: 'e1', type: 'ellipse', x: 10, y: 20, width: 100, height: 50, color: '#1971c2', strokeWidth: 4 },
-          { id: 'a1', type: 'arrow', x1: 0, y1: 0, x2: 100, y2: 0, color: '#2f9e44', strokeWidth: 4 },
+          {
+            id: 'r1',
+            type: 'rectangle',
+            x: 10,
+            y: 20,
+            width: 100,
+            height: 50,
+            color: '#e03131',
+            strokeWidth: 4,
+          },
+          {
+            id: 'e1',
+            type: 'ellipse',
+            x: 10,
+            y: 20,
+            width: 100,
+            height: 50,
+            color: '#1971c2',
+            strokeWidth: 4,
+          },
+          {
+            id: 'a1',
+            type: 'arrow',
+            x1: 0,
+            y1: 0,
+            x2: 100,
+            y2: 0,
+            color: '#2f9e44',
+            strokeWidth: 4,
+          },
         ],
         width: 480,
         height: 320,
@@ -2310,9 +2828,37 @@ describe('canvas block: toHTML / toPlainText / fromHTML (v1 scope)', () => {
       props: {
         strokes: [],
         shapes: [
-          { id: 'r1', type: 'rectangle', x: 10, y: 20, width: 100, height: 50, color: '#000', strokeWidth: 4, fillColor: '#1971c2' },
-          { id: 'r2', type: 'rectangle', x: 10, y: 20, width: 100, height: 50, color: '#000', strokeWidth: 4 },
-          { id: 'a1', type: 'arrow', x1: 0, y1: 0, x2: 100, y2: 0, color: '#2f9e44', strokeWidth: 4 },
+          {
+            id: 'r1',
+            type: 'rectangle',
+            x: 10,
+            y: 20,
+            width: 100,
+            height: 50,
+            color: '#000',
+            strokeWidth: 4,
+            fillColor: '#1971c2',
+          },
+          {
+            id: 'r2',
+            type: 'rectangle',
+            x: 10,
+            y: 20,
+            width: 100,
+            height: 50,
+            color: '#000',
+            strokeWidth: 4,
+          },
+          {
+            id: 'a1',
+            type: 'arrow',
+            x1: 0,
+            y1: 0,
+            x2: 100,
+            y2: 0,
+            color: '#2f9e44',
+            strokeWidth: 4,
+          },
         ],
         width: 480,
         height: 320,
@@ -2328,7 +2874,19 @@ describe('canvas block: toHTML / toPlainText / fromHTML (v1 scope)', () => {
     const block = {
       props: {
         strokes: [],
-        shapes: [{ id: 't1', type: 'text', x: 10, y: 20, width: 200, height: 60, text: '<b>hi</b> & bye', color: '#000', fontSize: 24 }],
+        shapes: [
+          {
+            id: 't1',
+            type: 'text',
+            x: 10,
+            y: 20,
+            width: 200,
+            height: 60,
+            text: '<b>hi</b> & bye',
+            color: '#000',
+            fontSize: 24,
+          },
+        ],
         width: 480,
         height: 320,
       },
@@ -2343,7 +2901,19 @@ describe('canvas block: toHTML / toPlainText / fromHTML (v1 scope)', () => {
     const block = {
       props: {
         strokes: [],
-        shapes: [{ id: 'r1', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, color: '#000', strokeWidth: 4, rotation: 45 }],
+        shapes: [
+          {
+            id: 'r1',
+            type: 'rectangle',
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 100,
+            color: '#000',
+            strokeWidth: 4,
+            rotation: 45,
+          },
+        ],
         width: 480,
         height: 320,
       },
@@ -2357,7 +2927,17 @@ describe('canvas block: toHTML / toPlainText / fromHTML (v1 scope)', () => {
       props: {
         strokes: [],
         shapes: [
-          { id: 'r1', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, color: '#000', strokeWidth: 4, rotation: 0 },
+          {
+            id: 'r1',
+            type: 'rectangle',
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 100,
+            color: '#000',
+            strokeWidth: 4,
+            rotation: 0,
+          },
           { id: 'a1', type: 'arrow', x1: 0, y1: 0, x2: 100, y2: 0, color: '#000', strokeWidth: 4 },
         ],
         width: 480,
@@ -2375,7 +2955,9 @@ describe('canvas block: toHTML / toPlainText / fromHTML (v1 scope)', () => {
   it('toPlainText always returns an empty string', () => {
     expect(canvasBlockType.toPlainText({ props: { strokes: [] } })).toBe('');
     expect(
-      canvasBlockType.toPlainText({ props: { strokes: [{ id: 's1', points: [[0, 0, 0.5]], color: '#000', size: 8 }] } }),
+      canvasBlockType.toPlainText({
+        props: { strokes: [{ id: 's1', points: [[0, 0, 0.5]], color: '#000', size: 8 }] },
+      }),
     ).toBe('');
   });
 
@@ -2405,7 +2987,15 @@ describe('canvas block: pen-tool pointer-drawing (Phase 2)', () => {
   // our purposes (the component only ever reads these as plain properties).
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -2449,7 +3039,18 @@ describe('canvas block: pen-tool pointer-drawing (Phase 2)', () => {
       // regardless of draw order.
       store.applyOperation(
         updateBlockProps(id, {
-          shapes: [{ id: 'h1', type: 'rectangle', x: 0, y: 0, width: 1000, height: 1000, color: '#000', fillColor: '#e03131' }],
+          shapes: [
+            {
+              id: 'h1',
+              type: 'rectangle',
+              x: 0,
+              y: 0,
+              width: 1000,
+              height: 1000,
+              color: '#000',
+              fillColor: '#e03131',
+            },
+          ],
         }),
       );
       const { container } = renderDoc(store);
@@ -2468,7 +3069,9 @@ describe('canvas block: pen-tool pointer-drawing (Phase 2)', () => {
       expect(strokeZ).toBeGreaterThan(0); // above the legacy shape's own fallback z (see zOrder.js)
 
       // DOM/paint order: the stroke's <path> must come AFTER the shape's <rect> now.
-      const rectIndex = [...svg.children].findIndex((el) => el.tagName === 'rect' && !el.classList.contains('be-canvas-grid-background'));
+      const rectIndex = [...svg.children].findIndex(
+        (el) => el.tagName === 'rect' && !el.classList.contains('be-canvas-grid-background'),
+      );
       const pathIndex = [...svg.children].findIndex((el) => el.tagName === 'path');
       expect(rectIndex).toBeGreaterThanOrEqual(0);
       expect(pathIndex).toBeGreaterThan(rectIndex);
@@ -2533,7 +3136,15 @@ describe('canvas block: eraser tool (Phase 3)', () => {
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -2545,8 +3156,24 @@ describe('canvas block: eraser tool (Phase 3)', () => {
         store.applyOperation(
           updateBlockProps(id, {
             strokes: [
-              { id: 's1', points: [[100, 100, 0.5], [200, 200, 0.5]], color: '#000', size: 8 }, // near top-left
-              { id: 's2', points: [[800, 800, 0.5], [900, 900, 0.5]], color: '#000', size: 8 }, // near bottom-right, untouched
+              {
+                id: 's1',
+                points: [
+                  [100, 100, 0.5],
+                  [200, 200, 0.5],
+                ],
+                color: '#000',
+                size: 8,
+              }, // near top-left
+              {
+                id: 's2',
+                points: [
+                  [800, 800, 0.5],
+                  [900, 900, 0.5],
+                ],
+                color: '#000',
+                size: 8,
+              }, // near bottom-right, untouched
             ],
           }),
         );
@@ -2589,7 +3216,9 @@ describe('canvas block: eraser tool (Phase 3)', () => {
       const id = insertAtRoot(store, createCanvasBlock());
       act(() => {
         store.applyOperation(
-          updateBlockProps(id, { strokes: [{ id: 's1', points: [[500, 500, 0.5]], color: '#000', size: 8 }] }),
+          updateBlockProps(id, {
+            strokes: [{ id: 's1', points: [[500, 500, 0.5]], color: '#000', size: 8 }],
+          }),
         );
       });
       const { container } = renderDoc(store);
@@ -2620,7 +3249,18 @@ describe('canvas block: eraser tool (Phase 3)', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            strokes: [{ id: 'L', points: [[100, 100, 0.5], [100, 300, 0.5], [300, 300, 0.5]], color: '#000', size: 8 }],
+            strokes: [
+              {
+                id: 'L',
+                points: [
+                  [100, 100, 0.5],
+                  [100, 300, 0.5],
+                  [300, 300, 0.5],
+                ],
+                color: '#000',
+                size: 8,
+              },
+            ],
           }),
         );
       });
@@ -2658,7 +3298,18 @@ describe('canvas block: eraser tool (Phase 3)', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            shapes: [{ id: 'sh1', type: 'rectangle', x: 100, y: 100, width: 100, height: 100, color: '#000', strokeWidth: 4 }],
+            shapes: [
+              {
+                id: 'sh1',
+                type: 'rectangle',
+                x: 100,
+                y: 100,
+                width: 100,
+                height: 100,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
       });
@@ -2685,7 +3336,16 @@ describe('canvas block: eraser tool (Phase 3)', () => {
     withMockedRect(() => {
       const store = new EditorStore(emptyDoc());
       const id = insertAtRoot(store, createCanvasBlock());
-      const shape = { id: 'sh1', type: 'rectangle', x: 120, y: 90, width: 20, height: 20, color: '#000', strokeWidth: 4 };
+      const shape = {
+        id: 'sh1',
+        type: 'rectangle',
+        x: 120,
+        y: 90,
+        width: 20,
+        height: 20,
+        color: '#000',
+        strokeWidth: 4,
+      };
       act(() => {
         store.applyOperation(updateBlockProps(id, { shapes: [shape] }));
       });
@@ -2728,7 +3388,9 @@ describe('canvas block: eraser tool (Phase 3)', () => {
       const id = insertAtRoot(store, createCanvasBlock());
       const points = Array.from({ length: 11 }, (_, i) => [100 + i * 20, 100, 0.5]); // x: 100,120,...,300
       act(() => {
-        store.applyOperation(updateBlockProps(id, { strokes: [{ id: 's1', points, color: '#000', size: 8 }] }));
+        store.applyOperation(
+          updateBlockProps(id, { strokes: [{ id: 's1', points, color: '#000', size: 8 }] }),
+        );
       });
       const { container } = renderDoc(store);
       const wrapper = container.querySelector(`[data-block-id="${id}"]`);
@@ -2767,7 +3429,9 @@ describe('canvas block: eraser tool (Phase 3)', () => {
       const id = insertAtRoot(store, createCanvasBlock());
       const points = Array.from({ length: 11 }, (_, i) => [100 + i * 20, 100, 0.5]);
       act(() => {
-        store.applyOperation(updateBlockProps(id, { strokes: [{ id: 's1', points, color: '#000', size: 8 }] }));
+        store.applyOperation(
+          updateBlockProps(id, { strokes: [{ id: 's1', points, color: '#000', size: 8 }] }),
+        );
       });
       const { container } = renderDoc(store);
       const wrapper = container.querySelector(`[data-block-id="${id}"]`);
@@ -2803,7 +3467,10 @@ describe('canvas block: eraser tool (Phase 3)', () => {
             strokes: [
               {
                 id: 's1',
-                points: [[100, 100, 0.5], [103, 100, 0.5]], // both within a 6-unit radius of one point
+                points: [
+                  [100, 100, 0.5],
+                  [103, 100, 0.5],
+                ], // both within a 6-unit radius of one point
                 color: '#000',
                 size: 8,
               },
@@ -2836,7 +3503,9 @@ describe('canvas block: eraser tool (Phase 3)', () => {
       const id = insertAtRoot(store, createCanvasBlock());
       const points = Array.from({ length: 5 }, (_, i) => [100 + i * 20, 100, 0.5]);
       act(() => {
-        store.applyOperation(updateBlockProps(id, { strokes: [{ id: 's1', points, color: '#000', size: 8 }] }));
+        store.applyOperation(
+          updateBlockProps(id, { strokes: [{ id: 's1', points, color: '#000', size: 8 }] }),
+        );
       });
       const { container } = renderDoc(store);
       const wrapper = container.querySelector(`[data-block-id="${id}"]`);
@@ -2863,8 +3532,29 @@ describe('canvas block: eraser tool (Phase 3)', () => {
       act(() => {
         store.applyOperation(
           updateBlockProps(id, {
-            strokes: [{ id: 's1', points: [[100, 100, 0.5], [150, 150, 0.5]], color: '#000', size: 8 }],
-            shapes: [{ id: 'sh1', type: 'rectangle', x: 100, y: 100, width: 100, height: 100, color: '#000', strokeWidth: 4 }],
+            strokes: [
+              {
+                id: 's1',
+                points: [
+                  [100, 100, 0.5],
+                  [150, 150, 0.5],
+                ],
+                color: '#000',
+                size: 8,
+              },
+            ],
+            shapes: [
+              {
+                id: 'sh1',
+                type: 'rectangle',
+                x: 100,
+                y: 100,
+                width: 100,
+                height: 100,
+                color: '#000',
+                strokeWidth: 4,
+              },
+            ],
           }),
         );
       });
@@ -2955,7 +3645,19 @@ describe('canvas block: resize handle (Phase 4)', () => {
     const id = insertAtRoot(store, createCanvasBlock());
     act(() => {
       store.applyOperation(
-        updateBlockProps(id, { strokes: [{ id: 's1', points: [[0, 0, 0.5], [1000, 1000, 0.5]], color: '#000', size: 8 }] }),
+        updateBlockProps(id, {
+          strokes: [
+            {
+              id: 's1',
+              points: [
+                [0, 0, 0.5],
+                [1000, 1000, 0.5],
+              ],
+              color: '#000',
+              size: 8,
+            },
+          ],
+        }),
       );
     });
     const { container } = renderDoc(store);
@@ -2991,7 +3693,15 @@ describe('canvas block: pan/zoom (Phase 5) — local view state, never touches t
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -3013,7 +3723,7 @@ describe('canvas block: pan/zoom (Phase 5) — local view state, never touches t
     });
   });
 
-  it('Ctrl+wheel actually calls preventDefault (regression: React\'s synthetic onWheel is passive by default and silently ignores preventDefault, letting the browser also zoom the whole page)', () => {
+  it("Ctrl+wheel actually calls preventDefault (regression: React's synthetic onWheel is passive by default and silently ignores preventDefault, letting the browser also zoom the whole page)", () => {
     withMockedRect(() => {
       const store = new EditorStore(emptyDoc());
       const id = insertAtRoot(store, createCanvasBlock());
@@ -3081,8 +3791,18 @@ describe('canvas block: pan/zoom (Phase 5) — local view state, never touches t
 
       act(() => {
         // First finger alone starts a pen stroke (the default tool).
-        firePointerEvent(svg, 'pointerdown', { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 });
-        firePointerEvent(svg, 'pointermove', { pointerId: 1, pointerType: 'touch', clientX: 105, clientY: 105 });
+        firePointerEvent(svg, 'pointerdown', {
+          pointerId: 1,
+          pointerType: 'touch',
+          clientX: 100,
+          clientY: 100,
+        });
+        firePointerEvent(svg, 'pointermove', {
+          pointerId: 1,
+          pointerType: 'touch',
+          clientX: 105,
+          clientY: 105,
+        });
         // A second finger lands mid-gesture — this should cancel the
         // in-progress stroke and switch straight into a two-finger pan.
         firePointerEvent(svg, 'pointerdown', {
@@ -3094,9 +3814,24 @@ describe('canvas block: pan/zoom (Phase 5) — local view state, never touches t
         });
         // Both fingers drag together (same relative offset from each
         // other — a pan, not a pinch).
-        firePointerEvent(svg, 'pointermove', { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 130 });
-        firePointerEvent(svg, 'pointermove', { pointerId: 2, pointerType: 'touch', clientX: 140, clientY: 130 });
-        firePointerEvent(svg, 'pointerup', { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 130 });
+        firePointerEvent(svg, 'pointermove', {
+          pointerId: 1,
+          pointerType: 'touch',
+          clientX: 100,
+          clientY: 130,
+        });
+        firePointerEvent(svg, 'pointermove', {
+          pointerId: 2,
+          pointerType: 'touch',
+          clientX: 140,
+          clientY: 130,
+        });
+        firePointerEvent(svg, 'pointerup', {
+          pointerId: 1,
+          pointerType: 'touch',
+          clientX: 100,
+          clientY: 130,
+        });
         firePointerEvent(svg, 'pointerup', {
           pointerId: 2,
           pointerType: 'touch',
@@ -3208,7 +3943,15 @@ describe('canvas block: toolbar color/size controls (Phase 6)', () => {
 
   function firePointerEvent(el, type, opts = {}) {
     const event = new Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: 1, isPrimary: true, button: 0, pressure: 0.5, clientX: 0, clientY: 0, ...opts });
+    Object.assign(event, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      pressure: 0.5,
+      clientX: 0,
+      clientY: 0,
+      ...opts,
+    });
     el.dispatchEvent(event);
   }
 
@@ -3325,7 +4068,9 @@ describe('canvas block: toolbar color/size controls (Phase 6)', () => {
       act(() => {
         wrapper.querySelector('[aria-label^="Fill:"]').click();
       });
-      expect(wrapper.querySelector('[aria-label="No fill"]').getAttribute('aria-pressed')).toBe('true');
+      expect(wrapper.querySelector('[aria-label="No fill"]').getAttribute('aria-pressed')).toBe(
+        'true',
+      );
       expect(wrapper.querySelector('.be-canvas-custom-swatch input[type="color"]')).not.toBeNull();
 
       act(() => {
@@ -3435,20 +4180,42 @@ describe('canvas block: PNG export', () => {
     act(() => {
       store.applyOperation(
         updateBlockProps(id, {
-          shapes: [{ id: 'r1', type: 'rectangle', x: 0, y: 0, width: 100, height: 100, color: '#000', strokeWidth: 4 }],
+          shapes: [
+            {
+              id: 'r1',
+              type: 'rectangle',
+              x: 0,
+              y: 0,
+              width: 100,
+              height: 100,
+              color: '#000',
+              strokeWidth: 4,
+            },
+          ],
         }),
       );
     });
     expect(button.disabled).toBe(false);
   });
 
-  it('clicking Export PNG does not throw, even in an environment (like this test suite\'s jsdom) with no real URL.createObjectURL/canvas support', () => {
+  it("clicking Export PNG does not throw, even in an environment (like this test suite's jsdom) with no real URL.createObjectURL/canvas support", () => {
     const store = new EditorStore(emptyDoc());
     const id = insertAtRoot(store, createCanvasBlock());
     act(() => {
       store.applyOperation(
         updateBlockProps(id, {
-          shapes: [{ id: 'r1', type: 'rectangle', x: 0, y: 0, width: 100, height: 100, color: '#000', strokeWidth: 4 }],
+          shapes: [
+            {
+              id: 'r1',
+              type: 'rectangle',
+              x: 0,
+              y: 0,
+              width: 100,
+              height: 100,
+              color: '#000',
+              strokeWidth: 4,
+            },
+          ],
         }),
       );
     });

@@ -31,7 +31,9 @@ function renderHarness(store, { authorId } = {}) {
 function getFirstRunEl(container) {
   // addComment may split the run -- the comment-marked slice is whichever
   // element ends up with the highlight class.
-  return container.querySelector('.be-comment-highlight') ?? container.querySelector('[data-run-id]');
+  return (
+    container.querySelector('.be-comment-highlight') ?? container.querySelector('[data-run-id]')
+  );
 }
 
 describe('CommentPopover', () => {
@@ -46,7 +48,11 @@ describe('CommentPopover', () => {
 
   it('opens on click over a commented run, showing the thread', () => {
     const store = new EditorStore(makeDoc());
-    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'looks off' });
+    addComment(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { authorId: 'alice', text: 'looks off' },
+    );
     const { container } = renderHarness(store, { authorId: 'alice' });
 
     const commentedEl = getFirstRunEl(container);
@@ -60,7 +66,11 @@ describe('CommentPopover', () => {
 
   it('opens on hover too, and stays open while the pointer is over the popover', () => {
     const store = new EditorStore(makeDoc());
-    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'hover preview' });
+    addComment(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { authorId: 'alice', text: 'hover preview' },
+    );
     const { container } = renderHarness(store, { authorId: 'alice' });
 
     const commentedEl = getFirstRunEl(container);
@@ -85,12 +95,19 @@ describe('CommentPopover', () => {
     fireEvent.change(textarea, { target: { value: 'a reply' } });
     fireEvent.click(popover.querySelector('.be-comment-composer-submit'));
 
-    expect(store.getComment(commentId).messages.map((m) => m.text)).toEqual(['first message', 'a reply']);
+    expect(store.getComment(commentId).messages.map((m) => m.text)).toEqual([
+      'first message',
+      'a reply',
+    ]);
   });
 
   it('hides Reply when no authorId is configured, but still shows Resolve/Delete', () => {
     const store = new EditorStore(makeDoc());
-    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'x' });
+    addComment(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { authorId: 'alice', text: 'x' },
+    );
     const { container } = renderHarness(store); // no authorId
 
     fireEvent.click(getFirstRunEl(container));
@@ -111,7 +128,9 @@ describe('CommentPopover', () => {
 
     fireEvent.click(getFirstRunEl(container));
     let popover = document.querySelector('.be-comment-popover');
-    fireEvent.click([...popover.querySelectorAll('button')].find((b) => b.textContent === 'Resolve'));
+    fireEvent.click(
+      [...popover.querySelectorAll('button')].find((b) => b.textContent === 'Resolve'),
+    );
     expect(store.getComment(commentId).resolved).toBe(true);
 
     popover = document.querySelector('.be-comment-popover');
@@ -122,7 +141,11 @@ describe('CommentPopover', () => {
 
   it('closes on Escape', () => {
     const store = new EditorStore(makeDoc());
-    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'x' });
+    addComment(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { authorId: 'alice', text: 'x' },
+    );
     const { container } = renderHarness(store, { authorId: 'alice' });
 
     fireEvent.click(getFirstRunEl(container));
@@ -136,7 +159,11 @@ describe('CommentPopover', () => {
 
   it('shows an avatar for the root message and indents replies in their own connector container', () => {
     const store = new EditorStore(makeDoc());
-    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'root' });
+    addComment(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { authorId: 'alice', text: 'root' },
+    );
     const commentId = store.getComments()[0].id;
     replyToComment(store, commentId, { authorId: 'bob', text: 'a reply' });
     const { container } = renderHarness(store, { authorId: 'alice' });
@@ -151,7 +178,11 @@ describe('CommentPopover', () => {
 
   it('a pinned (click-)opened popover has dialog semantics, moves focus in, and restores it on close', () => {
     const store = new EditorStore(makeDoc());
-    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'x' });
+    addComment(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { authorId: 'alice', text: 'x' },
+    );
     const { container } = renderHarness(store, { authorId: 'alice' });
 
     const outsideButton = document.createElement('button');
@@ -176,7 +207,11 @@ describe('CommentPopover', () => {
 
   it('a hover-only preview does not steal focus or claim aria-modal', () => {
     const store = new EditorStore(makeDoc());
-    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'x' });
+    addComment(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { authorId: 'alice', text: 'x' },
+    );
     const { container } = renderHarness(store, { authorId: 'alice' });
 
     const outsideButton = document.createElement('button');
@@ -194,7 +229,11 @@ describe('CommentPopover', () => {
 
   it('closes on an outside click', () => {
     const store = new EditorStore(makeDoc());
-    addComment(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, { authorId: 'alice', text: 'x' });
+    addComment(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { authorId: 'alice', text: 'x' },
+    );
     const { container } = renderHarness(store, { authorId: 'alice' });
 
     fireEvent.click(getFirstRunEl(container));

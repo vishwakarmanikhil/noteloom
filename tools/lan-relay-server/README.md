@@ -33,7 +33,7 @@ import { createWebSocketSignaling, CollabSession } from 'noteloom';
 
 const signaling = createWebSocketSignaling({
   url: 'ws://192.168.1.5:8080', // the relay's address
-  roomId: 'my-document-id',     // anyone using the same roomId ends up in the same room
+  roomId: 'my-document-id', // anyone using the same roomId ends up in the same room
   peerId: crypto.randomUUID(),
 });
 
@@ -51,13 +51,13 @@ signaling.onPeerDiscovered((remotePeerId) => {
 Plain JSON messages over the WebSocket. `room` and `peerId` are passed as
 URL query params on connect (`ws://host:8080?room=...&peerId=...`).
 
-| Direction | Message | Meaning |
-|---|---|---|
-| server → client | `{type:'roster', peerIds:[...]}` | sent once on connect — who else is already in this room |
-| server → client | `{type:'peer-joined', peerId}` | another peer joined the room |
-| server → client | `{type:'peer-left', peerId}` | a peer disconnected |
-| client → server | `{type:'signal', toPeerId, payload}` | relay `payload` to one specific peer in the same room |
-| server → client | `{type:'signal', fromPeerId, payload}` | a relayed message addressed to you |
+| Direction       | Message                                | Meaning                                                 |
+| --------------- | -------------------------------------- | ------------------------------------------------------- |
+| server → client | `{type:'roster', peerIds:[...]}`       | sent once on connect — who else is already in this room |
+| server → client | `{type:'peer-joined', peerId}`         | another peer joined the room                            |
+| server → client | `{type:'peer-left', peerId}`           | a peer disconnected                                     |
+| client → server | `{type:'signal', toPeerId, payload}`   | relay `payload` to one specific peer in the same room   |
+| server → client | `{type:'signal', fromPeerId, payload}` | a relayed message addressed to you                      |
 
 ## Not handled here
 

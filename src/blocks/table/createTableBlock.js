@@ -12,7 +12,11 @@ function createRow(parentId, columns) {
     runs.push(cell.run);
     contentIds.push(cell.block.id);
   }
-  return { block: { id: rowId, type: 'tableRow', parentId, contentIds, props: {} }, blocks: cellBlocks, runs };
+  return {
+    block: { id: rowId, type: 'tableRow', parentId, contentIds, props: {} },
+    blocks: cellBlocks,
+    runs,
+  };
 }
 
 /** factory(parentId) -> {block, runs, subtreeBlocks} for a fresh rows x cols table. */

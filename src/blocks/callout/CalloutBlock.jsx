@@ -122,7 +122,12 @@ export function CalloutBlock({ id }) {
           <span className={`be-callout-color-dot be-callout-color-dot-${color}`} />
         </button>
         {isColorPickerOpen && (
-          <div ref={colorPickerRef} className="be-callout-color-picker" role="menu" aria-label="Callout color">
+          <div
+            ref={colorPickerRef}
+            className="be-callout-color-picker"
+            role="menu"
+            aria-label="Callout color"
+          >
             {CALLOUT_COLORS.map((c) => (
               <button
                 key={c.value}

@@ -1,5 +1,9 @@
 import { CanvasBlock } from './CanvasBlock.jsx';
-import { createCanvasBlock, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from './createCanvasBlock.js';
+import {
+  createCanvasBlock,
+  DEFAULT_CANVAS_WIDTH,
+  DEFAULT_CANVAS_HEIGHT,
+} from './createCanvasBlock.js';
 import { buildCanvasSVGMarkup } from './exportSvg.js';
 import { insertSiblingAfter, insertSiblingAfterAndFocus } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
@@ -39,7 +43,9 @@ function fromHTML() {
 function insertCanvasCommand(store, { blockId, runId, sliceStart, sliceEnd }) {
   const run = store.getRun(runId);
   const value = run?.value ?? '';
-  store.applyOperation(updateRun(runId, { value: value.slice(0, sliceStart) + value.slice(sliceEnd) }));
+  store.applyOperation(
+    updateRun(runId, { value: value.slice(0, sliceStart) + value.slice(sliceEnd) }),
+  );
   const canvasId = insertSiblingAfter(store, blockId, createCanvasBlock());
   insertSiblingAfterAndFocus(store, canvasId, createTextLeafBlock('paragraph'));
   return canvasId;
@@ -48,7 +54,12 @@ function insertCanvasCommand(store, { blockId, runId, sliceStart, sliceEnd }) {
 export const canvasBlockType = {
   component: CanvasBlock,
   isLeaf: true, // contentIds always [] — a pure widget, same convention as divider/embed
-  defaultProps: { strokes: [], shapes: [], width: DEFAULT_CANVAS_WIDTH, height: DEFAULT_CANVAS_HEIGHT },
+  defaultProps: {
+    strokes: [],
+    shapes: [],
+    width: DEFAULT_CANVAS_WIDTH,
+    height: DEFAULT_CANVAS_HEIGHT,
+  },
   toHTML,
   toPlainText,
   fromHTML,

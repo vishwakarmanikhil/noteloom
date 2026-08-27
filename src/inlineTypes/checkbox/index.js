@@ -29,7 +29,10 @@ function fromHTML(node) {
     type: 'checkbox',
     value: '',
     marks: {},
-    data: { checked: node.getAttribute('data-checked') === 'true', label: (node.textContent ?? '').replace(/^[☑☐]\s*/, '') },
+    data: {
+      checked: node.getAttribute('data-checked') === 'true',
+      label: (node.textContent ?? '').replace(/^[☑☐]\s*/, ''),
+    },
   };
 }
 

@@ -20,7 +20,9 @@ export function duplicateBlock(store, blockId) {
   const subtree = captureSubtree(store, blockId);
   const { block, runs, subtreeBlocks } = remapSubtreeIds(subtree);
 
-  store.applyOperation(insertBlock(block, parent.id, index + 1, { blocks: [block, ...subtreeBlocks], runs }));
+  store.applyOperation(
+    insertBlock(block, parent.id, index + 1, { blocks: [block, ...subtreeBlocks], runs }),
+  );
   focusBlockStart(store, block.id);
   return block.id;
 }
@@ -69,7 +71,8 @@ export function deleteBlockAndFocusSibling(store, blockId) {
   const parent = store.getBlock(block.parentId);
   const index = parent.contentIds.indexOf(blockId);
   const prevId = index > 0 ? parent.contentIds[index - 1] : null;
-  const nextId = index !== -1 && index < parent.contentIds.length - 1 ? parent.contentIds[index + 1] : null;
+  const nextId =
+    index !== -1 && index < parent.contentIds.length - 1 ? parent.contentIds[index + 1] : null;
 
   store.applyOperation(removeBlock(blockId));
   const fallbackId = ensureRootNonEmpty(store);

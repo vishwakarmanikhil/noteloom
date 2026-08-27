@@ -149,13 +149,31 @@ function makeInitialDoc() {
         id: pFollowUp,
         type: 'paragraph',
         parentId: rootId,
-        contentIds: [rFollowUpBefore, assigneeFollowUp, rFollowUpMiddle, dateFollowUp, rFollowUpAfter],
+        contentIds: [
+          rFollowUpBefore,
+          assigneeFollowUp,
+          rFollowUpMiddle,
+          dateFollowUp,
+          rFollowUpAfter,
+        ],
         props: {},
       },
-      { id: callout1, type: 'callout', parentId: rootId, contentIds: [calloutP1], props: { icon: '💡' } },
+      {
+        id: callout1,
+        type: 'callout',
+        parentId: rootId,
+        contentIds: [calloutP1],
+        props: { icon: '💡' },
+      },
       { id: calloutP1, type: 'paragraph', parentId: callout1, contentIds: [rCalloutP1], props: {} },
       { id: quote1, type: 'blockquote', parentId: rootId, contentIds: [rQuote1], props: {} },
-      { id: code1, type: 'code', parentId: rootId, contentIds: [rCode1], props: { language: 'javascript' } },
+      {
+        id: code1,
+        type: 'code',
+        parentId: rootId,
+        contentIds: [rCode1],
+        props: { language: 'javascript' },
+      },
       {
         id: li1,
         type: 'listItem',
@@ -170,7 +188,13 @@ function makeInitialDoc() {
         contentIds: [toggleChild1],
         props: { ordered: false, collapsed: false, titleRunIds: [rToggle1] },
       },
-      { id: toggleChild1, type: 'paragraph', parentId: toggle1, contentIds: [rToggleChild1], props: {} },
+      {
+        id: toggleChild1,
+        type: 'paragraph',
+        parentId: toggle1,
+        contentIds: [rToggleChild1],
+        props: {},
+      },
       { id: layout1, type: 'layout', parentId: rootId, contentIds: [col1, col2, col3], props: {} },
       { id: col1, type: 'layoutColumn', parentId: layout1, contentIds: [colP1], props: {} },
       { id: col2, type: 'layoutColumn', parentId: layout1, contentIds: [colP2], props: {} },
@@ -192,7 +216,13 @@ function makeInitialDoc() {
         contentIds: [rToggleHeadingChild1],
         props: {},
       },
-      { id: button1, type: 'button', parentId: rootId, contentIds: [rButton1], props: { href: 'https://example.com' } },
+      {
+        id: button1,
+        type: 'button',
+        parentId: rootId,
+        contentIds: [rButton1],
+        props: { href: 'https://example.com' },
+      },
       {
         id: embedImage1,
         type: 'embed',
@@ -205,7 +235,13 @@ function makeInitialDoc() {
           mimeType: 'image/svg+xml',
         },
       },
-      { id: embedFile1, type: 'embed', parentId: rootId, contentIds: [], props: { kind: 'file', src: '', name: '', mimeType: '' } },
+      {
+        id: embedFile1,
+        type: 'embed',
+        parentId: rootId,
+        contentIds: [],
+        props: { kind: 'file', src: '', name: '', mimeType: '' },
+      },
       { id: divider1, type: 'divider', parentId: rootId, contentIds: [], props: {} },
       {
         id: todo1,
@@ -234,18 +270,29 @@ function makeInitialDoc() {
         // render, which in turn remounts each column's header cell (React
         // key={column.id}) and silently resets any of its own open menu/
         // popover state.
-        props: { columns: [{ id: genId(), label: 'Column 1', type: 'text', width: 160 }, { id: genId(), label: 'Column 2', type: 'text', width: 160 }] },
+        props: {
+          columns: [
+            { id: genId(), label: 'Column 1', type: 'text', width: 160 },
+            { id: genId(), label: 'Column 2', type: 'text', width: 160 },
+          ],
+        },
       },
       { id: row, type: 'tableRow', parentId: table, contentIds: [cellA, cellB], props: {} },
       { id: cellA, type: 'tableCell', parentId: row, contentIds: [rCellA], props: {} },
       { id: cellB, type: 'tableCell', parentId: row, contentIds: [rCellB], props: {} },
     ],
     runs: [
-      { id: rh1, type: 'text', value: 'Block editor demo — type "/" for commands, "@" to assign someone', marks: {} },
+      {
+        id: rh1,
+        type: 'text',
+        value: 'Block editor demo — type "/" for commands, "@" to assign someone',
+        marks: {},
+      },
       {
         id: rp1,
         type: 'text',
-        value: 'Type here. Select text and press Ctrl+B/I/U to format. Ctrl+Z/Ctrl+Shift+Z to undo/redo.',
+        value:
+          'Type here. Select text and press Ctrl+B/I/U to format. Ctrl+Z/Ctrl+Shift+Z to undo/redo.',
         marks: {},
       },
       { id: rDiagBefore, type: 'text', value: 'Diagnosis: ', marks: {} },
@@ -285,13 +332,15 @@ function makeInitialDoc() {
       {
         id: rCalloutP1,
         type: 'text',
-        value: "This is a callout — click the icon to change it, or select the whole box and it copies/pastes/deletes as one unit.",
+        value:
+          'This is a callout — click the icon to change it, or select the whole box and it copies/pastes/deletes as one unit.',
         marks: {},
       },
       {
         id: rQuote1,
         type: 'text',
-        value: 'A quote — Enter exits it into a new paragraph, Backspace at the start merges it away.',
+        value:
+          'A quote — Enter exits it into a new paragraph, Backspace at the start merges it away.',
         marks: {},
       },
       {
@@ -306,7 +355,12 @@ function makeInitialDoc() {
         value: 'A toggle — click the triangle to collapse/expand its content.',
         marks: {},
       },
-      { id: rToggleChild1, type: 'text', value: 'Hidden content, revealed when expanded.', marks: {} },
+      {
+        id: rToggleChild1,
+        type: 'text',
+        value: 'Hidden content, revealed when expanded.',
+        marks: {},
+      },
       { id: rColP1, type: 'text', value: 'Column 1', marks: {} },
       { id: rColP2, type: 'text', value: 'Column 2', marks: {} },
       { id: rColP3, type: 'text', value: 'Column 3 — try "/columns" for 2-5 columns.', marks: {} },
@@ -323,7 +377,12 @@ function makeInitialDoc() {
         marks: {},
       },
       { id: rButton1, type: 'text', value: 'Visit example.com', marks: {} },
-      { id: rli1, type: 'text', value: 'A list item — press Enter for a new one, Tab to indent', marks: {} },
+      {
+        id: rli1,
+        type: 'text',
+        value: 'A list item — press Enter for a new one, Tab to indent',
+        marks: {},
+      },
       { id: rTodo1, type: 'text', value: 'A completed to-do', marks: {} },
       { id: rTodo2, type: 'text', value: 'An open to-do — click the checkbox', marks: {} },
       { id: rCellA, type: 'text', value: 'Cell A', marks: {} },
@@ -342,7 +401,8 @@ function VoiceCommandsModal({ isOpen, onClose }) {
       <ul className="be-voice-commands-list">
         {listVoiceCommands().map((command) => (
           <li key={command.phrases[0]}>
-            <strong>{command.phrases.map((p) => `"${p}"`).join(' / ')}</strong> — {command.description}
+            <strong>{command.phrases.map((p) => `"${p}"`).join(' / ')}</strong> —{' '}
+            {command.description}
           </li>
         ))}
       </ul>
@@ -403,14 +463,17 @@ function Toolbar() {
             type="button"
             className={voice.isListening ? 'be-toolbar-btn-active' : undefined}
             onClick={() => (voice.isListening ? voice.stop() : voice.start())}
-            title="Ctrl/Cmd+Shift+M also toggles this. Say a command like &quot;heading one&quot; or &quot;new paragraph&quot; while dictating, or say &quot;stop dictation&quot; to stop."
+            title='Ctrl/Cmd+Shift+M also toggles this. Say a command like "heading one" or "new paragraph" while dictating, or say "stop dictation" to stop.'
           >
             {voice.isListening ? 'Stop dictation' : 'Start dictation'}
           </button>
           <button type="button" onClick={() => setIsCommandsModalOpen(true)}>
             Voice commands
           </button>
-          <VoiceCommandsModal isOpen={isCommandsModalOpen} onClose={() => setIsCommandsModalOpen(false)} />
+          <VoiceCommandsModal
+            isOpen={isCommandsModalOpen}
+            onClose={() => setIsCommandsModalOpen(false)}
+          />
           <VoicePermissionModal voice={voice} />
           <VoiceListeningIndicator voice={voice} />
         </>
@@ -541,7 +604,13 @@ export function App() {
   }, []);
 
   return (
-    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store} commentAuthorId={COMMENT_AUTHOR_ID}>
+    <EditorProvider
+      store={store}
+      registry={registry}
+      inlineRegistry={inlineRegistry}
+      history={store}
+      commentAuthorId={COMMENT_AUTHOR_ID}
+    >
       <EditorSurface />
     </EditorProvider>
   );

@@ -31,7 +31,13 @@ function makeDocWithEmbed() {
     blocks: [
       { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'embed1', 'p2'], props: {} },
       { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
-      { id: 'embed1', type: 'embed', parentId: 'root', contentIds: [], props: { kind: 'image', src: 'https://x/a.png' } },
+      {
+        id: 'embed1',
+        type: 'embed',
+        parentId: 'root',
+        contentIds: [],
+        props: { kind: 'image', src: 'https://x/a.png' },
+      },
       { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: ['r2'], props: {} },
     ],
     runs: [
@@ -81,7 +87,9 @@ describe('non-editable block select-then-delete: Backspace into a preceding divi
 
     expect(store.getBlock('div1')).toBeDefined(); // not deleted yet
     expect(store.getBlock('root').contentIds).toEqual(['p1', 'div1', 'p2']);
-    expect(container.querySelector('[data-block-id="div1"]').classList.contains('be-block-selected')).toBe(true);
+    expect(
+      container.querySelector('[data-block-id="div1"]').classList.contains('be-block-selected'),
+    ).toBe(true);
     expect(store.getRun('r2').value).toBe('after'); // p2's own text untouched
   });
 
@@ -167,7 +175,13 @@ describe('non-editable block select-then-delete: generalizes to every block type
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['div1', 'li1'], props: {} },
         { id: 'div1', type: 'divider', parentId: 'root', contentIds: [], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
       ],
       runs: [{ id: 'r1', type: 'text', value: 'item text', marks: {} }],
     });
@@ -176,7 +190,9 @@ describe('non-editable block select-then-delete: generalizes to every block type
     collapseCaretAt(runNode, 0);
 
     fireEvent.keyDown(runNode, { key: 'Backspace' }); // select
-    expect(container.querySelector('[data-block-id="div1"]').classList.contains('be-block-selected')).toBe(true);
+    expect(
+      container.querySelector('[data-block-id="div1"]').classList.contains('be-block-selected'),
+    ).toBe(true);
     expect(store.getBlock('div1')).toBeDefined();
 
     fireEvent.keyDown(runNode, { key: 'Backspace' }); // delete
@@ -210,7 +226,9 @@ describe('regression: an empty block next to a divider must be removed BEFORE th
     expect(store.getBlock('p1')).toBeUndefined(); // the empty paragraph is gone
     expect(store.getBlock('div1')).toBeDefined(); // the divider is untouched
     expect(store.getBlock('root').contentIds).toEqual(['div1']);
-    expect(container.querySelector('[data-block-id="div1"]').classList.contains('be-block-selected')).toBe(true);
+    expect(
+      container.querySelector('[data-block-id="div1"]').classList.contains('be-block-selected'),
+    ).toBe(true);
   });
 
   it('a second Backspace (landing directly on the now-selected divider) then removes the divider', () => {
@@ -242,10 +260,12 @@ describe('non-editable block select-then-delete: Delete key into a following emb
     fireEvent.keyDown(runNode, { key: 'Delete' });
 
     expect(store.getBlock('embed1')).toBeDefined();
-    expect(container.querySelector('[data-block-id="embed1"]').classList.contains('be-block-selected')).toBe(true);
+    expect(
+      container.querySelector('[data-block-id="embed1"]').classList.contains('be-block-selected'),
+    ).toBe(true);
   });
 
-  it('a second Delete removes the embed, leaving the current block\'s caret position untouched', () => {
+  it("a second Delete removes the embed, leaving the current block's caret position untouched", () => {
     const store = new EditorStore(makeDocWithEmbed());
     const { container } = renderHarness(store);
     const runNode = container.querySelector('[data-run-id="r1"]');

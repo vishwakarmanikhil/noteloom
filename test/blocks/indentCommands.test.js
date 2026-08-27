@@ -7,8 +7,20 @@ function makeDoc() {
     rootId: 'root',
     blocks: [
       { id: 'root', type: 'page', parentId: null, contentIds: ['li1', 'li2'], props: {} },
-      { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
-      { id: 'li2', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r2'] } },
+      {
+        id: 'li1',
+        type: 'listItem',
+        parentId: 'root',
+        contentIds: [],
+        props: { ordered: false, titleRunIds: ['r1'] },
+      },
+      {
+        id: 'li2',
+        type: 'listItem',
+        parentId: 'root',
+        contentIds: [],
+        props: { ordered: false, titleRunIds: ['r2'] },
+      },
     ],
     runs: [
       { id: 'r1', type: 'text', value: 'one', marks: {} },
@@ -45,7 +57,13 @@ describe('indentListItem', () => {
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'li1'], props: {} },
         { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['rp1'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
       ],
       runs: [
         { id: 'rp1', type: 'text', value: 'intro', marks: {} },

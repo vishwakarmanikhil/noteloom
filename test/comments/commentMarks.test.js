@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
-import { addCommentMarkOverRange, removeCommentMarkEverywhere } from '../../src/comments/commentMarks.js';
+import {
+  addCommentMarkOverRange,
+  removeCommentMarkEverywhere,
+} from '../../src/comments/commentMarks.js';
 
 function makeDoc() {
   return {
@@ -16,14 +19,22 @@ function makeDoc() {
 describe('addCommentMarkOverRange', () => {
   it('appends commentIds to the whole run when the range covers it exactly', () => {
     const store = new EditorStore(makeDoc());
-    const op = addCommentMarkOverRange(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 11 }, 'c1');
+    const op = addCommentMarkOverRange(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 11 },
+      'c1',
+    );
     store.applyOperation(op);
     expect(store.getRun('r1').marks.commentIds).toEqual(['c1']);
   });
 
   it('splits a run for a partial-range comment, leaving the rest unmarked', () => {
     const store = new EditorStore(makeDoc());
-    const op = addCommentMarkOverRange(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, 'c1');
+    const op = addCommentMarkOverRange(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      'c1',
+    );
     store.applyOperation(op);
 
     const runIds = store.getBlock('p1').contentIds;
@@ -37,10 +48,22 @@ describe('addCommentMarkOverRange', () => {
 
   it('two overlapping comments both survive in commentIds', () => {
     const store = new EditorStore(makeDoc());
-    store.applyOperation(addCommentMarkOverRange(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 11 }, 'c1'));
+    store.applyOperation(
+      addCommentMarkOverRange(
+        store,
+        { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 11 },
+        'c1',
+      ),
+    );
 
     const runId = store.getBlock('p1').contentIds[0];
-    store.applyOperation(addCommentMarkOverRange(store, { blockId: 'p1', startRunId: runId, startOffset: 0, endRunId: runId, endOffset: 5 }, 'c2'));
+    store.applyOperation(
+      addCommentMarkOverRange(
+        store,
+        { blockId: 'p1', startRunId: runId, startOffset: 0, endRunId: runId, endOffset: 5 },
+        'c2',
+      ),
+    );
 
     const [firstId] = store.getBlock('p1').contentIds;
     expect(store.getRun(firstId).marks.commentIds).toEqual(['c1', 'c2']);
@@ -50,7 +73,13 @@ describe('addCommentMarkOverRange', () => {
     const doc = makeDoc();
     doc.runs[0].marks = { bold: true };
     const store = new EditorStore(doc);
-    store.applyOperation(addCommentMarkOverRange(store, { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 }, 'c1'));
+    store.applyOperation(
+      addCommentMarkOverRange(
+        store,
+        { blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+        'c1',
+      ),
+    );
 
     const firstId = store.getBlock('p1').contentIds[0];
     const run = store.getRun(firstId);
@@ -60,7 +89,11 @@ describe('addCommentMarkOverRange', () => {
 
   it('returns null for a collapsed range', () => {
     const store = new EditorStore(makeDoc());
-    const op = addCommentMarkOverRange(store, { blockId: 'p1', startRunId: 'r1', startOffset: 3, endRunId: 'r1', endOffset: 3 }, 'c1');
+    const op = addCommentMarkOverRange(
+      store,
+      { blockId: 'p1', startRunId: 'r1', startOffset: 3, endRunId: 'r1', endOffset: 3 },
+      'c1',
+    );
     expect(op).toBeNull();
   });
 });

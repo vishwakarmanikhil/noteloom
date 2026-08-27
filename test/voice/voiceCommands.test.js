@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeUtterance, matchVoiceCommand, listVoiceCommands } from '../../src/voice/voiceCommands.js';
+import {
+  normalizeUtterance,
+  matchVoiceCommand,
+  listVoiceCommands,
+} from '../../src/voice/voiceCommands.js';
 
 describe('normalizeUtterance', () => {
   it('lowercases, trims, collapses whitespace, and strips trailing punctuation', () => {
@@ -21,8 +25,16 @@ describe('matchVoiceCommand', () => {
   });
 
   it('matches heading level phrases, including digit and spelled-out forms', () => {
-    expect(matchVoiceCommand('heading one')).toEqual({ type: 'convertBlock', blockType: 'heading', props: { level: 1 } });
-    expect(matchVoiceCommand('heading 2')).toEqual({ type: 'convertBlock', blockType: 'heading', props: { level: 2 } });
+    expect(matchVoiceCommand('heading one')).toEqual({
+      type: 'convertBlock',
+      blockType: 'heading',
+      props: { level: 1 },
+    });
+    expect(matchVoiceCommand('heading 2')).toEqual({
+      type: 'convertBlock',
+      blockType: 'heading',
+      props: { level: 2 },
+    });
     expect(matchVoiceCommand('Heading Three')).toEqual({
       type: 'convertBlock',
       blockType: 'heading',
@@ -46,7 +58,11 @@ describe('matchVoiceCommand', () => {
       blockType: 'listItem',
       props: { ordered: false, checked: false, titleRunIds: [] },
     });
-    expect(matchVoiceCommand('quote')).toEqual({ type: 'convertBlock', blockType: 'blockquote', props: {} });
+    expect(matchVoiceCommand('quote')).toEqual({
+      type: 'convertBlock',
+      blockType: 'blockquote',
+      props: {},
+    });
     expect(matchVoiceCommand('code block')).toEqual({
       type: 'convertBlock',
       blockType: 'code',
@@ -66,7 +82,7 @@ describe('matchVoiceCommand', () => {
   });
 
   it('returns null for plain dictated prose, even when it mentions a command phrase mid-sentence', () => {
-    expect(matchVoiceCommand("that concludes the introduction paragraph")).toBeNull();
+    expect(matchVoiceCommand('that concludes the introduction paragraph')).toBeNull();
     expect(matchVoiceCommand('The results were significant.')).toBeNull();
     expect(matchVoiceCommand('')).toBeNull();
   });

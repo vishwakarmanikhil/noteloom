@@ -10,7 +10,10 @@ function applyOps(store, ops) {
 }
 
 export function isBlankTitle(store, titleRunIds) {
-  return titleRunIds.length === 0 || (titleRunIds.length === 1 && (store.getRun(titleRunIds[0])?.value ?? '') === '');
+  return (
+    titleRunIds.length === 0 ||
+    (titleRunIds.length === 1 && (store.getRun(titleRunIds[0])?.value ?? '') === '')
+  );
 }
 
 /**
@@ -30,7 +33,9 @@ function isBodyEmpty(store, block) {
   if (childIds.length === 0) return true;
   if (childIds.length > 1) return false;
   const onlyChild = store.getBlock(childIds[0]);
-  return Boolean(onlyChild) && onlyChild.type === 'paragraph' && isRunsEmpty(store, onlyChild.contentIds);
+  return (
+    Boolean(onlyChild) && onlyChild.type === 'paragraph' && isRunsEmpty(store, onlyChild.contentIds)
+  );
 }
 
 /**

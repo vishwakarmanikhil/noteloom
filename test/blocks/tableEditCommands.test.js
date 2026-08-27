@@ -113,7 +113,11 @@ describe('insertColumnAfter', () => {
 describe('deleteColumn', () => {
   it('removes the cell at colIndex from every row', () => {
     const { store, tableId } = makeDocWithTable({ rows: 2, cols: 3 });
-    const removedCellIds = store.getBlock(tableId).contentIds.map((rowId) => cellAt(store, tableId, store.getBlock(tableId).contentIds.indexOf(rowId), 1));
+    const removedCellIds = store
+      .getBlock(tableId)
+      .contentIds.map((rowId) =>
+        cellAt(store, tableId, store.getBlock(tableId).contentIds.indexOf(rowId), 1),
+      );
 
     deleteColumn(store, tableId, 1);
 
@@ -144,7 +148,7 @@ describe('column metadata (props.columns)', () => {
     expect(new Set(columns.map((c) => c.id)).size).toBe(3); // stable, distinct ids
   });
 
-  it('renameColumn updates just that column\'s label, one atomic undo step', () => {
+  it("renameColumn updates just that column's label, one atomic undo step", () => {
     const rawStore = new EditorStore({
       rootId: 'root',
       blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
@@ -152,7 +156,9 @@ describe('column metadata (props.columns)', () => {
     });
     const store = new History(rawStore);
     const { block, runs, subtreeBlocks } = createTableBlock({ rows: 1, cols: 2 })('root');
-    store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }));
+    store.applyOperation(
+      insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }),
+    );
 
     renameColumn(store, block.id, 1, 'Diagnosis');
 
@@ -195,15 +201,21 @@ describe('column metadata (props.columns)', () => {
     });
     const store = new History(rawStore);
     const { block, runs, subtreeBlocks } = createTableBlock({ rows: 1, cols: 2 })('root');
-    store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }));
+    store.applyOperation(
+      insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }),
+    );
 
     insertColumnAfter(store, block.id, 0);
     expect(store.getBlock(block.id).props.columns.length).toBe(3);
-    expect(store.getBlock(block.id).contentIds.map((rowId) => store.getBlock(rowId).contentIds.length)).toEqual([3]);
+    expect(
+      store.getBlock(block.id).contentIds.map((rowId) => store.getBlock(rowId).contentIds.length),
+    ).toEqual([3]);
 
     store.undo(); // must undo the new cell AND the column-metadata update together
     expect(store.getBlock(block.id).props.columns.length).toBe(2);
-    expect(store.getBlock(block.id).contentIds.map((rowId) => store.getBlock(rowId).contentIds.length)).toEqual([2]);
+    expect(
+      store.getBlock(block.id).contentIds.map((rowId) => store.getBlock(rowId).contentIds.length),
+    ).toEqual([2]);
   });
 });
 
@@ -284,7 +296,7 @@ describe('typed columns (props.columns[i].type + setColumnType)', () => {
     expect(selectedLabels).toEqual(['Flu', 'Cold', 'Flu']); // both "Flu" cells share the same option
   });
 
-  it('converts an atomic (date) column back to text using the inline type\'s own toPlainText', () => {
+  it("converts an atomic (date) column back to text using the inline type's own toPlainText", () => {
     const { store, tableId } = makeDocWithTable({ rows: 1, cols: 1 });
     const inlineRegistry = makeInlineRegistry();
     setColumnType(store, tableId, 0, 'date', inlineRegistry);
@@ -292,7 +304,11 @@ describe('typed columns (props.columns[i].type + setColumnType)', () => {
     const rowId = store.getBlock(tableId).contentIds[0];
     const cellId = store.getBlock(rowId).contentIds[0];
     const dateRunId = store.getBlock(cellId).contentIds[0];
-    store.applyOperation({ type: 'updateRun', id: dateRunId, patch: { data: { isoDate: '2026-01-01' } } });
+    store.applyOperation({
+      type: 'updateRun',
+      id: dateRunId,
+      patch: { data: { isoDate: '2026-01-01' } },
+    });
 
     setColumnType(store, tableId, 0, 'text', inlineRegistry);
 
@@ -316,7 +332,9 @@ describe('typed columns (props.columns[i].type + setColumnType)', () => {
     });
     const store = new History(rawStore);
     const { block, runs, subtreeBlocks } = createTableBlock({ rows: 3, cols: 1 })('root');
-    store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }));
+    store.applyOperation(
+      insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }),
+    );
 
     setColumnType(store, block.id, 0, 'checkbox', makeInlineRegistry());
 
@@ -366,7 +384,11 @@ describe('setColumnOptions (select column shared option list)', () => {
   function makeSelectColumnDoc() {
     const { store, tableId } = makeDocWithTable({ rows: 2, cols: 1 });
     const rowIds = store.getBlock(tableId).contentIds;
-    store.applyOperation({ type: 'updateRun', id: store.getBlock(store.getBlock(rowIds[0]).contentIds[0]).contentIds[0], patch: { value: 'a' } });
+    store.applyOperation({
+      type: 'updateRun',
+      id: store.getBlock(store.getBlock(rowIds[0]).contentIds[0]).contentIds[0],
+      patch: { value: 'a' },
+    });
     setColumnType(store, tableId, 0, 'select', makeInlineRegistry());
     return { store, tableId, rowIds };
   }
@@ -386,7 +408,8 @@ describe('setColumnOptions (select column shared option list)', () => {
   it('removing an option clears any cell that had it selected', () => {
     const { store, tableId, rowIds } = makeSelectColumnDoc();
     const firstCellId = store.getBlock(rowIds[0]).contentIds[0];
-    const selectedOptionValue = store.getRun(store.getBlock(firstCellId).contentIds[0]).data.selectedValue;
+    const selectedOptionValue = store.getRun(store.getBlock(firstCellId).contentIds[0]).data
+      .selectedValue;
 
     setColumnOptions(store, tableId, 0, []); // remove all options, including the selected one
 
@@ -396,7 +419,7 @@ describe('setColumnOptions (select column shared option list)', () => {
     expect(selectedOptionValue).toBeTruthy(); // sanity: it really had been selected before
   });
 
-  it('renaming an option keeps a cell\'s selection and updates its cached label', () => {
+  it("renaming an option keeps a cell's selection and updates its cached label", () => {
     const { store, tableId, rowIds } = makeSelectColumnDoc();
     const column = store.getBlock(tableId).props.columns[0];
     const optionValue = column.options[0].value;
@@ -417,11 +440,15 @@ describe('setColumnOptions (select column shared option list)', () => {
     });
     const store = new History(rawStore);
     const { block, runs, subtreeBlocks } = createTableBlock({ rows: 1, cols: 1 })('root');
-    store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }));
+    store.applyOperation(
+      insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }),
+    );
     setColumnType(store, block.id, 0, 'select', makeInlineRegistry());
 
     setColumnOptions(store, block.id, 0, [{ value: 'a', label: 'Alpha' }]);
-    expect(store.getBlock(block.id).props.columns[0].options).toEqual([{ value: 'a', label: 'Alpha' }]);
+    expect(store.getBlock(block.id).props.columns[0].options).toEqual([
+      { value: 'a', label: 'Alpha' },
+    ]);
 
     store.undo();
     expect(store.getBlock(block.id).props.columns[0].options).toEqual([]);
@@ -457,7 +484,9 @@ describe('sortTableByColumn', () => {
     });
     const store = new History(rawStore);
     const { block, runs, subtreeBlocks } = createTableBlock({ rows: 2, cols: 1 })('root');
-    store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }));
+    store.applyOperation(
+      insertBlock(block, 'root', 0, { blocks: [block, ...subtreeBlocks], runs }),
+    );
     const originalOrder = [...store.getBlock(block.id).contentIds];
 
     sortTableByColumn(store, block.id, 0, 'asc');

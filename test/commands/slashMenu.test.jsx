@@ -28,7 +28,14 @@ function Harness() {
   return (
     <div ref={containerRef}>
       <BlockChildren parentId="root" />
-      <SlashMenu isOpen={isOpen} rect={rect} commands={commands} runId={runId} onSelect={selectCommand} onClose={close} />
+      <SlashMenu
+        isOpen={isOpen}
+        rect={rect}
+        commands={commands}
+        runId={runId}
+        onSelect={selectCommand}
+        onClose={close}
+      />
     </div>
   );
 }
@@ -80,7 +87,9 @@ describe('slash command menu', () => {
     // some commands' icons (e.g. HeadingIcon) render an SVG <text> glyph,
     // which itself contributes real text content ("H1"/"H2"/"H3") that
     // would otherwise leak into a naive textContent comparison.
-    expect([...items].map((el) => el.querySelector('.be-slash-menu-item-label').textContent)).toEqual([
+    expect(
+      [...items].map((el) => el.querySelector('.be-slash-menu-item-label').textContent),
+    ).toEqual([
       'Heading 1',
       'Heading 2',
       'Heading 3',
@@ -303,7 +312,9 @@ describe('slash command menu: inline insertion (regression)', () => {
     const text = 'pick: /select more text';
     typeIntoRunWithCaretAt(runNode, text, 'pick: /select'.length);
 
-    const selectItem = [...container.querySelectorAll('.be-slash-menu-item')].find((el) => el.textContent === 'Select');
+    const selectItem = [...container.querySelectorAll('.be-slash-menu-item')].find(
+      (el) => el.textContent === 'Select',
+    );
     fireEvent.mouseDown(selectItem);
 
     expect(store.getBlock('root').contentIds).toEqual(['p1']); // still no new block

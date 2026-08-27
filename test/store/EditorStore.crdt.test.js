@@ -1,7 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { History } from '../../src/store/history.js';
-import { insertBlock, removeBlock, updateRun, changeBlockType } from '../../src/store/operations.js';
+import {
+  insertBlock,
+  removeBlock,
+  updateRun,
+  changeBlockType,
+} from '../../src/store/operations.js';
 
 function makeDoc() {
   return {
@@ -167,7 +172,7 @@ describe('EditorStore remote operations never enter the local undo stack', () =>
 });
 
 describe('EditorStore + History: a remote write landing mid-local-coalescing-batch', () => {
-  it('character-level undo protects a peer\'s concurrent edit even when a local batch coalesces straight across a remote arrival', () => {
+  it("character-level undo protects a peer's concurrent edit even when a local batch coalesces straight across a remote arrival", () => {
     // History's keystroke coalescing (see history.js's 500ms idle window)
     // has no visibility into applyRemoteOperation, since that path
     // deliberately never touches History -- so if a remote write lands
@@ -209,7 +214,7 @@ describe('EditorStore + History: a remote write landing mid-local-coalescing-bat
     }
   });
 
-  it('CollabSession flushing History on every remote op keeps each actor\'s own edits as separate undo steps', () => {
+  it("CollabSession flushing History on every remote op keeps each actor's own edits as separate undo steps", () => {
     vi.useFakeTimers();
     try {
       const historyA = new History(new EditorStore(makeDoc()));
@@ -337,7 +342,7 @@ describe('EditorStore character-level text merge: concurrent edits to the same r
     expect(storeA.getRun('rHello').value).toBe('Howdy');
   });
 
-  it('undo of a local text edit never removes a peer\'s concurrent characters, even interleaved at the same position', () => {
+  it("undo of a local text edit never removes a peer's concurrent characters, even interleaved at the same position", () => {
     const storeA = new History(new EditorStore(makeDoc()));
     const storeB = new EditorStore(makeDoc());
 

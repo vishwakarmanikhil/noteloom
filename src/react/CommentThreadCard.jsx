@@ -60,7 +60,10 @@ export function CommentThreadCard({ store, thread, authorId, onJumpToText }) {
       onMouseLeave={() => setHoveredCommentId(null)}
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-      <div onClick={onJumpToText ? () => onJumpToText(thread.id) : undefined} style={onJumpToText ? { cursor: 'pointer' } : undefined}>
+      <div
+        onClick={onJumpToText ? () => onJumpToText(thread.id) : undefined}
+        style={onJumpToText ? { cursor: 'pointer' } : undefined}
+      >
         <CommentMessageRow message={rootMessage} />
       </div>
 
@@ -73,7 +76,13 @@ export function CommentThreadCard({ store, thread, authorId, onJumpToText }) {
       )}
 
       {isReplying ? (
-        <CommentComposer authorId={authorId} placeholder="Reply…" autoFocus onSubmit={handleReplySubmit} onCancel={() => setIsReplying(false)} />
+        <CommentComposer
+          authorId={authorId}
+          placeholder="Reply…"
+          autoFocus
+          onSubmit={handleReplySubmit}
+          onCancel={() => setIsReplying(false)}
+        />
       ) : (
         <div className="be-comment-thread-actions">
           {/* No literal space between the icon and label -- CSS gap (see

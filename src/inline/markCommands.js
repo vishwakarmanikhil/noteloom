@@ -1,7 +1,15 @@
 import { genId } from '../utils/idGen.js';
 import { replaceRunSpan } from '../store/operations.js';
 
-const BOOLEAN_MARK_NAMES = ['bold', 'italic', 'underline', 'strike', 'subscript', 'superscript', 'code'];
+const BOOLEAN_MARK_NAMES = [
+  'bold',
+  'italic',
+  'underline',
+  'strike',
+  'subscript',
+  'superscript',
+  'code',
+];
 const VALUE_MARK_NAMES = ['color', 'highlight', 'link'];
 
 function getBlockRunIds(store, blockId) {
@@ -47,7 +55,8 @@ export function getMarksSummaryOverSelection(store, blockId, selection) {
   const startIndex = runIds.indexOf(startRunId);
   const endIndex = runIds.indexOf(endRunId);
   if (startIndex === -1 || endIndex === -1) return {};
-  const [fromIndex, toIndex] = startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+  const [fromIndex, toIndex] =
+    startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
   const runs = runIds
     .slice(fromIndex, toIndex + 1)
     .map((id) => store.getRun(id))
@@ -69,7 +78,9 @@ export function getMarksSummaryOverBlockRange(store, crossSelection) {
   const endBlockIndex = blockIds.indexOf(endBlockId);
   if (startBlockIndex === -1 || endBlockIndex === -1) return {};
   const [fromBlockIndex, toBlockIndex] =
-    startBlockIndex <= endBlockIndex ? [startBlockIndex, endBlockIndex] : [endBlockIndex, startBlockIndex];
+    startBlockIndex <= endBlockIndex
+      ? [startBlockIndex, endBlockIndex]
+      : [endBlockIndex, startBlockIndex];
 
   const runs = [];
   for (let i = fromBlockIndex; i <= toBlockIndex; i += 1) {
@@ -136,7 +147,8 @@ function applyMarksPatchOverRunSpan(store, blockId, selection, marksPatch) {
   const endIndex = runIds.indexOf(endRunId);
   if (startIndex === -1 || endIndex === -1) return null;
 
-  const [fromIndex, toIndex] = startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+  const [fromIndex, toIndex] =
+    startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
   const fromOffset = startIndex <= endIndex ? startOffset : endOffset;
   const toOffset = startIndex <= endIndex ? endOffset : startOffset;
 
@@ -173,7 +185,12 @@ function applyMarksPatchOverRunSpan(store, blockId, selection, marksPatch) {
 
     if (before) newRuns.push({ id: genId(), type: 'text', value: before, marks: { ...run.marks } });
 
-    const middleRun = { id: genId(), type: 'text', value: middle, marks: applyMarksPatch(run.marks, marksPatch) };
+    const middleRun = {
+      id: genId(),
+      type: 'text',
+      value: middle,
+      marks: applyMarksPatch(run.marks, marksPatch),
+    };
     newRuns.push(middleRun);
     lastNewRunId = middleRun.id;
 
@@ -191,7 +208,8 @@ function computeShouldEnableForRange(store, blockId, selection, markName) {
   const startIndex = runIds.indexOf(startRunId);
   const endIndex = runIds.indexOf(endRunId);
   if (startIndex === -1 || endIndex === -1) return true;
-  const [fromIndex, toIndex] = startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+  const [fromIndex, toIndex] =
+    startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
   const textRuns = runIds
     .slice(fromIndex, toIndex + 1)
     .map((id) => store.getRun(id))
@@ -222,7 +240,9 @@ export function toggleMarkOnRunRange(store, blockId, runId, startOffset, endOffs
   if (from === to) return runId; // collapsed selection: nothing to toggle
 
   const shouldEnable = !run.marks?.[markName];
-  return applyPatchToSingleRun(store, blockId, run, from, to, { [markName]: shouldEnable ? true : null });
+  return applyPatchToSingleRun(store, blockId, run, from, to, {
+    [markName]: shouldEnable ? true : null,
+  });
 }
 
 /**
@@ -256,7 +276,9 @@ export function setMarksOverSelection(store, blockId, selection, marksPatch) {
  */
 export function toggleMarkOverSelection(store, blockId, selection, markName) {
   const shouldEnable = computeShouldEnableForRange(store, blockId, selection, markName);
-  return setMarksOverSelection(store, blockId, selection, { [markName]: shouldEnable ? true : null });
+  return setMarksOverSelection(store, blockId, selection, {
+    [markName]: shouldEnable ? true : null,
+  });
 }
 
 /**
@@ -278,7 +300,12 @@ export function toggleMarkOverSelection(store, blockId, selection, markName) {
  * cross-block undo is a further follow-up.
  */
 export function toggleMarkOverBlockRange(store, crossSelection, markName) {
-  return setMarksOverBlockRange(store, crossSelection, (allMarked) => ({ [markName]: allMarked ? null : true }), markName);
+  return setMarksOverBlockRange(
+    store,
+    crossSelection,
+    (allMarked) => ({ [markName]: allMarked ? null : true }),
+    markName,
+  );
 }
 
 /**
@@ -292,7 +319,8 @@ export function toggleMarkOverBlockRange(store, crossSelection, markName) {
  * `allMarked`, defaulting to the lookup used by the boolean-toggle case).
  */
 export function setMarksOverBlockRange(store, crossSelection, marksPatchOrFn, markNameForDecision) {
-  const { blockIds, startBlockId, startRunId, startOffset, endBlockId, endRunId, endOffset } = crossSelection;
+  const { blockIds, startBlockId, startRunId, startOffset, endBlockId, endRunId, endOffset } =
+    crossSelection;
   if (!blockIds || blockIds.length === 0) return null;
 
   const startBlockIndex = blockIds.indexOf(startBlockId);
@@ -300,7 +328,9 @@ export function setMarksOverBlockRange(store, crossSelection, marksPatchOrFn, ma
   if (startBlockIndex === -1 || endBlockIndex === -1) return null;
 
   const [fromBlockIndex, toBlockIndex] =
-    startBlockIndex <= endBlockIndex ? [startBlockIndex, endBlockIndex] : [endBlockIndex, startBlockIndex];
+    startBlockIndex <= endBlockIndex
+      ? [startBlockIndex, endBlockIndex]
+      : [endBlockIndex, startBlockIndex];
   const firstIsStart = startBlockIndex <= endBlockIndex;
   const firstRunId = firstIsStart ? startRunId : endRunId;
   const firstOffset = firstIsStart ? startOffset : endOffset;
@@ -326,7 +356,12 @@ export function setMarksOverBlockRange(store, crossSelection, marksPatchOrFn, ma
     return setMarksOverSelection(
       store,
       blockIds[fromBlockIndex],
-      { startRunId: firstRunId, startOffset: firstOffset, endRunId: lastRunId, endOffset: lastOffset },
+      {
+        startRunId: firstRunId,
+        startOffset: firstOffset,
+        endRunId: lastRunId,
+        endOffset: lastOffset,
+      },
       marksPatch,
     );
   }
@@ -342,13 +377,33 @@ export function setMarksOverBlockRange(store, crossSelection, marksPatchOrFn, ma
 
     let selection;
     if (i === fromBlockIndex && i === toBlockIndex) {
-      selection = { startRunId: firstRunId, startOffset: firstOffset, endRunId: lastRunId, endOffset: lastOffset };
+      selection = {
+        startRunId: firstRunId,
+        startOffset: firstOffset,
+        endRunId: lastRunId,
+        endOffset: lastOffset,
+      };
     } else if (i === fromBlockIndex) {
-      selection = { startRunId: firstRunId, startOffset: firstOffset, endRunId: blockLastRunId, endOffset: blockLastOffset };
+      selection = {
+        startRunId: firstRunId,
+        startOffset: firstOffset,
+        endRunId: blockLastRunId,
+        endOffset: blockLastOffset,
+      };
     } else if (i === toBlockIndex) {
-      selection = { startRunId: blockFirstRunId, startOffset: 0, endRunId: lastRunId, endOffset: lastOffset };
+      selection = {
+        startRunId: blockFirstRunId,
+        startOffset: 0,
+        endRunId: lastRunId,
+        endOffset: lastOffset,
+      };
     } else {
-      selection = { startRunId: blockFirstRunId, startOffset: 0, endRunId: blockLastRunId, endOffset: blockLastOffset };
+      selection = {
+        startRunId: blockFirstRunId,
+        startOffset: 0,
+        endRunId: blockLastRunId,
+        endOffset: blockLastOffset,
+      };
     }
 
     lastNewRunId = setMarksOverSelection(store, blockId, selection, marksPatch);

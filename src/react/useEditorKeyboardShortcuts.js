@@ -74,7 +74,11 @@ export function useEditorKeyboardShortcuts(containerRef) {
       //    real DOM focus onto it once the block that used to hold it was
       //    deleted for being empty) — event.defaultPrevented is still
       //    false, so this is the only place that can delete it.
-      if (getSelectedBlockId() && (event.key === 'Backspace' || event.key === 'Delete') && !event.defaultPrevented) {
+      if (
+        getSelectedBlockId() &&
+        (event.key === 'Backspace' || event.key === 'Delete') &&
+        !event.defaultPrevented
+      ) {
         event.preventDefault();
         // This listener is native (added via addEventListener below) on an
         // ancestor of the React root's own delegated event target, so it
@@ -135,7 +139,12 @@ export function useEditorKeyboardShortcuts(containerRef) {
 
           const sameBlockSelection = resolveMultiRunSelection();
           if (sameBlockSelection) {
-            const newRunId = toggleMarkOverSelection(store, sameBlockSelection.blockId, sameBlockSelection, markName);
+            const newRunId = toggleMarkOverSelection(
+              store,
+              sameBlockSelection.blockId,
+              sameBlockSelection,
+              markName,
+            );
             if (newRunId) focusRunEnd(newRunId);
             return;
           }
@@ -197,5 +206,12 @@ export function useEditorKeyboardShortcuts(containerRef) {
       container.removeEventListener('keydown', handleKeyDown);
       container.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [containerRef, store, isWholeDocumentSelected, setIsWholeDocumentSelected, getSelectedBlockId, setSelectedBlockId]);
+  }, [
+    containerRef,
+    store,
+    isWholeDocumentSelected,
+    setIsWholeDocumentSelected,
+    getSelectedBlockId,
+    setSelectedBlockId,
+  ]);
 }

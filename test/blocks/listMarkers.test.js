@@ -1,9 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
-import { listItemDepth, orderedItemIndex, orderedMarkerText, bulletMarkerText } from '../../src/blocks/listItem/listMarkers.js';
+import {
+  listItemDepth,
+  orderedItemIndex,
+  orderedMarkerText,
+  bulletMarkerText,
+} from '../../src/blocks/listItem/listMarkers.js';
 
 function li(id, parentId, contentIds = [], overrides = {}) {
-  return { id, type: 'listItem', parentId, contentIds, props: { ordered: false, titleRunIds: [], ...overrides } };
+  return {
+    id,
+    type: 'listItem',
+    parentId,
+    contentIds,
+    props: { ordered: false, titleRunIds: [], ...overrides },
+  };
 }
 
 describe('listMarkers: orderedMarkerText / bulletMarkerText cycling by depth', () => {
@@ -68,7 +79,13 @@ describe('listMarkers: orderedItemIndex', () => {
     const store = new EditorStore({
       rootId: 'root',
       blocks: [
-        { id: 'root', type: 'page', parentId: null, contentIds: ['li1', 'li2', 'bullet1', 'li3'], props: {} },
+        {
+          id: 'root',
+          type: 'page',
+          parentId: null,
+          contentIds: ['li1', 'li2', 'bullet1', 'li3'],
+          props: {},
+        },
         li('li1', 'root', [], { ordered: true }),
         li('li2', 'root', [], { ordered: true }),
         li('bullet1', 'root', [], { ordered: false }),

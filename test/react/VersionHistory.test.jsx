@@ -36,7 +36,12 @@ function renderPanel(history, docId, props = {}) {
   const inlineRegistry = createInlineRegistry();
   registerBuiltInInlineTypes(inlineRegistry);
   return render(
-    <EditorProvider store={history} registry={registry} inlineRegistry={inlineRegistry} history={history}>
+    <EditorProvider
+      store={history}
+      registry={registry}
+      inlineRegistry={inlineRegistry}
+      history={history}
+    >
       <VersionHistory docId={docId} idleMs={30} {...props} />
     </EditorProvider>,
   );
@@ -91,7 +96,10 @@ describe('VersionHistory', () => {
 
     // Switching to the "Preview" tab shows the plain, non-diffed render instead.
     fireEvent.click(document.querySelector('.be-version-history-view-toggle button:nth-child(2)'));
-    expect(document.querySelector('.be-version-history-preview-body:not(.be-version-history-diff-body)').textContent).toContain('hi');
+    expect(
+      document.querySelector('.be-version-history-preview-body:not(.be-version-history-diff-body)')
+        .textContent,
+    ).toContain('hi');
   });
 
   it('restoring a version replaces the live document and closes the drawer', async () => {

@@ -70,7 +70,12 @@ describe('usePersistedDocument: Ctrl/Cmd+S save shortcut', () => {
     const { unmount } = renderHarness(store, docId);
     await waitFor(() => expect(hookApi.isLoaded).toBe(true));
 
-    const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true, cancelable: true });
+    const event = new KeyboardEvent('keydown', {
+      key: 's',
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
     document.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(true);

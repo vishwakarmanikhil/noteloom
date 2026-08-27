@@ -10,7 +10,11 @@ import { registerBuiltInBlocks } from '../../src/blocks/index.js';
 const STYLE_TAG_ID = 'noteloom-default-styles';
 
 function makeStore() {
-  return new EditorStore({ rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] });
+  return new EditorStore({
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  });
 }
 
 function Probe() {
@@ -110,7 +114,7 @@ describe('EditorProvider: getBlockClassName (internal per-block customization)',
     });
   }
 
-  it('leaves the block\'s base class untouched when no callback is given', () => {
+  it("leaves the block's base class untouched when no callback is given", () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
     const { container } = render(
@@ -125,9 +129,14 @@ describe('EditorProvider: getBlockClassName (internal per-block customization)',
   it('appends whatever getBlockClassName(block) returns, keyed off the real block object', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
-    const getBlockClassName = (block) => (block.type === 'paragraph' ? `custom-${block.id}` : undefined);
+    const getBlockClassName = (block) =>
+      block.type === 'paragraph' ? `custom-${block.id}` : undefined;
     const { container } = render(
-      <EditorProvider store={makeDocWithParagraph()} registry={registry} getBlockClassName={getBlockClassName}>
+      <EditorProvider
+        store={makeDocWithParagraph()}
+        registry={registry}
+        getBlockClassName={getBlockClassName}
+      >
         <BlockChildren parentId="root" />
       </EditorProvider>,
     );

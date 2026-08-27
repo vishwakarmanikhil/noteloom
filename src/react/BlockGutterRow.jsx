@@ -10,7 +10,12 @@ import { BlockRenderer } from './BlockRenderer.jsx';
 import { TurnIntoSubmenu } from './TurnIntoSubmenu.jsx';
 import { insertSiblingAfterAndFocus } from '../blocks/shared/blockCommands.js';
 import { createTextLeafBlock } from '../blocks/shared/leafBlockFactory.js';
-import { duplicateBlock, moveBlockUp, moveBlockDown, deleteBlockAndFocusSibling } from '../blocks/shared/blockActions.js';
+import {
+  duplicateBlock,
+  moveBlockUp,
+  moveBlockDown,
+  deleteBlockAndFocusSibling,
+} from '../blocks/shared/blockActions.js';
 import { resolveBlockDir } from '../blocks/shared/resolveBlockDir.js';
 import { isTurnIntoEligible, turnBlockInto } from '../blocks/shared/turnInto.js';
 import { updateBlockProps } from '../store/operations.js';
@@ -91,7 +96,12 @@ export function BlockGutterRow({ id }) {
     setIsMenuOpen(true);
   }, []);
 
-  const position = useAutoAdjustedPosition(menuRef, isMenuOpen, rect?.bottom != null ? rect.bottom + 4 : null, rect?.left);
+  const position = useAutoAdjustedPosition(
+    menuRef,
+    isMenuOpen,
+    rect?.bottom != null ? rect.bottom + 4 : null,
+    rect?.left,
+  );
 
   const handleAdd = useCallback(() => {
     insertSiblingAfterAndFocus(store, id, createTextLeafBlock('paragraph'));
@@ -156,8 +166,16 @@ export function BlockGutterRow({ id }) {
       data-block-row-id={id}
       dir={resolveBlockDir(store, block)}
     >
-      <div className={`be-block-gutter${isMenuOpen ? ' be-block-gutter-active' : ''}`} contentEditable={false}>
-        <button type="button" className="be-block-gutter-btn" onClick={handleAdd} aria-label="Add block below">
+      <div
+        className={`be-block-gutter${isMenuOpen ? ' be-block-gutter-active' : ''}`}
+        contentEditable={false}
+      >
+        <button
+          type="button"
+          className="be-block-gutter-btn"
+          onClick={handleAdd}
+          aria-label="Add block below"
+        >
           <PlusIcon size={16} />
         </button>
         <button
@@ -185,25 +203,54 @@ export function BlockGutterRow({ id }) {
             className="be-block-gutter-menu"
             style={{ position: 'fixed', top: position.top, left: position.left }}
           >
-            <button type="button" role="menuitem" className="be-block-gutter-menu-item" onClick={handleDuplicate}>
+            <button
+              type="button"
+              role="menuitem"
+              className="be-block-gutter-menu-item"
+              onClick={handleDuplicate}
+            >
               <CopyIcon size={15} /> Duplicate
             </button>
-            <button type="button" role="menuitem" className="be-block-gutter-menu-item" onClick={handleMoveUp}>
+            <button
+              type="button"
+              role="menuitem"
+              className="be-block-gutter-menu-item"
+              onClick={handleMoveUp}
+            >
               <ArrowUpIcon size={15} /> Move up
             </button>
-            <button type="button" role="menuitem" className="be-block-gutter-menu-item" onClick={handleMoveDown}>
+            <button
+              type="button"
+              role="menuitem"
+              className="be-block-gutter-menu-item"
+              onClick={handleMoveDown}
+            >
               <ArrowDownIcon size={15} /> Move down
             </button>
-            <button type="button" role="menuitem" className="be-block-gutter-menu-item" onClick={handleToggleHidden}>
+            <button
+              type="button"
+              role="menuitem"
+              className="be-block-gutter-menu-item"
+              onClick={handleToggleHidden}
+            >
               {isHidden ? <EyeIcon size={15} /> : <EyeOffIcon size={15} />}
               {isHidden ? 'Show in preview' : 'Hide in preview'}
             </button>
-            <button type="button" role="menuitem" className="be-block-gutter-menu-item" onClick={handleToggleDir}>
+            <button
+              type="button"
+              role="menuitem"
+              className="be-block-gutter-menu-item"
+              onClick={handleToggleDir}
+            >
               {isRtl ? <AlignLeftIcon size={15} /> : <AlignRightIcon size={15} />}
               {isRtl ? 'Switch to left-to-right' : 'Switch to right-to-left'}
             </button>
             {isTurnIntoEligible(block.type) && (
-              <TurnIntoSubmenu onSelect={handleTurnInto} onClose={() => {}} containerRef={turnIntoMenuRef} />
+              <TurnIntoSubmenu
+                onSelect={handleTurnInto}
+                onClose={() => {}}
+                containerRef={turnIntoMenuRef}
+              />
             )}
             <button
               type="button"

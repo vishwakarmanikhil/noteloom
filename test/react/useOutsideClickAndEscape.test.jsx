@@ -6,7 +6,11 @@ import { useOutsideClickAndEscape } from '../../src/react/useOutsideClickAndEsca
 function Harness({ onClose }) {
   const ref = useRef(null);
   useOutsideClickAndEscape(ref, true, onClose);
-  return <div ref={ref} data-testid="inside">inside</div>;
+  return (
+    <div ref={ref} data-testid="inside">
+      inside
+    </div>
+  );
 }
 
 describe('useOutsideClickAndEscape', () => {

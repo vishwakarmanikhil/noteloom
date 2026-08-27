@@ -46,8 +46,10 @@ function diffValueOffsets(oldValue, newValue) {
  * restore ids). Returns `undefined` for anything else.
  */
 function previousValueFromInverse(inverse) {
-  if (inverse?.type === 'updateRun' && typeof inverse.patch?.value === 'string') return inverse.patch.value;
-  if (inverse?.type === 'editRunChars' && typeof inverse.previousValue === 'string') return inverse.previousValue;
+  if (inverse?.type === 'updateRun' && typeof inverse.patch?.value === 'string')
+    return inverse.patch.value;
+  if (inverse?.type === 'editRunChars' && typeof inverse.previousValue === 'string')
+    return inverse.previousValue;
   return undefined;
 }
 
@@ -55,7 +57,8 @@ function computeEntrySelection(entry) {
   if (!entry.ops.length || !entry.inverses.length) return null;
   const firstOp = entry.ops[0];
   const lastOp = entry.ops[entry.ops.length - 1];
-  if (firstOp.type !== 'updateRun' || lastOp.type !== 'updateRun' || firstOp.id !== lastOp.id) return null;
+  if (firstOp.type !== 'updateRun' || lastOp.type !== 'updateRun' || firstOp.id !== lastOp.id)
+    return null;
   if (typeof lastOp.patch?.value !== 'string') return null;
 
   // inverses are unshifted (most-recent-first), so the last element is the
@@ -116,7 +119,10 @@ function extractAffectedBlockIds(entry) {
  * not erase "who changed what, when".
  */
 export class History {
-  constructor(store, { idleMs = IDLE_MS, trackChanges = false, maxChangeLogSize = 500, defaultActorId = null } = {}) {
+  constructor(
+    store,
+    { idleMs = IDLE_MS, trackChanges = false, maxChangeLogSize = 500, defaultActorId = null } = {},
+  ) {
     this.store = store;
     this.idleMs = idleMs;
     // Stamped onto historyLog/changeLog entries whenever a perform/
@@ -170,7 +176,11 @@ export class History {
     this.changeLog.push({
       opType: op.type,
       id: op.id ?? op.blockId ?? op.block?.id,
-      before: hasPatch ? inverse.patch : previousValue !== undefined ? { value: previousValue } : undefined,
+      before: hasPatch
+        ? inverse.patch
+        : previousValue !== undefined
+          ? { value: previousValue }
+          : undefined,
       after: hasPatch ? op.patch : previousValue !== undefined ? op.patch : undefined,
       actorId: meta.actorId ?? null,
       timestamp: meta.timestamp ?? Date.now(),
@@ -322,7 +332,12 @@ export class History {
     for (const op of ops) {
       const inverse = this.store.applyOperation(op);
       inverses.unshift(inverse);
-      this.historyLog.push({ opType: op.type, id: op.id ?? op.blockId ?? op.block?.id, actorId, timestamp });
+      this.historyLog.push({
+        opType: op.type,
+        id: op.id ?? op.blockId ?? op.block?.id,
+        actorId,
+        timestamp,
+      });
       this._recordChange(op, inverse, { actorId, timestamp });
     }
 
@@ -362,7 +377,8 @@ export class History {
   _record(op, inverse, meta) {
     this.redoStack = [];
     const batchKey = this._batchKeyFor(op);
-    const withinIdle = this.currentBatch && meta.timestamp - this.currentBatch.lastTimestamp <= this.idleMs;
+    const withinIdle =
+      this.currentBatch && meta.timestamp - this.currentBatch.lastTimestamp <= this.idleMs;
     const sameBatch =
       this.currentBatch &&
       batchKey !== null &&
@@ -430,7 +446,9 @@ export class History {
     for (const inverse of entry.inverses) this.store.applyOperation(inverse);
     this.redoStack.push(entry);
     const selection = computeEntrySelection(entry);
-    this._pendingSelection = selection ? { runId: selection.runId, offset: selection.beforeOffset } : null;
+    this._pendingSelection = selection
+      ? { runId: selection.runId, offset: selection.beforeOffset }
+      : null;
     this._pendingAffectedBlockIds = extractAffectedBlockIds(entry);
     this._notify();
     return true;
@@ -442,7 +460,9 @@ export class History {
     for (const op of entry.ops) this.store.applyOperation(op);
     this.undoStack.push(entry);
     const selection = computeEntrySelection(entry);
-    this._pendingSelection = selection ? { runId: selection.runId, offset: selection.afterOffset } : null;
+    this._pendingSelection = selection
+      ? { runId: selection.runId, offset: selection.afterOffset }
+      : null;
     this._pendingAffectedBlockIds = extractAffectedBlockIds(entry);
     this._notify();
     return true;

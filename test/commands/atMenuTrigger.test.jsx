@@ -28,7 +28,16 @@ function Harness() {
   return (
     <div ref={containerRef}>
       <BlockChildren parentId="root" />
-      <SlashMenu isOpen={isOpen} rect={rect} commands={commands} runId={runId} onSelect={selectCommand} onClose={close} menuId="be-at-menu" ariaLabel="Mention" />
+      <SlashMenu
+        isOpen={isOpen}
+        rect={rect}
+        commands={commands}
+        runId={runId}
+        onSelect={selectCommand}
+        onClose={close}
+        menuId="be-at-menu"
+        ariaLabel="Mention"
+      />
     </div>
   );
 }
@@ -57,7 +66,10 @@ function typeIntoRun(runNode, text) {
 describe('"@" trigger menu: only lists types that opted in via atCommand/atCommands', () => {
   it('a slash-only field type (default triggers) does NOT show up under "@"', () => {
     const inlineRegistry = createInlineRegistry();
-    inlineRegistry.register('priority', createSelectFieldType({ type: 'priority', label: 'Priority', options: [] }));
+    inlineRegistry.register(
+      'priority',
+      createSelectFieldType({ type: 'priority', label: 'Priority', options: [] }),
+    );
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store, inlineRegistry);
     const runNode = container.querySelector('[data-run-id="r1"]');
@@ -70,7 +82,12 @@ describe('"@" trigger menu: only lists types that opted in via atCommand/atComma
     const inlineRegistry = createInlineRegistry();
     inlineRegistry.register(
       'assignee',
-      createSelectFieldType({ type: 'assignee', label: 'Assignee', options: [{ value: 'u1', label: 'Alex' }], triggers: ['slash', 'at'] }),
+      createSelectFieldType({
+        type: 'assignee',
+        label: 'Assignee',
+        options: [{ value: 'u1', label: 'Alex' }],
+        triggers: ['slash', 'at'],
+      }),
     );
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store, inlineRegistry);
@@ -86,7 +103,10 @@ describe('"@" trigger menu: only lists types that opted in via atCommand/atComma
 
   it('an "at"-only field type shows under "@" but not "/"', () => {
     const inlineRegistry = createInlineRegistry();
-    inlineRegistry.register('assignee', createSelectFieldType({ type: 'assignee', label: 'Assignee', options: [], triggers: ['at'] }));
+    inlineRegistry.register(
+      'assignee',
+      createSelectFieldType({ type: 'assignee', label: 'Assignee', options: [], triggers: ['at'] }),
+    );
 
     expect(inlineRegistry.listSlashCommands()).toEqual([]);
     expect(inlineRegistry.listAtCommands().map((c) => c.label)).toEqual(['Assignee']);
@@ -115,7 +135,10 @@ describe('"@" trigger menu: only lists types that opted in via atCommand/atComma
 
   it('does not trigger when "@" is not at a word boundary', () => {
     const inlineRegistry = createInlineRegistry();
-    inlineRegistry.register('assignee', createSelectFieldType({ type: 'assignee', label: 'Assignee', options: [], triggers: ['at'] }));
+    inlineRegistry.register(
+      'assignee',
+      createSelectFieldType({ type: 'assignee', label: 'Assignee', options: [], triggers: ['at'] }),
+    );
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store, inlineRegistry);
     const runNode = container.querySelector('[data-run-id="r1"]');

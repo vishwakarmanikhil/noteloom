@@ -41,7 +41,14 @@ import { createAutoPersistence } from '../persistence/autoPersist.js';
  * hydrate-on-mount pattern, and not reachable in practice outside
  * deliberately racing it.
  */
-export function usePersistedDocument({ store, docId, debounceMs, onError, saveShortcut = true, onSave }) {
+export function usePersistedDocument({
+  store,
+  docId,
+  debounceMs,
+  onError,
+  saveShortcut = true,
+  onSave,
+}) {
   const [isLoaded, setIsLoaded] = useState(false);
   // The current burst's own flush(), refreshed every time the docId effect
   // below re-runs — save() always goes through this ref rather than

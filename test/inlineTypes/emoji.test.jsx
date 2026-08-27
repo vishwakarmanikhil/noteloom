@@ -111,7 +111,7 @@ describe('emoji has its own ":" trigger, separate from "/"', () => {
 });
 
 describe('emoji ":" menu: inserting one splices plain text, not an atomic chip', () => {
-  it('selecting an emoji on an empty line inserts it as that line\'s own plain-text content', () => {
+  it("selecting an emoji on an empty line inserts it as that line's own plain-text content", () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderHarness(store);
     const runNode = container.querySelector('[data-run-id="r1"]');

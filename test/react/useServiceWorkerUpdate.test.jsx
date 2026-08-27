@@ -44,7 +44,10 @@ describe('useServiceWorkerUpdate', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(navigator, 'serviceWorker', { value: originalServiceWorker, configurable: true });
+    Object.defineProperty(navigator, 'serviceWorker', {
+      value: originalServiceWorker,
+      configurable: true,
+    });
   });
 
   it('stays "none" when the browser has no serviceWorker support at all', () => {

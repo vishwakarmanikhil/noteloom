@@ -15,7 +15,11 @@ function makeVersion(id, overrides = {}) {
     docId: 'doc-1',
     timestamp: Date.now(),
     label: undefined,
-    doc: { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] },
+    doc: {
+      rootId: 'root',
+      blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+      runs: [],
+    },
     ...overrides,
   };
 }
@@ -48,9 +52,15 @@ describe('version storage (separate object store from documents/templates, same 
   });
 
   it('listDocumentVersions returns only versions for the given docId, newest first', async () => {
-    await saveDocumentVersion(makeVersion('v-a', { docId: 'doc-list', timestamp: 100, label: 'A' }));
-    await saveDocumentVersion(makeVersion('v-b', { docId: 'doc-list', timestamp: 200, label: 'B' }));
-    await saveDocumentVersion(makeVersion('v-other', { docId: 'doc-list-2', timestamp: 300, label: 'Other' }));
+    await saveDocumentVersion(
+      makeVersion('v-a', { docId: 'doc-list', timestamp: 100, label: 'A' }),
+    );
+    await saveDocumentVersion(
+      makeVersion('v-b', { docId: 'doc-list', timestamp: 200, label: 'B' }),
+    );
+    await saveDocumentVersion(
+      makeVersion('v-other', { docId: 'doc-list-2', timestamp: 300, label: 'Other' }),
+    );
 
     const versions = await listDocumentVersions('doc-list');
     expect(versions.map((v) => v.id)).toEqual(['v-b', 'v-a']);
@@ -59,7 +69,12 @@ describe('version storage (separate object store from documents/templates, same 
 
   it('is a separate store from templates -- saving a version does not affect a template under the same id, and vice versa', async () => {
     const sharedId = 'shared-id';
-    await saveTemplate({ id: sharedId, scope: 'document', name: 'the-template', doc: { rootId: 'r', blocks: [], runs: [] } });
+    await saveTemplate({
+      id: sharedId,
+      scope: 'document',
+      name: 'the-template',
+      doc: { rootId: 'r', blocks: [], runs: [] },
+    });
     await saveDocumentVersion(makeVersion(sharedId, { label: 'the-version' }));
 
     expect((await loadTemplate(sharedId)).name).toBe('the-template');

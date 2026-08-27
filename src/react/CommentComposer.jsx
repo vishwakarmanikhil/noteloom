@@ -24,7 +24,13 @@ import { SendIcon } from './icons.jsx';
  * — a plain Enter stays newline-friendly now that there's room for more
  * than one line.
  */
-export function CommentComposer({ authorId, placeholder = 'Add a comment…', autoFocus = false, onSubmit, onCancel }) {
+export function CommentComposer({
+  authorId,
+  placeholder = 'Add a comment…',
+  autoFocus = false,
+  onSubmit,
+  onCancel,
+}) {
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
   const trimmed = text.trim();

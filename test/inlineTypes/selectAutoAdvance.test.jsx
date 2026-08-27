@@ -35,13 +35,24 @@ describe('select inline type: picking an option after a fresh insertion focuses 
       // text before and after it, matching a real mid-sentence insertion.
       runs: [{ id: 'r1', type: 'text', value: 'Diagnosis: /select please', marks: {} }],
     });
-    selectInlineType.slashCommand.run(store, { blockId: 'p1', runId: 'r1', sliceStart: 11, sliceEnd: 18 });
+    selectInlineType.slashCommand.run(store, {
+      blockId: 'p1',
+      runId: 'r1',
+      sliceStart: 11,
+      sliceEnd: 18,
+    });
     const [beforeRunId, chipRunId, afterRunId] = store.getBlock('p1').contentIds;
     expect(store.getRun(beforeRunId).value).toBe('Diagnosis: ');
     expect(store.getRun(afterRunId).value).toBe(' please');
 
     store.applyOperation(
-      updateRun(chipRunId, { data: { options: [{ value: 'flu', label: 'Influenza' }], selectedValue: '', placeholder: 'Select…' } }),
+      updateRun(chipRunId, {
+        data: {
+          options: [{ value: 'flu', label: 'Influenza' }],
+          selectedValue: '',
+          placeholder: 'Select…',
+        },
+      }),
     );
     focusRunEnd.mockClear();
 
@@ -68,7 +79,12 @@ describe('select inline type: picking an option after a fresh insertion focuses 
       ],
       runs: [{ id: 'r1', type: 'text', value: '/select', marks: {} }],
     });
-    selectInlineType.slashCommand.run(store, { blockId: 'p1', runId: 'r1', sliceStart: 0, sliceEnd: 7 });
+    selectInlineType.slashCommand.run(store, {
+      blockId: 'p1',
+      runId: 'r1',
+      sliceStart: 0,
+      sliceEnd: 7,
+    });
     const [, chipRunId, afterRunId] = store.getBlock('p1').contentIds;
     store.applyOperation(
       updateRun(chipRunId, {
@@ -112,10 +128,21 @@ describe('select inline type: picking an option after a fresh insertion focuses 
         { id: 'r2', type: 'text', value: 'a different block entirely', marks: {} },
       ],
     });
-    selectInlineType.slashCommand.run(store, { blockId: 'p1', runId: 'r1', sliceStart: 0, sliceEnd: 7 });
+    selectInlineType.slashCommand.run(store, {
+      blockId: 'p1',
+      runId: 'r1',
+      sliceStart: 0,
+      sliceEnd: 7,
+    });
     const [, chipRunId, afterRunId] = store.getBlock('p1').contentIds;
     store.applyOperation(
-      updateRun(chipRunId, { data: { options: [{ value: 'flu', label: 'Influenza' }], selectedValue: '', placeholder: 'Select…' } }),
+      updateRun(chipRunId, {
+        data: {
+          options: [{ value: 'flu', label: 'Influenza' }],
+          selectedValue: '',
+          placeholder: 'Select…',
+        },
+      }),
     );
     focusRunEnd.mockClear();
 
@@ -166,7 +193,9 @@ describe('select inline type: picking an option after a fresh insertion focuses 
     const chip = container.querySelector('[data-run-id="s1"]');
 
     fireEvent.click(chip.querySelector('.be-select-trigger'));
-    const rsvOption = [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'RSV');
+    const rsvOption = [...document.querySelectorAll('.be-select-option')].find(
+      (el) => el.textContent === 'RSV',
+    );
     fireEvent.mouseDown(rsvOption);
 
     expect(store.getRun('s1').data.selectedValue).toBe('rsv');
@@ -178,15 +207,32 @@ describe('select inline type: picking an option after a fresh insertion focuses 
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
       ],
       runs: [{ id: 'r1', type: 'text', value: '/select please', marks: {} }],
     });
-    selectInlineType.slashCommand.run(store, { blockId: 'li1', runId: 'r1', sliceStart: 0, sliceEnd: 7 });
+    selectInlineType.slashCommand.run(store, {
+      blockId: 'li1',
+      runId: 'r1',
+      sliceStart: 0,
+      sliceEnd: 7,
+    });
     const [, chipRunId, afterRunId] = store.getBlock('li1').props.titleRunIds; // element 0 is the empty "before" run (sliceStart is 0)
     expect(store.getRun(afterRunId).value).toBe(' please');
     store.applyOperation(
-      updateRun(chipRunId, { data: { options: [{ value: 'flu', label: 'Influenza' }], selectedValue: '', placeholder: 'Select…' } }),
+      updateRun(chipRunId, {
+        data: {
+          options: [{ value: 'flu', label: 'Influenza' }],
+          selectedValue: '',
+          placeholder: 'Select…',
+        },
+      }),
     );
     focusRunEnd.mockClear();
 
@@ -243,7 +289,9 @@ describe('createSelectFieldType: picking an option after a fresh insertion focus
     );
 
     const chip = container.querySelector(`[data-run-id="${chipRunId}"]`);
-    const highOption = [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'High');
+    const highOption = [...document.querySelectorAll('.be-select-option')].find(
+      (el) => el.textContent === 'High',
+    );
     fireEvent.mouseDown(highOption);
 
     expect(store.getRun(chipRunId).data.selectedValue).toBe('hi');
@@ -272,7 +320,13 @@ describe('createSelectFieldType: picking an option after a fresh insertion focus
         { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: ['r2'], props: {} },
       ],
       runs: [
-        { id: 'run1', type: 'priority', value: '', marks: {}, data: { selectedValue: 'lo', selectedLabel: 'Low' } },
+        {
+          id: 'run1',
+          type: 'priority',
+          value: '',
+          marks: {},
+          data: { selectedValue: 'lo', selectedLabel: 'Low' },
+        },
         { id: 'r2', type: 'text', value: 'second block', marks: {} },
       ],
     });
@@ -286,7 +340,9 @@ describe('createSelectFieldType: picking an option after a fresh insertion focus
     const chip = container.querySelector('[data-run-id="run1"]');
 
     fireEvent.click(chip.querySelector('.be-select-trigger'));
-    const highOption = [...document.querySelectorAll('.be-select-option')].find((el) => el.textContent === 'High');
+    const highOption = [...document.querySelectorAll('.be-select-option')].find(
+      (el) => el.textContent === 'High',
+    );
     fireEvent.mouseDown(highOption);
 
     expect(store.getRun('run1').data.selectedValue).toBe('hi');
@@ -301,7 +357,13 @@ describe('focusAfterChip: the underlying primitive', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
-        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['before', 'chip', 'after'], props: {} },
+        {
+          id: 'p1',
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: ['before', 'chip', 'after'],
+          props: {},
+        },
       ],
       runs: [
         { id: 'before', type: 'text', value: 'a', marks: {} },
@@ -351,7 +413,13 @@ describe('focusAfterChip: the underlying primitive', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['cell1'], props: {} },
-        { id: 'cell1', type: 'tableCell', parentId: 'root', contentIds: ['before', 'chip', 'after'], props: {} },
+        {
+          id: 'cell1',
+          type: 'tableCell',
+          parentId: 'root',
+          contentIds: ['before', 'chip', 'after'],
+          props: {},
+        },
       ],
       runs: [
         { id: 'before', type: 'text', value: 'a', marks: {} },

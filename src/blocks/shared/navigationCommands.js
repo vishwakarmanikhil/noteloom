@@ -26,7 +26,10 @@ export function resolveAdjacentFocusTarget(store, blockId, direction) {
   while (true) {
     const adjacentId = adjacentSiblingId(store, currentId, direction);
     if (!adjacentId) return null;
-    const runId = direction === 'up' ? resolveBlockLastRun(store, adjacentId) : resolveBlockFirstRun(store, adjacentId);
+    const runId =
+      direction === 'up'
+        ? resolveBlockLastRun(store, adjacentId)
+        : resolveBlockFirstRun(store, adjacentId);
     if (runId) return runId;
     currentId = adjacentId; // truly empty (no rows/children at all): keep walking past it
   }

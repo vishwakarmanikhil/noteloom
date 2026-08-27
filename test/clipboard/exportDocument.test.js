@@ -35,7 +35,11 @@ describe('exportDocumentJSON', () => {
     expect(parsed.blocks.map((b) => b.id).sort()).toEqual(['h1', 'p1', 'root'].sort());
     expect(parsed.runs.map((r) => r.value)).toEqual(expect.arrayContaining(['Title', 'Body text']));
 
-    const rebuilt = new EditorStore({ rootId: parsed.rootId, blocks: parsed.blocks, runs: parsed.runs });
+    const rebuilt = new EditorStore({
+      rootId: parsed.rootId,
+      blocks: parsed.blocks,
+      runs: parsed.runs,
+    });
     expect(rebuilt.getBlock('h1').props.level).toBe(2);
     expect(rebuilt.getRun('r-p1').value).toBe('Body text');
   });
@@ -114,9 +118,27 @@ describe('exportDocumentMarkdown', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1', 'li2', 'li3'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
-        { id: 'li2', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r2'] } },
-        { id: 'li3', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: true, titleRunIds: ['r3'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
+        {
+          id: 'li2',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r2'] },
+        },
+        {
+          id: 'li3',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: true, titleRunIds: ['r3'] },
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'first', marks: {} },
@@ -135,8 +157,20 @@ describe('exportDocumentMarkdown', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: ['li1a'], props: { ordered: false, titleRunIds: ['r1'] } },
-        { id: 'li1a', type: 'listItem', parentId: 'li1', contentIds: [], props: { ordered: false, titleRunIds: ['r1a'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: ['li1a'],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
+        {
+          id: 'li1a',
+          type: 'listItem',
+          parentId: 'li1',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1a'] },
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'parent', marks: {} },
@@ -154,8 +188,20 @@ describe('exportDocumentMarkdown', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1', 'li2'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, checked: true, titleRunIds: ['r1'] } },
-        { id: 'li2', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, checked: false, titleRunIds: ['r2'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, checked: true, titleRunIds: ['r1'] },
+        },
+        {
+          id: 'li2',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, checked: false, titleRunIds: ['r2'] },
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'done', marks: {} },
@@ -190,7 +236,10 @@ describe('exportDocumentMarkdown', () => {
   it('a code block renders as a fenced block with its language', () => {
     const store = new EditorStore({
       rootId: 'root',
-      blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} }, { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r1'], props: { language: 'js' } }],
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
+        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r1'], props: { language: 'js' } },
+      ],
       runs: [{ id: 'r1', type: 'text', value: 'const x = 1;', marks: {} }],
     });
     const registry = createBlockRegistry();
@@ -230,7 +279,12 @@ describe('exportDocumentMarkdown', () => {
           type: 'table',
           parentId: 'root',
           contentIds: ['row1'],
-          props: { columns: [{ id: 'c1', label: 'Name' }, { id: 'c2', label: 'Qty' }] },
+          props: {
+            columns: [
+              { id: 'c1', label: 'Name' },
+              { id: 'c2', label: 'Qty' },
+            ],
+          },
         },
         { id: 'row1', type: 'tableRow', parentId: 't1', contentIds: ['cell1', 'cell2'], props: {} },
         { id: 'cell1', type: 'tableCell', parentId: 'row1', contentIds: ['r1'], props: {} },
@@ -244,7 +298,9 @@ describe('exportDocumentMarkdown', () => {
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
 
-    expect(exportDocumentMarkdown(store, registry)).toBe('| Name | Qty |\n| --- | --- |\n| Apples | 3 |');
+    expect(exportDocumentMarkdown(store, registry)).toBe(
+      '| Name | Qty |\n| --- | --- |\n| Apples | 3 |',
+    );
   });
 
   it('an image embed renders as ![alt](src); a file embed as a plain link', () => {
@@ -252,26 +308,45 @@ describe('exportDocumentMarkdown', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['img1', 'file1'], props: {} },
-        { id: 'img1', type: 'embed', parentId: 'root', contentIds: [], props: { kind: 'image', src: 'https://x/a.png', alt: 'a cat' } },
-        { id: 'file1', type: 'embed', parentId: 'root', contentIds: [], props: { kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' } },
+        {
+          id: 'img1',
+          type: 'embed',
+          parentId: 'root',
+          contentIds: [],
+          props: { kind: 'image', src: 'https://x/a.png', alt: 'a cat' },
+        },
+        {
+          id: 'file1',
+          type: 'embed',
+          parentId: 'root',
+          contentIds: [],
+          props: { kind: 'file', src: 'https://x/a.pdf', name: 'a.pdf' },
+        },
       ],
       runs: [],
     });
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
 
-    expect(exportDocumentMarkdown(store, registry)).toBe('![a cat](https://x/a.png)\n\n[a.pdf](https://x/a.pdf)');
+    expect(exportDocumentMarkdown(store, registry)).toBe(
+      '![a cat](https://x/a.png)\n\n[a.pdf](https://x/a.pdf)',
+    );
   });
 
   it('a block type with no toMarkdown of its own falls back to toPlainText', () => {
     const store = new EditorStore({
       rootId: 'root',
-      blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: ['canvas1'], props: {} }, { id: 'canvas1', type: 'canvas', parentId: 'root', contentIds: [], props: {} }],
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['canvas1'], props: {} },
+        { id: 'canvas1', type: 'canvas', parentId: 'root', contentIds: [], props: {} },
+      ],
       runs: [],
     });
     const registry = createBlockRegistry();
     registerBuiltInBlocks(registry);
 
-    expect(exportDocumentMarkdown(store, registry)).toBe(registry.get('canvas').toPlainText(store.getBlock('canvas1')));
+    expect(exportDocumentMarkdown(store, registry)).toBe(
+      registry.get('canvas').toPlainText(store.getBlock('canvas1')),
+    );
   });
 });

@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com
-          scope: "@vishwakarmanikhil"
+          scope: '@vishwakarmanikhil'
 
       - run: npm ci
       - run: npm run build

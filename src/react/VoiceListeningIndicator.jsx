@@ -39,11 +39,18 @@ export function VoiceListeningIndicator({ voice }) {
       ref={badgeRef}
       className={`be-voice-indicator${isProcessing ? ' be-voice-indicator-processing' : ''}`}
       contentEditable={false}
-      style={{ position: 'fixed', top: rect.top - 8, left: centerLeft, transform: 'translate(-50%, -100%)' }}
+      style={{
+        position: 'fixed',
+        top: rect.top - 8,
+        left: centerLeft,
+        transform: 'translate(-50%, -100%)',
+      }}
     >
       <span className="be-voice-indicator-dot" />
       <MicIcon size={12} />
-      <span className="be-voice-indicator-label">{isProcessing ? 'Processing…' : 'Listening…'}</span>
+      <span className="be-voice-indicator-label">
+        {isProcessing ? 'Processing…' : 'Listening…'}
+      </span>
     </div>,
     document.body,
   );

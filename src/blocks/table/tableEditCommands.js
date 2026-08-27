@@ -1,8 +1,22 @@
-import { removeBlock, insertBlock, updateBlockProps, setBlockRuns, updateRun, setBlockContentIds } from '../../store/operations.js';
+import {
+  removeBlock,
+  insertBlock,
+  updateBlockProps,
+  setBlockRuns,
+  updateRun,
+  setBlockContentIds,
+} from '../../store/operations.js';
 import { genId } from '../../utils/idGen.js';
 import { focusBlockStart } from '../shared/navigationCommands.js';
 import { ensureRootNonEmpty } from '../shared/ensureRootNonEmpty.js';
-import { resolveColumns, createCellForColumn, convertRunToType, DEFAULT_COLUMN_TYPE, DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from './tableColumns.js';
+import {
+  resolveColumns,
+  createCellForColumn,
+  convertRunToType,
+  DEFAULT_COLUMN_TYPE,
+  DEFAULT_COLUMN_WIDTH,
+  MIN_COLUMN_WIDTH,
+} from './tableColumns.js';
 import { sortRowIdsByColumn, runPlainText } from './tableView.js';
 
 function applyOps(store, ops) {
@@ -55,7 +69,9 @@ export function insertRowAfter(store, rowId) {
   }
   const newRow = { id: newRowId, type: 'tableRow', parentId: table.id, contentIds, props: {} };
 
-  store.applyOperation(insertBlock(newRow, table.id, rowIndex + 1, { blocks: [newRow, ...cellBlocks], runs }));
+  store.applyOperation(
+    insertBlock(newRow, table.id, rowIndex + 1, { blocks: [newRow, ...cellBlocks], runs }),
+  );
   focusBlockStart(store, newRowId);
   return newRowId;
 }
@@ -87,15 +103,25 @@ export function deleteRow(store, rowId) {
 /** Inserts a new (always plain-text) column at `colIndex + 1` in every row of the table, and focuses the first new cell. One atomic undo step, including the new column's metadata. */
 export function insertColumnAfter(store, tableId, colIndex) {
   const table = store.getBlock(tableId);
-  const currentColumns = resolveColumns(table, table.contentIds[0] ? store.getBlock(table.contentIds[0]).contentIds.length : 0);
-  const newColumn = { id: genId(), label: 'New Column', type: DEFAULT_COLUMN_TYPE, width: DEFAULT_COLUMN_WIDTH };
+  const currentColumns = resolveColumns(
+    table,
+    table.contentIds[0] ? store.getBlock(table.contentIds[0]).contentIds.length : 0,
+  );
+  const newColumn = {
+    id: genId(),
+    label: 'New Column',
+    type: DEFAULT_COLUMN_TYPE,
+    width: DEFAULT_COLUMN_WIDTH,
+  };
   const ops = [];
   let firstNewCellId = null;
 
   for (const rowId of table.contentIds) {
     const cell = createCellForColumn(rowId, newColumn);
     if (firstNewCellId === null) firstNewCellId = cell.block.id;
-    ops.push(insertBlock(cell.block, rowId, colIndex + 1, { blocks: [cell.block], runs: [cell.run] }));
+    ops.push(
+      insertBlock(cell.block, rowId, colIndex + 1, { blocks: [cell.block], runs: [cell.run] }),
+    );
   }
 
   const nextColumns = [...currentColumns];
@@ -144,7 +170,10 @@ export function setColumnWidth(store, tableId, colIndex, width) {
   const currentColumns = resolveColumns(table, firstRow ? firstRow.contentIds.length : 0);
   if (!currentColumns[colIndex]) return;
   const nextColumns = [...currentColumns];
-  nextColumns[colIndex] = { ...currentColumns[colIndex], width: Math.max(MIN_COLUMN_WIDTH, Math.round(width)) };
+  nextColumns[colIndex] = {
+    ...currentColumns[colIndex],
+    width: Math.max(MIN_COLUMN_WIDTH, Math.round(width)),
+  };
   store.applyOperation(updateBlockProps(tableId, { columns: nextColumns }));
 }
 
@@ -179,7 +208,10 @@ export function sortTableByColumn(store, tableId, colIndex, direction, inlineReg
     const cell = store.getBlock(row.contentIds[colIndex]);
     return { rowId, run: cell ? store.getRun(cell.contentIds[0]) : null };
   });
-  const columns = resolveColumns(table, rows.length ? store.getBlock(table.contentIds[0]).contentIds.length : 0);
+  const columns = resolveColumns(
+    table,
+    rows.length ? store.getBlock(table.contentIds[0]).contentIds.length : 0,
+  );
   const columnType = columns[colIndex]?.type ?? DEFAULT_COLUMN_TYPE;
 
   const orderedIds = sortRowIdsByColumn(rows, columnType, direction, inlineRegistry);
@@ -230,7 +262,16 @@ function buildSelectColumnConversion(store, table, colIndex, inlineRegistry) {
   const newRuns = cellRuns.map(({ cellId, run }) => {
     const text = runPlainText(run, inlineRegistry).trim();
     const option = optionByLabel.get(text);
-    return { cellId, run: { id: genId(), type: 'tableSelect', value: '', marks: {}, data: { selectedValue: option?.value ?? '', selectedLabel: option?.label ?? '' } } };
+    return {
+      cellId,
+      run: {
+        id: genId(),
+        type: 'tableSelect',
+        value: '',
+        marks: {},
+        data: { selectedValue: option?.value ?? '', selectedLabel: option?.label ?? '' },
+      },
+    };
   });
 
   return { options, newRuns };
@@ -256,7 +297,12 @@ export function setColumnType(store, tableId, colIndex, newType, inlineRegistry)
   const nextColumns = [...currentColumns];
 
   if (newType === 'select') {
-    const { options, newRuns } = buildSelectColumnConversion(store, table, colIndex, inlineRegistry);
+    const { options, newRuns } = buildSelectColumnConversion(
+      store,
+      table,
+      colIndex,
+      inlineRegistry,
+    );
     nextColumns[colIndex] = { ...column, type: newType, options };
     const ops = [updateBlockProps(tableId, { columns: nextColumns })];
     for (const { cellId, run } of newRuns) ops.push(setBlockRuns(cellId, [run]));
@@ -301,8 +347,15 @@ export function setColumnOptions(store, tableId, colIndex, options) {
     const match = optionById.get(selectedValue);
     const nextSelectedValue = match ? selectedValue : '';
     const nextSelectedLabel = match ? match.label : '';
-    if (nextSelectedValue !== selectedValue || nextSelectedLabel !== (run.data?.selectedLabel ?? '')) {
-      ops.push(updateRun(run.id, { data: { selectedValue: nextSelectedValue, selectedLabel: nextSelectedLabel } }));
+    if (
+      nextSelectedValue !== selectedValue ||
+      nextSelectedLabel !== (run.data?.selectedLabel ?? '')
+    ) {
+      ops.push(
+        updateRun(run.id, {
+          data: { selectedValue: nextSelectedValue, selectedLabel: nextSelectedLabel },
+        }),
+      );
     }
   }
 

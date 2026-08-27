@@ -79,7 +79,13 @@ describe('ListItemBlock Enter on an empty nested item (regression)', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
       ],
       runs: [{ id: 'r1', type: 'text', value: 'not empty', marks: {} }],
     });
@@ -97,7 +103,13 @@ describe('ListItemBlock Enter on an empty nested item (regression)', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r1'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
       ],
       runs: [{ id: 'r1', type: 'text', value: '', marks: {} }],
     });

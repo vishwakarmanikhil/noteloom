@@ -2,8 +2,15 @@ import { useCallback } from 'react';
 import { useBlock } from '../../react/useBlock.js';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { BlockChildren } from '../../react/BlockChildren.jsx';
-import { useEditorStore, useSelectedBlock, useBlockClassName } from '../../react/EditorProvider.jsx';
-import { insertSiblingSplitAtCaretAndFocus, insertFirstChildSplitAtCaretAndFocus } from '../shared/blockCommands.js';
+import {
+  useEditorStore,
+  useSelectedBlock,
+  useBlockClassName,
+} from '../../react/EditorProvider.jsx';
+import {
+  insertSiblingSplitAtCaretAndFocus,
+  insertFirstChildSplitAtCaretAndFocus,
+} from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
 import { mergeToggleHeadingOrNoop } from './mergeCommands.js';
 import { isRunsEmpty } from '../shared/blockEmpty.js';
@@ -89,7 +96,13 @@ export function ToggleHeadingBlock({ id }) {
           className="be-toggle-heading-marker"
           onClick={toggleCollapsed}
           aria-expanded={!collapsed}
-          aria-label={!hasNestedChildren ? 'Add content to section' : collapsed ? 'Expand section' : 'Collapse section'}
+          aria-label={
+            !hasNestedChildren
+              ? 'Add content to section'
+              : collapsed
+                ? 'Expand section'
+                : 'Collapse section'
+          }
         >
           {collapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}
         </button>

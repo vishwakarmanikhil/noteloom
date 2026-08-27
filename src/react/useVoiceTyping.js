@@ -13,7 +13,7 @@ function getSpeechRecognitionCtor() {
 }
 
 const PERMISSION_DENIED_MESSAGE =
-  'Microphone access is blocked. Enable it in your browser\'s site settings, then try again.';
+  "Microphone access is blocked. Enable it in your browser's site settings, then try again.";
 
 /**
  * Native-browser (Web Speech API) voice typing: live, continuous dictation
@@ -243,7 +243,8 @@ export function useVoiceTyping({ shortcut = true, engine } = {}) {
       // back and forth as that text changes shape.
       if (entry.needsLeadingSpace === undefined) {
         const beforeChar = before[before.length - 1];
-        entry.needsLeadingSpace = entry.startOffset > 0 && beforeChar !== undefined && !/\s/.test(beforeChar);
+        entry.needsLeadingSpace =
+          entry.startOffset > 0 && beforeChar !== undefined && !/\s/.test(beforeChar);
       }
       const insertedText = (entry.needsLeadingSpace ? ' ' : '') + text;
       const after = value.slice(entry.startOffset + entry.insertedLength);
@@ -251,7 +252,9 @@ export function useVoiceTyping({ shortcut = true, engine } = {}) {
       // (including TextRunSpan's DOM-rewriting layout effect) before it
       // returns, so setCaretSync right after is guaranteed to see the
       // freshly-rewritten text node rather than a stale one.
-      flushSync(() => store.applyOperation(updateRun(entry.runId, { value: before + insertedText + after })));
+      flushSync(() =>
+        store.applyOperation(updateRun(entry.runId, { value: before + insertedText + after })),
+      );
       entry.insertedLength = insertedText.length;
       const nextOffset = entry.startOffset + insertedText.length;
       setCaretSync(entry.runId, nextOffset);
@@ -266,10 +269,15 @@ export function useVoiceTyping({ shortcut = true, engine } = {}) {
       const run = store.getRun(entry.runId);
       if (!run || run.type !== 'text') return;
       const value = run.value ?? '';
-      const restored = value.slice(0, entry.startOffset) + value.slice(entry.startOffset + entry.insertedLength);
+      const restored =
+        value.slice(0, entry.startOffset) + value.slice(entry.startOffset + entry.insertedLength);
       flushSync(() => store.applyOperation(updateRun(entry.runId, { value: restored })));
       setCaretSync(entry.runId, entry.startOffset);
-      sessionAnchorRef.current = { runId: entry.runId, blockId: entry.blockId, offset: entry.startOffset };
+      sessionAnchorRef.current = {
+        runId: entry.runId,
+        blockId: entry.blockId,
+        offset: entry.startOffset,
+      };
       expectedCaretRef.current = { runId: entry.runId, offset: entry.startOffset };
     },
     [store],
@@ -293,7 +301,8 @@ export function useVoiceTyping({ shortcut = true, engine } = {}) {
       const run = store.getRun(entry.runId);
       if (!run || run.type !== 'text') return;
       const value = run.value ?? '';
-      const restored = value.slice(0, entry.startOffset) + value.slice(entry.startOffset + entry.insertedLength);
+      const restored =
+        value.slice(0, entry.startOffset) + value.slice(entry.startOffset + entry.insertedLength);
       store.applyOperation(updateRun(entry.runId, { value: restored }));
     },
     [store],
@@ -403,7 +412,9 @@ export function useVoiceTyping({ shortcut = true, engine } = {}) {
     setError(null);
     const initialCaret = resolveCollapsedCaret();
     sessionAnchorRef.current = initialCaret;
-    expectedCaretRef.current = initialCaret ? { runId: initialCaret.runId, offset: initialCaret.offset } : null;
+    expectedCaretRef.current = initialCaret
+      ? { runId: initialCaret.runId, offset: initialCaret.offset }
+      : null;
     liveEntryRef.current = null;
     committedCountRef.current = 0;
     let recognition;

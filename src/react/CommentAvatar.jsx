@@ -11,7 +11,12 @@ export function CommentAvatar({ authorId, size = 26 }) {
   return (
     <span
       className="be-comment-avatar"
-      style={{ width: size, height: size, fontSize: Math.max(10, size * 0.4), background: getAvatarColor(authorId) }}
+      style={{
+        width: size,
+        height: size,
+        fontSize: Math.max(10, size * 0.4),
+        background: getAvatarColor(authorId),
+      }}
       aria-hidden="true"
     >
       {getInitials(authorId)}

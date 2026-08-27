@@ -32,12 +32,12 @@ function makeDoc() {
 }
 
 describe('resolveAdjacentFocusTarget', () => {
-  it('resolves the previous sibling\'s last run when moving up', () => {
+  it("resolves the previous sibling's last run when moving up", () => {
     const store = new EditorStore(makeDoc());
     expect(resolveAdjacentFocusTarget(store, 'p2', 'up')).toBe('r1');
   });
 
-  it('resolves the next sibling\'s first run when moving down', () => {
+  it("resolves the next sibling's first run when moving down", () => {
     const store = new EditorStore(makeDoc());
     expect(resolveAdjacentFocusTarget(store, 'p1', 'down')).toBe('r2');
   });
@@ -71,7 +71,13 @@ describe('resolveAdjacentFocusTarget: entering populated containers (regression)
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'table1', 'p2'], props: {} },
         { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
         { id: 'table1', type: 'table', parentId: 'root', contentIds: ['row1'], props: {} },
-        { id: 'row1', type: 'tableRow', parentId: 'table1', contentIds: ['cellA', 'cellB'], props: {} },
+        {
+          id: 'row1',
+          type: 'tableRow',
+          parentId: 'table1',
+          contentIds: ['cellA', 'cellB'],
+          props: {},
+        },
         { id: 'cellA', type: 'tableCell', parentId: 'row1', contentIds: ['rA'], props: {} },
         { id: 'cellB', type: 'tableCell', parentId: 'row1', contentIds: ['rB'], props: {} },
         { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: ['r2'], props: {} },
@@ -85,12 +91,12 @@ describe('resolveAdjacentFocusTarget: entering populated containers (regression)
     };
   }
 
-  it('ArrowDown from a paragraph enters a populated table\'s first cell, instead of skipping past it', () => {
+  it("ArrowDown from a paragraph enters a populated table's first cell, instead of skipping past it", () => {
     const store = new EditorStore(makeDocWithPopulatedTable());
     expect(resolveAdjacentFocusTarget(store, 'p1', 'down')).toBe('rA');
   });
 
-  it('ArrowUp from a paragraph enters a populated table\'s last cell, instead of skipping past it', () => {
+  it("ArrowUp from a paragraph enters a populated table's last cell, instead of skipping past it", () => {
     const store = new EditorStore(makeDocWithPopulatedTable());
     expect(resolveAdjacentFocusTarget(store, 'p2', 'up')).toBe('rB');
   });
@@ -114,17 +120,23 @@ describe('resolveAdjacentFocusTarget: entering populated containers (regression)
 });
 
 describe('resolveBlockFirstRun', () => {
-  it('resolves a leaf block\'s own first run directly', () => {
+  it("resolves a leaf block's own first run directly", () => {
     const store = new EditorStore(makeDoc());
     expect(resolveBlockFirstRun(store, 'p1')).toBe('r1');
   });
 
-  it('descends into a listItem\'s titleRunIds', () => {
+  it("descends into a listItem's titleRunIds", () => {
     const store = new EditorStore({
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { titleRunIds: ['tr1'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: [],
+          props: { titleRunIds: ['tr1'] },
+        },
       ],
       runs: [{ id: 'tr1', type: 'text', value: 'item', marks: {} }],
     });
@@ -137,7 +149,13 @@ describe('resolveBlockFirstRun', () => {
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['table1'], props: {} },
         { id: 'table1', type: 'table', parentId: 'root', contentIds: ['row1'], props: {} },
-        { id: 'row1', type: 'tableRow', parentId: 'table1', contentIds: ['cellA', 'cellB'], props: {} },
+        {
+          id: 'row1',
+          type: 'tableRow',
+          parentId: 'table1',
+          contentIds: ['cellA', 'cellB'],
+          props: {},
+        },
         { id: 'cellA', type: 'tableCell', parentId: 'row1', contentIds: ['rA'], props: {} },
         { id: 'cellB', type: 'tableCell', parentId: 'row1', contentIds: ['rB'], props: {} },
       ],
@@ -154,7 +172,13 @@ describe('resolveBlockFirstRun', () => {
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['layout1'], props: {} },
-        { id: 'layout1', type: 'layout', parentId: 'root', contentIds: ['col1', 'col2'], props: {} },
+        {
+          id: 'layout1',
+          type: 'layout',
+          parentId: 'root',
+          contentIds: ['col1', 'col2'],
+          props: {},
+        },
         { id: 'col1', type: 'layoutColumn', parentId: 'layout1', contentIds: ['p1'], props: {} },
         { id: 'col2', type: 'layoutColumn', parentId: 'layout1', contentIds: [], props: {} },
         { id: 'p1', type: 'paragraph', parentId: 'col1', contentIds: ['r1'], props: {} },

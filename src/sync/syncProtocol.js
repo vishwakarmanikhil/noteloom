@@ -12,7 +12,8 @@ export function encodeMessage(message) {
 
 export function decodeMessage(raw) {
   const message = JSON.parse(raw);
-  if (!message || typeof message.type !== 'string') throw new Error('Invalid sync message: missing type');
+  if (!message || typeof message.type !== 'string')
+    throw new Error('Invalid sync message: missing type');
   return message;
 }
 

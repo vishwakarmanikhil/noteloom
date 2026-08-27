@@ -15,7 +15,8 @@ export function diffWords(oldText, newText) {
   const dp = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
   for (let i = n - 1; i >= 0; i -= 1) {
     for (let j = m - 1; j >= 0; j -= 1) {
-      dp[i][j] = oldTokens[i] === newTokens[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      dp[i][j] =
+        oldTokens[i] === newTokens[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
     }
   }
 
@@ -120,7 +121,9 @@ export function diffDocumentsHTML(prevDoc, nextDoc) {
     const prevBlock = prevById.get(block.id);
     if (!prevBlock) {
       const text = escapeHtml(block.text) || '&nbsp;';
-      parts.push(`<p class="be-version-diff-block"><span class="be-version-diff-added">${text}</span></p>`);
+      parts.push(
+        `<p class="be-version-diff-block"><span class="be-version-diff-added">${text}</span></p>`,
+      );
       continue;
     }
     if (prevBlock.text === block.text) {
@@ -132,7 +135,8 @@ export function diffDocumentsHTML(prevDoc, nextDoc) {
       .map((seg) => {
         const escaped = escapeHtml(seg.text);
         if (seg.type === 'added') return `<span class="be-version-diff-added">${escaped}</span>`;
-        if (seg.type === 'removed') return `<span class="be-version-diff-removed">${escaped}</span>`;
+        if (seg.type === 'removed')
+          return `<span class="be-version-diff-removed">${escaped}</span>`;
         return escaped;
       })
       .join('');
@@ -142,7 +146,9 @@ export function diffDocumentsHTML(prevDoc, nextDoc) {
   for (const block of prevBlocks) {
     if (!nextIds.has(block.id)) {
       const text = escapeHtml(block.text) || '&nbsp;';
-      parts.push(`<p class="be-version-diff-block"><span class="be-version-diff-removed">${text}</span></p>`);
+      parts.push(
+        `<p class="be-version-diff-block"><span class="be-version-diff-removed">${text}</span></p>`,
+      );
     }
   }
 

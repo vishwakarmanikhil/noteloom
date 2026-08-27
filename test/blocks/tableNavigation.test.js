@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
-import { resolveAdjacentCellTarget, moveToAdjacentCell } from '../../src/blocks/table/tableNavigation.js';
+import {
+  resolveAdjacentCellTarget,
+  moveToAdjacentCell,
+} from '../../src/blocks/table/tableNavigation.js';
 import { createTableBlock } from '../../src/blocks/table/createTableBlock.js';
 import { insertBlock } from '../../src/store/operations.js';
 
@@ -83,7 +86,13 @@ describe('moveToAdjacentCell: Tab past the last cell exits the table', () => {
 
   it('when a block already follows the table, exiting does not create a new one', () => {
     const { store, tableId } = makeDoc();
-    const followingParagraph = { id: 'p-after', type: 'paragraph', parentId: 'root', contentIds: ['r-after'], props: {} };
+    const followingParagraph = {
+      id: 'p-after',
+      type: 'paragraph',
+      parentId: 'root',
+      contentIds: ['r-after'],
+      props: {},
+    };
     store.applyOperation(
       insertBlock(followingParagraph, 'root', 1, {
         blocks: [followingParagraph],

@@ -18,7 +18,10 @@ const FIELD_TYPES_KEY = '$fieldTypes';
  */
 export function useFieldTypes() {
   const store = useEditorStore();
-  const subscribe = useCallback((onStoreChange) => store.subscribe(FIELD_TYPES_KEY, onStoreChange), [store]);
+  const subscribe = useCallback(
+    (onStoreChange) => store.subscribe(FIELD_TYPES_KEY, onStoreChange),
+    [store],
+  );
   const getSnapshot = useCallback(() => store.getFieldTypes(), [store]);
   return useSyncExternalStore(subscribe, getSnapshot);
 }

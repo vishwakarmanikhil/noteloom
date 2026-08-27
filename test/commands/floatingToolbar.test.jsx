@@ -221,7 +221,12 @@ describe('FloatingToolbar: applying marks over a same-block selection', () => {
 
     selectWithinRunNode(runNode, 0, 5);
     fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Bold"]'));
-    expect(store.getBlock('p1').contentIds.map((id) => store.getRun(id).marks.bold).some(Boolean)).toBe(true);
+    expect(
+      store
+        .getBlock('p1')
+        .contentIds.map((id) => store.getRun(id).marks.bold)
+        .some(Boolean),
+    ).toBe(true);
 
     act(() => store.undo());
     const runs = store.getBlock('p1').contentIds.map((id) => store.getRun(id));
@@ -267,7 +272,13 @@ describe('FloatingToolbar: comment button', () => {
     expect(commentBtn).not.toBeNull();
 
     fireEvent.click(commentBtn);
-    expect(onComment).toHaveBeenCalledWith({ blockId: 'p1', startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 });
+    expect(onComment).toHaveBeenCalledWith({
+      blockId: 'p1',
+      startRunId: 'r1',
+      startOffset: 0,
+      endRunId: 'r1',
+      endOffset: 5,
+    });
   });
 
   it('does not appear for a cross-block selection (commentMarks.js does not support one yet)', () => {
@@ -328,7 +339,9 @@ describe('FloatingToolbar: comment button', () => {
 
     selectWithinRunNode(runNode, 0, 5); // "hello"
     fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
-    fireEvent.change(container.querySelector('.be-comment-composer-textarea'), { target: { value: 'done' } });
+    fireEvent.change(container.querySelector('.be-comment-composer-textarea'), {
+      target: { value: 'done' },
+    });
     fireEvent.click(container.querySelector('.be-comment-composer-submit'));
 
     // Real browsers fire selectionchange asynchronously after
@@ -394,13 +407,18 @@ describe('FloatingToolbar: comment button', () => {
     selectWithinRunNode(runNode, 0, 5); // "hello"
     fireEvent.click(container.querySelector('.be-floating-toolbar-btn[title^="Comment"]'));
 
-    fireEvent.change(container.querySelector('.be-comment-composer-textarea'), { target: { value: 'needs work' } });
+    fireEvent.change(container.querySelector('.be-comment-composer-textarea'), {
+      target: { value: 'needs work' },
+    });
     fireEvent.click(container.querySelector('.be-comment-composer-submit'));
 
     expect(container.querySelector('.be-comment-composer-textarea')).toBeNull();
     const comments = store.getComments();
     expect(comments.length).toBe(1);
-    expect(comments[0]).toMatchObject({ resolved: false, messages: [{ authorId: 'alice', text: 'needs work' }] });
+    expect(comments[0]).toMatchObject({
+      resolved: false,
+      messages: [{ authorId: 'alice', text: 'needs work' }],
+    });
   });
 
   it('onComment takes priority over commentAuthorId when both are given', () => {

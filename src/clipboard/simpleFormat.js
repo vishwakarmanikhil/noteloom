@@ -66,7 +66,10 @@ function exportBlock(store, registry, block, ctx) {
       const row = store.getBlock(rowId);
       return row.contentIds.map((cellId) => {
         const cell = store.getBlock(cellId);
-        return runsToHTML(cell.contentIds.map((runId) => store.getRun(runId)), ctx);
+        return runsToHTML(
+          cell.contentIds.map((runId) => store.getRun(runId)),
+          ctx,
+        );
       });
     });
     return { id: block.id, type, data };
@@ -74,14 +77,22 @@ function exportBlock(store, registry, block, ctx) {
 
   if (TITLE_RUN_TYPES.has(type)) {
     const runIds = block.props?.titleRunIds ?? [];
-    data.text = runsToHTML(runIds.map((id) => store.getRun(id)), ctx);
+    data.text = runsToHTML(
+      runIds.map((id) => store.getRun(id)),
+      ctx,
+    );
   } else if (registry.isLeaf(type) && !NO_TEXT_LEAF_TYPES.has(type)) {
-    data.text = runsToHTML(block.contentIds.map((id) => store.getRun(id)), ctx);
+    data.text = runsToHTML(
+      block.contentIds.map((id) => store.getRun(id)),
+      ctx,
+    );
   }
 
   const result = { id: block.id, type, data };
   if (!registry.isLeaf(type)) {
-    result.children = block.contentIds.map((childId) => exportBlock(store, registry, store.getBlock(childId), ctx));
+    result.children = block.contentIds.map((childId) =>
+      exportBlock(store, registry, store.getBlock(childId), ctx),
+    );
   }
   return result;
 }
@@ -111,13 +122,25 @@ function importTable(simpleBlock, parentId, blocksOut, runsOut, ctx) {
       const cellId = genId();
       const runs = textToRuns(cellHTML, ctx);
       runsOut.push(...runs);
-      blocksOut.push({ id: cellId, type: 'tableCell', parentId: rowId, contentIds: runs.map((r) => r.id), props: {} });
+      blocksOut.push({
+        id: cellId,
+        type: 'tableCell',
+        parentId: rowId,
+        contentIds: runs.map((r) => r.id),
+        props: {},
+      });
       return cellId;
     });
     blocksOut.push({ id: rowId, type: 'tableRow', parentId, contentIds: cellIds, props: {} });
     return rowId;
   });
-  const block = { id, type: 'table', parentId, contentIds: rowIds, props: { columns: data.columns ?? [] } };
+  const block = {
+    id,
+    type: 'table',
+    parentId,
+    contentIds: rowIds,
+    props: { columns: data.columns ?? [] },
+  };
   blocksOut.push(block);
   return block;
 }
@@ -139,7 +162,9 @@ function importBlock(simpleBlock, parentId, registry, ctx, blocksOut, runsOut) {
     const runs = textToRuns(data.text, ctx);
     runsOut.push(...runs);
     block.props.titleRunIds = runs.map((r) => r.id);
-    block.contentIds = children.map((child) => importBlock(child, id, registry, ctx, blocksOut, runsOut).id);
+    block.contentIds = children.map(
+      (child) => importBlock(child, id, registry, ctx, blocksOut, runsOut).id,
+    );
   } else if (registry.isLeaf(type)) {
     if (!NO_TEXT_LEAF_TYPES.has(type)) {
       const runs = textToRuns(data.text, ctx);
@@ -147,7 +172,9 @@ function importBlock(simpleBlock, parentId, registry, ctx, blocksOut, runsOut) {
       block.contentIds = runs.map((r) => r.id);
     }
   } else {
-    block.contentIds = children.map((child) => importBlock(child, id, registry, ctx, blocksOut, runsOut).id);
+    block.contentIds = children.map(
+      (child) => importBlock(child, id, registry, ctx, blocksOut, runsOut).id,
+    );
   }
 
   return block;
@@ -166,7 +193,9 @@ export function importDocumentSimpleJSON(json, registry, inlineRegistry) {
   const rootId = genId();
   const blocksOut = [];
   const runsOut = [];
-  const topIds = (doc.blocks ?? []).map((b) => importBlock(b, rootId, registry, ctx, blocksOut, runsOut).id);
+  const topIds = (doc.blocks ?? []).map(
+    (b) => importBlock(b, rootId, registry, ctx, blocksOut, runsOut).id,
+  );
   blocksOut.push({ id: rootId, type: 'page', parentId: null, contentIds: topIds, props: {} });
   return { rootId, blocks: blocksOut, runs: runsOut };
 }

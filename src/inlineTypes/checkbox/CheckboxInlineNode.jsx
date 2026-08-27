@@ -16,7 +16,9 @@ export function CheckboxInlineNode({ id }) {
 
   const handleCheckedChange = useCallback(
     (event) => {
-      store.applyOperation(updateRun(id, { data: { ...run?.data, checked: event.target.checked } }));
+      store.applyOperation(
+        updateRun(id, { data: { ...run?.data, checked: event.target.checked } }),
+      );
     },
     [store, id, run?.data],
   );
@@ -38,7 +40,12 @@ export function CheckboxInlineNode({ id }) {
       // See SelectInlineNode's onKeyDown comment for why this is needed.
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <input type="checkbox" className="be-inline-checkbox-input" checked={checked} onChange={handleCheckedChange} />
+      <input
+        type="checkbox"
+        className="be-inline-checkbox-input"
+        checked={checked}
+        onChange={handleCheckedChange}
+      />
       <input
         type="text"
         className="be-inline-checkbox-label"

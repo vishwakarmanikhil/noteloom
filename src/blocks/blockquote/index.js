@@ -21,14 +21,23 @@ function toPlainText(block, ctx) {
 // to insert a blank line between consecutive blockquote siblings, so they
 // read back as one continuous quote instead of separate ones.
 function toMarkdown(block, ctx) {
-  const text = runsToMarkdown(block.contentIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  const text = runsToMarkdown(
+    block.contentIds.map((runId) => ctx.store.getRun(runId)),
+    ctx,
+  );
   return `> ${text}`;
 }
 
 function fromHTML(node, ctx) {
   if (node.tagName !== 'BLOCKQUOTE') return null;
   const runs = domInlineToRuns(node, ctx);
-  const block = { id: genId(), type: 'blockquote', parentId: null, contentIds: runs.map((r) => r.id), props: {} };
+  const block = {
+    id: genId(),
+    type: 'blockquote',
+    parentId: null,
+    contentIds: runs.map((r) => r.id),
+    props: {},
+  };
   return { block, runs };
 }
 
@@ -44,6 +53,7 @@ export const blockquoteBlockType = {
     label: 'Quote',
     icon: QuoteIcon,
     keywords: ['quote', 'blockquote', 'citation'],
-    run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('blockquote')),
+    run: (store, ctx) =>
+      trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('blockquote')),
   },
 };

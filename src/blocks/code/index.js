@@ -8,7 +8,8 @@ import { CodeIcon } from '../../react/icons.jsx';
 function toHTML(block, ctx) {
   const runs = block.contentIds.map((runId) => ctx.store.getRun(runId));
   const language = block.props?.language;
-  const langAttr = language && language !== 'plaintext' ? ` data-language="${escapeHTML(language)}"` : '';
+  const langAttr =
+    language && language !== 'plaintext' ? ` data-language="${escapeHTML(language)}"` : '';
   return `<pre><code${langAttr}>${runs.map((r) => runToHTML(r, ctx)).join('')}</code></pre>`;
 }
 

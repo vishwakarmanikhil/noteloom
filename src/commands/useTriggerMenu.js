@@ -5,7 +5,10 @@ import { stripEmptyRunPlaceholder } from '../react/domRunSync.js';
 function matchesQuery(command, query) {
   if (!query) return true;
   const q = query.toLowerCase();
-  return command.label.toLowerCase().includes(q) || command.keywords?.some((k) => k.toLowerCase().includes(q));
+  return (
+    command.label.toLowerCase().includes(q) ||
+    command.keywords?.some((k) => k.toLowerCase().includes(q))
+  );
 }
 
 /**
@@ -82,7 +85,14 @@ export function useTriggerMenu(containerRef, regex, getCommands) {
         return;
       }
       const sliceStart = match.index + match[1].length; // position of the trigger character itself
-      setState({ query: match[2], blockId, runId, sliceStart, sliceEnd: caretOffset, rect: el.getBoundingClientRect() });
+      setState({
+        query: match[2],
+        blockId,
+        runId,
+        sliceStart,
+        sliceEnd: caretOffset,
+        rect: el.getBoundingClientRect(),
+      });
     };
 
     const handleKeyDown = (event) => {

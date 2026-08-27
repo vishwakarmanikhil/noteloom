@@ -17,10 +17,22 @@ function makeLargeDoc() {
     const blockId = `p${i}`;
     const runId = `r${i}`;
     rootContentIds.push(blockId);
-    blocks.push({ id: blockId, type: 'paragraph', parentId: 'root', contentIds: [runId], props: {} });
+    blocks.push({
+      id: blockId,
+      type: 'paragraph',
+      parentId: 'root',
+      contentIds: [runId],
+      props: {},
+    });
     runs.push({ id: runId, type: 'text', value: `Paragraph number ${i}`, marks: {} });
   }
-  blocks.unshift({ id: 'root', type: 'page', parentId: null, contentIds: rootContentIds, props: {} });
+  blocks.unshift({
+    id: 'root',
+    type: 'page',
+    parentId: null,
+    contentIds: rootContentIds,
+    props: {},
+  });
   return { rootId: 'root', blocks, runs };
 }
 
@@ -107,10 +119,22 @@ describe('performance: large document (stress test)', () => {
       const runs = [];
       for (let i = 0; i < blockCount; i += 1) {
         rootContentIds.push(`p${i}`);
-        blocks.push({ id: `p${i}`, type: 'paragraph', parentId: 'root', contentIds: [`r${i}`], props: {} });
+        blocks.push({
+          id: `p${i}`,
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: [`r${i}`],
+          props: {},
+        });
         runs.push({ id: `r${i}`, type: 'text', value: `Paragraph ${i}`, marks: {} });
       }
-      blocks.unshift({ id: 'root', type: 'page', parentId: null, contentIds: rootContentIds, props: {} });
+      blocks.unshift({
+        id: 'root',
+        type: 'page',
+        parentId: null,
+        contentIds: rootContentIds,
+        props: {},
+      });
 
       const store = new EditorStore({ rootId: 'root', blocks, runs });
       const registry = createBlockRegistry();

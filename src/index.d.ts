@@ -6,7 +6,14 @@
 // every export still gets *something* useful rather than `any`. No `.js`/
 // `.jsx` source was changed to produce this file.
 
-import type { ComponentType, ReactNode, ReactElement, CSSProperties, RefObject, ClipboardEvent } from 'react';
+import type {
+  ComponentType,
+  ReactNode,
+  ReactElement,
+  CSSProperties,
+  RefObject,
+  ClipboardEvent,
+} from 'react';
 
 // ---------------------------------------------------------------------------
 // Document shape
@@ -93,11 +100,20 @@ export const OP: {
 };
 
 export namespace operations {
-  export function insertBlock(block: Block, parentId: string, index: number, subtree?: { blocks: Block[]; runs: Run[] }): Operation;
+  export function insertBlock(
+    block: Block,
+    parentId: string,
+    index: number,
+    subtree?: { blocks: Block[]; runs: Run[] },
+  ): Operation;
   export function removeBlock(id: string): Operation;
   export function moveBlock(id: string, toParentId: string, toIndex: number): Operation;
   export function updateBlockProps(id: string, patch: Record<string, unknown>): Operation;
-  export function changeBlockType(id: string, blockType: string, props: Record<string, unknown>): Operation;
+  export function changeBlockType(
+    id: string,
+    blockType: string,
+    props: Record<string, unknown>,
+  ): Operation;
   export function updateRun(id: string, patch: Record<string, unknown>): Operation;
   export function setBlockContentIds(blockId: string, contentIds: string[]): Operation;
   export function replaceRunSpan(blockId: string, oldRunIds: string[], newRuns: Run[]): Operation;
@@ -285,13 +301,21 @@ export function encodeMessage(message: unknown): string;
 export function decodeMessage(raw: string): unknown;
 
 export class PeerConnection {
-  constructor(options: { peerConnection: RTCPeerConnection; dataChannel?: RTCDataChannel; onMessage?: (message: unknown) => void });
+  constructor(options: {
+    peerConnection: RTCPeerConnection;
+    dataChannel?: RTCDataChannel;
+    onMessage?: (message: unknown) => void;
+  });
   send(message: unknown): void;
   close(): void;
 }
 
 export class CollabSession {
-  constructor(options: { history: History | EditorStore; signaling: SignalingChannel; presenceThrottleMs?: number });
+  constructor(options: {
+    history: History | EditorStore;
+    signaling: SignalingChannel;
+    presenceThrottleMs?: number;
+  });
   connect(remotePeerId: string, options: { initiator: boolean }): void;
   disconnect(remotePeerId: string): void;
   destroy(): void;
@@ -346,7 +370,10 @@ export function loadTemplate(id: string): Promise<StoredTemplate | null>;
 export function deleteTemplate(id: string): Promise<void>;
 export function listTemplates(): Promise<StoredTemplate[]>;
 
-export function captureBlockTemplate(store: EditorStore | History, blockIds: string[]): BlockTemplate;
+export function captureBlockTemplate(
+  store: EditorStore | History,
+  blockIds: string[],
+): BlockTemplate;
 export function insertBlockTemplate(
   store: EditorStore | History,
   template: BlockTemplate,
@@ -364,7 +391,10 @@ export interface BlockTemplateDefinition {
 }
 
 /** Registers block templates as slash commands, discoverable/insertable via "/" alongside every built-in block — no SlashMenu/BlockRegistry changes needed. */
-export function registerBlockTemplates(registry: BlockRegistry, templates: BlockTemplateDefinition[]): void;
+export function registerBlockTemplates(
+  registry: BlockRegistry,
+  templates: BlockTemplateDefinition[],
+): void;
 
 export function useTemplates(options?: { scope?: 'document' | 'block' }): {
   templates: StoredTemplate[];
@@ -434,7 +464,10 @@ export function useDocumentVersions(docId: string | null | undefined): {
  * `.be-version-diff-removed` spans. Used internally by `<VersionHistory>`'s
  * "Changes" tab; exported for building a custom version-history UI.
  */
-export function diffDocumentsHTML(prevDoc: DocumentJSON | null | undefined, nextDoc: DocumentJSON): string;
+export function diffDocumentsHTML(
+  prevDoc: DocumentJSON | null | undefined,
+  nextDoc: DocumentJSON,
+): string;
 
 export interface VersionHistoryProps {
   docId: string;
@@ -458,18 +491,37 @@ export interface CommentRange {
 }
 
 /** Creates a comment thread anchored to `range`, highlighting it and creating the thread as one atomic undo step. Returns the new comment's id. */
-export function addComment(store: EditorStore | History, range: CommentRange, message: { authorId: string; text: string }): string;
+export function addComment(
+  store: EditorStore | History,
+  range: CommentRange,
+  message: { authorId: string; text: string },
+): string;
 /** Appends a reply to an existing thread. Returns the new message's id. */
-export function replyToComment(store: EditorStore | History, commentId: string, message: { authorId: string; text: string }): string;
+export function replyToComment(
+  store: EditorStore | History,
+  commentId: string,
+  message: { authorId: string; text: string },
+): string;
 /** Flips a thread's resolved flag (defaults to true). */
-export function resolveComment(store: EditorStore | History, commentId: string, resolved?: boolean): void;
+export function resolveComment(
+  store: EditorStore | History,
+  commentId: string,
+  resolved?: boolean,
+): void;
 /** Removes a thread and strips its highlight from every run that still carries it, as one atomic undo step. */
 export function deleteComment(store: EditorStore | History, commentId: string): void;
 
 /** Computes (does not apply) the op that highlights `range` with `commentId` -- for advanced use; addComment already calls this. Returns null for a collapsed/unresolvable range. */
-export function addCommentMarkOverRange(store: EditorStore | History, range: CommentRange, commentId: string): Operation | null;
+export function addCommentMarkOverRange(
+  store: EditorStore | History,
+  range: CommentRange,
+  commentId: string,
+): Operation | null;
 /** Computes (does not apply) the ops that strip `commentId` from every run in the document that carries it. */
-export function removeCommentMarkEverywhere(store: EditorStore | History, commentId: string): Operation[];
+export function removeCommentMarkEverywhere(
+  store: EditorStore | History,
+  commentId: string,
+): Operation[];
 
 export function useComments(): CommentThread[];
 
@@ -555,7 +607,10 @@ export type BlockTypeDefinition = BlockTypeEntry;
 export type InlineTypeDefinition = InlineTypeEntry;
 
 export function registerBuiltInBlocks(registry: BlockRegistry): void;
-export function registerBlocks(registry: BlockRegistry, types: Record<string, BlockTypeDefinition>): void;
+export function registerBlocks(
+  registry: BlockRegistry,
+  types: Record<string, BlockTypeDefinition>,
+): void;
 export const TABLE_BLOCKS: Record<string, BlockTypeDefinition>;
 export const LAYOUT_BLOCKS: Record<string, BlockTypeDefinition>;
 
@@ -577,7 +632,10 @@ export const embedBlockType: BlockTypeDefinition;
 export const canvasBlockType: BlockTypeDefinition;
 
 export function registerBuiltInInlineTypes(inlineRegistry: InlineRegistry): void;
-export function registerInlineTypes(inlineRegistry: InlineRegistry, types: Record<string, InlineTypeDefinition>): void;
+export function registerInlineTypes(
+  inlineRegistry: InlineRegistry,
+  types: Record<string, InlineTypeDefinition>,
+): void;
 export const TABLE_SELECT_INLINE_TYPES: Record<string, InlineTypeDefinition>;
 
 export const selectInlineType: InlineTypeDefinition;
@@ -604,7 +662,10 @@ export interface EditorProviderProps {
   /** Whether CodeBlock renders its line-number gutter -- see useShowLineNumbers. */
   showLineNumbers?: boolean;
   /** Sends a picked/dropped EmbedBlock file somewhere real (local disk, S3, any other cloud storage) instead of inlining it as a data: URL -- see useFileUpload's own doc comment for the full contract. */
-  uploadFile?: (file: File, ctx: { kind: 'image' | 'video' | 'audio' | 'file' }) => Promise<{ src: string; name?: string; mimeType?: string }>;
+  uploadFile?: (
+    file: File,
+    ctx: { kind: 'image' | 'video' | 'audio' | 'file' },
+  ) => Promise<{ src: string; name?: string; mimeType?: string }>;
   /** Byte cap for the in-document data: URL fallback ONLY (no effect once uploadFile is configured) -- an oversized file is rejected with a clear error instead of bloating the document. */
   maxFileSize?: number;
   children?: ReactNode;
@@ -624,7 +685,10 @@ export function useCommentAuthorId(): string | undefined;
 export function useShowLineNumbers(): boolean;
 /** `{ uploadFile, maxFileSize }` from EditorProvider -- see EditorProviderProps and useFileUpload's own doc comment for the full contract. */
 export function useFileUpload(): {
-  uploadFile?: (file: File, ctx: { kind: 'image' | 'video' | 'audio' | 'file' }) => Promise<{ src: string; name?: string; mimeType?: string }>;
+  uploadFile?: (
+    file: File,
+    ctx: { kind: 'image' | 'video' | 'audio' | 'file' },
+  ) => Promise<{ src: string; name?: string; mimeType?: string }>;
   maxFileSize?: number;
 };
 export function useFieldTypeEditor(): {
@@ -632,7 +696,10 @@ export function useFieldTypeEditor(): {
   openFieldTypeEditor: (id: string | null) => void;
   closeFieldTypeEditor: () => void;
 };
-export function useBlockClassName(baseClassName: string | undefined, block: Block): string | undefined;
+export function useBlockClassName(
+  baseClassName: string | undefined,
+  block: Block,
+): string | undefined;
 
 export function injectDefaultStyles(): void;
 
@@ -661,7 +728,9 @@ export function usePersistedDocument(options: {
   onSave?: () => void;
 }): { isLoaded: boolean; save: () => Promise<void> };
 
-export function usePresence(session: CollabSession | null | undefined): Map<string, Record<string, unknown>>;
+export function usePresence(
+  session: CollabSession | null | undefined,
+): Map<string, Record<string, unknown>>;
 
 export function useServiceWorkerUpdate(): { updateAvailable: boolean; applyUpdate: () => void };
 
@@ -694,7 +763,12 @@ export const MobileActionBar: ComponentType<{ containerRef: RefObject<HTMLElemen
 export const MobileBlockPickerSheet: ComponentType<Record<string, unknown>>;
 export const MobileBlockOptionsSheet: ComponentType<Record<string, unknown>>;
 export const EditableBlockContent: ComponentType<Record<string, unknown>>;
-export const Modal: ComponentType<{ isOpen?: boolean; onClose?: () => void; children?: ReactNode; [key: string]: unknown }>;
+export const Modal: ComponentType<{
+  isOpen?: boolean;
+  onClose?: () => void;
+  children?: ReactNode;
+  [key: string]: unknown;
+}>;
 export const Select: ComponentType<Record<string, unknown>>;
 export const EditorTrailingSpace: ComponentType<Record<string, unknown>>;
 
@@ -729,13 +803,32 @@ export function deserializeClipboard(...args: unknown[]): unknown;
 export function walkDomToBlocks(...args: unknown[]): unknown;
 export function textToParagraphs(...args: unknown[]): unknown;
 /** Returns a JSON *string* (pretty-printed by default) — parse it (`JSON.parse`) to get back a plain `{ version, rootId, blocks, runs }` object usable as `useEditor({ doc })`. */
-export function exportDocumentJSON(store: EditorStore | History, options?: { pretty?: boolean }): string;
+export function exportDocumentJSON(
+  store: EditorStore | History,
+  options?: { pretty?: boolean },
+): string;
 export function exportDocumentHTML(store: EditorStore | History, registry: BlockRegistry): string;
 export function exportDocumentText(store: EditorStore | History, registry: BlockRegistry): string;
-export function exportDocumentMarkdown(store: EditorStore | History, registry: BlockRegistry, inlineRegistry?: InlineRegistry): string;
-export function exportDocumentWordHTML(store: EditorStore | History, registry: BlockRegistry, inlineRegistry?: InlineRegistry): string;
-export function exportDocumentSimpleJSON(store: EditorStore | History, registry: BlockRegistry, inlineRegistry: InlineRegistry): unknown;
-export function importDocumentSimpleJSON(json: unknown, registry: BlockRegistry, inlineRegistry: InlineRegistry): DocumentJSON;
+export function exportDocumentMarkdown(
+  store: EditorStore | History,
+  registry: BlockRegistry,
+  inlineRegistry?: InlineRegistry,
+): string;
+export function exportDocumentWordHTML(
+  store: EditorStore | History,
+  registry: BlockRegistry,
+  inlineRegistry?: InlineRegistry,
+): string;
+export function exportDocumentSimpleJSON(
+  store: EditorStore | History,
+  registry: BlockRegistry,
+  inlineRegistry: InlineRegistry,
+): unknown;
+export function importDocumentSimpleJSON(
+  json: unknown,
+  registry: BlockRegistry,
+  inlineRegistry: InlineRegistry,
+): DocumentJSON;
 export const DocumentExportButton: ComponentType<Record<string, unknown>>;
 
 // ---------------------------------------------------------------------------
@@ -763,9 +856,15 @@ export interface SlashMenuProps {
 }
 
 export const SlashMenu: ComponentType<SlashMenuProps>;
-export function useSlashMenuTrigger(containerRef: RefObject<HTMLElement | null>): CommandMenuTriggerState;
-export function useEmojiMenuTrigger(containerRef: RefObject<HTMLElement | null>): CommandMenuTriggerState;
-export function useAtMenuTrigger(containerRef: RefObject<HTMLElement | null>): CommandMenuTriggerState;
+export function useSlashMenuTrigger(
+  containerRef: RefObject<HTMLElement | null>,
+): CommandMenuTriggerState;
+export function useEmojiMenuTrigger(
+  containerRef: RefObject<HTMLElement | null>,
+): CommandMenuTriggerState;
+export function useAtMenuTrigger(
+  containerRef: RefObject<HTMLElement | null>,
+): CommandMenuTriggerState;
 
 export interface FloatingToolbarProps {
   isOpen: boolean;
@@ -861,8 +960,14 @@ export function copyBlockRangeToClipboard(...args: unknown[]): unknown;
 // ---------------------------------------------------------------------------
 
 export function createSelectFieldType(options: Record<string, unknown>): InlineTypeDefinition;
-export function registerStoredFieldTypes(inlineRegistry: InlineRegistry, fieldTypes: FieldType[]): void;
-export function useRegisterFieldTypes(inlineRegistry: InlineRegistry, fieldTypes: FieldType[]): void;
+export function registerStoredFieldTypes(
+  inlineRegistry: InlineRegistry,
+  fieldTypes: FieldType[],
+): void;
+export function useRegisterFieldTypes(
+  inlineRegistry: InlineRegistry,
+  fieldTypes: FieldType[],
+): void;
 export const FieldTypeEditorModal: ComponentType<Record<string, unknown>>;
 
 // ---------------------------------------------------------------------------
@@ -904,7 +1009,10 @@ export interface NoteloomEditorProps {
   /** Renders CommentsPanel (right-side, Notion/Google Docs-style thread list) automatically. */
   showCommentsPanel?: boolean;
   /** Sends a picked/dropped EmbedBlock file somewhere real (local disk, S3, any other cloud storage) instead of inlining it as a data: URL -- see useFileUpload's own doc comment for the full contract. */
-  uploadFile?: (file: File, ctx: { kind: 'image' | 'video' | 'audio' | 'file' }) => Promise<{ src: string; name?: string; mimeType?: string }>;
+  uploadFile?: (
+    file: File,
+    ctx: { kind: 'image' | 'video' | 'audio' | 'file' },
+  ) => Promise<{ src: string; name?: string; mimeType?: string }>;
   /** Byte cap for the in-document data: URL fallback ONLY (no effect once uploadFile is configured). */
   maxFileSize?: number;
   children?: ReactNode;
@@ -921,11 +1029,23 @@ export interface FindMatch {
 }
 
 /** Finds every occurrence of `query` in the document, in reading order — single-run matches only (see the implementation's own doc comment for scope). */
-export function findMatches(store: EditorStore | History, query: string, options?: { caseSensitive?: boolean; wholeWord?: boolean }): FindMatch[];
+export function findMatches(
+  store: EditorStore | History,
+  query: string,
+  options?: { caseSensitive?: boolean; wholeWord?: boolean },
+): FindMatch[];
 /** Replaces one match's own slice of its run's text, one atomic write. */
-export function replaceMatch(store: EditorStore | History, match: FindMatch, replacement: string): void;
+export function replaceMatch(
+  store: EditorStore | History,
+  match: FindMatch,
+  replacement: string,
+): void;
 /** Replaces every given match, one write per affected run, one atomic undo step. */
-export function replaceAllMatches(store: EditorStore | History, matches: FindMatch[], replacement: string): void;
+export function replaceAllMatches(
+  store: EditorStore | History,
+  matches: FindMatch[],
+  replacement: string,
+): void;
 
 export interface UseFindInDocumentResult {
   isOpen: boolean;
@@ -951,7 +1071,9 @@ export interface UseFindInDocumentResult {
 }
 
 /** Ctrl/Cmd+F (while `containerRef` has focus) find/replace — see NoteloomEditor's own doc comment for scope. Pair with `<FindBar>`, or build custom chrome off this hook's returned state/actions directly. */
-export function useFindInDocument(containerRef: RefObject<HTMLElement | null>): UseFindInDocumentResult;
+export function useFindInDocument(
+  containerRef: RefObject<HTMLElement | null>,
+): UseFindInDocumentResult;
 export function FindBar(props: UseFindInDocumentResult): ReactElement | null;
 
 // ---------------------------------------------------------------------------
@@ -965,8 +1087,15 @@ export interface Person {
   [key: string]: unknown;
 }
 
-export function addPerson(store: EditorStore | History, person: { name: string; color?: string }): string;
-export function updatePerson(store: EditorStore | History, id: string, patch: Partial<Person>): void;
+export function addPerson(
+  store: EditorStore | History,
+  person: { name: string; color?: string },
+): string;
+export function updatePerson(
+  store: EditorStore | History,
+  id: string,
+  patch: Partial<Person>,
+): void;
 export function removePerson(store: EditorStore | History, id: string): void;
 /** Reactive view of the document's `people` collection. */
 export function usePeople(): Person[];

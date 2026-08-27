@@ -7,18 +7,27 @@ import { BlockChildren } from '../../src/react/BlockChildren.jsx';
 import { createBlockRegistry } from '../../src/registry/blockRegistry.js';
 import { registerBuiltInBlocks } from '../../src/blocks/index.js';
 import { insertBlock, removeBlock } from '../../src/store/operations.js';
-import { createCalloutBlock, DEFAULT_CALLOUT_ICON } from '../../src/blocks/callout/createCalloutBlock.js';
+import {
+  createCalloutBlock,
+  DEFAULT_CALLOUT_ICON,
+} from '../../src/blocks/callout/createCalloutBlock.js';
 import { serializeBlockRange, remapSubtreeIds } from '../../src/clipboard/serialize.js';
 import { deleteOverBlockRange } from '../../src/inline/deleteCommands.js';
 import { mergeWithPreviousOrDelete } from '../../src/blocks/shared/mergeCommands.js';
 
 function emptyDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function insertAtRoot(store, factory, index = 0) {
   const { block, runs = [], subtreeBlocks = [] } = factory('root');
-  store.applyOperation(insertBlock(block, 'root', index, { blocks: [block, ...subtreeBlocks], runs }));
+  store.applyOperation(
+    insertBlock(block, 'root', index, { blocks: [block, ...subtreeBlocks], runs }),
+  );
   return block.id;
 }
 
@@ -133,9 +142,15 @@ describe('callout block: clipboard round-trip', () => {
     const callout = store.getBlock(calloutId);
     const childId = callout.contentIds[0];
     const child = store.getBlock(childId);
-    store.applyOperation({ type: 'updateRun', id: child.contentIds[0], patch: { value: 'remember this' } });
+    store.applyOperation({
+      type: 'updateRun',
+      id: child.contentIds[0],
+      patch: { value: 'remember this' },
+    });
 
-    const text = registry.get('callout').toPlainText(store.getBlock(calloutId), { store, registry });
+    const text = registry
+      .get('callout')
+      .toPlainText(store.getBlock(calloutId), { store, registry });
     expect(text).toBe('📌 remember this');
   });
 
@@ -162,14 +177,26 @@ describe('callout block: cross-block selection delete removes it as one unit', (
   it('deleteOverBlockRange spanning a callout sibling removes the whole callout subtree', () => {
     const store = new EditorStore(emptyDoc());
     const beforeId = insertAtRoot(store, () => ({
-      block: { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
+      block: {
+        id: 'before',
+        type: 'paragraph',
+        parentId: 'root',
+        contentIds: ['r-before'],
+        props: {},
+      },
       runs: [{ id: 'r-before', type: 'text', value: 'before', marks: {} }],
     }));
     const calloutId = insertAtRoot(store, createCalloutBlock({ icon: '📌' }), 1);
     const afterId = insertAtRoot(
       store,
       () => ({
-        block: { id: 'after', type: 'paragraph', parentId: 'root', contentIds: ['r-after'], props: {} },
+        block: {
+          id: 'after',
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: ['r-after'],
+          props: {},
+        },
         runs: [{ id: 'r-after', type: 'text', value: 'after', marks: {} }],
       }),
       2,
@@ -202,7 +229,13 @@ describe('callout block: an empty callout is removed entirely on Backspace', () 
   it('backspacing the sole empty paragraph removes the whole callout, not just leaving an empty box', () => {
     const store = new EditorStore(emptyDoc());
     const beforeId = insertAtRoot(store, () => ({
-      block: { id: 'before', type: 'paragraph', parentId: 'root', contentIds: ['r-before'], props: {} },
+      block: {
+        id: 'before',
+        type: 'paragraph',
+        parentId: 'root',
+        contentIds: ['r-before'],
+        props: {},
+      },
       runs: [{ id: 'r-before', type: 'text', value: 'before', marks: {} }],
     }));
     const calloutId = insertAtRoot(store, createCalloutBlock(), 1);

@@ -94,7 +94,10 @@ export function useTextFormattingActions(store, kind, selection, crossSelection,
     [store],
   );
 
-  const handleSaveLink = useCallback((href, target) => applyLinkPatch({ link: { href, target } }), [applyLinkPatch]);
+  const handleSaveLink = useCallback(
+    (href, target) => applyLinkPatch({ link: { href, target } }),
+    [applyLinkPatch],
+  );
   const handleRemoveLink = useCallback(() => applyLinkPatch({ link: null }), [applyLinkPatch]);
 
   return {

@@ -23,7 +23,13 @@ const emptyDoc = { rootId: 'r', blocks: [], runs: [] };
 
 describe('useDocumentVersions', () => {
   it('starts not loaded, then loads whatever is currently stored for docId', async () => {
-    await saveDocumentVersion({ id: 'uv-1', docId: 'doc-a', timestamp: 1, label: 'First Save', doc: emptyDoc });
+    await saveDocumentVersion({
+      id: 'uv-1',
+      docId: 'doc-a',
+      timestamp: 1,
+      label: 'First Save',
+      doc: emptyDoc,
+    });
 
     render(<Harness docId="doc-a" />);
     await waitFor(() => expect(screen.getByTestId('loaded').textContent).toBe('true'));
@@ -31,8 +37,20 @@ describe('useDocumentVersions', () => {
   });
 
   it('only shows versions for the given docId', async () => {
-    await saveDocumentVersion({ id: 'uv-mine', docId: 'doc-b', timestamp: 1, label: 'Mine', doc: emptyDoc });
-    await saveDocumentVersion({ id: 'uv-other', docId: 'doc-other', timestamp: 1, label: 'Other', doc: emptyDoc });
+    await saveDocumentVersion({
+      id: 'uv-mine',
+      docId: 'doc-b',
+      timestamp: 1,
+      label: 'Mine',
+      doc: emptyDoc,
+    });
+    await saveDocumentVersion({
+      id: 'uv-other',
+      docId: 'doc-other',
+      timestamp: 1,
+      label: 'Other',
+      doc: emptyDoc,
+    });
 
     render(<Harness docId="doc-b" />);
     await waitFor(() => expect(screen.getByTestId('loaded').textContent).toBe('true'));
@@ -45,7 +63,13 @@ describe('useDocumentVersions', () => {
     await waitFor(() => expect(screen.getByTestId('loaded').textContent).toBe('true'));
     expect(screen.queryByText('Appeared Later')).toBeNull();
 
-    await saveDocumentVersion({ id: 'uv-later', docId: 'doc-c', timestamp: 1, label: 'Appeared Later', doc: emptyDoc });
+    await saveDocumentVersion({
+      id: 'uv-later',
+      docId: 'doc-c',
+      timestamp: 1,
+      label: 'Appeared Later',
+      doc: emptyDoc,
+    });
     fireEvent.click(screen.getByText('refresh'));
 
     await waitFor(() => expect(screen.queryByText('Appeared Later')).not.toBeNull());

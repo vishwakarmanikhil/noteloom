@@ -41,7 +41,12 @@ export { createAutoPersistence } from './persistence/autoPersist.js';
 // (saveTemplate/loadTemplate/deleteTemplate/listTemplates, above) is shared
 // between both; capture/insert are block-scope-specific since a document
 // template needs no new primitives beyond exportDocumentJSON/useEditor.
-export { captureBlockTemplate, insertBlockTemplate, applyDocumentTemplate, registerBlockTemplates } from './templates/blockTemplates.js';
+export {
+  captureBlockTemplate,
+  insertBlockTemplate,
+  applyDocumentTemplate,
+  registerBlockTemplates,
+} from './templates/blockTemplates.js';
 export { useTemplates } from './react/useTemplates.js';
 export { TemplatePicker } from './react/TemplatePicker.jsx';
 
@@ -85,7 +90,12 @@ export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.
 // instead — none of this is an all-or-nothing choice, since
 // registerBuiltInBlocks(registry) is itself just `registerBlocks(registry,
 // { paragraph: paragraphBlockType, ... })` under the hood.
-export { registerBuiltInBlocks, registerBlocks, TABLE_BLOCKS, LAYOUT_BLOCKS } from './blocks/index.js';
+export {
+  registerBuiltInBlocks,
+  registerBlocks,
+  TABLE_BLOCKS,
+  LAYOUT_BLOCKS,
+} from './blocks/index.js';
 export {
   paragraphBlockType,
   headingBlockType,
@@ -105,7 +115,11 @@ export {
   canvasBlockType,
 } from './blocks/index.js';
 
-export { registerBuiltInInlineTypes, registerInlineTypes, TABLE_SELECT_INLINE_TYPES } from './inlineTypes/index.js';
+export {
+  registerBuiltInInlineTypes,
+  registerInlineTypes,
+  TABLE_SELECT_INLINE_TYPES,
+} from './inlineTypes/index.js';
 export {
   selectInlineType,
   dateInlineType,
@@ -208,7 +222,12 @@ export {
   sortTableByColumn,
   setColumnAggregate,
 } from './blocks/table/tableEditCommands.js';
-export { computeColumnAggregate, formatAggregateValue, AGGREGATE_TYPES, AGGREGATE_LABELS } from './blocks/table/tableView.js';
+export {
+  computeColumnAggregate,
+  formatAggregateValue,
+  AGGREGATE_TYPES,
+  AGGREGATE_LABELS,
+} from './blocks/table/tableView.js';
 export {
   resolveColumns,
   createDefaultColumns,
@@ -231,12 +250,26 @@ export {
   getMarksSummaryOverSelection,
   getMarksSummaryOverBlockRange,
 } from './inline/markCommands.js';
-export { deleteRunRangeInBlock, deleteOverBlockRange, deleteEntireDocument } from './inline/deleteCommands.js';
-export { resolveRunSelection, resolveMultiRunSelection, resolveCrossBlockSelection, resolveCollapsedCaret } from './react/selectionResolve.js';
+export {
+  deleteRunRangeInBlock,
+  deleteOverBlockRange,
+  deleteEntireDocument,
+} from './inline/deleteCommands.js';
+export {
+  resolveRunSelection,
+  resolveMultiRunSelection,
+  resolveCrossBlockSelection,
+  resolveCollapsedCaret,
+} from './react/selectionResolve.js';
 export { isEntireBlockSelected } from './react/selectAllCommand.js';
 export { focusRunEnd, focusRunStart, focusRunAtOffset } from './react/focusRun.js';
 export { ensureRootNonEmpty } from './blocks/shared/ensureRootNonEmpty.js';
-export { duplicateBlock, moveBlockUp, moveBlockDown, deleteBlockAndFocusSibling } from './blocks/shared/blockActions.js';
+export {
+  duplicateBlock,
+  moveBlockUp,
+  moveBlockDown,
+  deleteBlockAndFocusSibling,
+} from './blocks/shared/blockActions.js';
 export {
   deleteBlockRange,
   moveBlockRangeUp,

@@ -15,7 +15,10 @@ function applyOps(store, ops) {
  */
 export function deleteBlockRange(store, blockIds) {
   if (blockIds.length === 0) return;
-  applyOps(store, blockIds.map((id) => removeBlock(id)));
+  applyOps(
+    store,
+    blockIds.map((id) => removeBlock(id)),
+  );
 }
 
 /**
@@ -66,7 +69,10 @@ export function isEntireBlockRangeHidden(store, blockIds) {
 /** Sets props.hidden on every block in the range, one atomic undo step. */
 export function setBlockRangeHidden(store, blockIds, hidden) {
   if (blockIds.length === 0) return;
-  applyOps(store, blockIds.map((id) => updateBlockProps(id, { hidden })));
+  applyOps(
+    store,
+    blockIds.map((id) => updateBlockProps(id, { hidden })),
+  );
 }
 
 /**

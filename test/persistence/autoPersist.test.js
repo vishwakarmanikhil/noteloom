@@ -53,7 +53,11 @@ describe('createAutoPersistence', () => {
 
   it('works with a History-wrapped store too (History delegates subscribeAll/toJSON to the underlying EditorStore)', async () => {
     const history = new History(new EditorStore(makeDoc()));
-    const { stop } = createAutoPersistence({ store: history, docId: 'debounce-test-history', debounceMs: 50 });
+    const { stop } = createAutoPersistence({
+      store: history,
+      docId: 'debounce-test-history',
+      debounceMs: 50,
+    });
 
     history.perform(updateRun('r1', { value: 'via history' }));
     await wait(150);
@@ -67,7 +71,11 @@ describe('createAutoPersistence', () => {
   it('remote edits (applyRemoteOperation) also trigger a save, since subscribeAll does not distinguish local from remote', async () => {
     const store = new EditorStore(makeDoc());
     const remoteStore = new EditorStore(makeDoc());
-    const { stop } = createAutoPersistence({ store, docId: 'debounce-test-remote', debounceMs: 50 });
+    const { stop } = createAutoPersistence({
+      store,
+      docId: 'debounce-test-remote',
+      debounceMs: 50,
+    });
 
     remoteStore.applyOperation(updateRun('r1', { value: 'from a peer' }));
     store.applyRemoteOperation(remoteStore.getLastEnvelope());
@@ -81,7 +89,11 @@ describe('createAutoPersistence', () => {
 
   it('flush() saves immediately without waiting for the debounce window', async () => {
     const store = new EditorStore(makeDoc());
-    const { stop, flush } = createAutoPersistence({ store, docId: 'debounce-test-flush', debounceMs: 5000 });
+    const { stop, flush } = createAutoPersistence({
+      store,
+      docId: 'debounce-test-flush',
+      debounceMs: 5000,
+    });
 
     store.applyOperation(updateRun('r1', { value: 'flushed' }));
     flush();
@@ -95,7 +107,11 @@ describe('createAutoPersistence', () => {
 
   it('flush() returns a Promise that resolves once the write actually lands', async () => {
     const store = new EditorStore(makeDoc());
-    const { stop, flush } = createAutoPersistence({ store, docId: 'debounce-test-flush-promise', debounceMs: 5000 });
+    const { stop, flush } = createAutoPersistence({
+      store,
+      docId: 'debounce-test-flush-promise',
+      debounceMs: 5000,
+    });
 
     store.applyOperation(updateRun('r1', { value: 'flushed' }));
     await flush(); // no separate wait(...) needed -- awaiting flush() itself is enough
@@ -108,7 +124,11 @@ describe('createAutoPersistence', () => {
 
   it('flush() resolves immediately (a no-op) when nothing is pending', async () => {
     const store = new EditorStore(makeDoc());
-    const { stop, flush } = createAutoPersistence({ store, docId: 'debounce-test-flush-noop', debounceMs: 50 });
+    const { stop, flush } = createAutoPersistence({
+      store,
+      docId: 'debounce-test-flush-noop',
+      debounceMs: 50,
+    });
 
     await expect(flush()).resolves.toBeUndefined();
     expect(await loadPersistedDocument('debounce-test-flush-noop')).toBeNull();

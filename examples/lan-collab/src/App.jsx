@@ -28,12 +28,23 @@ function makeStarterDoc() {
     rootId: 'root',
     blocks: [
       { id: 'root', type: 'page', parentId: null, contentIds: ['title', 'body'], props: {} },
-      { id: 'title', type: 'heading', parentId: 'root', contentIds: ['rTitle'], props: { level: 2 } },
+      {
+        id: 'title',
+        type: 'heading',
+        parentId: 'root',
+        contentIds: ['rTitle'],
+        props: { level: 2 },
+      },
       { id: 'body', type: 'paragraph', parentId: 'root', contentIds: ['rBody'], props: {} },
     ],
     runs: [
       { id: 'rTitle', type: 'text', value: 'LAN collaboration (WebSocket relay)', marks: {} },
-      { id: 'rBody', type: 'text', value: 'Type here — edits sync live to every other peer in this room.', marks: {} },
+      {
+        id: 'rBody',
+        type: 'text',
+        value: 'Type here — edits sync live to every other peer in this room.',
+        marks: {},
+      },
     ],
   };
 }
@@ -98,7 +109,10 @@ function PeerCursors({ session }) {
         const host = document.querySelector(`[data-run-id="${data.runId}"]`);
         const textNode = host?.firstChild;
         if (!textNode) return null;
-        const safeOffset = Math.max(0, Math.min(data.offset ?? 0, textNode.textContent?.length ?? 0));
+        const safeOffset = Math.max(
+          0,
+          Math.min(data.offset ?? 0, textNode.textContent?.length ?? 0),
+        );
         const range = document.createRange();
         try {
           range.setStart(textNode, safeOffset);
@@ -113,7 +127,13 @@ function PeerCursors({ session }) {
           <div
             key={peerId}
             className="collab-peer-cursor"
-            style={{ position: 'fixed', top: rect.top, left: rect.left, height: rect.height || '1em', background: color }}
+            style={{
+              position: 'fixed',
+              top: rect.top,
+              left: rect.left,
+              height: rect.height || '1em',
+              background: color,
+            }}
           >
             <span className="collab-peer-cursor-label" style={{ background: color }}>
               {peerId.slice(0, 8)}
@@ -175,7 +195,9 @@ function Toolbar() {
       <button type="button" disabled={!history.canRedo} onClick={history.redo}>
         Redo
       </button>
-      <span className="collab-toolbar-note">Undo only ever affects your own edits — never a peer's.</span>
+      <span className="collab-toolbar-note">
+        Undo only ever affects your own edits — never a peer's.
+      </span>
     </div>
   );
 }
@@ -205,7 +227,13 @@ function EditorSurface({ session }) {
   }, [session]);
 
   return (
-    <div ref={containerRef} className="collab-surface" onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
+    <div
+      ref={containerRef}
+      className="collab-surface"
+      onCopy={onCopy}
+      onCut={onCut}
+      onPaste={onPaste}
+    >
       <Toolbar />
       <BlockChildren parentId="root" />
       <SlashMenu
@@ -285,7 +313,11 @@ export function App() {
         resetStoreToEmpty(store);
       }
 
-      const signaling = createWebSocketSignaling({ url: RELAY_URL, roomId: ROOM_ID, peerId: localPeerId });
+      const signaling = createWebSocketSignaling({
+        url: RELAY_URL,
+        roomId: ROOM_ID,
+        peerId: localPeerId,
+      });
       const collabSession = new CollabSession({ history: store, signaling });
       currentSignaling = signaling;
       currentSession = collabSession;
@@ -382,7 +414,9 @@ export function App() {
       // connection problems generically via a short grace period instead.
       const noConnectionTimeout = setTimeout(() => {
         if (!hasContent() && knownPeerIds.size === 0) {
-          setConnectionError((prev) => prev ?? 'no response from the relay yet — check it is running and reachable');
+          setConnectionError(
+            (prev) => prev ?? 'no response from the relay yet — check it is running and reachable',
+          );
         }
       }, 4000);
 
@@ -436,7 +470,12 @@ export function App() {
   }, []);
 
   return (
-    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store}>
+    <EditorProvider
+      store={store}
+      registry={registry}
+      inlineRegistry={inlineRegistry}
+      history={store}
+    >
       <div className="collab-page">
         <ConnectionStatus
           localPeerId={localPeerId}
@@ -444,7 +483,11 @@ export function App() {
           connectionError={connectionError}
           status={status}
         />
-        {isReady ? <EditorSurface session={session} /> : <p className="collab-loading">Joining room…</p>}
+        {isReady ? (
+          <EditorSurface session={session} />
+        ) : (
+          <p className="collab-loading">Joining room…</p>
+        )}
       </div>
     </EditorProvider>
   );

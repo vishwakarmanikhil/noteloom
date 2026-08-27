@@ -58,7 +58,12 @@ export function applyDocumentTemplate(store, doc) {
   // useFieldTypes/useComments subscribe to -- without them, a restored
   // template/version's field types or comments wouldn't refresh a
   // currently-mounted list for either, even though the underlying Maps did change.
-  rawStore._notify([...rawStore.blocks.keys(), ...rawStore.runs.keys(), '$fieldTypes', '$comments']);
+  rawStore._notify([
+    ...rawStore.blocks.keys(),
+    ...rawStore.runs.keys(),
+    '$fieldTypes',
+    '$comments',
+  ]);
 }
 
 /**
@@ -84,7 +89,9 @@ export function registerBlockTemplates(registry, templates) {
           // clear the "/query" text that triggered this, same as every other block's slashCommand
           const run = store.getRun(runId);
           const value = run?.value ?? '';
-          store.applyOperation(updateRun(runId, { value: value.slice(0, sliceStart) + value.slice(sliceEnd) }));
+          store.applyOperation(
+            updateRun(runId, { value: value.slice(0, sliceStart) + value.slice(sliceEnd) }),
+          );
 
           const current = store.getBlock(blockId);
           const parent = store.getBlock(current.parentId);

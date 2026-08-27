@@ -24,14 +24,23 @@ function cellToPlainText(block, ctx) {
 // newline (breaks the table entirely) — escape/replace those on top of the
 // normal inline-marks escaping runsToMarkdown already does.
 function cellToMarkdown(block, ctx) {
-  const raw = runsToMarkdown(block.contentIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  const raw = runsToMarkdown(
+    block.contentIds.map((runId) => ctx.store.getRun(runId)),
+    ctx,
+  );
   return raw.replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
 }
 
 function cellFromHTML(node, ctx) {
   if (node.tagName !== 'TD' && node.tagName !== 'TH') return null;
   const runs = domInlineToRuns(node, ctx);
-  const block = { id: genId(), type: 'tableCell', parentId: null, contentIds: runs.map((r) => r.id), props: {} };
+  const block = {
+    id: genId(),
+    type: 'tableCell',
+    parentId: null,
+    contentIds: runs.map((r) => r.id),
+    props: {},
+  };
   return { block, runs };
 }
 
@@ -162,7 +171,9 @@ function tableFromHTML(node, ctx) {
 
   const props = {};
   if (theadRow) {
-    const headerCells = [...theadRow.children].filter((c) => c.tagName === 'TH' || c.tagName === 'TD');
+    const headerCells = [...theadRow.children].filter(
+      (c) => c.tagName === 'TH' || c.tagName === 'TD',
+    );
     props.columns = headerCells.map((cell) => ({ id: genId(), label: cell.textContent ?? '' }));
   }
 
@@ -202,6 +213,7 @@ export const tableBlockType = {
     label: 'Table',
     icon: TableIcon,
     keywords: ['table', 'grid'],
-    run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTableBlock({ rows: 2, cols: 2 })),
+    run: (store, ctx) =>
+      trimSlashQueryAndInsertAfter(store, ctx, createTableBlock({ rows: 2, cols: 2 })),
   },
 };

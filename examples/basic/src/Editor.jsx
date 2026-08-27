@@ -28,7 +28,9 @@ export function Editor() {
           { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
           { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
         ],
-        runs: [{ id: 'r1', type: 'text', value: 'Hello — try typing "/" for commands.', marks: {} }],
+        runs: [
+          { id: 'r1', type: 'text', value: 'Hello — try typing "/" for commands.', marks: {} },
+        ],
       }),
     );
     return { store, registry, inlineRegistry };
@@ -39,7 +41,12 @@ export function Editor() {
   useEditorKeyboardShortcuts(containerRef);
 
   return (
-    <EditorProvider store={store} registry={registry} inlineRegistry={inlineRegistry} history={store}>
+    <EditorProvider
+      store={store}
+      registry={registry}
+      inlineRegistry={inlineRegistry}
+      history={store}
+    >
       <div ref={containerRef} onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
         <BlockChildren parentId="root" />
         <SlashMenu

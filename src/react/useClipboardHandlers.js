@@ -1,11 +1,26 @@
 import { useCallback } from 'react';
-import { useEditorStore, useBlockRegistry, useInlineRegistry, useWholeDocumentSelection, useBlockRangeSelection, useFileUpload } from './EditorProvider.jsx';
+import {
+  useEditorStore,
+  useBlockRegistry,
+  useInlineRegistry,
+  useWholeDocumentSelection,
+  useBlockRangeSelection,
+  useFileUpload,
+} from './EditorProvider.jsx';
 import { serializeBlockRange } from '../clipboard/serialize.js';
 import { deserializeClipboard } from '../clipboard/deserialize.js';
 import { APP_MIME } from '../clipboard/mimeType.js';
 import { insertBlock, removeBlock, updateRun } from '../store/operations.js';
-import { resolveMultiRunSelection, resolveCrossBlockSelection, resolveCollapsedCaret } from './selectionResolve.js';
-import { deleteRunRangeInBlock, deleteOverBlockRange, deleteEntireDocument } from '../inline/deleteCommands.js';
+import {
+  resolveMultiRunSelection,
+  resolveCrossBlockSelection,
+  resolveCollapsedCaret,
+} from './selectionResolve.js';
+import {
+  deleteRunRangeInBlock,
+  deleteOverBlockRange,
+  deleteEntireDocument,
+} from '../inline/deleteCommands.js';
 import { deleteBlockRange } from '../blocks/shared/blockRangeActions.js';
 import { focusRunAtOffset } from './focusRun.js';
 import { resolveFileToEmbedInsert } from '../blocks/embed/resolveFileEmbed.js';
@@ -145,7 +160,14 @@ export function useClipboardHandlers() {
       const result = deleteCurrentSelection(store);
       if (result?.runId) focusRunAtOffset(result.runId, result.offset);
     },
-    [onCopy, store, isWholeDocumentSelected, setIsWholeDocumentSelected, selectedBlockRange, setSelectedBlockRange],
+    [
+      onCopy,
+      store,
+      isWholeDocumentSelected,
+      setIsWholeDocumentSelected,
+      selectedBlockRange,
+      setSelectedBlockRange,
+    ],
   );
 
   // A raw image/media file straight off the OS clipboard (a screenshot, an
@@ -159,7 +181,9 @@ export function useClipboardHandlers() {
   // than aborting the whole paste — the rest still land.
   const insertPastedFiles = useCallback(
     async (files) => {
-      const settled = await Promise.allSettled(files.map((file) => resolveFileToEmbedInsert(file, { uploadFile, maxFileSize })));
+      const settled = await Promise.allSettled(
+        files.map((file) => resolveFileToEmbedInsert(file, { uploadFile, maxFileSize })),
+      );
       const inserts = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
       if (inserts.length === 0) return;
 
@@ -170,7 +194,9 @@ export function useClipboardHandlers() {
         let rootIndex = 0;
         for (const { block, runs, subtreeBlocks = [] } of inserts) {
           block.parentId = rootId;
-          ops.push(insertBlock(block, rootId, rootIndex, { blocks: [block, ...subtreeBlocks], runs }));
+          ops.push(
+            insertBlock(block, rootId, rootIndex, { blocks: [block, ...subtreeBlocks], runs }),
+          );
           rootIndex += 1;
         }
         applyOps(store, ops);
@@ -187,7 +213,9 @@ export function useClipboardHandlers() {
         const ops = selectedBlockRange.map((id) => removeBlock(id));
         for (const { block, runs, subtreeBlocks = [] } of inserts) {
           block.parentId = parentId;
-          ops.push(insertBlock(block, parentId, index, { blocks: [block, ...subtreeBlocks], runs }));
+          ops.push(
+            insertBlock(block, parentId, index, { blocks: [block, ...subtreeBlocks], runs }),
+          );
           index += 1;
         }
         applyOps(store, ops);
@@ -196,7 +224,8 @@ export function useClipboardHandlers() {
       }
 
       const deleteResult = deleteCurrentSelection(store);
-      const atBlockId = deleteResult?.blockId ?? closestBlockId(window.getSelection?.()?.anchorNode);
+      const atBlockId =
+        deleteResult?.blockId ?? closestBlockId(window.getSelection?.()?.anchorNode);
       if (!atBlockId) return;
       const current = store.getBlock(atBlockId);
       if (!current) return;
@@ -206,12 +235,22 @@ export function useClipboardHandlers() {
       const insertOps = [];
       for (const { block, runs, subtreeBlocks = [] } of inserts) {
         block.parentId = current.parentId;
-        insertOps.push(insertBlock(block, current.parentId, index, { blocks: [block, ...subtreeBlocks], runs }));
+        insertOps.push(
+          insertBlock(block, current.parentId, index, { blocks: [block, ...subtreeBlocks], runs }),
+        );
         index += 1;
       }
       applyOps(store, insertOps);
     },
-    [store, uploadFile, maxFileSize, isWholeDocumentSelected, setIsWholeDocumentSelected, selectedBlockRange, setSelectedBlockRange],
+    [
+      store,
+      uploadFile,
+      maxFileSize,
+      isWholeDocumentSelected,
+      setIsWholeDocumentSelected,
+      selectedBlockRange,
+      setSelectedBlockRange,
+    ],
   );
 
   const onPaste = useCallback(
@@ -238,7 +277,9 @@ export function useClipboardHandlers() {
         let rootIndex = 0;
         for (const { block, runs, subtreeBlocks = [] } of inserts) {
           block.parentId = rootId;
-          ops.push(insertBlock(block, rootId, rootIndex, { blocks: [block, ...subtreeBlocks], runs }));
+          ops.push(
+            insertBlock(block, rootId, rootIndex, { blocks: [block, ...subtreeBlocks], runs }),
+          );
           rootIndex += 1;
         }
         applyOps(store, ops);
@@ -259,7 +300,9 @@ export function useClipboardHandlers() {
         const ops = selectedBlockRange.map((id) => removeBlock(id));
         for (const { block, runs, subtreeBlocks = [] } of inserts) {
           block.parentId = parentId;
-          ops.push(insertBlock(block, parentId, index, { blocks: [block, ...subtreeBlocks], runs }));
+          ops.push(
+            insertBlock(block, parentId, index, { blocks: [block, ...subtreeBlocks], runs }),
+          );
           index += 1;
         }
         applyOps(store, ops);
@@ -283,11 +326,17 @@ export function useClipboardHandlers() {
       // block(s) after the current one; splitting the current block
       // around it is a further follow-up.
       const isSimpleTextPaste =
-        inserts.length === 1 && inserts[0].runs.every((r) => r.type === 'text') && (inserts[0].subtreeBlocks ?? []).length === 0;
+        inserts.length === 1 &&
+        inserts[0].runs.every((r) => r.type === 'text') &&
+        (inserts[0].subtreeBlocks ?? []).length === 0;
 
       if (isSimpleTextPaste) {
         const caret = deleteResult
-          ? { blockId: deleteResult.blockId, runId: deleteResult.runId, offset: deleteResult.offset }
+          ? {
+              blockId: deleteResult.blockId,
+              runId: deleteResult.runId,
+              offset: deleteResult.offset,
+            }
           : resolveCollapsedCaret();
         if (caret) {
           const text = inserts[0].runs.map((r) => r.value).join('');
@@ -300,7 +349,8 @@ export function useClipboardHandlers() {
         }
       }
 
-      const atBlockId = deleteResult?.blockId ?? closestBlockId(window.getSelection?.()?.anchorNode);
+      const atBlockId =
+        deleteResult?.blockId ?? closestBlockId(window.getSelection?.()?.anchorNode);
       if (!atBlockId) return;
 
       const current = store.getBlock(atBlockId);
@@ -311,7 +361,9 @@ export function useClipboardHandlers() {
       const insertOps = [];
       for (const { block, runs, subtreeBlocks = [] } of inserts) {
         block.parentId = current.parentId;
-        insertOps.push(insertBlock(block, current.parentId, index, { blocks: [block, ...subtreeBlocks], runs }));
+        insertOps.push(
+          insertBlock(block, current.parentId, index, { blocks: [block, ...subtreeBlocks], runs }),
+        );
         index += 1;
       }
       // One atomic undo step for the whole paste, regardless of how many
@@ -320,7 +372,16 @@ export function useClipboardHandlers() {
 
       event.preventDefault();
     },
-    [store, registry, inlineRegistry, isWholeDocumentSelected, setIsWholeDocumentSelected, selectedBlockRange, setSelectedBlockRange, insertPastedFiles],
+    [
+      store,
+      registry,
+      inlineRegistry,
+      isWholeDocumentSelected,
+      setIsWholeDocumentSelected,
+      selectedBlockRange,
+      setSelectedBlockRange,
+      insertPastedFiles,
+    ],
   );
 
   return { onCopy, onCut, onPaste };

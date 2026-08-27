@@ -4,7 +4,11 @@ import { History } from '../../src/store/history.js';
 import { applyVoiceAction } from '../../src/voice/applyVoiceAction.js';
 import { updateRun } from '../../src/store/operations.js';
 
-vi.mock('../../src/react/focusRun.js', () => ({ focusRunEnd: vi.fn(), focusRunStart: vi.fn(), focusRunAtOffset: vi.fn() }));
+vi.mock('../../src/react/focusRun.js', () => ({
+  focusRunEnd: vi.fn(),
+  focusRunStart: vi.fn(),
+  focusRunAtOffset: vi.fn(),
+}));
 vi.mock('../../src/blocks/shared/navigationCommands.js', async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, focusBlockStart: vi.fn() };
@@ -36,7 +40,11 @@ describe('applyVoiceAction: insertParagraph', () => {
 describe('applyVoiceAction: convertBlock', () => {
   it('converts the current block to the target type, preserving already-dictated text', () => {
     const store = new EditorStore(makeDoc());
-    applyVoiceAction(store, 'p1', { type: 'convertBlock', blockType: 'heading', props: { level: 1 } });
+    applyVoiceAction(store, 'p1', {
+      type: 'convertBlock',
+      blockType: 'heading',
+      props: { level: 1 },
+    });
 
     const newBlockId = store.getBlock('root').contentIds[0];
     const newBlock = store.getBlock(newBlockId);
@@ -63,7 +71,11 @@ describe('applyVoiceAction: convertBlock', () => {
   it('is a no-op when the block no longer exists', () => {
     const store = new EditorStore(makeDoc());
     expect(() =>
-      applyVoiceAction(store, 'does-not-exist', { type: 'convertBlock', blockType: 'heading', props: { level: 1 } }),
+      applyVoiceAction(store, 'does-not-exist', {
+        type: 'convertBlock',
+        blockType: 'heading',
+        props: { level: 1 },
+      }),
     ).not.toThrow();
     expect(store.getBlock('p1')).toBeDefined(); // untouched
   });

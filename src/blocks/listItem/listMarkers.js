@@ -44,7 +44,11 @@ function toRoman(n) {
  * numbering/bullet-style cycling at all.
  */
 function isPlainMarkerItem(block) {
-  return block?.type === 'listItem' && block.props?.checked === undefined && block.props?.collapsed === undefined;
+  return (
+    block?.type === 'listItem' &&
+    block.props?.checked === undefined &&
+    block.props?.collapsed === undefined
+  );
 }
 
 /**

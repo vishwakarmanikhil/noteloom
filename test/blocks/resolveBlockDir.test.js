@@ -19,12 +19,12 @@ describe('resolveBlockDir', () => {
     expect(resolveBlockDir(store, store.getBlock('p1'))).toBe('auto');
   });
 
-  it('falls back to the document root\'s dir when the block has none of its own', () => {
+  it("falls back to the document root's dir when the block has none of its own", () => {
     const store = new EditorStore(makeDoc({ dir: 'rtl' }));
     expect(resolveBlockDir(store, store.getBlock('p1'))).toBe('rtl');
   });
 
-  it('a block\'s own dir override takes precedence over the root\'s', () => {
+  it("a block's own dir override takes precedence over the root's", () => {
     const store = new EditorStore(makeDoc({ dir: 'rtl' }, { dir: 'ltr' }));
     expect(resolveBlockDir(store, store.getBlock('p1'))).toBe('ltr');
   });

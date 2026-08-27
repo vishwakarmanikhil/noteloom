@@ -50,11 +50,14 @@ function Harness() {
 function renderHarness(store) {
   const registry = createBlockRegistry();
   registerBuiltInBlocks(registry);
-  return { ...render(
-    <EditorProvider store={store} registry={registry}>
-      <Harness />
-    </EditorProvider>,
-  ), registry };
+  return {
+    ...render(
+      <EditorProvider store={store} registry={registry}>
+        <Harness />
+      </EditorProvider>,
+    ),
+    registry,
+  };
 }
 
 function renderHarnessWithUpload(store, uploadOptions) {
@@ -97,7 +100,16 @@ function renderFullHarness(store) {
 // our own code acts on.
 function selectEntireDocumentViaCtrlA(runNode) {
   selectWithinRunNode(runNode, 0, runNode.textContent.length);
-  act(() => runNode.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true, cancelable: true })));
+  act(() =>
+    runNode.dispatchEvent(
+      new window.KeyboardEvent('keydown', {
+        key: 'a',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    ),
+  );
 }
 
 function selectWithinRunNode(runNode, start, end) {
@@ -344,7 +356,7 @@ describe('useClipboardHandlers: pasting a raw file straight off the clipboard (s
 });
 
 describe('useClipboardHandlers: leaves plain <input>/<textarea> fields (embed URL box, FindBar, modals, ...) alone', () => {
-  it('pasting into the embed block\'s own URL input does not hijack it into inserting a new block elsewhere in the document', () => {
+  it("pasting into the embed block's own URL input does not hijack it into inserting a new block elsewhere in the document", () => {
     const store = new EditorStore(makeTwoParagraphDoc());
     const { block, runs = [] } = createEmbedBlock({ kind: 'file' })('root');
     store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block], runs }));
@@ -363,7 +375,7 @@ describe('useClipboardHandlers: leaves plain <input>/<textarea> fields (embed UR
     expect(store.getBlock('root').contentIds).toEqual([block.id, 'p1', 'p2']);
   });
 
-  it('copying/cutting inside a plain input is also left alone (the field\'s own native selection, not a block-range serialization)', () => {
+  it("copying/cutting inside a plain input is also left alone (the field's own native selection, not a block-range serialization)", () => {
     const store = new EditorStore(makeTwoParagraphDoc());
     const { block, runs = [] } = createEmbedBlock({ kind: 'file' })('root');
     store.applyOperation(insertBlock(block, 'root', 0, { blocks: [block], runs }));
@@ -496,7 +508,7 @@ describe('useClipboardHandlers: a drag-selected block range takes priority over 
     expect(store.getBlock('root').contentIds).toEqual(['p1', 'p2']);
   });
 
-  it('Paste replaces the range with the pasted content, starting at the range\'s former position', () => {
+  it("Paste replaces the range with the pasted content, starting at the range's former position", () => {
     const store = new History(new EditorStore(makeTwoParagraphDoc()));
     const { container } = renderRangeHarness(store, ['p1']);
 

@@ -12,11 +12,23 @@ function makeDoc() {
   return {
     rootId: 'root',
     blocks: [
-      { id: 'root', type: 'page', parentId: null, contentIds: ['h1', 'p1', 'p2', 'li1', 'li2'], props: {} },
+      {
+        id: 'root',
+        type: 'page',
+        parentId: null,
+        contentIds: ['h1', 'p1', 'p2', 'li1', 'li2'],
+        props: {},
+      },
       { id: 'h1', type: 'heading', parentId: 'root', contentIds: ['r-h1'], props: { level: 2 } },
       { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r-p1'], props: {} },
       { id: 'p2', type: 'paragraph', parentId: 'root', contentIds: ['r-p2'], props: {} },
-      { id: 'li1', type: 'listItem', parentId: 'root', contentIds: [], props: { ordered: false, titleRunIds: ['r-li1'] } },
+      {
+        id: 'li1',
+        type: 'listItem',
+        parentId: 'root',
+        contentIds: [],
+        props: { ordered: false, titleRunIds: ['r-li1'] },
+      },
       {
         id: 'li2',
         type: 'listItem',
@@ -81,15 +93,21 @@ describe('empty-block placeholder hint (data-empty/data-placeholder)', () => {
     const store = new EditorStore(makeDoc());
     const { container } = renderDoc(store);
 
-    expect(container.querySelector('[data-block-id="h1"]').getAttribute('data-placeholder')).toBe('Heading 2');
+    expect(container.querySelector('[data-block-id="h1"]').getAttribute('data-placeholder')).toBe(
+      'Heading 2',
+    );
     expect(container.querySelector('[data-block-id="p2"]').getAttribute('data-placeholder')).toBe(
       "Type '/' for commands",
     );
     expect(
-      container.querySelector('[data-block-id="li1"] .be-list-item-title').getAttribute('data-placeholder'),
+      container
+        .querySelector('[data-block-id="li1"] .be-list-item-title')
+        .getAttribute('data-placeholder'),
     ).toBe('List item');
     expect(
-      container.querySelector('[data-block-id="li2"] .be-list-item-title').getAttribute('data-placeholder'),
+      container
+        .querySelector('[data-block-id="li2"] .be-list-item-title')
+        .getAttribute('data-placeholder'),
     ).toBe('To-do'); // checked !== undefined => to-do item, distinct hint from a plain bullet
   });
 

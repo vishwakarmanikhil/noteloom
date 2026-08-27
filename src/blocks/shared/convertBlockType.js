@@ -1,4 +1,9 @@
-import { changeBlockType, moveBlock, setBlockContentIds, updateBlockProps } from '../../store/operations.js';
+import {
+  changeBlockType,
+  moveBlock,
+  setBlockContentIds,
+  updateBlockProps,
+} from '../../store/operations.js';
 
 /**
  * Builds the ops that convert `blockId` to a different type IN PLACE — same
@@ -44,7 +49,9 @@ export function convertBlockType(store, blockId, type, props, runIds, registry) 
   const index = parent.contentIds.indexOf(blockId);
   const targetUsesTitleRunIds = 'titleRunIds' in props;
   const sourceUsesTitleRunIds = 'titleRunIds' in (block.props ?? {});
-  const sourceHasChildren = registry ? !registry.isLeaf(block.type) && block.contentIds.length > 0 : false;
+  const sourceHasChildren = registry
+    ? !registry.isLeaf(block.type) && block.contentIds.length > 0
+    : false;
   const targetCanHoldChildren = registry ? !registry.isLeaf(type) : false;
 
   const ops = [];
@@ -53,7 +60,9 @@ export function convertBlockType(store, blockId, type, props, runIds, registry) 
   // to siblings). When the target can also hold children, they're already
   // correctly parented to this same block id — nothing to do.
   if (sourceHasChildren && !targetCanHoldChildren) {
-    block.contentIds.forEach((childId, i) => ops.push(moveBlock(childId, block.parentId, index + 1 + i)));
+    block.contentIds.forEach((childId, i) =>
+      ops.push(moveBlock(childId, block.parentId, index + 1 + i)),
+    );
   }
 
   ops.push(changeBlockType(blockId, type, props));

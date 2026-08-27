@@ -58,7 +58,8 @@ export class PeerConnection {
       // and neither survives a class instance. .toJSON() is the plain,
       // serializable RTCIceCandidateInit shape that addIceCandidate also
       // accepts directly, so no reconstruction is needed on the other end.
-      if (event.candidate) this._signaling.send(remotePeerId, { kind: 'ice', candidate: event.candidate.toJSON() });
+      if (event.candidate)
+        this._signaling.send(remotePeerId, { kind: 'ice', candidate: event.candidate.toJSON() });
     };
 
     if (initiator) {

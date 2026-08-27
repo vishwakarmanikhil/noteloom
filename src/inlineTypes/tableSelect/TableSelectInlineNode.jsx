@@ -45,7 +45,9 @@ export function TableSelectInlineNode({ id, blockId }) {
 
   const handleChange = useCallback(
     (selectedValue, option) => {
-      store.applyOperation(updateRun(id, { data: { selectedValue, selectedLabel: option?.label ?? '' } }));
+      store.applyOperation(
+        updateRun(id, { data: { selectedValue, selectedLabel: option?.label ?? '' } }),
+      );
     },
     [store, id],
   );

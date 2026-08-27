@@ -18,7 +18,11 @@ function makeDoc() {
 }
 
 function ParagraphStub({ id }) {
-  return <div className="be-paragraph" data-block-id={id}>sibling content</div>;
+  return (
+    <div className="be-paragraph" data-block-id={id}>
+      sibling content
+    </div>
+  );
 }
 
 // Regression: an uncaught error while React commits one block's DOM (e.g.

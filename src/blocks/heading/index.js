@@ -22,7 +22,10 @@ function toPlainText(block, ctx) {
 
 function toMarkdown(block, ctx) {
   const level = block.props?.level ?? 3;
-  const text = runsToMarkdown(block.contentIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  const text = runsToMarkdown(
+    block.contentIds.map((runId) => ctx.store.getRun(runId)),
+    ctx,
+  );
   return `${'#'.repeat(level)} ${text}`;
 }
 
@@ -53,19 +56,22 @@ export const headingBlockType = {
       label: 'Heading 1',
       icon: HEADING_ICONS[1],
       keywords: ['heading', 'h1', 'title'],
-      run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 1 })),
+      run: (store, ctx) =>
+        trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 1 })),
     },
     {
       label: 'Heading 2',
       icon: HEADING_ICONS[2],
       keywords: ['heading', 'h2', 'subtitle'],
-      run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 2 })),
+      run: (store, ctx) =>
+        trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 2 })),
     },
     {
       label: 'Heading 3',
       icon: HEADING_ICONS[3],
       keywords: ['heading', 'h3', 'title'],
-      run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 3 })),
+      run: (store, ctx) =>
+        trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 3 })),
     },
   ],
 };

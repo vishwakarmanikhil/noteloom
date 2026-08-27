@@ -28,7 +28,14 @@ function EditorSurface({ store, rootId, onComment, commentAuthorId }) {
   useBlockRangeDrag(containerRef);
 
   return (
-    <div ref={containerRef} role="document" aria-label="Document editor" onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
+    <div
+      ref={containerRef}
+      role="document"
+      aria-label="Document editor"
+      onCopy={onCopy}
+      onCut={onCut}
+      onPaste={onPaste}
+    >
       <FindBar {...findInDocument} />
       <BlockRangeActionMenu />
       <BlockChildren parentId={rootId} isTopLevel />
@@ -150,7 +157,12 @@ export function NoteloomEditor({
       uploadFile={uploadFile}
       maxFileSize={maxFileSize}
     >
-      <EditorSurface store={store} rootId={rootId} onComment={onComment} commentAuthorId={commentAuthorId} />
+      <EditorSurface
+        store={store}
+        rootId={rootId}
+        onComment={onComment}
+        commentAuthorId={commentAuthorId}
+      />
       {showCommentsPanel && <CommentsPanel authorId={commentAuthorId} />}
       {children}
     </EditorProvider>

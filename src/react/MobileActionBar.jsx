@@ -4,8 +4,15 @@ import { useHistory } from './useHistory.js';
 import { useCoarsePointer } from './useCoarsePointer.js';
 import { useVirtualKeyboardInset } from './useVirtualKeyboardInset.js';
 import { useTextFormattingActions } from '../commands/useTextFormattingActions.js';
-import { resolveCollapsedCaret, resolveMultiRunSelection, resolveCrossBlockSelection } from './selectionResolve.js';
-import { getMarksSummaryOverSelection, getMarksSummaryOverBlockRange } from '../inline/markCommands.js';
+import {
+  resolveCollapsedCaret,
+  resolveMultiRunSelection,
+  resolveCrossBlockSelection,
+} from './selectionResolve.js';
+import {
+  getMarksSummaryOverSelection,
+  getMarksSummaryOverBlockRange,
+} from '../inline/markCommands.js';
 import { updateBlockProps } from '../store/operations.js';
 import { insertRowAfter, insertColumnAfter } from '../blocks/table/tableEditCommands.js';
 import { LANGUAGES } from '../blocks/code/CodeBlock.jsx';
@@ -13,7 +20,15 @@ import { CALLOUT_COLORS } from '../blocks/callout/CalloutBlock.jsx';
 import { Select } from './Select.jsx';
 import { MobileBlockPickerSheet } from './MobileBlockPickerSheet.jsx';
 import { MobileBlockOptionsSheet } from './MobileBlockOptionsSheet.jsx';
-import { BoldIcon, ItalicIcon, UnderlineIcon, LinkIcon, PlusIcon, MoreHorizontalIcon, ChevronDownIcon } from './icons.jsx';
+import {
+  BoldIcon,
+  ItalicIcon,
+  UnderlineIcon,
+  LinkIcon,
+  PlusIcon,
+  MoreHorizontalIcon,
+  ChevronDownIcon,
+} from './icons.jsx';
 
 const LANGUAGE_OPTIONS = LANGUAGES.map((lang) => ({ value: lang, label: lang }));
 
@@ -111,7 +126,13 @@ function useMobileBarState(containerRef, store) {
 
 function FormattingActions({ store, selectionState }) {
   const { kind, selection, crossSelection, marks } = selectionState;
-  const { toggleBoolean, openLinkModal } = useTextFormattingActions(store, kind, selection, crossSelection, marks);
+  const { toggleBoolean, openLinkModal } = useTextFormattingActions(
+    store,
+    kind,
+    selection,
+    crossSelection,
+    marks,
+  );
 
   return (
     <>
@@ -170,10 +191,20 @@ function TableCellActions({ store, blockId }) {
 
   return (
     <>
-      <button type="button" className="be-mobile-bar-btn" aria-label="Insert row below" onClick={handleInsertRow}>
+      <button
+        type="button"
+        className="be-mobile-bar-btn"
+        aria-label="Insert row below"
+        onClick={handleInsertRow}
+      >
         + Row
       </button>
-      <button type="button" className="be-mobile-bar-btn" aria-label="Insert column right" onClick={handleInsertColumn}>
+      <button
+        type="button"
+        className="be-mobile-bar-btn"
+        aria-label="Insert column right"
+        onClick={handleInsertColumn}
+      >
         + Column
       </button>
     </>
@@ -327,7 +358,8 @@ export function MobileActionBar({ containerRef }) {
 
   if (!isCoarsePointer || !isFocused) return null;
 
-  const actionableBlock = mode === 'caret' && caretState ? findActionableAncestor(store, caretState.blockId) : null;
+  const actionableBlock =
+    mode === 'caret' && caretState ? findActionableAncestor(store, caretState.blockId) : null;
   const TypeActions = actionableBlock ? BLOCK_TYPE_ACTIONS[actionableBlock.type] : null;
 
   // Whichever block the caret/selection is currently in, regardless of
@@ -336,7 +368,9 @@ export function MobileActionBar({ containerRef }) {
   const currentBlockId =
     mode === 'caret' && caretState
       ? caretState.blockId
-      : (selectionState?.selection?.blockId ?? selectionState?.crossSelection?.startBlockId ?? null);
+      : (selectionState?.selection?.blockId ??
+        selectionState?.crossSelection?.startBlockId ??
+        null);
   const topLevelBlock = currentBlockId ? findTopLevelAncestor(store, currentBlockId) : null;
 
   return (
@@ -348,14 +382,23 @@ export function MobileActionBar({ containerRef }) {
         style={{ bottom: keyboardInset }}
         onMouseDown={(event) => event.preventDefault()}
       >
-        {mode === 'selection' && selectionState && <FormattingActions store={store} selectionState={selectionState} />}
+        {mode === 'selection' && selectionState && (
+          <FormattingActions store={store} selectionState={selectionState} />
+        )}
 
         {mode !== 'selection' && (
           <>
-            <button type="button" className="be-mobile-bar-btn" aria-label="Add block" onClick={openPicker}>
+            <button
+              type="button"
+              className="be-mobile-bar-btn"
+              aria-label="Add block"
+              onClick={openPicker}
+            >
               <PlusIcon size={18} />
             </button>
-            {TypeActions && actionableBlock && <TypeActions store={store} blockId={actionableBlock.id} />}
+            {TypeActions && actionableBlock && (
+              <TypeActions store={store} blockId={actionableBlock.id} />
+            )}
             {history && (
               <>
                 <button
@@ -383,15 +426,29 @@ export function MobileActionBar({ containerRef }) {
 
         <span className="be-mobile-bar-spacer" />
         {topLevelBlock && (
-          <button type="button" className="be-mobile-bar-btn" aria-label="Block options" onClick={openOptions}>
+          <button
+            type="button"
+            className="be-mobile-bar-btn"
+            aria-label="Block options"
+            onClick={openOptions}
+          >
             <MoreHorizontalIcon size={18} />
           </button>
         )}
-        <button type="button" className="be-mobile-bar-btn" aria-label="Dismiss keyboard" onClick={handleDismissKeyboard}>
+        <button
+          type="button"
+          className="be-mobile-bar-btn"
+          aria-label="Dismiss keyboard"
+          onClick={handleDismissKeyboard}
+        >
           <ChevronDownIcon size={18} />
         </button>
       </div>
-      <MobileBlockPickerSheet isOpen={isPickerOpen} onClose={closePicker} onSelectCommand={handleSelectCommand} />
+      <MobileBlockPickerSheet
+        isOpen={isPickerOpen}
+        onClose={closePicker}
+        onSelectCommand={handleSelectCommand}
+      />
       <MobileBlockOptionsSheet
         isOpen={isOptionsOpen}
         onClose={closeOptions}

@@ -7,7 +7,12 @@ function locateCell(store, cellId) {
   const cell = store.getBlock(cellId);
   const row = store.getBlock(cell.parentId);
   const table = store.getBlock(row.parentId);
-  return { table, row, rowIndex: table.contentIds.indexOf(row.id), colIndex: row.contentIds.indexOf(cellId) };
+  return {
+    table,
+    row,
+    rowIndex: table.contentIds.indexOf(row.id),
+    colIndex: row.contentIds.indexOf(cellId),
+  };
 }
 
 /**
@@ -43,7 +48,9 @@ export function resolveAdjacentCellTarget(store, cellId, direction) {
   const targetRowIndex = rowIndex + delta;
   if (targetRowIndex < 0 || targetRowIndex >= table.contentIds.length) return null;
   const targetRow = store.getBlock(table.contentIds[targetRowIndex]);
-  return targetRow.contentIds[colIndex] ?? targetRow.contentIds[targetRow.contentIds.length - 1] ?? null;
+  return (
+    targetRow.contentIds[colIndex] ?? targetRow.contentIds[targetRow.contentIds.length - 1] ?? null
+  );
 }
 
 /**

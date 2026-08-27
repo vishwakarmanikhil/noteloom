@@ -201,14 +201,30 @@
   margin: 0.5em 0;
 }
 
-.be-callout[data-color='gray'] { background: rgba(148, 163, 184, 0.16); }
-.be-callout[data-color='blue'] { background: rgba(99, 102, 241, 0.12); }
-.be-callout[data-color='green'] { background: rgba(34, 197, 94, 0.14); }
-.be-callout[data-color='yellow'] { background: rgba(234, 179, 8, 0.16); }
-.be-callout[data-color='orange'] { background: rgba(249, 115, 22, 0.14); }
-.be-callout[data-color='red'] { background: rgba(239, 68, 68, 0.13); }
-.be-callout[data-color='purple'] { background: rgba(168, 85, 247, 0.13); }
-.be-callout[data-color='pink'] { background: rgba(236, 72, 153, 0.13); }
+.be-callout[data-color='gray'] {
+  background: rgba(148, 163, 184, 0.16);
+}
+.be-callout[data-color='blue'] {
+  background: rgba(99, 102, 241, 0.12);
+}
+.be-callout[data-color='green'] {
+  background: rgba(34, 197, 94, 0.14);
+}
+.be-callout[data-color='yellow'] {
+  background: rgba(234, 179, 8, 0.16);
+}
+.be-callout[data-color='orange'] {
+  background: rgba(249, 115, 22, 0.14);
+}
+.be-callout[data-color='red'] {
+  background: rgba(239, 68, 68, 0.13);
+}
+.be-callout[data-color='purple'] {
+  background: rgba(168, 85, 247, 0.13);
+}
+.be-callout[data-color='pink'] {
+  background: rgba(236, 72, 153, 0.13);
+}
 
 .be-callout-icon-wrap {
   flex: none;
@@ -280,14 +296,30 @@
   border: 1px solid rgba(15, 23, 42, 0.12);
 }
 
-.be-callout-color-dot-gray { background: #94a3b8; }
-.be-callout-color-dot-blue { background: #6366f1; }
-.be-callout-color-dot-green { background: #22c55e; }
-.be-callout-color-dot-yellow { background: #eab308; }
-.be-callout-color-dot-orange { background: #f97316; }
-.be-callout-color-dot-red { background: #ef4444; }
-.be-callout-color-dot-purple { background: #a855f7; }
-.be-callout-color-dot-pink { background: #ec4899; }
+.be-callout-color-dot-gray {
+  background: #94a3b8;
+}
+.be-callout-color-dot-blue {
+  background: #6366f1;
+}
+.be-callout-color-dot-green {
+  background: #22c55e;
+}
+.be-callout-color-dot-yellow {
+  background: #eab308;
+}
+.be-callout-color-dot-orange {
+  background: #f97316;
+}
+.be-callout-color-dot-red {
+  background: #ef4444;
+}
+.be-callout-color-dot-purple {
+  background: #a855f7;
+}
+.be-callout-color-dot-pink {
+  background: #ec4899;
+}
 
 .be-callout-color-picker {
   position: absolute;
@@ -314,14 +346,30 @@
   padding: 0;
 }
 
-.be-callout-color-option-gray { background: #94a3b8; }
-.be-callout-color-option-blue { background: #6366f1; }
-.be-callout-color-option-green { background: #22c55e; }
-.be-callout-color-option-yellow { background: #eab308; }
-.be-callout-color-option-orange { background: #f97316; }
-.be-callout-color-option-red { background: #ef4444; }
-.be-callout-color-option-purple { background: #a855f7; }
-.be-callout-color-option-pink { background: #ec4899; }
+.be-callout-color-option-gray {
+  background: #94a3b8;
+}
+.be-callout-color-option-blue {
+  background: #6366f1;
+}
+.be-callout-color-option-green {
+  background: #22c55e;
+}
+.be-callout-color-option-yellow {
+  background: #eab308;
+}
+.be-callout-color-option-orange {
+  background: #f97316;
+}
+.be-callout-color-option-red {
+  background: #ef4444;
+}
+.be-callout-color-option-purple {
+  background: #a855f7;
+}
+.be-callout-color-option-pink {
+  background: #ec4899;
+}
 
 .be-callout-color-option-active {
   border-color: var(--noteloom-text);
@@ -992,7 +1040,8 @@
 
 .be-canvas-fill-trigger-dot-none,
 .be-canvas-fill-swatch-none {
-  background: repeating-conic-gradient(rgba(255, 255, 255, 0.5) 0% 25%, transparent 0% 50%) 50% / 8px 8px;
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.5) 0% 25%, transparent 0% 50%) 50% /
+    8px 8px;
 }
 
 .be-canvas-custom-swatch {
@@ -1601,7 +1650,9 @@ tr.be-table-row:hover .be-table-delete-row {
   background: transparent;
   color: var(--noteloom-text-faint);
   cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
 }
 
 /* Touch: no hover state exists to reveal the gutter at all, and its
@@ -2061,7 +2112,9 @@ tr.be-table-row:hover .be-table-delete-row {
 
 .be-modal-color-swatch-active {
   border-color: var(--noteloom-accent);
-  box-shadow: 0 0 0 2px var(--noteloom-bg), 0 0 0 4px var(--noteloom-accent-soft);
+  box-shadow:
+    0 0 0 2px var(--noteloom-bg),
+    0 0 0 4px var(--noteloom-accent-soft);
 }
 
 .be-modal-attr-row {
@@ -3027,7 +3080,9 @@ tr.be-table-row:hover .be-table-delete-row {
   right: 0;
   padding: 8px 12px;
   border-radius: var(--noteloom-radius-md);
-  transition: top 0.15s ease, background-color 0.1s ease;
+  transition:
+    top 0.15s ease,
+    background-color 0.1s ease;
 }
 
 .be-comments-panel-item:hover {

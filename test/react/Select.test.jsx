@@ -15,7 +15,9 @@ const TAG_OPTIONS = [
 
 describe('Select: trigger and popover basics', () => {
   it('shows the placeholder when nothing is selected, and the option label when it is', () => {
-    const { container, rerender } = render(<Select value="" options={OPTIONS} onChange={() => {}} placeholder="Pick one" />);
+    const { container, rerender } = render(
+      <Select value="" options={OPTIONS} onChange={() => {}} placeholder="Pick one" />,
+    );
     expect(container.querySelector('.be-select-value').textContent).toBe('Pick one');
 
     rerender(<Select value="b" options={OPTIONS} onChange={() => {}} placeholder="Pick one" />);
@@ -142,7 +144,13 @@ describe('Select: choosing an option', () => {
 describe('Select: variant="tag" (colored pill, no dropdown-box chrome)', () => {
   it('shows the placeholder as plain text (no border/chevron) when nothing is selected', () => {
     const { container } = render(
-      <Select value="" options={TAG_OPTIONS} onChange={() => {}} placeholder="Empty" variant="tag" />,
+      <Select
+        value=""
+        options={TAG_OPTIONS}
+        onChange={() => {}}
+        placeholder="Empty"
+        variant="tag"
+      />,
     );
     const trigger = container.querySelector('.be-select-trigger');
     expect(trigger.classList.contains('be-select-trigger-tag')).toBe(true);
@@ -151,8 +159,10 @@ describe('Select: variant="tag" (colored pill, no dropdown-box chrome)', () => {
     expect(container.querySelector('.be-select-tag')).toBeNull();
   });
 
-  it('renders the selected value as a colored pill using the option\'s color', () => {
-    const { container } = render(<Select value="a" options={TAG_OPTIONS} onChange={() => {}} variant="tag" />);
+  it("renders the selected value as a colored pill using the option's color", () => {
+    const { container } = render(
+      <Select value="a" options={TAG_OPTIONS} onChange={() => {}} variant="tag" />,
+    );
     const tag = container.querySelector('.be-select-tag');
     expect(tag).not.toBeNull();
     expect(tag.textContent).toBe('Alpha');
@@ -162,7 +172,9 @@ describe('Select: variant="tag" (colored pill, no dropdown-box chrome)', () => {
   });
 
   it('renders each option in the popover as its own colored pill', () => {
-    const { container } = render(<Select value="" options={TAG_OPTIONS} onChange={() => {}} variant="tag" />);
+    const { container } = render(
+      <Select value="" options={TAG_OPTIONS} onChange={() => {}} variant="tag" />,
+    );
     fireEvent.click(container.querySelector('.be-select-trigger'));
     const tags = [...document.querySelectorAll('.be-select-option .be-select-tag')];
     expect(tags).toHaveLength(2);
@@ -172,7 +184,9 @@ describe('Select: variant="tag" (colored pill, no dropdown-box chrome)', () => {
 
   it('picking a tag option still calls onChange with (value, option) as usual', () => {
     const onChange = vi.fn();
-    const { container } = render(<Select value="" options={TAG_OPTIONS} onChange={onChange} variant="tag" />);
+    const { container } = render(
+      <Select value="" options={TAG_OPTIONS} onChange={onChange} variant="tag" />,
+    );
     fireEvent.click(container.querySelector('.be-select-trigger'));
     fireEvent.mouseDown(document.querySelector('.be-select-option'));
     expect(onChange).toHaveBeenCalledWith('a', TAG_OPTIONS[0]);
@@ -232,7 +246,9 @@ describe('Select: option list virtualization', () => {
   }
 
   it('does not mount every option at once for a large list — only a windowed subset', () => {
-    const { container } = render(<Select value="" options={manyOptions(500)} onChange={() => {}} />);
+    const { container } = render(
+      <Select value="" options={manyOptions(500)} onChange={() => {}} />,
+    );
     fireEvent.click(container.querySelector('.be-select-trigger'));
 
     const rendered = document.querySelectorAll('.be-select-option').length;
@@ -241,7 +257,9 @@ describe('Select: option list virtualization', () => {
   });
 
   it('renders top/bottom spacers so the scrollbar still reflects the full (unmounted) list length', () => {
-    const { container } = render(<Select value="" options={manyOptions(500)} onChange={() => {}} />);
+    const { container } = render(
+      <Select value="" options={manyOptions(500)} onChange={() => {}} />,
+    );
     fireEvent.click(container.querySelector('.be-select-trigger'));
 
     const list = document.querySelector('.be-select-options');
@@ -255,7 +273,9 @@ describe('Select: option list virtualization', () => {
   });
 
   it('scrolling reveals options further down the list that were not initially mounted', () => {
-    const { container } = render(<Select value="" options={manyOptions(500)} onChange={() => {}} />);
+    const { container } = render(
+      <Select value="" options={manyOptions(500)} onChange={() => {}} />,
+    );
     fireEvent.click(container.querySelector('.be-select-trigger'));
 
     expect(document.body.textContent).not.toContain('Option 400');
@@ -395,7 +415,13 @@ describe('Select: onManageOptions footer', () => {
   it('renders a "Manage options…" entry when provided, and calls it (closing the popover) on click', () => {
     const onManageOptions = vi.fn();
     const { container } = render(
-      <Select value="" options={OPTIONS} onChange={() => {}} onManageOptions={onManageOptions} manageOptionsLabel="Manage…" />,
+      <Select
+        value=""
+        options={OPTIONS}
+        onChange={() => {}}
+        onManageOptions={onManageOptions}
+        manageOptionsLabel="Manage…"
+      />,
     );
     fireEvent.click(container.querySelector('.be-select-trigger'));
     const manageBtn = document.querySelector('.be-select-manage-options');

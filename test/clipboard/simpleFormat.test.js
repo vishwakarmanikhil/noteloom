@@ -4,7 +4,10 @@ import { createBlockRegistry } from '../../src/registry/blockRegistry.js';
 import { registerBuiltInBlocks } from '../../src/blocks/index.js';
 import { createInlineRegistry } from '../../src/registry/inlineRegistry.js';
 import { registerBuiltInInlineTypes } from '../../src/inlineTypes/index.js';
-import { exportDocumentSimpleJSON, importDocumentSimpleJSON } from '../../src/clipboard/simpleFormat.js';
+import {
+  exportDocumentSimpleJSON,
+  importDocumentSimpleJSON,
+} from '../../src/clipboard/simpleFormat.js';
 
 function makeRegistry() {
   const registry = createBlockRegistry();
@@ -56,11 +59,18 @@ describe('exportDocumentSimpleJSON: shape', () => {
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'bold', marks: { bold: true } },
-        { id: 'r2', type: 'text', value: ' link', marks: { link: { href: 'https://example.com' } } },
+        {
+          id: 'r2',
+          type: 'text',
+          value: ' link',
+          marks: { link: { href: 'https://example.com' } },
+        },
       ],
     };
     const { parsed } = roundTrip(doc);
-    expect(parsed.blocks[0].data.text).toBe('<strong>bold</strong><a href="https://example.com"> link</a>');
+    expect(parsed.blocks[0].data.text).toBe(
+      '<strong>bold</strong><a href="https://example.com"> link</a>',
+    );
   });
 });
 
@@ -94,8 +104,20 @@ describe('exportDocumentSimpleJSON / importDocumentSimpleJSON: round-trip per bl
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['li1'], props: {} },
-        { id: 'li1', type: 'listItem', parentId: 'root', contentIds: ['li2'], props: { ordered: false, titleRunIds: ['r1'] } },
-        { id: 'li2', type: 'listItem', parentId: 'li1', contentIds: [], props: { ordered: false, checked: true, titleRunIds: ['r2'] } },
+        {
+          id: 'li1',
+          type: 'listItem',
+          parentId: 'root',
+          contentIds: ['li2'],
+          props: { ordered: false, titleRunIds: ['r1'] },
+        },
+        {
+          id: 'li2',
+          type: 'listItem',
+          parentId: 'li1',
+          contentIds: [],
+          props: { ordered: false, checked: true, titleRunIds: ['r2'] },
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'Parent item', marks: {} },
@@ -126,7 +148,13 @@ describe('exportDocumentSimpleJSON / importDocumentSimpleJSON: round-trip per bl
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['tg1'], props: {} },
-        { id: 'tg1', type: 'toggleHeading', parentId: 'root', contentIds: ['p1'], props: { level: 2, collapsed: false, titleRunIds: ['r1'] } },
+        {
+          id: 'tg1',
+          type: 'toggleHeading',
+          parentId: 'root',
+          contentIds: ['p1'],
+          props: { level: 2, collapsed: false, titleRunIds: ['r1'] },
+        },
         { id: 'p1', type: 'paragraph', parentId: 'tg1', contentIds: ['r2'], props: {} },
       ],
       runs: [
@@ -161,7 +189,9 @@ describe('exportDocumentSimpleJSON / importDocumentSimpleJSON: round-trip per bl
     const rootIds = importedStore.getBlock(importedStore.getRootId()).contentIds;
     const callout = importedStore.getBlock(rootIds[0]);
     expect(callout.props.icon).toBe('💡');
-    expect(importedStore.getRun(importedStore.getBlock(callout.contentIds[0]).contentIds[0]).value).toBe('A tip');
+    expect(
+      importedStore.getRun(importedStore.getBlock(callout.contentIds[0]).contentIds[0]).value,
+    ).toBe('A tip');
   });
 
   it('layout with columns', () => {
@@ -195,7 +225,13 @@ describe('exportDocumentSimpleJSON / importDocumentSimpleJSON: round-trip per bl
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['t1'], props: {} },
-        { id: 't1', type: 'table', parentId: 'root', contentIds: ['row1'], props: { columns: [{ id: 'c1', label: 'Name', type: 'text', width: 160 }] } },
+        {
+          id: 't1',
+          type: 'table',
+          parentId: 'root',
+          contentIds: ['row1'],
+          props: { columns: [{ id: 'c1', label: 'Name', type: 'text', width: 160 }] },
+        },
         { id: 'row1', type: 'tableRow', parentId: 't1', contentIds: ['cell1'], props: {} },
         { id: 'cell1', type: 'tableCell', parentId: 'row1', contentIds: ['r1'], props: {} },
       ],
@@ -220,10 +256,46 @@ describe('exportDocumentSimpleJSON / importDocumentSimpleJSON: round-trip per bl
     const doc = {
       rootId: 'root',
       blocks: [
-        { id: 'root', type: 'page', parentId: null, contentIds: ['e1', 'b1', 'cd1', 'bq1', 'd1'], props: {} },
-        { id: 'e1', type: 'embed', parentId: 'root', contentIds: [], props: { kind: 'image', src: 'img.png', name: '', alt: 'A photo', mimeType: 'image/png', align: 'center', width: 80 } },
-        { id: 'b1', type: 'button', parentId: 'root', contentIds: ['rb'], props: { href: 'https://example.com', color: '#ff0000', customAttrs: [{ key: 'tracking', value: 'x' }] } },
-        { id: 'cd1', type: 'code', parentId: 'root', contentIds: ['rc'], props: { language: 'javascript' } },
+        {
+          id: 'root',
+          type: 'page',
+          parentId: null,
+          contentIds: ['e1', 'b1', 'cd1', 'bq1', 'd1'],
+          props: {},
+        },
+        {
+          id: 'e1',
+          type: 'embed',
+          parentId: 'root',
+          contentIds: [],
+          props: {
+            kind: 'image',
+            src: 'img.png',
+            name: '',
+            alt: 'A photo',
+            mimeType: 'image/png',
+            align: 'center',
+            width: 80,
+          },
+        },
+        {
+          id: 'b1',
+          type: 'button',
+          parentId: 'root',
+          contentIds: ['rb'],
+          props: {
+            href: 'https://example.com',
+            color: '#ff0000',
+            customAttrs: [{ key: 'tracking', value: 'x' }],
+          },
+        },
+        {
+          id: 'cd1',
+          type: 'code',
+          parentId: 'root',
+          contentIds: ['rc'],
+          props: { language: 'javascript' },
+        },
         { id: 'bq1', type: 'blockquote', parentId: 'root', contentIds: ['rq'], props: {} },
         { id: 'd1', type: 'divider', parentId: 'root', contentIds: [], props: {} },
       ],
@@ -244,7 +316,9 @@ describe('exportDocumentSimpleJSON / importDocumentSimpleJSON: round-trip per bl
     });
 
     const rootIds = importedStore.getBlock(importedStore.getRootId()).contentIds;
-    const [embed, button, code, blockquote, divider] = rootIds.map((id) => importedStore.getBlock(id));
+    const [embed, button, code, blockquote, divider] = rootIds.map((id) =>
+      importedStore.getBlock(id),
+    );
 
     expect(embed.props.src).toBe('img.png');
     expect(embed.props.alt).toBe('A photo');
@@ -265,11 +339,23 @@ describe('exportDocumentSimpleJSON / importDocumentSimpleJSON: atomic inline rou
       rootId: 'root',
       blocks: [
         { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
-        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1', 'chk', 'r2', 'dt', 'r3', 'sel'], props: {} },
+        {
+          id: 'p1',
+          type: 'paragraph',
+          parentId: 'root',
+          contentIds: ['r1', 'chk', 'r2', 'dt', 'r3', 'sel'],
+          props: {},
+        },
       ],
       runs: [
         { id: 'r1', type: 'text', value: 'Done: ', marks: {} },
-        { id: 'chk', type: 'checkbox', value: '', marks: {}, data: { checked: true, label: 'Confirmed' } },
+        {
+          id: 'chk',
+          type: 'checkbox',
+          value: '',
+          marks: {},
+          data: { checked: true, label: 'Confirmed' },
+        },
         { id: 'r2', type: 'text', value: ' on ', marks: {} },
         { id: 'dt', type: 'date', value: '', marks: {}, data: { isoDate: '2026-07-15' } },
         { id: 'r3', type: 'text', value: ' status ', marks: {} },

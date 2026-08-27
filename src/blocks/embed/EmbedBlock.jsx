@@ -3,11 +3,23 @@ import { useBlock } from '../../react/useBlock.js';
 import { useEditorStore, useBlockClassName, useFileUpload } from '../../react/EditorProvider.jsx';
 import { updateBlockProps } from '../../store/operations.js';
 import { Modal } from '../../react/Modal.jsx';
-import { PaperclipIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, LinkIcon } from '../../react/icons.jsx';
+import {
+  PaperclipIcon,
+  AlignLeftIcon,
+  AlignCenterIcon,
+  AlignRightIcon,
+  LinkIcon,
+} from '../../react/icons.jsx';
 import { resolveFileToSrc } from './resolveFileEmbed.js';
 import { resolveOEmbedUrl } from './oembedProviders.js';
 
-const KIND_LABEL = { image: 'image', video: 'video', audio: 'audio', file: 'file', oembed: 'embed' };
+const KIND_LABEL = {
+  image: 'image',
+  video: 'video',
+  audio: 'audio',
+  file: 'file',
+  oembed: 'embed',
+};
 const KIND_ACCEPT = { image: 'image/*', video: 'video/*', audio: 'audio/*', file: '*/*' };
 const MIN_WIDTH = 20;
 const MAX_WIDTH = 100;
@@ -48,7 +60,13 @@ function EmbedPreview({ kind, src, name, alt, provider }) {
     );
   }
   return (
-    <a className="be-embed-file-link" href={src} download={name || undefined} target="_blank" rel="noopener noreferrer">
+    <a
+      className="be-embed-file-link"
+      href={src}
+      download={name || undefined}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       <PaperclipIcon size={14} /> {name || src}
     </a>
   );
@@ -103,7 +121,10 @@ export function EmbedBlock({ id }) {
   const previewRef = useRef(null);
   const frameRef = useRef(null);
 
-  const setMedia = useCallback((patch) => store.applyOperation(updateBlockProps(id, patch)), [store, id]);
+  const setMedia = useCallback(
+    (patch) => store.applyOperation(updateBlockProps(id, patch)),
+    [store, id],
+  );
 
   const openAltText = useCallback(() => {
     setAltDraft(block?.props?.alt ?? '');
@@ -127,7 +148,11 @@ export function EmbedBlock({ id }) {
       setUploadError(null);
       setIsUploading(true);
       try {
-        const { src, name, mimeType } = await resolveFileToSrc(file, { uploadFile, maxFileSize, kind });
+        const { src, name, mimeType } = await resolveFileToSrc(file, {
+          uploadFile,
+          maxFileSize,
+          kind,
+        });
         setMedia({ src, name, mimeType });
       } catch (err) {
         setUploadError(err?.message || 'Upload failed. Please try again.');
@@ -173,7 +198,14 @@ export function EmbedBlock({ id }) {
     if (!trimmed) return;
     const oembed = resolveOEmbedUrl(trimmed);
     if (oembed) {
-      setMedia({ kind: 'oembed', src: oembed.embedUrl, name: trimmed, mimeType: '', provider: oembed.provider, originalUrl: trimmed });
+      setMedia({
+        kind: 'oembed',
+        src: oembed.embedUrl,
+        name: trimmed,
+        mimeType: '',
+        provider: oembed.provider,
+        originalUrl: trimmed,
+      });
     } else {
       setMedia({ src: trimmed, name: trimmed });
     }
@@ -195,7 +227,8 @@ export function EmbedBlock({ id }) {
       const startWidth = frameEl.getBoundingClientRect().width;
       const startX = event.clientX;
 
-      const computePct = (moveEvent) => clampWidth(((startWidth + (moveEvent.clientX - startX)) / containerWidth) * 100);
+      const computePct = (moveEvent) =>
+        clampWidth(((startWidth + (moveEvent.clientX - startX)) / containerWidth) * 100);
 
       const handleMouseMove = (moveEvent) => setDragWidth(computePct(moveEvent));
       const handleMouseUp = (upEvent) => {
@@ -221,7 +254,8 @@ export function EmbedBlock({ id }) {
       const step = event.shiftKey ? 1 : 5;
       let next;
       if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = clampWidth(current - step);
-      else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = clampWidth(current + step);
+      else if (event.key === 'ArrowRight' || event.key === 'ArrowUp')
+        next = clampWidth(current + step);
       else if (event.key === 'Home') next = MIN_WIDTH;
       else if (event.key === 'End') next = MAX_WIDTH;
       else return;
@@ -234,7 +268,16 @@ export function EmbedBlock({ id }) {
   const className = useBlockClassName('be-embed', block);
 
   if (!block) return null;
-  const { kind = 'file', src, name, alt = '', align = 'left', width = 100, provider = '', originalUrl = '' } = block.props;
+  const {
+    kind = 'file',
+    src,
+    name,
+    alt = '',
+    align = 'left',
+    width = 100,
+    provider = '',
+    originalUrl = '',
+  } = block.props;
   const canResize = kind === 'image' || kind === 'video' || kind === 'oembed';
   const effectiveWidth = dragWidth ?? width;
   const isOEmbed = kind === 'oembed';
@@ -245,7 +288,13 @@ export function EmbedBlock({ id }) {
     // surface's keydown listener capturing subsequent Backspace/Delete
     // presses once this block becomes selected, even when whatever
     // previously had focus was just removed from the DOM entirely.
-    <div className={className} data-block-id={id} data-kind={kind} contentEditable={false} tabIndex={-1}>
+    <div
+      className={className}
+      data-block-id={id}
+      data-kind={kind}
+      contentEditable={false}
+      tabIndex={-1}
+    >
       {src ? (
         <div ref={previewRef} className={`be-embed-preview be-embed-align-${align}`}>
           <div
@@ -268,7 +317,11 @@ export function EmbedBlock({ id }) {
                 </button>
               ))}
               {kind === 'image' && (
-                <button type="button" className="be-embed-toolbar-btn be-embed-alt-text-btn" onClick={openAltText}>
+                <button
+                  type="button"
+                  className="be-embed-toolbar-btn be-embed-alt-text-btn"
+                  onClick={openAltText}
+                >
                   Alt text
                 </button>
               )}
@@ -284,7 +337,12 @@ export function EmbedBlock({ id }) {
                   <LinkIcon size={14} />
                 </a>
               )}
-              <button type="button" className="be-embed-remove" onClick={clearMedia} aria-label={`Remove ${KIND_LABEL[kind]}`}>
+              <button
+                type="button"
+                className="be-embed-remove"
+                onClick={clearMedia}
+                aria-label={`Remove ${KIND_LABEL[kind]}`}
+              >
                 Remove
               </button>
             </div>
@@ -319,16 +377,27 @@ export function EmbedBlock({ id }) {
                 <>
                   <label className="be-embed-upload-btn">
                     Upload {KIND_LABEL[kind]}
-                    <input type="file" accept={KIND_ACCEPT[kind]} onChange={handleFileChange} hidden />
+                    <input
+                      type="file"
+                      accept={KIND_ACCEPT[kind]}
+                      onChange={handleFileChange}
+                      hidden
+                    />
                   </label>
-                  <span className="be-embed-dropzone-hint">or drop a file, or paste a URL below</span>
+                  <span className="be-embed-dropzone-hint">
+                    or drop a file, or paste a URL below
+                  </span>
                 </>
               )}
               <div className="be-embed-url-row">
                 <input
                   type="text"
                   className="be-embed-url-input"
-                  placeholder={isOEmbed ? 'Paste a YouTube, Vimeo, Loom, Figma, CodePen, or Spotify link' : `https://... ${KIND_LABEL[kind]} URL`}
+                  placeholder={
+                    isOEmbed
+                      ? 'Paste a YouTube, Vimeo, Loom, Figma, CodePen, or Spotify link'
+                      : `https://... ${KIND_LABEL[kind]} URL`
+                  }
                   value={urlInput}
                   onChange={(event) => setUrlInput(event.target.value)}
                   onKeyDown={(event) => event.key === 'Enter' && commitUrl()}

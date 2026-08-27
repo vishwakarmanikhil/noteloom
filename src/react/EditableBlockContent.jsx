@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useEditorStore, useInlineRegistry, useSelectedBlock, useCommentAuthorId, useHoveredComment } from './EditorProvider.jsx';
+import {
+  useEditorStore,
+  useInlineRegistry,
+  useSelectedBlock,
+  useCommentAuthorId,
+  useHoveredComment,
+} from './EditorProvider.jsx';
 import { useRun } from './useBlock.js';
 import { updateRun, setBlockRuns, removeBlock } from '../store/operations.js';
-import { reconcileDomToRuns, EMPTY_RUN_PLACEHOLDER, stripEmptyRunPlaceholder } from './domRunSync.js';
+import {
+  reconcileDomToRuns,
+  EMPTY_RUN_PLACEHOLDER,
+  stripEmptyRunPlaceholder,
+} from './domRunSync.js';
 import { isRunBlank, isRunsEmpty } from '../blocks/shared/blockEmpty.js';
 import { isContentlessBlock } from '../blocks/shared/contentless.js';
 import { genId } from '../utils/idGen.js';
@@ -38,7 +48,9 @@ function marksToStyle(marks = {}) {
     fontWeight: marks.bold ? 'bold' : undefined,
     fontStyle: marks.italic ? 'italic' : undefined,
     textDecoration:
-      [(marks.underline || marks.link) && 'underline', marks.strike && 'line-through'].filter(Boolean).join(' ') || undefined,
+      [(marks.underline || marks.link) && 'underline', marks.strike && 'line-through']
+        .filter(Boolean)
+        .join(' ') || undefined,
     verticalAlign: marks.subscript ? 'sub' : marks.superscript ? 'super' : undefined,
     fontSize: marks.subscript || marks.superscript ? 'smaller' : undefined,
     color: marks.color || (marks.link ? 'var(--noteloom-accent)' : undefined),
@@ -126,7 +138,10 @@ function TextRunSpan({ id, host, onValueSynced }) {
     host.classList.toggle('be-comment-highlight', (run.marks?.commentIds?.length ?? 0) > 0);
     // Echoes a hover from the comment panel/popover back onto the text --
     // see useHoveredComment.
-    host.classList.toggle('be-comment-highlight-active', Boolean(hoveredCommentId) && Boolean(run.marks?.commentIds?.includes(hoveredCommentId)));
+    host.classList.toggle(
+      'be-comment-highlight-active',
+      Boolean(hoveredCommentId) && Boolean(run.marks?.commentIds?.includes(hoveredCommentId)),
+    );
 
     // A link mark is a *style*, not a real <a> — the host is always a plain
     // <span> (created once, before any run's marks are known; see
@@ -139,7 +154,11 @@ function TextRunSpan({ id, host, onValueSynced }) {
       ? (event) => {
           if (!event.ctrlKey && !event.metaKey) return;
           event.preventDefault();
-          window.open(link.href, link.target === '_blank' ? '_blank' : '_self', 'noopener,noreferrer');
+          window.open(
+            link.href,
+            link.target === '_blank' ? '_blank' : '_self',
+            'noopener,noreferrer',
+          );
         }
       : null;
 
@@ -209,7 +228,9 @@ function findAdjacentAtomicRunId(containerEl, runIds, getRun, backward) {
   const runEl = el?.closest?.('[data-run-id]');
   if (!runEl || !containerEl.contains(runEl)) return null;
 
-  const atBoundary = backward ? anchorOffset === 0 : anchorOffset === (anchorNode.textContent ?? '').length;
+  const atBoundary = backward
+    ? anchorOffset === 0
+    : anchorOffset === (anchorNode.textContent ?? '').length;
   if (!atBoundary) return null;
 
   return neighborAtomicId(runEl.getAttribute('data-run-id'));
@@ -258,7 +279,8 @@ function resolveRangeBoundary(containerEl, node, offset) {
   const runEl = el?.closest?.('[data-run-id]');
   if (!runEl || !containerEl.contains(runEl)) return null;
   const childIndex = Array.prototype.indexOf.call(containerEl.childNodes, runEl);
-  const charOffset = node === runEl ? (offset === 0 ? 0 : (runEl.textContent ?? '').length) : offset;
+  const charOffset =
+    node === runEl ? (offset === 0 ? 0 : (runEl.textContent ?? '').length) : offset;
   return { childIndex, charOffset };
 }
 
@@ -345,7 +367,8 @@ function isCaretAtContainerStart(containerEl) {
 
   // A first run that's still just the placeholder has no real content yet,
   // so any caret position within it (offset 0 or 1) counts as "at start".
-  const maxStartOffset = probe.nodeType === 3 && probe.textContent === EMPTY_RUN_PLACEHOLDER ? 1 : 0;
+  const maxStartOffset =
+    probe.nodeType === 3 && probe.textContent === EMPTY_RUN_PLACEHOLDER ? 1 : 0;
   return selection.anchorOffset <= maxStartOffset;
 }
 
@@ -356,7 +379,8 @@ function isCaretAtContainerEnd(containerEl) {
   const lastChild = containerEl.lastChild;
   if (!lastChild) return true;
 
-  if (selection.anchorNode === containerEl) return selection.anchorOffset >= containerEl.childNodes.length;
+  if (selection.anchorNode === containerEl)
+    return selection.anchorOffset >= containerEl.childNodes.length;
 
   let probe = lastChild;
   while (probe && probe.lastChild) probe = probe.lastChild;
@@ -524,7 +548,11 @@ export function EditableBlockContent({
     const container = containerRef.current;
     if (!container) return;
     const currentRuns = runIds.map((id) => store.getRun(id)).filter(Boolean);
-    const { runs: nextRuns, changed, onlyValueChanges } = reconcileDomToRuns(container, currentRuns);
+    const {
+      runs: nextRuns,
+      changed,
+      onlyValueChanges,
+    } = reconcileDomToRuns(container, currentRuns);
     if (!changed) return;
 
     if (onlyValueChanges) {
@@ -542,17 +570,17 @@ export function EditableBlockContent({
       // Same "never zero runs" guard as removeRun — belt-and-suspenders,
       // since reconcileDomToRuns normally never drops a matched run.
       store.applyOperation(
-        setBlockRuns(blockId, nextRuns.length ? nextRuns : [{ id: genId(), type: 'text', value: '', marks: {} }]),
+        setBlockRuns(
+          blockId,
+          nextRuns.length ? nextRuns : [{ id: genId(), type: 'text', value: '', marks: {} }],
+        ),
       );
     }
     syncEmptyAttr(container, nextRuns);
   }, [store, blockId, runIds, onAutoformat]);
 
   const syncEmptyFromStore = useCallback(() => {
-    syncEmptyAttr(
-      containerRef.current,
-      runIds.map((id) => store.getRun(id)).filter(Boolean),
-    );
+    syncEmptyAttr(containerRef.current, runIds.map((id) => store.getRun(id)).filter(Boolean));
   }, [store, runIds]);
 
   const handleCompositionStart = useCallback(() => {
@@ -576,7 +604,10 @@ export function EditableBlockContent({
       // every keystroke after that mints a brand new run+host instead of
       // updating one in place (the "characters double" bug).
       store.applyOperation(
-        setBlockRuns(blockId, nextRuns.length ? nextRuns : [{ id: genId(), type: 'text', value: '', marks: {} }]),
+        setBlockRuns(
+          blockId,
+          nextRuns.length ? nextRuns : [{ id: genId(), type: 'text', value: '', marks: {} }],
+        ),
       );
     },
     [store, blockId, runIds],
@@ -652,9 +683,15 @@ export function EditableBlockContent({
       const selection = window.getSelection?.();
       const range = targetRanges?.[0] ?? (selection?.rangeCount ? selection.getRangeAt(0) : null);
       if (!range) return;
-      if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) return;
+      if (!container.contains(range.startContainer) || !container.contains(range.endContainer))
+        return;
 
-      const result = computeRunsAfterRangeDeletion(container, runIds, (id) => store.getRun(id), range);
+      const result = computeRunsAfterRangeDeletion(
+        container,
+        runIds,
+        (id) => store.getRun(id),
+        range,
+      );
       if (!result) return; // no atomic run in range: let native/existing handling proceed unchanged
 
       event.preventDefault();
@@ -665,7 +702,11 @@ export function EditableBlockContent({
 
       if (isReplaceTyped && event.data) {
         const typedRun = { id: genId(), type: 'text', value: event.data, marks: {} };
-        nextRuns = [...nextRuns.slice(0, insertionIndex), typedRun, ...nextRuns.slice(insertionIndex)];
+        nextRuns = [
+          ...nextRuns.slice(0, insertionIndex),
+          typedRun,
+          ...nextRuns.slice(insertionIndex),
+        ];
         focusRunId = typedRun.id;
         focusAtStart = false;
       } else if (insertionIndex > 0) {
@@ -676,7 +717,9 @@ export function EditableBlockContent({
         focusAtStart = true;
       }
 
-      const finalRuns = nextRuns.length ? nextRuns : [{ id: genId(), type: 'text', value: '', marks: {} }];
+      const finalRuns = nextRuns.length
+        ? nextRuns
+        : [{ id: genId(), type: 'text', value: '', marks: {} }];
       store.applyOperation(setBlockRuns(blockId, finalRuns));
 
       const landingRunId = focusRunId ?? finalRuns[0].id;
@@ -715,13 +758,15 @@ export function EditableBlockContent({
       }
       if (event.key === 'Backspace') {
         const container = containerRef.current;
-        const wholeId = container && findWhollySelectedAtomicRunId(container, runIds, store.getRun.bind(store));
+        const wholeId =
+          container && findWhollySelectedAtomicRunId(container, runIds, store.getRun.bind(store));
         if (wholeId) {
           event.preventDefault();
           removeRun(wholeId);
           return;
         }
-        const atomicId = container && findAdjacentAtomicRunId(container, runIds, store.getRun.bind(store), true);
+        const atomicId =
+          container && findAdjacentAtomicRunId(container, runIds, store.getRun.bind(store), true);
         if (atomicId) {
           event.preventDefault();
           removeRun(atomicId);
@@ -765,13 +810,15 @@ export function EditableBlockContent({
       }
       if (event.key === 'Delete') {
         const container = containerRef.current;
-        const wholeId = container && findWhollySelectedAtomicRunId(container, runIds, store.getRun.bind(store));
+        const wholeId =
+          container && findWhollySelectedAtomicRunId(container, runIds, store.getRun.bind(store));
         if (wholeId) {
           event.preventDefault();
           removeRun(wholeId);
           return;
         }
-        const atomicId = container && findAdjacentAtomicRunId(container, runIds, store.getRun.bind(store), false);
+        const atomicId =
+          container && findAdjacentAtomicRunId(container, runIds, store.getRun.bind(store), false);
         if (atomicId) {
           event.preventDefault();
           removeRun(atomicId);

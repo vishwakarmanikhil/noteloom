@@ -40,7 +40,9 @@ export function BlockChildren({ parentId, isTopLevel = false, filterIds }) {
   const [isPreviewMode] = usePreviewMode();
 
   const baseIds = filterIds ?? contentIds;
-  const visibleIds = isPreviewMode ? baseIds.filter((childId) => !store.getBlock(childId)?.props?.hidden) : baseIds;
+  const visibleIds = isPreviewMode
+    ? baseIds.filter((childId) => !store.getBlock(childId)?.props?.hidden)
+    : baseIds;
 
   if (isTopLevel && !isPreviewMode) {
     return visibleIds.map((childId) => <BlockGutterRow key={childId} id={childId} />);

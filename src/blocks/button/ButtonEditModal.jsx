@@ -78,7 +78,12 @@ export function ButtonEditModal({ isOpen, onClose, store, blockId }) {
     <Modal isOpen={isOpen} onClose={onClose} title="Edit button">
       <label className="be-modal-field">
         <span>Label</span>
-        <input type="text" value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Button" />
+        <input
+          type="text"
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          placeholder="Button"
+        />
       </label>
 
       <label className="be-modal-field">
@@ -125,7 +130,12 @@ export function ButtonEditModal({ isOpen, onClose, store, blockId }) {
               onChange={(event) => updateAttrRow(index, { value: event.target.value })}
             />
             {(row.key || row.value) && (
-              <button type="button" className="be-modal-attr-remove" onClick={() => removeAttrRow(index)} aria-label="Remove attribute">
+              <button
+                type="button"
+                className="be-modal-attr-remove"
+                onClick={() => removeAttrRow(index)}
+                aria-label="Remove attribute"
+              >
                 <XIcon size={14} />
               </button>
             )}

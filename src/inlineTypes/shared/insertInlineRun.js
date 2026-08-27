@@ -22,7 +22,12 @@ import { markPendingAutoOpen } from '../../react/pendingAutoOpen.js';
  * asked for is already open, ready to search." Left off for types with no
  * such picker to open (checkbox, date), which keep the original behavior.
  */
-export function insertInlineRunAtCursor(store, { blockId, runId, sliceStart, sliceEnd }, createInlineRun, { autoOpen = false } = {}) {
+export function insertInlineRunAtCursor(
+  store,
+  { blockId, runId, sliceStart, sliceEnd },
+  createInlineRun,
+  { autoOpen = false } = {},
+) {
   const currentRun = store.getRun(runId);
   const value = currentRun?.value ?? '';
   const beforeText = value.slice(0, sliceStart);

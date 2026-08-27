@@ -22,9 +22,15 @@ export function TemplatePicker({ templates, onSelect, emptyLabel = 'No templates
         <li key={template.id} className="be-template-card">
           <div className="be-template-card-body">
             <span className="be-template-card-name">{template.name}</span>
-            {template.description && <span className="be-template-card-description">{template.description}</span>}
+            {template.description && (
+              <span className="be-template-card-description">{template.description}</span>
+            )}
           </div>
-          <button type="button" className="be-template-card-select" onClick={() => onSelect(template)}>
+          <button
+            type="button"
+            className="be-template-card-select"
+            onClick={() => onSelect(template)}
+          >
             Use
           </button>
         </li>

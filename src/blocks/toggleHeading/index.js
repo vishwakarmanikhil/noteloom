@@ -43,7 +43,10 @@ function toPlainText(block, ctx) {
 // collapsed toggle list item.
 function toMarkdown(block, ctx) {
   const { titleRunIds = [], level = 2 } = block.props;
-  const title = runsToMarkdown(titleRunIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  const title = runsToMarkdown(
+    titleRunIds.map((runId) => ctx.store.getRun(runId)),
+    ctx,
+  );
   const heading = `${'#'.repeat(Math.min(6, level))} ${title}`;
   const children = block.contentIds
     .map((childId) => {
@@ -61,7 +64,9 @@ function fromHTML(node, ctx) {
   const summary = [...node.children].find((c) => c.tagName === 'SUMMARY');
   const headingEl = summary?.querySelector('h1,h2,h3,h4,h5,h6');
   const level = headingEl ? Math.min(6, Math.max(1, Number(headingEl.tagName[1]))) : 2;
-  const titleRuns = headingEl ? domInlineToRuns(headingEl, ctx) : [{ id: genId(), type: 'text', value: '', marks: {} }];
+  const titleRuns = headingEl
+    ? domInlineToRuns(headingEl, ctx)
+    : [{ id: genId(), type: 'text', value: '', marks: {} }];
 
   const blockId = genId();
   const childBlocks = [];
@@ -70,7 +75,13 @@ function fromHTML(node, ctx) {
   for (const child of node.children) {
     if (child === summary || child.tagName !== 'P') continue;
     const runs = domInlineToRuns(child, ctx);
-    const pBlock = { id: genId(), type: 'paragraph', parentId: blockId, contentIds: runs.map((r) => r.id), props: {} };
+    const pBlock = {
+      id: genId(),
+      type: 'paragraph',
+      parentId: blockId,
+      contentIds: runs.map((r) => r.id),
+      props: {},
+    };
     childBlocks.push(pBlock);
     childRuns.push(...runs);
     contentIds.push(pBlock.id);
@@ -87,7 +98,11 @@ function fromHTML(node, ctx) {
     type: 'toggleHeading',
     parentId: null,
     contentIds,
-    props: { level, collapsed: !node.hasAttribute('open'), titleRunIds: titleRuns.map((r) => r.id) },
+    props: {
+      level,
+      collapsed: !node.hasAttribute('open'),
+      titleRunIds: titleRuns.map((r) => r.id),
+    },
   };
   return { block, runs: [...titleRuns, ...childRuns], subtreeBlocks: childBlocks };
 }
@@ -108,6 +123,7 @@ export const toggleHeadingBlockType = {
     // heading/index.js); duplicating them here would make "/h3" ambiguous
     // between "Heading 3" and "Toggle heading 3".
     keywords: ['toggle', 'heading', 'collapse', 'section'],
-    run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createToggleHeadingBlock({ level })),
+    run: (store, ctx) =>
+      trimSlashQueryAndInsertAfter(store, ctx, createToggleHeadingBlock({ level })),
   })),
 };

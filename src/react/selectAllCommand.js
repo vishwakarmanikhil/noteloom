@@ -25,7 +25,8 @@ export function isEntireBlockSelected(store) {
   const endIndex = runIds.indexOf(endRunId);
   if (startIndex === -1 || endIndex === -1) return false;
 
-  const [fromIndex, toIndex] = startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+  const [fromIndex, toIndex] =
+    startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
   const fromOffset = startIndex <= endIndex ? startOffset : endOffset;
   const toOffset = startIndex <= endIndex ? endOffset : startOffset;
   if (fromIndex !== 0 || toIndex !== runIds.length - 1 || fromOffset !== 0) return false;

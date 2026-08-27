@@ -3,14 +3,28 @@ import { render, act } from '@testing-library/react';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { EditorProvider } from '../../src/react/EditorProvider.jsx';
 import { useComments } from '../../src/react/useComments.js';
-import { addCommentThread, removeCommentThread, resolveComment } from '../../src/store/operations.js';
+import {
+  addCommentThread,
+  removeCommentThread,
+  resolveComment,
+} from '../../src/store/operations.js';
 
 function makeDoc() {
-  return { rootId: 'root', blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }], runs: [] };
+  return {
+    rootId: 'root',
+    blocks: [{ id: 'root', type: 'page', parentId: null, contentIds: [], props: {} }],
+    runs: [],
+  };
 }
 
 function makeThread(id) {
-  return { id, blockId: 'p1', anchorRunIds: ['r1', 'r1'], resolved: false, messages: [{ id: 'm1', authorId: 'alice', text: 'hi', createdAt: 1 }] };
+  return {
+    id,
+    blockId: 'p1',
+    anchorRunIds: ['r1', 'r1'],
+    resolved: false,
+    messages: [{ id: 'm1', authorId: 'alice', text: 'hi', createdAt: 1 }],
+  };
 }
 
 function Harness() {
@@ -21,7 +35,11 @@ function Harness() {
 describe('useComments', () => {
   it('re-renders with the updated list after add/resolve/remove, empty initially', () => {
     const store = new EditorStore(makeDoc());
-    const { getByTestId } = render(<EditorProvider store={store} registry={{}}><Harness /></EditorProvider>);
+    const { getByTestId } = render(
+      <EditorProvider store={store} registry={{}}>
+        <Harness />
+      </EditorProvider>,
+    );
 
     expect(getByTestId('ids').textContent).toBe('');
 

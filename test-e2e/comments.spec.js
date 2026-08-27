@@ -34,7 +34,9 @@ test('selecting text shows the floating toolbar with a Comment button', async ({
   await expect(page.locator('.be-floating-toolbar-btn[title^="Comment"]')).toBeVisible();
 });
 
-test('Comment button opens a composer, replacing the button row, and highlights the text immediately', async ({ page }) => {
+test('Comment button opens a composer, replacing the button row, and highlights the text immediately', async ({
+  page,
+}) => {
   await selectWord(page, '[data-run-id="r1"]', 0, 6);
   await page.click('.be-floating-toolbar-btn[title^="Comment"]');
 
@@ -43,13 +45,17 @@ test('Comment button opens a composer, replacing the button row, and highlights 
   await expect(page.locator('.be-comment-highlight')).toBeVisible();
 });
 
-test('submitting a comment: appears in the panel, and the plain toolbar does not pop back up behind it', async ({ page }) => {
+test('submitting a comment: appears in the panel, and the plain toolbar does not pop back up behind it', async ({
+  page,
+}) => {
   await selectWord(page, '[data-run-id="r1"]', 0, 6);
   await page.click('.be-floating-toolbar-btn[title^="Comment"]');
   await page.fill('.be-comment-composer-textarea', 'How does this hold up long-term?');
   await page.click('.be-comment-composer-submit');
 
-  await expect(page.locator('.be-comments-panel-item')).toContainText('How does this hold up long-term?');
+  await expect(page.locator('.be-comments-panel-item')).toContainText(
+    'How does this hold up long-term?',
+  );
   await expect(page.locator('.be-floating-toolbar-btn[title^="Bold"]')).toHaveCount(0);
 });
 
@@ -70,7 +76,9 @@ test('Ctrl+Alt+M opens the composer the same way the button does', async ({ page
   await expect(page.locator('.be-comment-composer-textarea')).toBeVisible();
 });
 
-test('clicking a highlighted comment opens a popover with Reply/Resolve/Delete', async ({ page }) => {
+test('clicking a highlighted comment opens a popover with Reply/Resolve/Delete', async ({
+  page,
+}) => {
   await selectWord(page, '[data-run-id="r1"]', 0, 6);
   await page.click('.be-floating-toolbar-btn[title^="Comment"]');
   await page.fill('.be-comment-composer-textarea', 'first message');
@@ -98,7 +106,9 @@ test('replying from the popover shows up in the panel too', async ({ page }) => 
   await expect(page.locator('.be-comments-panel-item')).toContainText('a reply');
 });
 
-test('Resolve then Delete from the panel removes the thread and its highlight', async ({ page }) => {
+test('Resolve then Delete from the panel removes the thread and its highlight', async ({
+  page,
+}) => {
   await selectWord(page, '[data-run-id="r1"]', 0, 6);
   await page.click('.be-floating-toolbar-btn[title^="Comment"]');
   await page.fill('.be-comment-composer-textarea', 'needs a look');

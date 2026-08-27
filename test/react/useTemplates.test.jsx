@@ -21,7 +21,12 @@ function Harness({ scope }) {
 
 describe('useTemplates', () => {
   it('starts not loaded, then loads whatever is currently stored', async () => {
-    await saveTemplate({ id: 'ut-1', scope: 'document', name: 'Doc One', doc: { rootId: 'r', blocks: [], runs: [] } });
+    await saveTemplate({
+      id: 'ut-1',
+      scope: 'document',
+      name: 'Doc One',
+      doc: { rootId: 'r', blocks: [], runs: [] },
+    });
 
     render(<Harness />);
     await waitFor(() => expect(screen.getByTestId('loaded').textContent).toBe('true'));
@@ -29,7 +34,12 @@ describe('useTemplates', () => {
   });
 
   it('filters by scope when given', async () => {
-    await saveTemplate({ id: 'ut-doc', scope: 'document', name: 'A Document', doc: { rootId: 'r', blocks: [], runs: [] } });
+    await saveTemplate({
+      id: 'ut-doc',
+      scope: 'document',
+      name: 'A Document',
+      doc: { rootId: 'r', blocks: [], runs: [] },
+    });
     await saveTemplate({ id: 'ut-block', scope: 'block', name: 'A Snippet', doc: { roots: [] } });
 
     render(<Harness scope="block" />);
@@ -43,7 +53,12 @@ describe('useTemplates', () => {
     await waitFor(() => expect(screen.getByTestId('loaded').textContent).toBe('true'));
     expect(screen.queryByText('Appeared Later')).toBeNull();
 
-    await saveTemplate({ id: 'ut-later', scope: 'document', name: 'Appeared Later', doc: { rootId: 'r', blocks: [], runs: [] } });
+    await saveTemplate({
+      id: 'ut-later',
+      scope: 'document',
+      name: 'Appeared Later',
+      doc: { rootId: 'r', blocks: [], runs: [] },
+    });
     fireEvent.click(screen.getByText('refresh'));
 
     await waitFor(() => expect(screen.queryByText('Appeared Later')).not.toBeNull());

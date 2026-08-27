@@ -6,19 +6,19 @@ Status: **draft / proposal** · Owner: @vishwakarmanikhil · Target: `noteloom` 
 
 ## 1. Why re-plan
 
-noteloom grew feature-first. The engine is good, but the *package* was never
+noteloom grew feature-first. The engine is good, but the _package_ was never
 designed as a product other people build on. Concretely, today:
 
-| Symptom | Evidence |
-|---|---|
-| One giant flat API | `src/index.js` has **112 `export` lines / ~150 named exports**; the README is **923 lines** and splits itself into "Basic guide" vs "Advanced: the granular API". |
-| Everything ships in one bundle | Single `noteloom` entry, **~564 KB ESM** + **81 KB CSS**. Voice, canvas (2 500-line component), WebRTC/CRDT, comments, versions, PWA are all in the same package graph. |
-| Half-built features are in the public surface | CRDT primitives are exported with the doc comment *"Phase A: pure, in-memory CRDT core — not yet wired into EditorStore/History or any transport."* |
-| The extension contract is informal | A block type is a bare object (`{ component, isLeaf, defaultProps, toHTML, fromHTML, toPlainText, toMarkdown, slashCommand }`) documented **only** in a JSDoc comment on `BlockRegistry`. No factory, no types, no validation, no versioning. |
-| Two document formats | `exportDocumentJSON` (internal normalized graph) **and** `exportDocumentSimpleJSON` (flat). New users have to understand both to pick one. |
-| Types are a manual tax | `src/index.d.ts` is **955 hand-written lines** that CONTRIBUTING says must be kept in sync by hand ("it's hand-written, not generated, so nothing enforces this"). |
-| React-only | The store core is framework-agnostic in principle, but every documented path goes through `useEditor()` / `<NoteloomEditor>`. No non-React story. |
-| No contributor guardrails | "There's no linter configured yet"; sync work "only caught by opening two real browser tabs". |
+| Symptom                                       | Evidence                                                                                                                                                                                                                                      |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One giant flat API                            | `src/index.js` has **112 `export` lines / ~150 named exports**; the README is **923 lines** and splits itself into "Basic guide" vs "Advanced: the granular API".                                                                             |
+| Everything ships in one bundle                | Single `noteloom` entry, **~564 KB ESM** + **81 KB CSS**. Voice, canvas (2 500-line component), WebRTC/CRDT, comments, versions, PWA are all in the same package graph.                                                                       |
+| Half-built features are in the public surface | CRDT primitives are exported with the doc comment _"Phase A: pure, in-memory CRDT core — not yet wired into EditorStore/History or any transport."_                                                                                           |
+| The extension contract is informal            | A block type is a bare object (`{ component, isLeaf, defaultProps, toHTML, fromHTML, toPlainText, toMarkdown, slashCommand }`) documented **only** in a JSDoc comment on `BlockRegistry`. No factory, no types, no validation, no versioning. |
+| Two document formats                          | `exportDocumentJSON` (internal normalized graph) **and** `exportDocumentSimpleJSON` (flat). New users have to understand both to pick one.                                                                                                    |
+| Types are a manual tax                        | `src/index.d.ts` is **955 hand-written lines** that CONTRIBUTING says must be kept in sync by hand ("it's hand-written, not generated, so nothing enforces this").                                                                            |
+| React-only                                    | The store core is framework-agnostic in principle, but every documented path goes through `useEditor()` / `<NoteloomEditor>`. No non-React story.                                                                                             |
+| No contributor guardrails                     | "There's no linter configured yet"; sync work "only caught by opening two real browser tabs".                                                                                                                                                 |
 
 None of this is a rewrite. The engine, the block set, the normalized store, the
 per-run reactivity, and the `examples/` learning ladder are keepers. What needs
@@ -29,7 +29,7 @@ design is the **boundary** between the engine and the people using it.
 Everything below is designed around three hard rules:
 
 1. **Nothing that works today may break** before a deliberate major version.
-   Every phase before 1.0 is *additive* — new entry points and new APIs land
+   Every phase before 1.0 is _additive_ — new entry points and new APIs land
    next to the old ones, which keep working with a deprecation warning at most.
    The `examples/` apps must run untouched after every phase.
 2. **The basic editor stays a one-line import.** Like Tiptap's `StarterKit`, the
@@ -42,7 +42,7 @@ Everything below is designed around three hard rules:
    bundle, never required for the basic case.
 
 noteloom already uses only **named exports** (no default export); that stays.
-The goal is *fewer import lines for the common case*, not more.
+The goal is _fewer import lines for the common case_, not more.
 
 ---
 
@@ -60,7 +60,7 @@ The goal is *fewer import lines for the common case*, not more.
   use; the rest never enters your graph.
 - **One extension shape for everything.** `Extension.create({…})`,
   `Node.create({…})`, `Mark.create({…})` — a declarative config object with a
-  fixed, documented, *typed* set of hooks: `name`, `addOptions`,
+  fixed, documented, _typed_ set of hooks: `name`, `addOptions`,
   `addAttributes`, `parseHTML`, `renderHTML`, `addCommands`,
   `addKeyboardShortcuts`, `addNodeView`, `addInputRules`, `addProseMirrorPlugins`.
   `.configure(options)` is the single knob.
@@ -77,12 +77,12 @@ The goal is *fewer import lines for the common case*, not more.
   type (`@editorjs/header`, `@editorjs/list`, `@editorjs/image`, …) is a separate
   npm package you pass into `tools: {}` at construction time.
 - **A Block Tool is a class with a tiny contract:** `constructor({ data, config,
-  api, readOnly })`, `render() → HTMLElement`, `save(el) → data`, and optional
+api, readOnly })`, `render() → HTMLElement`, `save(el) → data`, and optional
   `validate()`, `renderSettings()`, `static get toolbox()`, `static get
-  pasteConfig`, `static get sanitize`. That's the whole surface, and it's
+pasteConfig`, `static get sanitize`. That's the whole surface, and it's
   exhaustively documented ("Creating a Block Tool" is a multi-part guide).
 - **One clean output format:** `{ time, blocks: [{ type, data }], version }`.
-  There is no "internal vs simple" — the saved JSON *is* the format.
+  There is no "internal vs simple" — the saved JSON _is_ the format.
 - **Framework-agnostic** (vanilla DOM). React/Vue wrappers exist as community
   packages around the same core.
 - **`api` object** is how a tool talks back to the editor (`api.blocks`,
@@ -91,17 +91,17 @@ The goal is *fewer import lines for the common case*, not more.
 
 ### 2.3 What to borrow
 
-| Borrow | From | Applied to noteloom |
-|---|---|---|
-| Headless framework-free core + thin React adapter | Tiptap | `noteloom` (core) has no `react` import; `noteloom/react` is the adapter. |
-| Optional features are opt-in entry points, not in the default bundle | Both | `noteloom/collab`, `/persistence`, `/comments`, `/versions`, `/voice`, `/canvas`. |
-| A single, typed, documented factory for extensions | Tiptap | `defineBlock()` / `defineInline()` replacing the bare object. |
-| Small stable `api`/`ctx` facade passed to extensions | Editor.js | Formalize the `ctx` already passed to `toHTML`/`run`. |
-| One canonical document format | Editor.js | Promote the "simple" JSON to *the* format; internal graph becomes an implementation detail. |
-| Generated types, lint, scaffolding CLI, per-topic docs | Tiptap | See §6–7. |
-| A convenience "everything" meta-import | Tiptap starter-kit | `noteloom/starter-kit` = today's `useEditor()` defaults. |
+| Borrow                                                               | From               | Applied to noteloom                                                                         |
+| -------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
+| Headless framework-free core + thin React adapter                    | Tiptap             | `noteloom` (core) has no `react` import; `noteloom/react` is the adapter.                   |
+| Optional features are opt-in entry points, not in the default bundle | Both               | `noteloom/collab`, `/persistence`, `/comments`, `/versions`, `/voice`, `/canvas`.           |
+| A single, typed, documented factory for extensions                   | Tiptap             | `defineBlock()` / `defineInline()` replacing the bare object.                               |
+| Small stable `api`/`ctx` facade passed to extensions                 | Editor.js          | Formalize the `ctx` already passed to `toHTML`/`run`.                                       |
+| One canonical document format                                        | Editor.js          | Promote the "simple" JSON to _the_ format; internal graph becomes an implementation detail. |
+| Generated types, lint, scaffolding CLI, per-topic docs               | Tiptap             | See §6–7.                                                                                   |
+| A convenience "everything" meta-import                               | Tiptap starter-kit | `noteloom/starter-kit` = today's `useEditor()` defaults.                                    |
 
-**Where noteloom should *not* follow them:** a full multi-package monorepo with
+**Where noteloom should _not_ follow them:** a full multi-package monorepo with
 12 independently-versioned packages is right for a funded team, not a
 single-maintainer project. Get the same isolation with **subpath exports from one
 package** first (§3), and only split into real packages when there's a second
@@ -173,18 +173,18 @@ plugins that need to depend on `@noteloom/core` without the React adapter.
 
 ### 3.3 What moves where
 
-| Today (`src/…`) | New home |
-|---|---|
-| `store/`, `registry/`, `inline/`, `clipboard/serialize·deserialize·exportDocument`, `search/findInDocument`, `templates/blockTemplates` (capture/insert core) | `noteloom` core |
-| `react/` hooks & components, `commands/` trigger hooks, `blocks/*/**.jsx` view layer | `noteloom/react` |
-| `blocks/*` (type entries) | `noteloom/blocks/<family>` — `text` (paragraph/heading/list/quote/callout/code/divider/toggle), `table`, `layout`, `embed`, `button` |
-| `crdt/`, `sync/` | `noteloom/collab` — and **mark it `experimental` in one place**, stop exporting "not yet wired" primitives from core |
-| `persistence/`, `react/usePersistedDocument`, `react/useServiceWorkerUpdate` | `noteloom/persistence` |
-| `comments/`, comment components/hooks | `noteloom/comments` |
-| `versions/`, version components/hooks | `noteloom/versions` |
-| `voice/`, `react/useVoiceTyping`, voice components | `noteloom/voice` |
-| `blocks/canvas/` | `noteloom/canvas` (heaviest single component in the repo) |
-| `style.css` | `noteloom/theme` + per-feature CSS co-located with its entry |
+| Today (`src/…`)                                                                                                                                               | New home                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `store/`, `registry/`, `inline/`, `clipboard/serialize·deserialize·exportDocument`, `search/findInDocument`, `templates/blockTemplates` (capture/insert core) | `noteloom` core                                                                                                                      |
+| `react/` hooks & components, `commands/` trigger hooks, `blocks/*/**.jsx` view layer                                                                          | `noteloom/react`                                                                                                                     |
+| `blocks/*` (type entries)                                                                                                                                     | `noteloom/blocks/<family>` — `text` (paragraph/heading/list/quote/callout/code/divider/toggle), `table`, `layout`, `embed`, `button` |
+| `crdt/`, `sync/`                                                                                                                                              | `noteloom/collab` — and **mark it `experimental` in one place**, stop exporting "not yet wired" primitives from core                 |
+| `persistence/`, `react/usePersistedDocument`, `react/useServiceWorkerUpdate`                                                                                  | `noteloom/persistence`                                                                                                               |
+| `comments/`, comment components/hooks                                                                                                                         | `noteloom/comments`                                                                                                                  |
+| `versions/`, version components/hooks                                                                                                                         | `noteloom/versions`                                                                                                                  |
+| `voice/`, `react/useVoiceTyping`, voice components                                                                                                            | `noteloom/voice`                                                                                                                     |
+| `blocks/canvas/`                                                                                                                                              | `noteloom/canvas` (heaviest single component in the repo)                                                                            |
+| `style.css`                                                                                                                                                   | `noteloom/theme` + per-feature CSS co-located with its entry                                                                         |
 
 ---
 
@@ -235,7 +235,7 @@ export const callout = defineBlock({
 ### 4.2 `defineInline`
 
 Same shape for inline widgets. `createSelectFieldType` stays as a
-higher-level helper built *on* `defineInline` (it already is, effectively).
+higher-level helper built _on_ `defineInline` (it already is, effectively).
 
 ### 4.3 `defineExtension` (behavior, no content)
 
@@ -251,10 +251,13 @@ registration list instead of "register blocks here, wire hooks there".
 ```jsx
 const editor = useEditor({
   extensions: [
-    ...starterKit(),        // or hand-pick:
-    text.paragraph, text.heading, table, embed,
-    callout,                // your custom block
-    smartQuotes(),          // a behavior extension
+    ...starterKit(), // or hand-pick:
+    text.paragraph,
+    text.heading,
+    table,
+    embed,
+    callout, // your custom block
+    smartQuotes(), // a behavior extension
   ],
   doc,
 });
@@ -271,7 +274,7 @@ can remain as the implementation underneath for one release, then be dropped.
 
 ## 5. Document model — pick one format
 
-- **Promote `exportDocumentSimpleJSON`'s shape to *the* public format**
+- **Promote `exportDocumentSimpleJSON`'s shape to _the_ public format**
   (`{ version, blocks: [{ id, type, data, children? }] }`). It's already
   documented as the storage/API/CRUD shape; make it the default of
   `editor.toJSON()` / `useEditor({ doc })`.
@@ -287,14 +290,14 @@ can remain as the implementation underneath for one release, then be dropped.
 
 ## 6. Developer experience
 
-| Area | Now | Change |
-|---|---|---|
-| **Types** | 955-line hand-written `index.d.ts`, kept in sync manually | Adopt **JSDoc + `tsc --emitDeclarationOnly`** (keeps "no build to run tests") *or* migrate `src` to TS. Either way types are **generated**; delete the hand-written file. `api-extractor` to produce one rolled-up `.d.ts` per entry + a public-API report that fails CI on unintended surface changes. |
-| **Lint** | none | ESLint + Prettier. Two rules that matter most: `import/no-restricted-paths` (core ↛ react, feature ↛ feature) and `no-restricted-imports` for `react` inside core. |
-| **Versioning** | manual `version` bump | **Changesets.** Every PR that changes public behavior adds a changeset; release notes + `CHANGELOG.md` generated. |
-| **Bundle watch** | none | `size-limit` per entry point in CI, with a budget (e.g. core ≤ 40 KB gz, react adapter ≤ 60 KB). Regressions fail the check. |
-| **Scaffolding** | copy an existing `blocks/*` folder | `npm create noteloom-block` (or `npx noteloom new block <name>`) that emits `index.js` + `view.jsx` + `<name>.test.js` from a template. Mirrors `@tiptap/cli`. |
-| **Sync testing** | "open two real tabs" | Keep that, but add a Playwright multi-context spec (`test-e2e/`) that drives two editor instances through one relay so the regressions listed in CONTRIBUTING are guarded automatically. |
+| Area             | Now                                                       | Change                                                                                                                                                                                                                                                                                                  |
+| ---------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Types**        | 955-line hand-written `index.d.ts`, kept in sync manually | Adopt **JSDoc + `tsc --emitDeclarationOnly`** (keeps "no build to run tests") _or_ migrate `src` to TS. Either way types are **generated**; delete the hand-written file. `api-extractor` to produce one rolled-up `.d.ts` per entry + a public-API report that fails CI on unintended surface changes. |
+| **Lint**         | none                                                      | ESLint + Prettier. Two rules that matter most: `import/no-restricted-paths` (core ↛ react, feature ↛ feature) and `no-restricted-imports` for `react` inside core.                                                                                                                                      |
+| **Versioning**   | manual `version` bump                                     | **Changesets.** Every PR that changes public behavior adds a changeset; release notes + `CHANGELOG.md` generated.                                                                                                                                                                                       |
+| **Bundle watch** | none                                                      | `size-limit` per entry point in CI, with a budget (e.g. core ≤ 40 KB gz, react adapter ≤ 60 KB). Regressions fail the check.                                                                                                                                                                            |
+| **Scaffolding**  | copy an existing `blocks/*` folder                        | `npm create noteloom-block` (or `npx noteloom new block <name>`) that emits `index.js` + `view.jsx` + `<name>.test.js` from a template. Mirrors `@tiptap/cli`.                                                                                                                                          |
+| **Sync testing** | "open two real tabs"                                      | Keep that, but add a Playwright multi-context spec (`test-e2e/`) that drives two editor instances through one relay so the regressions listed in CONTRIBUTING are guarded automatically.                                                                                                                |
 
 ---
 
@@ -323,7 +326,7 @@ can remain as the implementation underneath for one release, then be dropped.
 
 Sequenced so that **every phase through 1.0 is additive** (see §1.1). After each
 one, `import { useEditor, NoteloomEditor } from 'noteloom'` and all `examples/*`
-work exactly as before. The old API is only *removed* at 2.0, long after the new
+work exactly as before. The old API is only _removed_ at 2.0, long after the new
 one is proven.
 
 ### The verification problem
@@ -332,12 +335,12 @@ Re-running a full manual regression pass after every phase is the real cost of
 this work. The answer is a **one-time automated gate** that makes each phase a
 "push PR → wait for CI → 5-minute smoke" step instead:
 
-| Gate | Catches | Build cost |
-|---|---|---|
-| **Export-surface snapshot** — a test that imports `noteloom` + every subpath and asserts the exported-name set matches a committed snapshot | any accidental removal/rename while moving files around | ~2h once |
-| **Golden-document e2e** — one Playwright script drives `examples/basic`: type text, slash-insert every block type, format, undo/redo, table row/col ops, then export JSON; the exported doc is snapshotted | any behavioral regression in the editor | ~1d once |
-| **Multi-context collab spec** — two editor instances through one relay, scripted | the "open two browser tabs" checks from CONTRIBUTING | ~0.5d once |
-| existing 131 vitest files, `tsc`, `size-limit` | engine logic, types, bundle size | already exists |
+| Gate                                                                                                                                                                                                       | Catches                                                 | Build cost     |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------- |
+| **Export-surface snapshot** — a test that imports `noteloom` + every subpath and asserts the exported-name set matches a committed snapshot                                                                | any accidental removal/rename while moving files around | ~2h once       |
+| **Golden-document e2e** — one Playwright script drives `examples/basic`: type text, slash-insert every block type, format, undo/redo, table row/col ops, then export JSON; the exported doc is snapshotted | any behavioral regression in the editor                 | ~1d once       |
+| **Multi-context collab spec** — two editor instances through one relay, scripted                                                                                                                           | the "open two browser tabs" checks from CONTRIBUTING    | ~0.5d once     |
+| existing 131 vitest files, `tsc`, `size-limit`                                                                                                                                                             | engine logic, types, bundle size                        | already exists |
 
 Capture the golden snapshots from **current `master`** — that is the
 known-good baseline every later phase is diffed against.
@@ -352,6 +355,7 @@ For Phase 3, run the **existing test suite against both code paths**
 setup — this proves equivalence with almost no new tests written.
 
 ### Phase &minus;1 — build the gate (do this first)
+
 - **[done]** `test/publicApi.test.js` — imports the `noteloom` main entry, asserts
   the sorted export-name set (217 names) and the `operations` namespace match a
   frozen list. Any add/drop/rename fails the test and shows up as a diff to
@@ -375,6 +379,7 @@ setup — this proves equivalence with almost no new tests written.
 > work, not because each needs its own release or its own regression cycle.
 
 ### Phase 0 — groundwork · part of `0.4.0` (no API change at all)
+
 Pure repo hygiene, invisible to consumers.
 
 - **[done]** ESLint 9 flat config (`eslint.config.js`) — real-bug rules as
@@ -402,8 +407,10 @@ Pure repo hygiene, invisible to consumers.
   reformat + `format:check` CI gate, which await the decision above.
 
 ### Phase 1 — add optional-feature entry points · part of `0.4.0` (additive only)
+
 This is the phase that answers "basic import, extras per document". **No files
 that affect the public API move; nothing is removed.**
+
 - Add subpath `exports` that **re-export existing modules**:
   `noteloom/collab`, `noteloom/persistence`, `noteloom/comments`,
   `noteloom/versions`, `noteloom/voice`, `noteloom/canvas`, `noteloom/theme`.
@@ -419,6 +426,7 @@ that affect the public API move; nothing is removed.**
   0.3.x; every 0.3.x import still resolves.
 
 ### Phase 2 — framework-free core boundary · part of `0.4.0` (internal only)
+
 - Move engine files so core code never imports `react`/`react-dom`; add the
   lint rule at error level. Export surface of `noteloom` is unchanged — it still
   re-exports the React pieces for back-compat; internally they now live behind
@@ -426,6 +434,7 @@ that affect the public API move; nothing is removed.**
 - **Exit:** `import/no-restricted-imports` passes; no export added or removed.
 
 ### Phase 3 — the `defineBlock` extension API · `0.5.0` (additive only)
+
 - Ship `defineBlock` / `defineInline` / `defineExtension` + the stable `ctx`
   facade, and a `useEditor({ extensions: [...] })` option **next to** the
   existing `registerBlocks` / `registerBuiltInBlocks` / `registerInlineTypes` /
@@ -436,11 +445,12 @@ that affect the public API move; nothing is removed.**
 - Scaffolding CLI + `noteloom-block-starter` template repo.
 - `register*` functions still work, now documented as "legacy — prefer
   `extensions`".
-- **Exit:** one built-in block *and* one `examples/` custom block authored only
+- **Exit:** one built-in block _and_ one `examples/` custom block authored only
   through public `defineBlock` + `ctx`, no internal imports; every old
   registration path still passes its tests.
 
 ### Phase 4 — document format · `0.6.0` (opt-in default, escape hatch kept)
+
 - `editor.toJSON()` / `useEditor({ doc })` accept **both** shapes (detected by
   `version` / structure). New docs default to the simple schema'd format;
   `{ format: 'internal' }` still produces the normalized graph.
@@ -448,16 +458,18 @@ that affect the public API move; nothing is removed.**
 - **Exit:** existing stored documents in either shape load unchanged.
 
 ### Phase 5 — `1.0.0` (still no removals)
+
 - Promote the new APIs to "recommended", freeze them under semver: the `ctx`
   facade, the `define*` field sets, the document schema, and the list of subpath
   entry points.
-- Auto-theme-injection becomes opt-in *by default* only here, with `injectTheme()`
+- Auto-theme-injection becomes opt-in _by default_ only here, with `injectTheme()`
   and a starter-kit component covering the old behavior; the deprecation warning
   has been visible since 0.4.
 - `collab` labelled `experimental` and versioned separately if not yet solid.
 - Write the migration guide + a codemod for the mechanical import moves.
 
 ### Phase 6 — `2.0.0` (the only breaking release)
+
 - Remove the deprecated main-entry re-exports of moved features and the legacy
   `register*` functions. By now the replacements have shipped for several minor
   versions and the codemod exists.
@@ -470,7 +482,7 @@ that affect the public API move; nothing is removed.**
   a change to the "no build to test" property. Recommendation: JSDoc+emit now,
   revisit full TS after 1.0. **Decision needed.**
 - **Auto-injected theme removal** is the most user-visible break. The `warn +
-  shim` path covers it, but confirm we're willing to make people add one import.
+shim` path covers it, but confirm we're willing to make people add one import.
 - **`collab`/`crdt`** — is it a supported feature or a lab? The plan assumes
   "experimental, isolated, separately gated". If it's meant to be a headline
   feature, it needs its own hardening track that's out of scope here.

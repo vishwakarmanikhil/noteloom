@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { getAvatarColor, getInitials, formatRelativeTime } from '../../src/react/commentFormatting.js';
+import {
+  getAvatarColor,
+  getInitials,
+  formatRelativeTime,
+} from '../../src/react/commentFormatting.js';
 
 describe('getInitials', () => {
   it('takes the first letter of each of the first two words for a "First Last" name', () => {

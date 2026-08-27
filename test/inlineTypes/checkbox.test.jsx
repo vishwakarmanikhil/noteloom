@@ -50,12 +50,20 @@ describe('checkbox inline type', () => {
     fireEvent.click(container.querySelector('input[type="checkbox"]'));
     expect(store.getRun('c1').data.checked).toBe(true);
 
-    fireEvent.change(container.querySelector('.be-inline-checkbox-label'), { target: { value: 'Reviewed' } });
+    fireEvent.change(container.querySelector('.be-inline-checkbox-label'), {
+      target: { value: 'Reviewed' },
+    });
     expect(store.getRun('c1').data.label).toBe('Reviewed');
   });
 
   it('toHTML/toPlainText format checked state + label, and fromHTML round-trips via its own marker', () => {
-    const run = { id: 'c1', type: 'checkbox', value: '', marks: {}, data: { checked: true, label: 'Done' } };
+    const run = {
+      id: 'c1',
+      type: 'checkbox',
+      value: '',
+      marks: {},
+      data: { checked: true, label: 'Done' },
+    };
     const html = checkboxInlineType.toHTML(run);
     expect(html).toBe('<span data-inline-type="checkbox" data-checked="true">☑ Done</span>');
     expect(checkboxInlineType.toPlainText(run)).toBe('[x] Done');

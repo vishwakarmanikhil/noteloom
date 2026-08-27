@@ -232,7 +232,9 @@ export function GripVerticalIcon(props) {
   return (
     <Icon {...props}>
       {[5, 12, 19].flatMap((cy) =>
-        [9, 15].map((cx) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.3" fill="currentColor" stroke="none" />),
+        [9, 15].map((cx) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.3" fill="currentColor" stroke="none" />
+        )),
       )}
     </Icon>
   );
@@ -396,7 +398,14 @@ export function TextIcon(props) {
 /** Parameterized by `level` (1-3) — a single "H" + digit, filled text rather than the shared stroke-only glyphs above. */
 export function HeadingIcon({ level = 1, size = 16, ...rest }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...rest}>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      {...rest}
+    >
       <text x="2" y="18" fontSize="14" fontWeight="700" fill="currentColor" fontFamily="inherit">
         H{level}
       </text>

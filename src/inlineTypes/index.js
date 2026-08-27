@@ -32,4 +32,10 @@ export function registerInlineTypes(inlineRegistry, typesByType) {
 /** Only relevant alongside TABLE_BLOCKS (see blocks/index.js) — powers a table column set to "select" type. */
 export const TABLE_SELECT_INLINE_TYPES = { tableSelect: tableSelectInlineType };
 
-export { selectInlineType, dateInlineType, checkboxInlineType, tableSelectInlineType, emojiInlineType };
+export {
+  selectInlineType,
+  dateInlineType,
+  checkboxInlineType,
+  tableSelectInlineType,
+  emojiInlineType,
+};

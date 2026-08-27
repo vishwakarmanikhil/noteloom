@@ -77,7 +77,11 @@ describe('React bindings: per-block re-render isolation', () => {
 
     act(() => {
       store.applyOperation(
-        insertBlock({ id: 'p3', type: 'paragraph', parentId: 'root', contentIds: [], props: {} }, 'root', 2),
+        insertBlock(
+          { id: 'p3', type: 'paragraph', parentId: 'root', contentIds: [], props: {} },
+          'root',
+          2,
+        ),
       );
     });
     expect(renderCounts.children).toBe(2); // contentIds reference changed

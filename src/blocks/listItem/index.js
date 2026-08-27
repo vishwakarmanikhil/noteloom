@@ -4,7 +4,12 @@ import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createListItemBlock } from './createListItemBlock.js';
-import { BulletedListIcon, NumberedListIcon, CheckboxIcon, ChevronRightIcon } from '../../react/icons.jsx';
+import {
+  BulletedListIcon,
+  NumberedListIcon,
+  CheckboxIcon,
+  ChevronRightIcon,
+} from '../../react/icons.jsx';
 
 /**
  * Emits just `<li>...</li>` (with nested `<ul>/<ol>` for indented children).
@@ -16,9 +21,13 @@ function toHTML(block, ctx) {
   const { titleRunIds = [], ordered } = block.props;
   const titleHTML = titleRunIds.map((runId) => runToHTML(ctx.store.getRun(runId), ctx)).join('');
   const childrenHTML = block.contentIds
-    .map((childId) => ctx.registry.get(ctx.store.getBlock(childId).type).toHTML(ctx.store.getBlock(childId), ctx))
+    .map((childId) =>
+      ctx.registry.get(ctx.store.getBlock(childId).type).toHTML(ctx.store.getBlock(childId), ctx),
+    )
     .join('');
-  const nested = childrenHTML ? `<${ordered ? 'ol' : 'ul'}>${childrenHTML}</${ordered ? 'ol' : 'ul'}>` : '';
+  const nested = childrenHTML
+    ? `<${ordered ? 'ol' : 'ul'}>${childrenHTML}</${ordered ? 'ol' : 'ul'}>`
+    : '';
   return `<li>${titleHTML}${nested}</li>`;
 }
 
@@ -42,7 +51,10 @@ function toPlainText(block, ctx) {
 function toMarkdown(block, ctx) {
   const { titleRunIds = [], ordered, checked } = block.props;
   const marker = checked !== undefined ? (checked ? '- [x] ' : '- [ ] ') : ordered ? '1. ' : '- ';
-  const title = runsToMarkdown(titleRunIds.map((runId) => ctx.store.getRun(runId)), ctx);
+  const title = runsToMarkdown(
+    titleRunIds.map((runId) => ctx.store.getRun(runId)),
+    ctx,
+  );
   const childrenMd = block.contentIds
     .map((childId) => {
       const child = ctx.store.getBlock(childId);
@@ -121,27 +133,37 @@ export const listItemBlockType = {
       label: 'Bulleted list',
       icon: BulletedListIcon,
       keywords: ['list', 'bullet', 'ul'],
-      run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: false })),
+      run: (store, ctx) =>
+        trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: false })),
     },
     {
       label: 'Numbered list',
       icon: NumberedListIcon,
       keywords: ['list', 'number', 'ordered', 'ol'],
-      run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: true })),
+      run: (store, ctx) =>
+        trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: true })),
     },
     {
       label: 'To-do list',
       icon: CheckboxIcon,
       keywords: ['todo', 'checkbox', 'task', 'checklist'],
       run: (store, ctx) =>
-        trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: false, checked: false })),
+        trimSlashQueryAndInsertAfter(
+          store,
+          ctx,
+          createListItemBlock({ ordered: false, checked: false }),
+        ),
     },
     {
       label: 'Toggle list',
       icon: ChevronRightIcon,
       keywords: ['toggle', 'collapse', 'expand', 'dropdown', 'accordion'],
       run: (store, ctx) =>
-        trimSlashQueryAndInsertAfter(store, ctx, createListItemBlock({ ordered: false, collapsed: false })),
+        trimSlashQueryAndInsertAfter(
+          store,
+          ctx,
+          createListItemBlock({ ordered: false, collapsed: false }),
+        ),
     },
   ],
 };
