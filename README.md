@@ -78,6 +78,23 @@ Everything past this point is a reference guide, in two parts:
 
 Every example below uses `editor`/`store`/`registry`/`inlineRegistry` from `useEditor()` (`const { store, registry, inlineRegistry } = editor;`) unless it says otherwise.
 
+## Import paths
+
+The basic editor is one import — `import { useEditor, NoteloomEditor } from 'noteloom'` — and nothing below changes that. The heavier, optional features also have their own entry points so a bundler can drop the ones you don't use:
+
+| Import                                     | What's in it                                                                                                                |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `noteloom`                                 | the editor, every built-in block/inline type, slash menu, clipboard, undo/redo, export, templates, find & replace, presence |
+| `noteloom/theme` (or `noteloom/style.css`) | the default theme stylesheet                                                                                                |
+| `noteloom/collab`                          | `CollabSession`, `PeerConnection`, the CRDT primitives, WebSocket signaling                                                 |
+| `noteloom/persistence`                     | `usePersistedDocument`, `createAutoPersistence`, the raw IndexedDB ops, `useServiceWorkerUpdate`                            |
+| `noteloom/comments`                        | `addComment`/`replyToComment`/…, `useComments`, `CommentsPanel` and the other comment components                            |
+| `noteloom/versions`                        | `createAutoVersionHistory`, `VersionHistory`, `diffDocumentsHTML`, `useDocumentVersions`                                    |
+| `noteloom/voice`                           | `useVoiceTyping`, `VoicePermissionModal`, `VoiceListeningIndicator`, `listVoiceCommands`                                    |
+| `noteloom/canvas`                          | `canvasBlockType` (the freehand-drawing block — the single heaviest component, so it's opt-in)                              |
+
+Every name in those feature entries is **also still exported from `noteloom`** itself, so existing imports keep working unchanged. Prefer the subpath in new code — the main-entry re-exports of these will be removed in a future major version (see `docs/repackaging-plan.md`).
+
 ## Built-in block types
 
 `paragraph`, `heading` (h1–h3), `listItem` (bulleted, numbered, to-do, and toggle — with Tab/Shift+Tab nesting and standard Enter conventions), `table` (with row/column insert/delete), `layout` (multi-column), `divider`, `callout`, `blockquote`, `code`, `toggleHeading`, `button`, and `embed` (image/video/audio/file).

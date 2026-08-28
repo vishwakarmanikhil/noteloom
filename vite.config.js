@@ -5,22 +5,46 @@ export default defineConfig({
   plugins: [react()],
   build: {
     lib: {
-      entry: 'src/index.js',
-      name: 'Noteloom',
-      // The CJS build MUST end in `.cjs`, not `.cjs.js` — with "type":
-      // "module" set in package.json, Node treats every plain `.js` file
-      // as ESM purely by extension, regardless of what's actually written
-      // inside it, so a `require()` consumer loading a CJS-syntax file
-      // still named `.js` fails outright (ERR_REQUIRE_ESM). `.cjs` is
-      // always CommonJS to Node no matter what "type" says.
-      fileName: (format) => (format === 'es' ? 'noteloom.es.js' : 'noteloom.cjs'),
-      formats: ['es', 'cjs'],
+      // One entry per published subpath (see package.json "exports" and
+      // docs/repackaging-plan.md Phase 1). The main `noteloom` entry
+      // (index) still re-exports everything the feature entries do, so
+      // nothing that imported from 'noteloom' before breaks; the point of
+      // the split is that a consumer importing only `noteloom` +
+      // `noteloom/react`-level pieces no longer pulls WebRTC / canvas /
+      // SpeechRecognition / IndexedDB code into their bundle.
+      entry: {
+        index: 'src/index.js',
+        collab: 'src/collab.js',
+        persistence: 'src/persistence.js',
+        comments: 'src/comments.js',
+        versions: 'src/versions.js',
+        voice: 'src/voice.js',
+        canvas: 'src/canvas.js',
+      },
     },
     rollupOptions: {
       external: ['react', 'react-dom', 'react/jsx-runtime'],
-      output: {
-        globals: { react: 'React', 'react-dom': 'ReactDOM' },
-      },
+      // One output config per format so the extension is right on BOTH
+      // entry files and shared chunks. With "type": "module" in
+      // package.json, Node treats every plain `.js` file as ESM purely by
+      // extension — so a `require()` that pulls in a CJS-syntax chunk still
+      // named `.js` fails outright (ERR_REQUIRE_ESM). Every CJS artifact,
+      // chunks included, must end in `.cjs`.
+      output: [
+        {
+          format: 'es',
+          entryFileNames: '[name].js',
+          chunkFileNames: 'shared/[name]-[hash].js',
+          globals: { react: 'React', 'react-dom': 'ReactDOM' },
+        },
+        {
+          format: 'cjs',
+          entryFileNames: '[name].cjs',
+          chunkFileNames: 'shared/[name]-[hash].cjs',
+          exports: 'named',
+          globals: { react: 'React', 'react-dom': 'ReactDOM' },
+        },
+      ],
     },
     cssCodeSplit: false,
     sourcemap: true,

@@ -406,24 +406,41 @@ Pure repo hygiene, invisible to consumers.
 - **Exit:** CI green, zero runtime/behavior/API change. ✔ except the Prettier
   reformat + `format:check` CI gate, which await the decision above.
 
-### Phase 1 — add optional-feature entry points · part of `0.4.0` (additive only)
+### Phase 1 — add optional-feature entry points · part of `0.4.0` (additive only) — **DONE**
 
-This is the phase that answers "basic import, extras per document". **No files
-that affect the public API move; nothing is removed.**
+This is the phase that answers "basic import, extras per document". No files
+that affect the public API moved; nothing was removed.
 
-- Add subpath `exports` that **re-export existing modules**:
-  `noteloom/collab`, `noteloom/persistence`, `noteloom/comments`,
-  `noteloom/versions`, `noteloom/voice`, `noteloom/canvas`, `noteloom/theme`.
-- Split the Vite build into one target per entry so a consumer importing only
-  `noteloom` + `noteloom/react` no longer pulls WebRTC / SpeechRecognition /
-  IndexedDB / the canvas component into their bundle.
-- The main `noteloom` entry **still re-exports every one of those symbols too**,
-  now with a one-time `console.warn` in dev pointing at the new path. Both work.
-- Document the new imports; update `examples/*` to use them (proof they're
-  real) — but the old imports in anyone else's code keep working.
-- **Exit:** `examples/*` run with only mechanical import edits; default-path
-  bundle (`noteloom` + `noteloom/react`, no extras) is measurably smaller than
-  0.3.x; every 0.3.x import still resolves.
+- **[done]** Subpath `exports` re-exporting existing modules: `noteloom/collab`,
+  `/persistence`, `/comments`, `/versions`, `/voice`, `/canvas`, plus
+  `noteloom/theme` (alias of the existing `noteloom/style.css`). Each is a
+  ~10-line `src/<name>.js` + a `src/<name>.d.ts` that re-exports its types from
+  `./index` (one source of truth while `index.d.ts` stays hand-written).
+- **[done]** Vite build is now multi-entry (one output per subpath), with shared
+  code in `dist/shared/*` chunks. `rollupOptions.output` is per-format so CJS
+  chunks are `.cjs` (a plain `.js` CJS chunk under `"type": "module"` would
+  `ERR_REQUIRE_ESM`). `scripts/copy-dist-assets.mjs` copies `style.css` + every
+  `src/*.d.ts`. Node smoke test: `import` and `require` both resolve for the
+  main entry and every subpath.
+- **[done]** Main `noteloom` entry still re-exports all 217 names (frozen by
+  `test/publicApi.test.js`), and `test/publicApi.test.js` now also freezes each
+  subpath's surface and asserts every subpath name is still on the main entry.
+- **[revised]** No runtime `console.warn` on the main-entry re-exports yet —
+  per-symbol wrapping is noisy and the removal isn't until 2.0. Deprecation is
+  documented (README + the entry files' own header comments) for now; a
+  build-time or lint-time nudge can come later.
+- **[revised]** `size-limit` switched from `@size-limit/file` to
+  `@size-limit/esbuild` — with the multi-entry split, measuring a single entry
+  file undercounts (shared code moved to chunks it imports); esbuild re-bundles
+  each entry to get the real cost. Budgets now: main ≤ 110 kB, `/collab` &
+  `/comments` ≤ 8 kB, `/canvas` ≤ 20 kB, theme CSS ≤ 10 kB (min+brotli).
+- **[note]** Built file names changed (`dist/noteloom.es.js` → `dist/index.js`,
+  `dist/noteloom.cjs` → `dist/index.cjs`). Invisible to consumers — the
+  `exports` map is the only entry path — but noted for anyone deep-linking.
+- **[not needed]** `examples/*` import via a `noteloom → src/index.js` alias, so
+  they already exercise the (unchanged) main entry; left as-is.
+- **Exit:** ✔ `examples/*` unchanged and green; `npm run lint` / `typecheck` /
+  `size` / vitest (1382) / e2e (16) all green; every 0.3.x import still resolves.
 
 ### Phase 2 — framework-free core boundary · part of `0.4.0` (internal only)
 

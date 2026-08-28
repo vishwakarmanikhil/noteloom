@@ -1,14 +1,35 @@
 [
   {
-    "name": "noteloom (ESM, gzip)",
-    "path": "dist/noteloom.es.js",
-    "limit": "140 kB",
-    "gzip": true
+    "name": "noteloom (main entry, ESM + shared chunks, min+brotli)",
+    "path": "dist/index.js",
+    "import": "*",
+    "ignore": ["react", "react-dom", "react/jsx-runtime"],
+    "limit": "110 kB"
   },
   {
-    "name": "default theme CSS (gzip)",
+    "name": "noteloom/collab (min+brotli)",
+    "path": "dist/collab.js",
+    "import": "*",
+    "ignore": ["react", "react-dom", "react/jsx-runtime"],
+    "limit": "8 kB"
+  },
+  {
+    "name": "noteloom/comments (min+brotli)",
+    "path": "dist/comments.js",
+    "import": "*",
+    "ignore": ["react", "react-dom", "react/jsx-runtime"],
+    "limit": "8 kB"
+  },
+  {
+    "name": "noteloom/canvas (min+brotli)",
+    "path": "dist/canvas.js",
+    "import": "*",
+    "ignore": ["react", "react-dom", "react/jsx-runtime"],
+    "limit": "20 kB"
+  },
+  {
+    "name": "default theme CSS (min+brotli)",
     "path": "dist/style.css",
-    "limit": "18 kB",
-    "gzip": true
+    "limit": "10 kB"
   }
 ]

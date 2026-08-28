@@ -2,6 +2,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import * as api from '../src/index.js';
+import * as collabEntry from '../src/collab.js';
+import * as persistenceEntry from '../src/persistence.js';
+import * as commentsEntry from '../src/comments.js';
+import * as versionsEntry from '../src/versions.js';
+import * as voiceEntry from '../src/voice.js';
+import * as canvasEntry from '../src/canvas.js';
 
 /**
  * Export-surface snapshot — the cheap gate that lets the repackaging work
@@ -292,6 +298,103 @@ describe('public API surface (noteloom main entry)', () => {
     const missing = EXPECTED_EXPORTS.filter((n) => n !== 'operations' && api[n] === undefined);
     expect(missing).toEqual([]);
   });
+});
+
+// The optional-feature subpath entry points (docs/repackaging-plan.md Phase 1).
+// Each re-exports a hand-picked slice; every name here must also still be on the
+// main `noteloom` entry (they are re-exports, removed only in 2.0). Freezing
+// these lists is what stops a rename in a feature module from silently changing
+// `noteloom/collab` & co.
+const ENTRY_EXPORTS = {
+  'noteloom/collab': {
+    mod: collabEntry,
+    names: [
+      'CollabSession',
+      'FieldClockRegistry',
+      'HLC',
+      'ListCrdtState',
+      'MESSAGE_TYPE',
+      'PeerConnection',
+      'createPeriodicTombstoneGC',
+      'createWebSocketSignaling',
+      'decodeMessage',
+      'encodeMessage',
+      'genPeerId',
+    ],
+  },
+  'noteloom/persistence': {
+    mod: persistenceEntry,
+    names: [
+      'createAutoPersistence',
+      'deletePersistedDocument',
+      'listPersistedDocumentIds',
+      'loadPersistedDocument',
+      'savePersistedDocument',
+      'usePersistedDocument',
+      'useServiceWorkerUpdate',
+    ],
+  },
+  'noteloom/comments': {
+    mod: commentsEntry,
+    names: [
+      'CommentAvatar',
+      'CommentComposer',
+      'CommentThreadCard',
+      'CommentsPanel',
+      'addComment',
+      'addCommentMarkOverRange',
+      'deleteComment',
+      'removeCommentMarkEverywhere',
+      'replyToComment',
+      'resolveComment',
+      'useCommentAuthorId',
+      'useComments',
+    ],
+  },
+  'noteloom/versions': {
+    mod: versionsEntry,
+    names: [
+      'VersionHistory',
+      'createAutoVersionHistory',
+      'deleteDocumentVersion',
+      'diffDocumentsHTML',
+      'listDocumentVersions',
+      'loadDocumentVersion',
+      'saveDocumentVersion',
+      'useDocumentVersions',
+    ],
+  },
+  'noteloom/voice': {
+    mod: voiceEntry,
+    names: [
+      'VoiceListeningIndicator',
+      'VoicePermissionModal',
+      'listVoiceCommands',
+      'useVoiceTyping',
+    ],
+  },
+  'noteloom/canvas': {
+    mod: canvasEntry,
+    names: ['canvasBlockType'],
+  },
+};
+
+describe('optional-feature subpath entry points', () => {
+  for (const [entry, { mod, names }] of Object.entries(ENTRY_EXPORTS)) {
+    it(`${entry} exports exactly its frozen set`, () => {
+      const actual = Object.keys(mod).sort();
+      const { added, removed } = diff(actual, names);
+      expect(
+        { added, removed },
+        `${entry} surface changed.\n  + added:   ${JSON.stringify(added)}\n  - removed: ${JSON.stringify(removed)}`,
+      ).toEqual({ added: [], removed: [] });
+    });
+
+    it(`${entry} names are all still on the main noteloom entry (back-compat)`, () => {
+      const notOnMain = names.filter((name) => api[name] === undefined);
+      expect(notOnMain).toEqual([]);
+    });
+  }
 });
 
 // src/index.d.ts is hand-written (see its header comment) and CONTRIBUTING asks

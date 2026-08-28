@@ -76,7 +76,13 @@ export default [
   },
 
   {
-    files: ['test/**/*.{js,jsx}', 'test-e2e/**/*.{js,jsx}', '**/*.config.js', 'tools/**/*.js'],
+    files: [
+      'test/**/*.{js,jsx}',
+      'test-e2e/**/*.{js,jsx}',
+      'scripts/**/*.{js,mjs}',
+      '**/*.config.{js,mjs}',
+      'tools/**/*.js',
+    ],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser, ...globals.vitest },
     },

@@ -31,17 +31,54 @@
   "sideEffects": [
     "*.css"
   ],
-  "main": "./dist/noteloom.cjs",
-  "module": "./dist/noteloom.es.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "style": "./dist/style.css",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/noteloom.es.js",
-      "require": "./dist/noteloom.cjs",
-      "default": "./dist/noteloom.es.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
     },
+    "./collab": {
+      "types": "./dist/collab.d.ts",
+      "import": "./dist/collab.js",
+      "require": "./dist/collab.cjs",
+      "default": "./dist/collab.js"
+    },
+    "./persistence": {
+      "types": "./dist/persistence.d.ts",
+      "import": "./dist/persistence.js",
+      "require": "./dist/persistence.cjs",
+      "default": "./dist/persistence.js"
+    },
+    "./comments": {
+      "types": "./dist/comments.d.ts",
+      "import": "./dist/comments.js",
+      "require": "./dist/comments.cjs",
+      "default": "./dist/comments.js"
+    },
+    "./versions": {
+      "types": "./dist/versions.d.ts",
+      "import": "./dist/versions.js",
+      "require": "./dist/versions.cjs",
+      "default": "./dist/versions.js"
+    },
+    "./voice": {
+      "types": "./dist/voice.d.ts",
+      "import": "./dist/voice.js",
+      "require": "./dist/voice.cjs",
+      "default": "./dist/voice.js"
+    },
+    "./canvas": {
+      "types": "./dist/canvas.d.ts",
+      "import": "./dist/canvas.js",
+      "require": "./dist/canvas.cjs",
+      "default": "./dist/canvas.js"
+    },
+    "./theme": "./dist/style.css",
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },
@@ -63,7 +100,7 @@
     "dev:collab": "vite --config examples/collab/vite.config.js",
     "dev:lan-collab": "vite --config examples/lan-collab/vite.config.js",
     "dev:offline-persist": "vite --config examples/offline-persist/vite.config.js",
-    "build": "vite build && node -e \"require('fs').copyFileSync('src/style.css','dist/style.css');require('fs').copyFileSync('src/index.d.ts','dist/index.d.ts')\"",
+    "build": "vite build && node scripts/copy-dist-assets.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "typecheck": "tsc",
@@ -83,6 +120,7 @@
     "@changesets/cli": "^3.0.1",
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.62.0",
+    "@size-limit/esbuild": "^13.0.3",
     "@size-limit/file": "^13.0.3",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",

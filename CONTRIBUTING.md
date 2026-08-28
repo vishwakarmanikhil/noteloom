@@ -66,8 +66,10 @@ ESLint (`eslint.config.js`) and Prettier (`.prettierrc.json`) are configured. `n
 - `src/sync/` — WebRTC transport + signaling (no merge-algorithm knowledge).
 - `src/persistence/` — IndexedDB-backed local persistence.
 - `src/react/` — React hooks/components (the public-facing surface for most of the above).
+- `src/index.js` + `src/<feature>.js` (`collab`, `persistence`, `comments`, `versions`, `voice`, `canvas`) — the published entry points. `src/index.js` re-exports everything; the feature files re-export a hand-picked slice for the `noteloom/<feature>` subpaths. Each has a sibling hand-written `src/<name>.d.ts`. Adding/renaming a public export means updating the relevant entry file, its `.d.ts`, **and** the frozen list in `test/publicApi.test.js` (the build's `exports` map in `package.json` and `vite.config.js`'s `lib.entry` only change when a whole new subpath is added).
 - `examples/` — runnable demo apps, not part of the published npm package.
 - `tools/` — reference tooling (e.g. the LAN signaling relay) that's Node-only and also not part of the published package.
+- `scripts/` — build helpers (`copy-dist-assets.mjs`).
 
 ## Questions / bugs
 
