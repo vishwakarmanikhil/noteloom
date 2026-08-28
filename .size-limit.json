@@ -28,6 +28,13 @@
     "limit": "20 kB"
   },
   {
+    "name": "noteloom/starter-kit (min+brotli)",
+    "path": "dist/starter-kit.js",
+    "import": "*",
+    "ignore": ["react", "react-dom", "react/jsx-runtime"],
+    "limit": "110 kB"
+  },
+  {
     "name": "default theme CSS (min+brotli)",
     "path": "dist/style.css",
     "limit": "10 kB"

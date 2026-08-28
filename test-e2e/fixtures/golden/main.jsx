@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import {
   useEditor,
   NoteloomEditor,
+  starterKit,
   exportDocumentJSON,
   exportDocumentHTML,
   exportDocumentMarkdown,
@@ -15,8 +16,12 @@ import { goldenDoc } from './doc.js';
 // one the repackaging plan most needs to keep stable — and hangs the real
 // exported serialization functions off `window.__noteloom` so the spec can
 // snapshot their output without reaching into internals.
+//
+// It goes through `extensions: starterKit()` on purpose: if the committed
+// golden snapshots still match, that proves the defineBlock()-wrapped built-ins
+// render and serialize byte-identically to the legacy registration path.
 function App() {
-  const editor = useEditor({ doc: goldenDoc });
+  const editor = useEditor({ doc: goldenDoc, extensions: starterKit() });
   const { store, registry, inlineRegistry } = editor;
 
   window.__noteloom = {

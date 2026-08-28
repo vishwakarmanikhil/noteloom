@@ -20,6 +20,7 @@ export default defineConfig({
         versions: 'src/versions.js',
         voice: 'src/voice.js',
         canvas: 'src/canvas.js',
+        'starter-kit': 'src/starter-kit.js',
       },
     },
     rollupOptions: {

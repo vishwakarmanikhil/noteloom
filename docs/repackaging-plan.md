@@ -469,19 +469,42 @@ that affect the public API moved; nothing was removed.
 
 ### Phase 3 — the `defineBlock` extension API · `0.5.0` (additive only)
 
-- Ship `defineBlock` / `defineInline` / `defineExtension` + the stable `ctx`
-  facade, and a `useEditor({ extensions: [...] })` option **next to** the
-  existing `registerBlocks` / `registerBuiltInBlocks` / `registerInlineTypes` /
-  `registerBlockTemplates` options.
-- Reimplement the built-ins on top of `defineBlock` internally (proves the
-  contract) — output and behavior identical.
-- `noteloom/starter-kit` entry = today's `useEditor()` defaults as one value.
+Increment 3a — **DONE**:
+
+- **[done]** `defineBlock` / `defineInline` (in `src/registry/define.js`,
+  framework-free) — validating factories. A result IS a registry entry plus
+  `name` + `kind`, so it drops into `registry.register()` unchanged.
+  `contentModel: 'blocks' | 'runs' | 'void'` normalizes to `isLeaf`; an explicit
+  `isLeaf` is honoured (for wrapping a pre-existing entry); all other fields pass
+  through untouched.
+- **[done]** `registerExtensions(extensions, { registry, inlineRegistry })` +
+  `useEditor({ extensions: [...] })` — passing `extensions` turns off automatic
+  built-in registration (opt-in, like `registerBlocks`); a `registerBlocks` /
+  `registerInlineTypes` callback given alongside still runs, on top.
+- **[done]** `noteloom/starter-kit` entry — `starterKit({ exclude? })` returns
+  every built-in type as an `extensions` array. Unit test proves it registers
+  the identical set (same `component` / `isLeaf` / `toHTML` / `slashCommand`
+  refs) as `registerBuiltInBlocks` / `registerBuiltInInlineTypes`; the
+  golden-document e2e fixture now renders through
+  `useEditor({ extensions: starterKit() })` and its byte-snapshots still match —
+  proof the wrapped built-ins serialize identically. `starter-kit` also
+  re-exports `defineBlock` / `defineInline` / `registerExtensions`.
+- **[done]** New main-entry exports: `defineBlock`, `defineInline`,
+  `registerExtensions`, `starterKit` (221 total, frozen in
+  `test/publicApi.test.js`); `.d.ts` hand-updated; `register*` functions
+  untouched and still documented.
+
+Still **TODO** (later increments):
+
+- `defineExtension` (behavior — keymap / input rules / paste transforms) and the
+  stable `ctx` facade — needs the effect lifecycle in `<NoteloomEditor>`, bigger
+  scope.
+- Rewrite each built-in's own `src/blocks/*/index.js` to call `defineBlock`
+  directly (right now `starterKit()` wraps the existing entry objects — behavior
+  proven identical, but the source files aren't migrated yet).
 - Scaffolding CLI + `noteloom-block-starter` template repo.
-- `register*` functions still work, now documented as "legacy — prefer
-  `extensions`".
-- **Exit:** one built-in block _and_ one `examples/` custom block authored only
-  through public `defineBlock` + `ctx`, no internal imports; every old
-  registration path still passes its tests.
+- An `examples/` app that authors a custom block purely through public
+  `defineBlock` + `ctx`.
 
 ### Phase 4 — document format · `0.6.0` (opt-in default, escape hatch kept)
 

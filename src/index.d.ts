@@ -645,6 +645,63 @@ export const tableSelectInlineType: InlineTypeDefinition;
 export const emojiInlineType: InlineTypeDefinition;
 
 // ---------------------------------------------------------------------------
+// registry/define.js, starter-kit.js — the defineBlock/defineInline factories
+// ---------------------------------------------------------------------------
+
+export interface DefineBlockConfig {
+  /** Unique — used as the block `type`. */
+  name: string;
+  /** React component, receives `{ id }`. */
+  component: ComponentType<{ id: string }>;
+  /** 'blocks' (default, holds child blocks) | 'runs' | 'void' (both leaves). */
+  contentModel?: 'blocks' | 'runs' | 'void';
+  /** Escape hatch — set `isLeaf` directly instead of `contentModel`. */
+  isLeaf?: boolean;
+  defaultProps?: Record<string, unknown>;
+  toHTML?: (block: Block, ctx: unknown) => string;
+  fromHTML?: (node: unknown, ctx: unknown) => unknown;
+  toPlainText?: (block: Block, ctx: unknown) => string;
+  toMarkdown?: (block: Block, ctx: unknown) => string;
+  slashCommand?: unknown;
+  slashCommands?: unknown[];
+  [key: string]: unknown;
+}
+
+export interface DefineInlineConfig {
+  name: string;
+  component: ComponentType<{ id: string }>;
+  /** Only `true` (the default) is supported today. */
+  atomic?: boolean;
+  isAtomic?: boolean;
+  toHTML?: (run: Run, ctx: unknown) => string;
+  fromHTML?: (node: unknown, ctx: unknown) => unknown;
+  toPlainText?: (run: Run, ctx: unknown) => string;
+  slashCommand?: unknown;
+  slashCommands?: unknown[];
+  atCommand?: unknown;
+  atCommands?: unknown[];
+  [key: string]: unknown;
+}
+
+/** A `defineBlock()` result — a `BlockRegistry` entry tagged `kind: 'block'`. */
+export type BlockDefinition = BlockTypeDefinition & { name: string; kind: 'block' };
+/** A `defineInline()` result — an `InlineRegistry` entry tagged `kind: 'inline'`. */
+export type InlineDefinition = InlineTypeDefinition & { name: string; kind: 'inline' };
+export type Extension = BlockDefinition | InlineDefinition;
+
+export function defineBlock(config: DefineBlockConfig): BlockDefinition;
+export function defineInline(config: DefineInlineConfig): InlineDefinition;
+
+/** Registers a flat/nested array of `defineBlock()` / `defineInline()` results onto the given registries. */
+export function registerExtensions(
+  extensions: ReadonlyArray<Extension | ReadonlyArray<Extension>>,
+  registries: { registry?: BlockRegistry; inlineRegistry?: InlineRegistry },
+): void;
+
+/** Every built-in block + inline type as an `extensions` array. `exclude` drops types by name. */
+export function starterKit(options?: { exclude?: string[] }): Extension[];
+
+// ---------------------------------------------------------------------------
 // react/ — provider, core hooks
 // ---------------------------------------------------------------------------
 
@@ -981,9 +1038,11 @@ export interface UseEditorOptions {
   history?: boolean;
   /** Stamped as every edit's actorId (History's defaultActorId) -- used by createAutoVersionHistory/VersionHistory for "who changed this", with no separate identity plumbing needed. Ignored when history: false. */
   currentUserId?: string | null;
-  /** Replaces registerBuiltInBlocks for an opt-in subset of block types. */
+  /** Recommended: an array of `defineBlock()` / `defineInline()` results (nesting allowed), e.g. `[...starterKit(), myBlock]`. Passing it turns off automatic built-in registration; `registerBlocks`/`registerInlineTypes`, if also given, still run afterward. */
+  extensions?: ReadonlyArray<Extension | ReadonlyArray<Extension>>;
+  /** Callback form: replaces registerBuiltInBlocks for an opt-in subset of block types. Runs after `extensions` if both are given. */
   registerBlocks?: (registry: BlockRegistry) => void;
-  /** Replaces registerBuiltInInlineTypes for an opt-in subset of inline types. */
+  /** Callback form: replaces registerBuiltInInlineTypes for an opt-in subset of inline types. Runs after `extensions` if both are given. */
   registerInlineTypes?: (inlineRegistry: InlineRegistry) => void;
 }
 

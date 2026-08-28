@@ -78,6 +78,12 @@
       "require": "./dist/canvas.cjs",
       "default": "./dist/canvas.js"
     },
+    "./starter-kit": {
+      "types": "./dist/starter-kit.d.ts",
+      "import": "./dist/starter-kit.js",
+      "require": "./dist/starter-kit.cjs",
+      "default": "./dist/starter-kit.js"
+    },
     "./theme": "./dist/style.css",
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"

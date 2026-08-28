@@ -82,6 +82,13 @@ export { usePeople } from './react/usePeople.js';
 export { BlockRegistry, createBlockRegistry } from './registry/blockRegistry.js';
 export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.js';
 
+// defineBlock/defineInline — the typed factories for authoring a block or
+// inline type; registerExtensions + useEditor({ extensions }) register an
+// array of them. starterKit() is every built-in type as such an array. See
+// noteloom/starter-kit and docs/repackaging-plan.md Phase 3.
+export { defineBlock, defineInline, registerExtensions } from './registry/define.js';
+export { starterKit } from './starter-kit.js';
+
 // registerBuiltInBlocks/registerBuiltInInlineTypes register EVERY built-in
 // type at once — the quickest way to get a fully-featured editor running.
 // For an opt-in pick of only the block/inline types you actually want,

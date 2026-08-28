@@ -8,6 +8,7 @@ import * as commentsEntry from '../src/comments.js';
 import * as versionsEntry from '../src/versions.js';
 import * as voiceEntry from '../src/voice.js';
 import * as canvasEntry from '../src/canvas.js';
+import * as starterKitEntry from '../src/starter-kit.js';
 
 /**
  * Export-surface snapshot — the cheap gate that lets the repackaging work
@@ -98,6 +99,8 @@ const EXPECTED_EXPORTS = [
   'createWebSocketSignaling',
   'dateInlineType',
   'decodeMessage',
+  'defineBlock',
+  'defineInline',
   'deleteBlockAndFocusSibling',
   'deleteBlockRange',
   'deleteColumn',
@@ -159,6 +162,7 @@ const EXPECTED_EXPORTS = [
   'registerBlocks',
   'registerBuiltInBlocks',
   'registerBuiltInInlineTypes',
+  'registerExtensions',
   'registerInlineTypes',
   'registerStoredFieldTypes',
   'remapSubtreeIds',
@@ -188,6 +192,7 @@ const EXPECTED_EXPORTS = [
   'setMarksOverBlockRange',
   'setMarksOverSelection',
   'sortTableByColumn',
+  'starterKit',
   'tableBlockType',
   'tableCellBlockType',
   'tableRowBlockType',
@@ -376,6 +381,10 @@ const ENTRY_EXPORTS = {
   'noteloom/canvas': {
     mod: canvasEntry,
     names: ['canvasBlockType'],
+  },
+  'noteloom/starter-kit': {
+    mod: starterKitEntry,
+    names: ['defineBlock', 'defineInline', 'registerExtensions', 'starterKit'],
   },
 };
 

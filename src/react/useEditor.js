@@ -5,6 +5,7 @@ import { createBlockRegistry } from '../registry/blockRegistry.js';
 import { createInlineRegistry } from '../registry/inlineRegistry.js';
 import { registerBuiltInBlocks } from '../blocks/index.js';
 import { registerBuiltInInlineTypes } from '../inlineTypes/index.js';
+import { registerExtensions } from '../registry/define.js';
 import { genId } from '../utils/idGen.js';
 
 function defaultDoc() {
@@ -29,10 +30,15 @@ function defaultDoc() {
  * `store`/`registry`/`inlineRegistry` fields directly with <EditorProvider>
  * for anything this doesn't cover — nothing here is hidden, just defaulted.
  *
- * `registerBlocks`/`registerInlineTypes` swap in a custom set instead of
- * every built-in type (see the `registerBlocks`/`TABLE_BLOCKS`-style opt-in
- * exports for picking a subset), matching this package's existing
- * opt-in-by-replacement convention rather than an extensions array.
+ * `extensions` is the newer, recommended way to pick what's registered: an
+ * array of `defineBlock()` / `defineInline()` results (nesting allowed), e.g.
+ * `useEditor({ extensions: [...starterKit(), myBlock] })`. Passing it turns
+ * OFF the automatic built-in registration (like `registerBlocks` does), so
+ * spread `starterKit()` in if you want the usual set. `registerBlocks` /
+ * `registerInlineTypes` are the older callback form — still supported, and
+ * they run *after* `extensions` if you pass both, so you can add a few
+ * imperatively on top. With none of the three given, every built-in block and
+ * inline type is registered.
  *
  * The store is created once, on first render — pass a different `doc` and
  * change `key` on the consuming component to load a different document,
@@ -50,14 +56,27 @@ export function useEditor({
   doc,
   history = true,
   currentUserId = null,
+  extensions,
   registerBlocks: customRegisterBlocks,
   registerInlineTypes: customRegisterInlineTypes,
 } = {}) {
   return useMemo(() => {
     const registry = createBlockRegistry();
-    (customRegisterBlocks ?? registerBuiltInBlocks)(registry);
     const inlineRegistry = createInlineRegistry();
-    (customRegisterInlineTypes ?? registerBuiltInInlineTypes)(inlineRegistry);
+
+    if (extensions != null) {
+      registerExtensions(extensions, { registry, inlineRegistry });
+    }
+    // Block and inline registration are independent: an explicit callback for
+    // one side doesn't suppress the built-ins on the other. `extensions`
+    // suppresses the built-ins on both sides (opt-in), but a callback passed
+    // alongside it still runs, on top.
+    if (customRegisterBlocks) customRegisterBlocks(registry);
+    else if (extensions == null) registerBuiltInBlocks(registry);
+
+    if (customRegisterInlineTypes) customRegisterInlineTypes(inlineRegistry);
+    else if (extensions == null) registerBuiltInInlineTypes(inlineRegistry);
+
     const store = new EditorStore(doc ?? defaultDoc());
     return {
       store: history ? new History(store, { defaultActorId: currentUserId }) : store,

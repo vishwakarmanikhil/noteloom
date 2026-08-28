@@ -92,6 +92,7 @@ The basic editor is one import — `import { useEditor, NoteloomEditor } from 'n
 | `noteloom/versions`                        | `createAutoVersionHistory`, `VersionHistory`, `diffDocumentsHTML`, `useDocumentVersions`                                    |
 | `noteloom/voice`                           | `useVoiceTyping`, `VoicePermissionModal`, `VoiceListeningIndicator`, `listVoiceCommands`                                    |
 | `noteloom/canvas`                          | `canvasBlockType` (the freehand-drawing block — the single heaviest component, so it's opt-in)                              |
+| `noteloom/starter-kit`                     | `starterKit()`, `defineBlock`, `defineInline`, `registerExtensions` — the extension-authoring workflow                      |
 
 Every name in those feature entries is **also still exported from `noteloom`** itself, so existing imports keep working unchanged. Prefer the subpath in new code — the main-entry re-exports of these will be removed in a future major version (see `docs/repackaging-plan.md`).
 
@@ -194,6 +195,36 @@ function Editor() {
 ```
 
 `examples/02-custom-block/` is a complete runnable version of this pattern.
+
+### `defineBlock` / `extensions` — the newer way
+
+The `registerBlocks` callback above still works, but the recommended way to author and register a type is now `defineBlock()` / `defineInline()` plus an `extensions` array:
+
+```jsx
+import { useEditor, NoteloomEditor, defineBlock, starterKit } from 'noteloom';
+// (defineBlock/defineInline/registerExtensions/starterKit are also on `noteloom/starter-kit`)
+
+const rating = defineBlock({
+  name: 'rating', // the block `type`
+  component: RatingBlock, // your React component, gets { id }
+  contentModel: 'void', // 'blocks' (default) | 'runs' | 'void' — sets isLeaf
+  defaultProps: { stars: 0 },
+  toHTML: (block) => `<div data-stars="${block.props.stars}"></div>`,
+  slashCommand: { label: 'Rating', keywords: ['stars'], run: /* … */ },
+});
+
+function Editor() {
+  const editor = useEditor({
+    extensions: [...starterKit(), rating], // every built-in, plus yours
+  });
+  return <NoteloomEditor editor={editor} />;
+}
+```
+
+- `starterKit()` is every built-in block + inline type as an array; `starterKit({ exclude: ['canvas'] })` drops some. `useEditor()` with no `extensions` registers exactly this same set.
+- Passing `extensions` turns off the automatic built-ins (it's opt-in, like `registerBlocks`) — spread `starterKit()` in if you want them. A `registerBlocks` callback passed alongside `extensions` still runs, on top.
+- `defineBlock` validates its config and throws on obvious mistakes (missing `name`/`component`, bad `contentModel`). The result is still a plain registry entry, so `registry.register('rating', rating)` also works.
+- `registerExtensions(array, { registry, inlineRegistry })` does the same registration against registries you made yourself.
 
 ## Custom dropdown / mention field types (static, or dynamic/API-backed)
 

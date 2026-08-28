@@ -5,6 +5,8 @@ import { NoteloomEditor } from '../../src/react/NoteloomEditor.jsx';
 import { History } from '../../src/store/history.js';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { addComment } from '../../src/comments/comments.js';
+import { starterKit } from '../../src/starter-kit.js';
+import { defineBlock } from '../../src/registry/define.js';
 
 describe('useEditor', () => {
   it('returns a History-wrapped store seeded with one empty paragraph, and populated registries', () => {
@@ -48,6 +50,28 @@ describe('useEditor', () => {
     const first = result.current.store;
     rerender();
     expect(result.current.store).toBe(first);
+  });
+
+  it('extensions: starterKit() registers the same types as the default (no-arg) path', () => {
+    const def = renderHook(() => useEditor()).result.current;
+    const kit = renderHook(() => useEditor({ extensions: starterKit() })).result.current;
+
+    const blockTypes = (r) => [...r._types.keys()].sort();
+    expect(blockTypes(kit.registry)).toEqual(blockTypes(def.registry));
+    expect(blockTypes(kit.inlineRegistry)).toEqual(blockTypes(def.inlineRegistry));
+  });
+
+  it('extensions replaces the built-ins (opt-in), and a registerBlocks callback still runs on top', () => {
+    const rating = defineBlock({ name: 'rating', component: () => null, contentModel: 'void' });
+    const { result } = renderHook(() =>
+      useEditor({
+        extensions: [rating],
+        registerBlocks: (registry) => registry.register('extra', { component: () => null }),
+      }),
+    );
+    const { registry } = result.current;
+    expect([...registry._types.keys()].sort()).toEqual(['extra', 'rating']);
+    expect(registry.get('paragraph')).toBeUndefined(); // built-ins suppressed
   });
 });
 
