@@ -12,14 +12,13 @@ import {
 import { goldenDoc } from './doc.js';
 
 // The golden-document e2e spec drives this page. It renders the deterministic
-// fixture through the SIMPLE public path (useEditor + NoteloomEditor) — the
-// one the repackaging plan most needs to keep stable — and hangs the real
-// exported serialization functions off `window.__noteloom` so the spec can
+// fixture through the simple public path (useEditor + NoteloomEditor) and hangs
+// the real serialization functions off `window.__noteloom` so the spec can
 // snapshot their output without reaching into internals.
 //
 // It goes through `extensions: starterKit()` on purpose: if the committed
-// golden snapshots still match, that proves the defineBlock()-wrapped built-ins
-// render and serialize byte-identically to the legacy registration path.
+// golden snapshots still match, the defineBlock()-wrapped built-ins render and
+// serialize identically to the legacy registration path.
 function App() {
   const editor = useEditor({ doc: goldenDoc, extensions: starterKit() });
   const { store, registry, inlineRegistry } = editor;

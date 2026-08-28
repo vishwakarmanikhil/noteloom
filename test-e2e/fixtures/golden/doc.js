@@ -1,9 +1,8 @@
 // Deterministic document (fixed ids) exercising every built-in block type
-// and the built-in atomic inline types. Consumed by the golden-document
-// e2e spec (test-e2e/golden-document.spec.js) — the point is that its
-// exported JSON / HTML / Markdown / text render is byte-stable across the
-// repackaging refactors in docs/repackaging-plan.md, so any behavioral
-// regression shows up as a snapshot diff instead of needing a manual pass.
+// and the built-in atomic inline types. Consumed by the golden-document e2e
+// spec (test-e2e/golden-document.spec.js): its exported JSON / HTML / Markdown /
+// text render is snapshotted, so a rendering or serialization regression shows
+// up as a snapshot diff instead of needing a manual pass.
 //
 // Do NOT hand-edit this to "fix" a failing golden snapshot — a diff here
 // means either an intended change (update the committed snapshots in the

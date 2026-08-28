@@ -13,16 +13,14 @@ const jsxA11yWarnings = Object.fromEntries(
   Object.keys(jsxA11y.flatConfigs.recommended.rules).map((rule) => [rule, 'warn']),
 );
 
-// Phase 0 of docs/repackaging-plan.md: get a linter in place at all. Rules
-// are deliberately conservative — real-bug rules stay as errors, everything
-// stylistic or aspirational is `warn` so `npm run lint` passes in CI today
-// without forcing a cleanup.
+// Rules are deliberately conservative — real-bug rules are errors, everything
+// stylistic or aspirational is `warn`, so `npm run lint` passes in CI without
+// forcing a cleanup.
 //
-// Phase 2 adds the one import-boundary rule that matters: the framework-free
-// core (every `.js` under src/ except the two React zones, src/react/ and
-// src/commands/, and any `.jsx`) may not import react/react-dom. This is what
-// keeps "is this engine logic or view logic?" an enforceable question and
-// leaves the door open to a non-React adapter later.
+// The one import-boundary rule that matters: the framework-free core (every
+// `.js` under src/ except the two React zones, src/react/ and src/commands/,
+// and any `.jsx`) may not import react/react-dom — keeping "is this engine
+// logic or view logic?" enforceable and leaving room for a non-React adapter.
 const REACT_IMPORT_PATHS = ['react', 'react-dom', 'react-dom/client', 'react-dom/server'];
 const REACT_IMPORT_PATTERNS = ['react-dom/*'];
 export default [
@@ -77,7 +75,7 @@ export default [
       'react/no-unknown-property': 'off',
       'react/no-unescaped-entities': 'off',
 
-      'import/order': 'off', // 100+ hits; not worth the churn in Phase 0
+      'import/order': 'off', // 100+ existing hits; not worth the churn
     },
   },
 

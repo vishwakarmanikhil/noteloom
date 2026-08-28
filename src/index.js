@@ -84,8 +84,8 @@ export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.
 
 // defineBlock/defineInline — the typed factories for authoring a block or
 // inline type; registerExtensions + useEditor({ extensions }) register an
-// array of them. starterKit() is every built-in type as such an array. See
-// noteloom/starter-kit and docs/repackaging-plan.md Phase 3.
+// array of them. starterKit() is every built-in type as such an array (also on
+// the noteloom/starter-kit entry).
 export {
   defineBlock,
   defineInline,

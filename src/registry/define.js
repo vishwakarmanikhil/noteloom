@@ -1,10 +1,10 @@
 // defineBlock / defineInline — the typed, validating factories for authoring a
-// block or inline type (docs/repackaging-plan.md Phase 3). A result is a plain
-// object that is ALSO a valid BlockRegistry/InlineRegistry entry, so it drops
-// straight into the existing `registry.register(type, entry)` path — this is an
-// addition next to `registerBlocks` / `registerBuiltInBlocks`, not a
-// replacement. `registerExtensions` walks an `extensions: [...]` array and
-// registers each item on the right registry.
+// block or inline type. A result is a plain object that is ALSO a valid
+// BlockRegistry/InlineRegistry entry, so it drops straight into the existing
+// `registry.register(type, entry)` path — an addition alongside
+// `registerBlocks` / `registerBuiltInBlocks`, not a replacement.
+// `registerExtensions` walks an `extensions: [...]` array and registers each
+// item on the right registry.
 
 const BLOCK_KIND = 'block';
 const INLINE_KIND = 'inline';

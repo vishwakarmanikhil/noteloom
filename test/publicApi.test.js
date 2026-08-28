@@ -11,15 +11,12 @@ import * as canvasEntry from '../src/canvas.js';
 import * as starterKitEntry from '../src/starter-kit.js';
 
 /**
- * Export-surface snapshot — the cheap gate that lets the repackaging work
- * (docs/repackaging-plan.md) move files around freely without a full manual
- * regression pass each time. Phases 0–2 add new entry points and relocate
- * modules but must not add, drop, or rename anything on the main `noteloom`
- * entry; this test fails loudly the moment that happens.
+ * Export-surface snapshot: the main `noteloom` entry, each subpath entry, and
+ * the `operations` namespace each expose exactly the frozen list of names
+ * below. Adding, dropping, or renaming an export fails this test.
  *
- * When a public API change IS intended, update the frozen lists below in the
- * same commit — the diff then shows exactly what entered or left the surface,
- * the same review signal the hand-written src/index.d.ts used to provide.
+ * When a public API change IS intended, update the frozen list in the same
+ * commit — the diff then shows exactly what entered or left the surface.
  */
 
 // The complete set of named exports from `noteloom` (the main entry), sorted.
@@ -309,11 +306,10 @@ describe('public API surface (noteloom main entry)', () => {
   });
 });
 
-// The optional-feature subpath entry points (docs/repackaging-plan.md Phase 1).
-// Each re-exports a hand-picked slice; every name here must also still be on the
-// main `noteloom` entry (they are re-exports, removed only in 2.0). Freezing
-// these lists is what stops a rename in a feature module from silently changing
-// `noteloom/collab` & co.
+// Each subpath entry re-exports a hand-picked slice; every name here must also
+// still be on the main `noteloom` entry (they are re-exports). Freezing these
+// lists stops a rename in a feature module from silently changing the surface
+// of `noteloom/collab` & co.
 const ENTRY_EXPORTS = {
   'noteloom/collab': {
     mod: collabEntry,
@@ -412,9 +408,9 @@ describe('optional-feature subpath entry points', () => {
 
 // src/index.d.ts is hand-written (see its header comment) and CONTRIBUTING asks
 // contributors to keep it in sync by hand. Generating it from the untyped .js
-// source would replace real signatures with `any`, so Phase 0 keeps it
-// hand-written but adds this check: every runtime export must have a matching
-// declaration in the .d.ts. A rename/add that forgets the .d.ts fails here.
+// source would replace real signatures with `any`, so it stays hand-written;
+// this check makes sure every runtime export has a matching declaration in it.
+// A rename/add that forgets the .d.ts fails here.
 describe('src/index.d.ts stays in sync with the runtime exports', () => {
   const dts = readFileSync(resolve(process.cwd(), 'src/index.d.ts'), 'utf8');
 

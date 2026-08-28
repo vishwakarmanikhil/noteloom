@@ -14,10 +14,8 @@ import { defineConfig, devices } from '@playwright/test';
  * `npm run dev`/other example servers a developer might already have on 5173:
  *   - examples/06-comments/ (5190) — the comments flow (comments.spec.js).
  *   - test-e2e/fixtures/golden/ (5191) — the deterministic golden-document
- *     fixture whose serialized output is snapshotted (golden-document.spec.js),
- *     the cheap regression gate for the repackaging work in
- *     docs/repackaging-plan.md. Specs use absolute URLs, so there's no single
- *     shared baseURL.
+ *     fixture whose serialized output is snapshotted (golden-document.spec.js).
+ *     Specs use absolute URLs, so there's no single shared baseURL.
  */
 export default defineConfig({
   testDir: './test-e2e',

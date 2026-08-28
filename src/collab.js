@@ -3,9 +3,8 @@
 // none of this is in the default `noteloom` bundle. Bring your own
 // SignalingChannel (see sync/signaling.js) to bootstrap peer connections.
 //
-// Everything here is also still re-exported from the main `noteloom` entry
-// for backward compatibility; that will be removed in 2.0 (see
-// docs/repackaging-plan.md).
+// These names are also still re-exported from the main `noteloom` entry for
+// backward compatibility; that is deprecated and removed in a future major.
 
 export { HLC, genPeerId } from './crdt/clock.js';
 export { ListCrdtState } from './crdt/listCrdt.js';

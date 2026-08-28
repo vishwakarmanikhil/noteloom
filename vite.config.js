@@ -5,13 +5,11 @@ export default defineConfig({
   plugins: [react()],
   build: {
     lib: {
-      // One entry per published subpath (see package.json "exports" and
-      // docs/repackaging-plan.md Phase 1). The main `noteloom` entry
-      // (index) still re-exports everything the feature entries do, so
-      // nothing that imported from 'noteloom' before breaks; the point of
-      // the split is that a consumer importing only `noteloom` +
-      // `noteloom/react`-level pieces no longer pulls WebRTC / canvas /
-      // SpeechRecognition / IndexedDB code into their bundle.
+      // One entry per published subpath (see package.json "exports"). The main
+      // `noteloom` entry still re-exports everything the feature entries do, so
+      // a consumer importing only `noteloom` + `noteloom/react`-level pieces no
+      // longer pulls WebRTC / canvas / SpeechRecognition / IndexedDB into their
+      // bundle.
       entry: {
         index: 'src/index.js',
         collab: 'src/collab.js',

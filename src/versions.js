@@ -1,8 +1,7 @@
 // noteloom/versions — Google Docs-style automatic version history: point-in-time
 // snapshots, the word-level diff, the reactive hook, and the built-in
-// <VersionHistory> drawer. Opt-in entry point; also still re-exported from the
-// main `noteloom` entry for backward compatibility (removed in 2.0 — see
-// docs/repackaging-plan.md).
+// <VersionHistory> drawer. Opt-in entry point; the same names are also
+// (deprecated) on the main `noteloom` entry, to be removed in a future major.
 
 export { createAutoVersionHistory } from './versions/autoVersionHistory.js';
 export { diffDocumentsHTML } from './versions/diffVersions.js';

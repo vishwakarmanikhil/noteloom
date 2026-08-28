@@ -1,15 +1,14 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Golden-document regression gate (see docs/repackaging-plan.md §8).
+ * Golden-document regression gate.
  *
  * Renders a deterministic document (test-e2e/fixtures/golden/) that exercises
  * every built-in block type and the atomic inline types, through the simple
  * public path (useEditor + NoteloomEditor), then snapshots the output of every
- * public serialization function. The repackaging phases move files and add
- * entry points but must not change what the editor renders or exports — a diff
- * in one of these snapshots is the signal that something regressed, without
- * anyone having to click through the editor by hand.
+ * public serialization function. A diff in one of these snapshots is the signal
+ * that rendering or export behavior regressed, without anyone having to click
+ * through the editor by hand.
  *
  * Update snapshots deliberately, in the same commit as an intended change:
  *   npx playwright test golden-document --update-snapshots

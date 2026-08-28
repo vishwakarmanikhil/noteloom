@@ -1,7 +1,7 @@
 // noteloom/persistence — offline-first local persistence (IndexedDB, native
 // browser API, no added dependency) plus the PWA service-worker update hook.
-// Opt-in entry point; also still re-exported from the main `noteloom` entry
-// for backward compatibility (removed in 2.0 — see docs/repackaging-plan.md).
+// Opt-in entry point; the same names are also (deprecated) on the main
+// `noteloom` entry, to be removed in a future major.
 
 export {
   savePersistedDocument,

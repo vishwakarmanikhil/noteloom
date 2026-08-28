@@ -5,7 +5,7 @@
 //   import { canvasBlockType } from 'noteloom/canvas';
 //   registerBlocks(registry, { canvas: canvasBlockType });
 //
-// Also still re-exported from the main `noteloom` entry for backward
-// compatibility (removed in 2.0 — see docs/repackaging-plan.md).
+// `canvasBlockType` is also (deprecated) on the main `noteloom` entry, to be
+// removed in a future major.
 
 export { canvasBlockType } from './blocks/canvas/index.js';
