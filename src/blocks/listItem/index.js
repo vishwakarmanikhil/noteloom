@@ -1,4 +1,5 @@
 import { ListItemBlock } from './ListItemBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { runToHTML, runToPlainText, runsToMarkdown } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
@@ -120,9 +121,10 @@ function fromHTML(node, ctx) {
   return { block, runs, subtreeBlocks: childBlocks };
 }
 
-export const listItemBlockType = {
+export const listItemBlockType = defineBlock({
+  name: 'listItem',
+  contentModel: 'blocks',
   component: ListItemBlock,
-  isLeaf: false,
   defaultProps: { ordered: false, titleRunIds: [] },
   toHTML,
   toPlainText,
@@ -166,4 +168,4 @@ export const listItemBlockType = {
         ),
     },
   ],
-};
+});

@@ -1,4 +1,5 @@
 import { HeadingBlock } from './HeadingBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { runToHTML, runToPlainText, runsToMarkdown } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
@@ -43,9 +44,10 @@ function fromHTML(node, ctx) {
   return { block, runs };
 }
 
-export const headingBlockType = {
+export const headingBlockType = defineBlock({
+  name: 'heading',
+  contentModel: 'runs',
   component: HeadingBlock,
-  isLeaf: true,
   defaultProps: { level: 3 },
   toHTML,
   toPlainText,
@@ -74,4 +76,4 @@ export const headingBlockType = {
         trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('heading', { level: 3 })),
     },
   ],
-};
+});

@@ -9,4 +9,4 @@
  * enumerates `inlineRegistry` sees an 'emoji' entry) even though it
  * currently does nothing on its own.
  */
-export const emojiInlineType = {};
+export const emojiInlineType = { name: 'emoji', kind: 'inline' };

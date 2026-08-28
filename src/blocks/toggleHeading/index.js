@@ -1,4 +1,5 @@
 import { ToggleHeadingBlock } from './ToggleHeadingBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { runToHTML, runToPlainText, runsToMarkdown } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
@@ -107,9 +108,10 @@ function fromHTML(node, ctx) {
   return { block, runs: [...titleRuns, ...childRuns], subtreeBlocks: childBlocks };
 }
 
-export const toggleHeadingBlockType = {
+export const toggleHeadingBlockType = defineBlock({
+  name: 'toggleHeading',
+  contentModel: 'blocks',
   component: ToggleHeadingBlock,
-  isLeaf: false,
   defaultProps: { level: 2, collapsed: false, titleRunIds: [] },
   toHTML,
   toPlainText,
@@ -126,4 +128,4 @@ export const toggleHeadingBlockType = {
     run: (store, ctx) =>
       trimSlashQueryAndInsertAfter(store, ctx, createToggleHeadingBlock({ level })),
   })),
-};
+});

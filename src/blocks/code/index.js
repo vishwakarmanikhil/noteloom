@@ -1,4 +1,5 @@
 import { CodeBlock } from './CodeBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { runToHTML, runToPlainText, escapeHTML } from '../../inline/marks.js';
 import { genId } from '../../utils/idGen.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
@@ -44,9 +45,10 @@ function fromHTML(node, ctx) {
   return { block, runs: [{ id: runId, type: 'text', value: codeEl.textContent ?? '', marks: {} }] };
 }
 
-export const codeBlockType = {
+export const codeBlockType = defineBlock({
+  name: 'code',
+  contentModel: 'runs',
   component: CodeBlock,
-  isLeaf: true,
   defaultProps: { language: 'plaintext' },
   toHTML,
   toPlainText,
@@ -58,4 +60,4 @@ export const codeBlockType = {
     keywords: ['code', 'codeblock', 'snippet', 'pre'],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('code')),
   },
-};
+});

@@ -5,8 +5,6 @@
 //
 // Also re-exported from the main `noteloom` entry.
 
-import { defineBlock, defineInline } from './registry/define.js';
-
 // Re-exported so the whole extension-authoring workflow is one import.
 export {
   defineBlock,
@@ -14,6 +12,7 @@ export {
   defineExtension,
   registerExtensions,
 } from './registry/define.js';
+
 import {
   paragraphBlockType,
   headingBlockType,
@@ -40,37 +39,33 @@ import {
   emojiInlineType,
 } from './inlineTypes/index.js';
 
-const BUILT_IN_BLOCKS = {
-  paragraph: paragraphBlockType,
-  heading: headingBlockType,
-  listItem: listItemBlockType,
-  table: tableBlockType,
-  tableRow: tableRowBlockType,
-  tableCell: tableCellBlockType,
-  layout: layoutBlockType,
-  layoutColumn: layoutColumnBlockType,
-  divider: dividerBlockType,
-  callout: calloutBlockType,
-  blockquote: blockquoteBlockType,
-  code: codeBlockType,
-  toggleHeading: toggleHeadingBlockType,
-  button: buttonBlockType,
-  embed: embedBlockType,
-  canvas: canvasBlockType,
-};
-
-const BUILT_IN_INLINE_TYPES = {
-  select: selectInlineType,
-  date: dateInlineType,
-  checkbox: checkboxInlineType,
-  tableSelect: tableSelectInlineType,
-};
-
-// `emoji` is a marker-only entry (no component — an emoji is inserted as
-// literal text via its own ":" trigger; the registry entry exists purely so
-// host code enumerating the inline registry sees it). defineInline() requires
-// a real component, so this one is assembled directly.
-const emojiDefinition = { ...emojiInlineType, name: 'emoji', kind: 'inline' };
+// Each built-in is already a defineBlock()/defineInline() result (see its own
+// src/blocks|inlineTypes/*/index.js), so `starterKit()` is just "all of them,
+// minus anything excluded". `emoji` is the one marker-only entry — no
+// component, tagged by hand in its own file.
+const ALL = [
+  paragraphBlockType,
+  headingBlockType,
+  listItemBlockType,
+  tableBlockType,
+  tableRowBlockType,
+  tableCellBlockType,
+  layoutBlockType,
+  layoutColumnBlockType,
+  dividerBlockType,
+  calloutBlockType,
+  blockquoteBlockType,
+  codeBlockType,
+  toggleHeadingBlockType,
+  buttonBlockType,
+  embedBlockType,
+  canvasBlockType,
+  selectInlineType,
+  dateInlineType,
+  checkboxInlineType,
+  tableSelectInlineType,
+  emojiInlineType,
+];
 
 /**
  * Returns a fresh array of `defineBlock()` / `defineInline()` results for every
@@ -79,13 +74,5 @@ const emojiDefinition = { ...emojiInlineType, name: 'emoji', kind: 'inline' };
  */
 export function starterKit({ exclude = [] } = {}) {
   const drop = new Set(exclude);
-  return [
-    ...Object.entries(BUILT_IN_BLOCKS)
-      .filter(([name]) => !drop.has(name))
-      .map(([name, entry]) => defineBlock({ name, ...entry })),
-    ...Object.entries(BUILT_IN_INLINE_TYPES)
-      .filter(([name]) => !drop.has(name))
-      .map(([name, entry]) => defineInline({ name, ...entry })),
-    ...(drop.has('emoji') ? [] : [emojiDefinition]),
-  ];
+  return ALL.filter((def) => !drop.has(def.name));
 }

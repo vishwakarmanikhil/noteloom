@@ -1,4 +1,5 @@
 import { DateInlineNode } from './DateInlineNode.jsx';
+import { defineInline } from '../../registry/define.js';
 import { genId } from '../../utils/idGen.js';
 import { insertInlineRunAtCursor } from '../shared/insertInlineRun.js';
 import { DateIcon } from '../../react/icons.jsx';
@@ -39,9 +40,9 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export const dateInlineType = {
+export const dateInlineType = defineInline({
+  name: 'date',
   component: DateInlineNode,
-  isAtomic: true,
   toHTML,
   toPlainText,
   fromHTML,
@@ -58,4 +59,4 @@ export const dateInlineType = {
         data: { isoDate: todayIso() },
       })),
   },
-};
+});

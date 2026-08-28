@@ -1,4 +1,5 @@
 import { ButtonBlock } from './ButtonBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { runToHTML, runToPlainText, runsToMarkdown, escapeAttr } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
@@ -61,9 +62,10 @@ function fromHTML(node, ctx) {
   return { block, runs };
 }
 
-export const buttonBlockType = {
+export const buttonBlockType = defineBlock({
+  name: 'button',
+  contentModel: 'runs',
   component: ButtonBlock,
-  isLeaf: true,
   defaultProps: { href: '', color: '', customAttrs: [] },
   toHTML,
   toPlainText,
@@ -75,4 +77,4 @@ export const buttonBlockType = {
     keywords: ['button', 'link', 'cta', 'action'],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createButtonBlock()),
   },
-};
+});

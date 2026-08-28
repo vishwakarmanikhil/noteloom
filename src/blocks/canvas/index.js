@@ -1,4 +1,5 @@
 import { CanvasBlock } from './CanvasBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import {
   createCanvasBlock,
   DEFAULT_CANVAS_WIDTH,
@@ -51,9 +52,10 @@ function insertCanvasCommand(store, { blockId, runId, sliceStart, sliceEnd }) {
   return canvasId;
 }
 
-export const canvasBlockType = {
+export const canvasBlockType = defineBlock({
+  name: 'canvas',
+  contentModel: 'void',
   component: CanvasBlock,
-  isLeaf: true, // contentIds always [] — a pure widget, same convention as divider/embed
   defaultProps: {
     strokes: [],
     shapes: [],
@@ -69,4 +71,4 @@ export const canvasBlockType = {
     keywords: ['canvas', 'draw', 'drawing', 'sketch', 'freehand'],
     run: insertCanvasCommand,
   },
-};
+});

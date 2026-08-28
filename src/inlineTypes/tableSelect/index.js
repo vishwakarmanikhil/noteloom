@@ -1,4 +1,5 @@
 import { TableSelectInlineNode } from './TableSelectInlineNode.jsx';
+import { defineInline } from '../../registry/define.js';
 import { genId } from '../../utils/idGen.js';
 
 function escapeHTML(str) {
@@ -47,13 +48,13 @@ function fromHTML(node) {
   };
 }
 
-export const tableSelectInlineType = {
+export const tableSelectInlineType = defineInline({
+  name: 'tableSelect',
   component: TableSelectInlineNode,
-  isAtomic: true,
   toHTML,
   toPlainText,
   fromHTML,
   // No slashCommand: unlike select/date/custom field types, this type is never
   // inserted ad-hoc into a paragraph — it only exists inside a table cell
   // whose column type has been set to "select" (see setColumnType).
-};
+});

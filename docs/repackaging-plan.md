@@ -502,6 +502,18 @@ Increment 3b — **DONE**:
   `registerExtensions` unpacks bundles recursively. New main export
   `defineExtension` (222 total, frozen).
 
+Increment 3c — **DONE** (satisfies the "reimplement built-ins on top" exit item):
+
+- **[done]** All 16 built-in block types and 4 inline types now call
+  `defineBlock()` / `defineInline()` in their own `src/blocks/*/index.js` /
+  `src/inlineTypes/*/index.js` — `isLeaf: true/false` became
+  `contentModel: 'runs' | 'void' | 'blocks'`. `emoji` stays a hand-tagged
+  marker (no component). `starterKit()` is now just "all the built-in
+  definitions, minus `exclude`" — no wrapping.
+- **[done]** Behavior-neutral: golden-document e2e snapshots unchanged, full
+  vitest (1398) + the `starterKit()` ≡ `registerBuiltIn*` equivalence test still
+  green. No public API change.
+
 Still **TODO** (later increments):
 
 - `defineExtension`'s **behavior** half — `keymap` / `inputRules` / `onPaste` /

@@ -1,4 +1,5 @@
 import { BlockquoteBlock } from './BlockquoteBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { runToHTML, runToPlainText, runsToMarkdown } from '../../inline/marks.js';
 import { domInlineToRuns } from '../../inline/runOps.js';
 import { genId } from '../../utils/idGen.js';
@@ -41,9 +42,10 @@ function fromHTML(node, ctx) {
   return { block, runs };
 }
 
-export const blockquoteBlockType = {
+export const blockquoteBlockType = defineBlock({
+  name: 'blockquote',
+  contentModel: 'runs',
   component: BlockquoteBlock,
-  isLeaf: true,
   defaultProps: {},
   toHTML,
   toPlainText,
@@ -56,4 +58,4 @@ export const blockquoteBlockType = {
     run: (store, ctx) =>
       trimSlashQueryAndInsertAfter(store, ctx, createTextLeafBlock('blockquote')),
   },
-};
+});

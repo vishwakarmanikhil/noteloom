@@ -1,4 +1,5 @@
 import { CalloutBlock } from './CalloutBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createCalloutBlock, DEFAULT_CALLOUT_ICON } from './createCalloutBlock.js';
 import { CalloutIcon } from '../../react/icons.jsx';
@@ -45,9 +46,10 @@ function toMarkdown(block, ctx) {
   return lines.map((line, i) => `> ${i === 0 ? `${icon} ` : ''}${line}`).join('\n');
 }
 
-export const calloutBlockType = {
+export const calloutBlockType = defineBlock({
+  name: 'callout',
+  contentModel: 'blocks',
   component: CalloutBlock,
-  isLeaf: false,
   defaultProps: { icon: DEFAULT_CALLOUT_ICON },
   toHTML,
   toPlainText,
@@ -64,4 +66,4 @@ export const calloutBlockType = {
     keywords: ['callout', 'aside', 'note', 'info', 'tip', 'warning'],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createCalloutBlock()),
   },
-};
+});

@@ -1,4 +1,5 @@
 import { SelectInlineNode } from './SelectInlineNode.jsx';
+import { defineInline } from '../../registry/define.js';
 import { genId } from '../../utils/idGen.js';
 import { insertInlineRunAtCursor } from '../shared/insertInlineRun.js';
 import { SelectIcon } from '../../react/icons.jsx';
@@ -44,9 +45,9 @@ function fromHTML(node) {
   };
 }
 
-export const selectInlineType = {
+export const selectInlineType = defineInline({
+  name: 'select',
   component: SelectInlineNode,
-  isAtomic: true,
   toHTML,
   toPlainText,
   fromHTML,
@@ -68,4 +69,4 @@ export const selectInlineType = {
         { autoOpen: true },
       ),
   },
-};
+});

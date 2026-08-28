@@ -1,4 +1,5 @@
 import { DividerBlock } from './DividerBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { genId } from '../../utils/idGen.js';
 import { insertSiblingAfter, insertSiblingAfterAndFocus } from '../shared/blockCommands.js';
 import { createTextLeafBlock } from '../shared/leafBlockFactory.js';
@@ -34,9 +35,10 @@ function fromHTML(node) {
   };
 }
 
-export const dividerBlockType = {
+export const dividerBlockType = defineBlock({
+  name: 'divider',
+  contentModel: 'void',
   component: DividerBlock,
-  isLeaf: true,
   defaultProps: {},
   toHTML,
   toPlainText,
@@ -60,4 +62,4 @@ export const dividerBlockType = {
       return dividerId;
     },
   },
-};
+});

@@ -1,4 +1,5 @@
 import { LayoutBlock } from './LayoutBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { LayoutColumnBlock } from './LayoutColumnBlock.jsx';
 import { trimSlashQueryAndInsertAfter } from '../shared/blockCommands.js';
 import { createLayoutBlock } from './createLayoutBlock.js';
@@ -37,9 +38,10 @@ function containerToMarkdown(block, ctx) {
     .join('\n\n');
 }
 
-export const layoutColumnBlockType = {
+export const layoutColumnBlockType = defineBlock({
+  name: 'layoutColumn',
+  contentModel: 'blocks',
   component: LayoutColumnBlock,
-  isLeaf: false,
   defaultProps: {},
   toHTML: containerToHTML('<div>', '</div>'),
   toPlainText: containerToPlainText,
@@ -47,11 +49,12 @@ export const layoutColumnBlockType = {
   // no fromHTML: a bare column has no distinct HTML representation of its
   // own outside a parent `layout`'s markup; layout.fromHTML would construct
   // both together if/when generic multi-column HTML import is added.
-};
+});
 
-export const layoutBlockType = {
+export const layoutBlockType = defineBlock({
+  name: 'layout',
+  contentModel: 'blocks',
   component: LayoutBlock,
-  isLeaf: false,
   defaultProps: {},
   toHTML: containerToHTML('<div style="display:flex;gap:1em">', '</div>'),
   toPlainText: containerToPlainText,
@@ -62,4 +65,4 @@ export const layoutBlockType = {
     keywords: ['layout', 'columns', 'column', String(columns)],
     run: (store, ctx) => trimSlashQueryAndInsertAfter(store, ctx, createLayoutBlock({ columns })),
   })),
-};
+});

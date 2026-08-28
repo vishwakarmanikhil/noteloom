@@ -1,4 +1,5 @@
 import { EmbedBlock } from './EmbedBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { genId } from '../../utils/idGen.js';
 import { escapeAttr, escapeHTML } from '../../inline/marks.js';
 import { insertSiblingAfter, insertSiblingAfterAndFocus } from '../shared/blockCommands.js';
@@ -159,9 +160,10 @@ function insertEmbedCommand(kind) {
   };
 }
 
-export const embedBlockType = {
+export const embedBlockType = defineBlock({
+  name: 'embed',
+  contentModel: 'void',
   component: EmbedBlock,
-  isLeaf: true, // contentIds always [] — a pure widget, same convention as divider
   defaultProps: {
     kind: 'file',
     src: '',
@@ -195,4 +197,4 @@ export const embedBlockType = {
       run: insertEmbedCommand('oembed'),
     },
   ],
-};
+});

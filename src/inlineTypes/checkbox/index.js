@@ -1,4 +1,5 @@
 import { CheckboxInlineNode } from './CheckboxInlineNode.jsx';
+import { defineInline } from '../../registry/define.js';
 import { genId } from '../../utils/idGen.js';
 import { insertInlineRunAtCursor } from '../shared/insertInlineRun.js';
 import { CheckboxIcon } from '../../react/icons.jsx';
@@ -36,9 +37,9 @@ function fromHTML(node) {
   };
 }
 
-export const checkboxInlineType = {
+export const checkboxInlineType = defineInline({
+  name: 'checkbox',
   component: CheckboxInlineNode,
-  isAtomic: true,
   toHTML,
   toPlainText,
   fromHTML,
@@ -55,4 +56,4 @@ export const checkboxInlineType = {
         data: { checked: false, label: '' },
       })),
   },
-};
+});

@@ -1,4 +1,5 @@
 import { TableBlock } from './TableBlock.jsx';
+import { defineBlock } from '../../registry/define.js';
 import { TableRowBlock } from './TableRowBlock.jsx';
 import { TableCellBlock } from './TableCellBlock.jsx';
 import { runToHTML, runToPlainText, runsToMarkdown, escapeHTML } from '../../inline/marks.js';
@@ -181,29 +182,32 @@ function tableFromHTML(node, ctx) {
   return { block, runs, subtreeBlocks };
 }
 
-export const tableCellBlockType = {
+export const tableCellBlockType = defineBlock({
+  name: 'tableCell',
+  contentModel: 'runs',
   component: TableCellBlock,
-  isLeaf: true,
   defaultProps: {},
   toHTML: cellToHTML,
   toPlainText: cellToPlainText,
   toMarkdown: cellToMarkdown,
   fromHTML: cellFromHTML,
-};
+});
 
-export const tableRowBlockType = {
+export const tableRowBlockType = defineBlock({
+  name: 'tableRow',
+  contentModel: 'blocks',
   component: TableRowBlock,
-  isLeaf: false,
   defaultProps: {},
   toHTML: rowToHTML,
   toPlainText: rowToPlainText,
   toMarkdown: rowToMarkdown,
   fromHTML: rowFromHTML,
-};
+});
 
-export const tableBlockType = {
+export const tableBlockType = defineBlock({
+  name: 'table',
+  contentModel: 'blocks',
   component: TableBlock,
-  isLeaf: false,
   defaultProps: {},
   toHTML: tableToHTML,
   toPlainText: tableToPlainText,
@@ -216,4 +220,4 @@ export const tableBlockType = {
     run: (store, ctx) =>
       trimSlashQueryAndInsertAfter(store, ctx, createTableBlock({ rows: 2, cols: 2 })),
   },
-};
+});
