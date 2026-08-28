@@ -1,6 +1,15 @@
 # Repackaging plan — making noteloom easy to install, extend, and contribute to
 
-Status: **draft / proposal** · Owner: @vishwakarmanikhil · Target: `noteloom` 0.4 → 1.0
+Status: **Phases 0–4 shipped** (staged for `0.5.0`) · Phase 5 = release management
+· Owner: @vishwakarmanikhil · Target: `noteloom` 0.5 → 1.0
+
+**Progress:** Phase −1 (gates), 0 (tooling), 1 (subpath entries), 2 (framework-free
+core), 3 (`defineBlock`/`defineInline`/`defineExtension` + `extensions` + `ctx` +
+CLI), and 4 (canonical document format) are done and committed, each behind the
+export-surface + golden-document gates. See per-phase `DONE` notes below.
+`docs/migration.md` is the consumer-facing 0.3.x → 0.5.0 guide. What remains
+(Phase 5) is cutting the release and the one open product decision (auto-theme
+injection).
 
 ---
 
@@ -616,17 +625,22 @@ shim` path covers it, but confirm we're willing to make people add one import.
 
 ---
 
-## 10. TL;DR of the decisions being proposed
+## 10. TL;DR — decisions, and where each one landed
 
-1. **Framework-free core**, `noteloom/react` as a thin adapter. Core never imports React.
-2. **Subpath entry points** for every optional feature (`/collab`, `/persistence`,
-   `/comments`, `/versions`, `/voice`, `/canvas`, `/theme`) — not a monorepo yet.
+1. **Framework-free core** — ✅ enforced by lint (`no-restricted-imports`); only
+   `src/react/**` and `src/commands/**` may import React.
+2. **Subpath entry points** for every optional feature (`/collab`,
+   `/persistence`, `/comments`, `/versions`, `/voice`, `/canvas`,
+   `/starter-kit`, `/theme`) — ✅ shipped; not a monorepo.
 3. **`defineBlock` / `defineInline` / `defineExtension` + a stable `ctx` facade**
-   replace the informal registry object and 9+ registration concepts with one
-   `extensions: []` array.
-4. **One document format** (today's "simple" JSON), schema'd and versioned;
-   normalized graph goes internal.
-5. **Explicit `import 'noteloom/theme'`** instead of auto-injection.
-6. **Generated types, ESLint, Changesets, size-limit, a scaffolding CLI, a plugin
-   template repo**, and a docs site that isn't one 923-line file.
-7. **Phased 0.4 → 1.0**, every phase shippable, compat shim until 1.0.
+   - one `extensions: []` array — ✅ shipped; `register*` kept and deprecated.
+4. **One document format** (the "simple" JSON), schema'd + versioned
+   (`docs/document.schema.json`); internal graph via
+   `toJSON({ format: 'internal' })` — ✅ shipped.
+5. **Explicit `import 'noteloom/theme'`** — alias shipped; making it _mandatory_
+   (dropping auto-injection) is the one **open** decision. See §9 / Phase 5.
+6. **ESLint, Prettier, Changesets, size-limit, `.d.ts`-sync test, a scaffolding
+   CLI (`npx noteloom new`)** — ✅ shipped. Types stay hand-written (§9); a
+   standalone plugin-template repo and a docs site are still nice-to-haves.
+7. **Phased, every phase additive + gated** — ✅; 0–4 staged for `0.5.0`,
+   removals reserved for `2.0`.
