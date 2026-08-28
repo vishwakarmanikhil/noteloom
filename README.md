@@ -375,11 +375,22 @@ It opens a modal with JSON/Simple JSON/HTML/Markdown/Text tabs (reading live fro
 
 Useful for debugging, or as a starting point for a real "export" feature.
 
-### A simpler JSON shape for storage/API/CRUD use
+### The document format
 
-`exportDocumentJSON()` above returns the _internal engine format_ — the same normalized, id-referenced graph `EditorStore` operates on (blocks reference other blocks by id; text lives in a separate `runs` collection, not embedded inline). That shape is what makes per-run reactivity, O(1) structural edits, and real nesting (toggle lists, tables, inline atomic chips) work — it's not going to look like a simple flat document, on purpose.
+The **simple format** is the canonical one for storage / APIs / hand-editing: self-contained blocks in an array, `children` for nesting, each block's own fields under `data`, no id-references to resolve. `editor.toJSON()` returns it and `useEditor({ doc })` accepts it (the shape is auto-detected, so an internal-format doc still works):
 
-If you just want something simpler to store, send over an API, or hand-edit — self-contained blocks in an array, `children` for nesting, no id-references to resolve — use the second, optional export/import pair instead:
+```jsx
+const editor = useEditor();
+const doc = editor.toJSON(); // { version: 1, blocks: [{ id, type, data, children? }] }
+// ...store it, send it, edit it...
+const editor2 = useEditor({ doc }); // loads it straight back
+```
+
+Its JSON Schema is published at [`docs/document.schema.json`](docs/document.schema.json) (`version: 1`); a CI test validates every export against it and checks `simple → store → simple` is byte-stable.
+
+The **internal engine format** — the normalized, id-referenced `{ rootId, blocks, runs }` graph `EditorStore` operates on — is what makes per-run reactivity, O(1) structural edits, and real nesting work. It's unversioned and reachable via `editor.toJSON({ format: 'internal' })` / `exportDocumentJSON()` when you need it (collab, debugging), but it's an implementation detail, not something to build against.
+
+The lower-level `exportDocumentSimpleJSON` / `importDocumentSimpleJSON` pair is still there for non-React use:
 
 ```js
 import { exportDocumentSimpleJSON, importDocumentSimpleJSON } from 'noteloom';
@@ -404,7 +415,7 @@ const json = exportDocumentSimpleJSON(store, registry, inlineRegistry);
 
 // ...later, or on a different machine/process:
 const doc = importDocumentSimpleJSON(json, registry, inlineRegistry); // -> { rootId, blocks, runs }
-const editor2 = useEditor({ doc }); // or `new EditorStore(doc)` directly outside React
+const editor2 = useEditor({ doc: JSON.parse(json) }); // useEditor detects the shape; or new EditorStore(doc) outside React
 ```
 
 Rich text (`data.text`) is an HTML string — the exact same per-run serialization every block type's own clipboard-copy `toHTML` already produces, so marks (bold/italic/underline/strike/code/sub/superscript/color/highlight/link) and atomic inline chips (checkbox/date/select/mention) round-trip through it the same way copy/paste already does. `table` is flattened specially (`data.columns` + `data.rows`, a 2D array) rather than exposing the internal table/row/cell block chain — the single biggest simplification versus the internal shape. Block/run ids are preserved on both export and import (useful for referencing/updating a specific block from an external system).

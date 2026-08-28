@@ -933,16 +933,31 @@ export function exportDocumentWordHTML(
   registry: BlockRegistry,
   inlineRegistry?: InlineRegistry,
 ): string;
+/** A `{ id, type, data, children? }` block in the simple document format. */
+export interface SimpleBlock {
+  id: string;
+  type: string;
+  data: Record<string, unknown>;
+  children?: SimpleBlock[];
+}
+/** The canonical interchange format — see docs/document.schema.json. */
+export interface SimpleDocument {
+  version: 1;
+  blocks: SimpleBlock[];
+}
 export function exportDocumentSimpleJSON(
   store: EditorStore | History,
   registry: BlockRegistry,
   inlineRegistry: InlineRegistry,
-): unknown;
+  options?: { pretty?: boolean },
+): string;
 export function importDocumentSimpleJSON(
-  json: unknown,
+  json: string | SimpleDocument,
   registry: BlockRegistry,
   inlineRegistry: InlineRegistry,
 ): DocumentJSON;
+/** True when `doc` is a `SimpleDocument` rather than the internal `DocumentJSON` shape. */
+export function isSimpleDocument(doc: unknown): doc is SimpleDocument;
 export const DocumentExportButton: ComponentType<Record<string, unknown>>;
 
 // ---------------------------------------------------------------------------
@@ -1089,8 +1104,8 @@ export const FieldTypeEditorModal: ComponentType<Record<string, unknown>>;
 // ---------------------------------------------------------------------------
 
 export interface UseEditorOptions {
-  /** Starting document; defaults to one empty paragraph. */
-  doc?: DocumentJSON;
+  /** Starting document; defaults to one empty paragraph. Accepts either the simple format (`SimpleDocument`, what `editor.toJSON()` returns) or the internal engine shape (`DocumentJSON`) — auto-detected. */
+  doc?: DocumentJSON | SimpleDocument;
   /** true (default): store is undo/redo-aware (a History instance). false: a plain EditorStore. */
   history?: boolean;
   /** Stamped as every edit's actorId (History's defaultActorId) -- used by createAutoVersionHistory/VersionHistory for "who changed this", with no separate identity plumbing needed. Ignored when history: false. */
@@ -1109,6 +1124,8 @@ export interface UseEditorResult {
   inlineRegistry: InlineRegistry;
   /** The flattened `extensions` list, forwarded to `<NoteloomEditor>` for the behavior half. */
   extensions: Extension[];
+  /** Read the live document out. `'simple'` (default) → `SimpleDocument`; `'internal'` → `DocumentJSON`. */
+  toJSON(options?: { format?: 'simple' | 'internal' }): SimpleDocument | DocumentJSON;
 }
 
 /** The one-call path to a working editor — see the README's Quick start. */

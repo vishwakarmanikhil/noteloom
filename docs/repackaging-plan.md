@@ -558,13 +558,26 @@ Still **TODO** (later increments):
 - A standalone `noteloom-block-starter` template repo (the CLI covers the
   in-repo case for now).
 
-### Phase 4 — document format · `0.6.0` (opt-in default, escape hatch kept)
+### Phase 4 — document format · part of `0.5.0` (opt-in default, escape hatch kept) — **DONE**
 
-- `editor.toJSON()` / `useEditor({ doc })` accept **both** shapes (detected by
-  `version` / structure). New docs default to the simple schema'd format;
-  `{ format: 'internal' }` still produces the normalized graph.
-- Publish + version the JSON Schema; add a `fromJSON(toJSON(x)) ≡ x` CI gate.
-- **Exit:** existing stored documents in either shape load unchanged.
+- **[done]** `useEditor({ doc })` accepts **both** shapes — `isSimpleDocument()`
+  (new export: simple = has `blocks[]`, no `rootId`, no `runs`) routes a simple
+  doc through `importDocumentSimpleJSON` before `new EditorStore`. The
+  internal-shape path is byte-for-byte unchanged.
+- **[done]** `editor.toJSON({ format })` — `'simple'` (default, the canonical
+  interchange format) or `'internal'` (the normalized graph). Returns an object.
+- **[done]** `docs/document.schema.json` — a versioned (`version: 1`) JSON
+  Schema for the simple format. `test/clipboard/documentSchema.test.js`
+  validates real exports against it (ajv devDep) and asserts
+  `simple → store → simple` is byte-stable. Runs in the existing CI `test` job.
+- **[done]** No exporter behavior change — golden-document e2e's
+  `exportDocumentSimpleJSON` snapshot is unchanged. `exportDocumentJSON` /
+  `exportDocumentSimpleJSON` / `importDocumentSimpleJSON` untouched.
+- **Exit:** ✔ documents in either shape load; every existing import still
+  resolves; lint / typecheck / size / vitest (1416) / e2e green.
+
+> Folded into `0.5.0` rather than a separate `0.6.0` — it's small and additive
+> and the release hadn't been cut yet.
 
 ### Phase 5 — `1.0.0` (still no removals)
 

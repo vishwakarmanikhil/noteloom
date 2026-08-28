@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://noteloom.qusere.in/document.schema.json",
+  "title": "noteloom document (simple format), version 1",
+  "description": "The canonical interchange format: what `exportDocumentSimpleJSON` produces and `editor.toJSON()` returns by default, and what `useEditor({ doc })` / `importDocumentSimpleJSON` accept. Self-contained blocks in an array; `children` for nesting; each block's own fields under `data`. The internal engine shape (`{ rootId, blocks, runs }`) is a separate, unversioned implementation detail reachable via `editor.toJSON({ format: 'internal' })`.",
+  "type": "object",
+  "required": ["version", "blocks"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "description": "Format version. Bumped only on a breaking change to this shape.",
+      "const": 1
+    },
+    "blocks": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/block" }
+    }
+  },
+  "definitions": {
+    "block": {
+      "type": "object",
+      "required": ["id", "type", "data"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable identifier. Preserved across export and import."
+        },
+        "type": {
+          "type": "string",
+          "description": "Block type name, e.g. 'paragraph', 'heading', 'listItem', 'table', 'callout', a custom type."
+        },
+        "data": {
+          "type": "object",
+          "description": "The block's own fields, shape depending on `type`. Common: `text` (an HTML string carrying marks and atomic inline chips, round-tripped the same way clipboard copy/paste is), `level` (heading/toggleHeading), `ordered`/`checked`/`collapsed` (listItem), `language` (code), `href`/`color` (button), `kind`/`src`/`alt` (embed), `icon` (callout). `table` is flattened specially: `columns` (array of `{ id, label, type, width }`) + `rows` (a 2D array of HTML-string cells)."
+        },
+        "children": {
+          "type": "array",
+          "description": "Nested child blocks. Present on container types (callout, layout, listItem/toggleHeading with nested content, …); absent on leaves.",
+          "items": { "$ref": "#/definitions/block" }
+        }
+      }
+    }
+  }
+}

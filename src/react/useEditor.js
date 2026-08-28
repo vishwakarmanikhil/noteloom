@@ -6,6 +6,11 @@ import { createInlineRegistry } from '../registry/inlineRegistry.js';
 import { registerBuiltInBlocks } from '../blocks/index.js';
 import { registerBuiltInInlineTypes } from '../inlineTypes/index.js';
 import { registerExtensions } from '../registry/define.js';
+import {
+  isSimpleDocument,
+  importDocumentSimpleJSON,
+  exportDocumentSimpleJSON,
+} from '../clipboard/simpleFormat.js';
 import { genId } from '../utils/idGen.js';
 
 function defaultDoc() {
@@ -39,6 +44,13 @@ function defaultDoc() {
  * they run *after* `extensions` if you pass both, so you can add a few
  * imperatively on top. With none of the three given, every built-in block and
  * inline type is registered.
+ *
+ * `doc` may be EITHER the internal engine shape (`{ rootId, blocks, runs }`,
+ * what `store.toJSON()` / `exportDocumentJSON` produce) OR the simple format
+ * (`{ version, blocks: [{ id, type, data, children? }] }`, what
+ * `exportDocumentSimpleJSON` produces and `editor.toJSON()` returns by
+ * default) — the shape is auto-detected. `editor.toJSON({ format })` reads the
+ * live document back out: `'simple'` (default) or `'internal'`.
  *
  * The store is created once, on first render — pass a different `doc` and
  * change `key` on the consuming component to load a different document,
@@ -77,9 +89,17 @@ export function useEditor({
     if (customRegisterInlineTypes) customRegisterInlineTypes(inlineRegistry);
     else if (extensions == null) registerBuiltInInlineTypes(inlineRegistry);
 
-    const store = new EditorStore(doc ?? defaultDoc());
+    const internalDoc =
+      doc == null
+        ? defaultDoc()
+        : isSimpleDocument(doc)
+          ? importDocumentSimpleJSON(doc, registry, inlineRegistry)
+          : doc;
+    const rawStore = new EditorStore(internalDoc);
+    const store = history ? new History(rawStore, { defaultActorId: currentUserId }) : rawStore;
+
     return {
-      store: history ? new History(store, { defaultActorId: currentUserId }) : store,
+      store,
       registry,
       inlineRegistry,
       // Flattened extension list — <NoteloomEditor> feeds this to
@@ -87,6 +107,12 @@ export function useEditor({
       // Block/inline definitions are already registered above; they're kept in
       // the list too but ignored there (no behavior fields).
       extensions: extensions != null ? extensions.flat(Infinity) : [],
+      // Read the live document back out. 'simple' (default) is the canonical
+      // interchange format; 'internal' is the normalized engine graph.
+      toJSON: ({ format = 'simple' } = {}) =>
+        format === 'internal'
+          ? store.toJSON()
+          : JSON.parse(exportDocumentSimpleJSON(store, registry, inlineRegistry)),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

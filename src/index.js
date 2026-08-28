@@ -215,7 +215,11 @@ export {
   exportDocumentMarkdown,
   exportDocumentWordHTML,
 } from './clipboard/exportDocument.js';
-export { exportDocumentSimpleJSON, importDocumentSimpleJSON } from './clipboard/simpleFormat.js';
+export {
+  exportDocumentSimpleJSON,
+  importDocumentSimpleJSON,
+  isSimpleDocument,
+} from './clipboard/simpleFormat.js';
 export { DocumentExportButton } from './react/DocumentExportButton.jsx';
 
 export { SlashMenu } from './commands/SlashMenu.jsx';

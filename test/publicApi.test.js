@@ -144,6 +144,7 @@ const EXPECTED_EXPORTS = [
   'insertRowAfter',
   'isEntireBlockRangeHidden',
   'isEntireBlockSelected',
+  'isSimpleDocument',
   'layoutBlockType',
   'layoutColumnBlockType',
   'listDocumentVersions',

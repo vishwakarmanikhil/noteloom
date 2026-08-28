@@ -181,6 +181,22 @@ function importBlock(simpleBlock, parentId, registry, ctx, blocksOut, runsOut) {
 }
 
 /**
+ * True when `doc` is a simple-format document (`{ version, blocks: [...] }`),
+ * as opposed to the internal engine shape (`{ rootId, blocks, runs }`). The
+ * internal shape always carries `rootId` and a `runs` array; the simple one
+ * carries neither. Used by `useEditor({ doc })` to accept either.
+ */
+export function isSimpleDocument(doc) {
+  return (
+    Boolean(doc) &&
+    typeof doc === 'object' &&
+    Array.isArray(doc.blocks) &&
+    doc.rootId === undefined &&
+    doc.runs === undefined
+  );
+}
+
+/**
  * Reverses `exportDocumentSimpleJSON` — returns a plain `{ rootId, blocks,
  * runs }` object, the same shape `new EditorStore(doc)` already accepts
  * (this function deliberately doesn't construct a store itself, matching

@@ -31,7 +31,7 @@ describe('useEditor', () => {
     expect(result.current.store).not.toBeInstanceOf(History);
   });
 
-  it('accepts a custom initial doc', () => {
+  it('accepts a custom initial doc (internal shape)', () => {
     const doc = {
       rootId: 'root',
       blocks: [
@@ -43,6 +43,38 @@ describe('useEditor', () => {
     const { result } = renderHook(() => useEditor({ doc }));
     const root = result.current.store.getBlock('root');
     expect(root.contentIds).toEqual(['p1']);
+  });
+
+  it('accepts a custom initial doc in the simple format too (auto-detected)', () => {
+    const doc = {
+      version: 1,
+      blocks: [
+        { id: 'h1', type: 'heading', data: { text: 'Hi', level: 2 } },
+        { id: 'p1', type: 'paragraph', data: { text: 'hello <strong>world</strong>' } },
+      ],
+    };
+    const { result } = renderHook(() => useEditor({ doc }));
+    const { store } = result.current;
+    const top = store.getBlock(store.getRootId()).contentIds.map((id) => store.getBlock(id).type);
+    expect(top).toEqual(['heading', 'paragraph']);
+  });
+
+  it('editor.toJSON() returns the simple format by default, internal on request', () => {
+    const doc = {
+      version: 1,
+      blocks: [{ id: 'p1', type: 'paragraph', data: { text: 'hi' } }],
+    };
+    const { result } = renderHook(() => useEditor({ doc }));
+    const editor = result.current;
+
+    const simple = editor.toJSON();
+    expect(simple.version).toBe(1);
+    expect(Array.isArray(simple.blocks)).toBe(true);
+    expect(simple.rootId).toBeUndefined();
+
+    const internal = editor.toJSON({ format: 'internal' });
+    expect(typeof internal.rootId).toBe('string');
+    expect(Array.isArray(internal.runs)).toBe(true);
   });
 
   it('memoizes the editor across re-renders (store identity is stable)', () => {
