@@ -86,7 +86,12 @@ export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.
 // inline type; registerExtensions + useEditor({ extensions }) register an
 // array of them. starterKit() is every built-in type as such an array. See
 // noteloom/starter-kit and docs/repackaging-plan.md Phase 3.
-export { defineBlock, defineInline, registerExtensions } from './registry/define.js';
+export {
+  defineBlock,
+  defineInline,
+  defineExtension,
+  registerExtensions,
+} from './registry/define.js';
 export { starterKit } from './starter-kit.js';
 
 // registerBuiltInBlocks/registerBuiltInInlineTypes register EVERY built-in

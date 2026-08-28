@@ -100,6 +100,7 @@ const EXPECTED_EXPORTS = [
   'dateInlineType',
   'decodeMessage',
   'defineBlock',
+  'defineExtension',
   'defineInline',
   'deleteBlockAndFocusSibling',
   'deleteBlockRange',
@@ -384,7 +385,7 @@ const ENTRY_EXPORTS = {
   },
   'noteloom/starter-kit': {
     mod: starterKitEntry,
-    names: ['defineBlock', 'defineInline', 'registerExtensions', 'starterKit'],
+    names: ['defineBlock', 'defineExtension', 'defineInline', 'registerExtensions', 'starterKit'],
   },
 };
 

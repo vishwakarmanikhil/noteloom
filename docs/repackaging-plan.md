@@ -494,11 +494,23 @@ Increment 3a — **DONE**:
   `test/publicApi.test.js`); `.d.ts` hand-updated; `register*` functions
   untouched and still documented.
 
+Increment 3b — **DONE**:
+
+- **[done]** `defineExtension({ name, blocks?, inlineTypes? })` — a named
+  **bundle** of `defineBlock()` / `defineInline()` results, droppable into the
+  `extensions: [...]` array as one unit (a plugin that ships several types).
+  `registerExtensions` unpacks bundles recursively. New main export
+  `defineExtension` (222 total, frozen).
+
 Still **TODO** (later increments):
 
-- `defineExtension` (behavior — keymap / input rules / paste transforms) and the
-  stable `ctx` facade — needs the effect lifecycle in `<NoteloomEditor>`, bigger
-  scope.
+- `defineExtension`'s **behavior** half — `keymap` / `inputRules` / `onPaste` /
+  a `setup(ctx)` lifecycle — needs an effect loop wired into `<NoteloomEditor>`
+  and the `ctx` facade below. This is where the ad-hoc `useSmartQuotes` /
+  `useAutoPairBrackets` / markdown-shortcut hooks would eventually fold in.
+- The stable `ctx` facade (`ctx.store`, `ctx.insertAfterCurrent`,
+  `ctx.selection`, `ctx.replaceRange`, …) passed to `setup` and, later, to block
+  `commands`.
 - Rewrite each built-in's own `src/blocks/*/index.js` to call `defineBlock`
   directly (right now `starterKit()` wraps the existing entry objects — behavior
   proven identical, but the source files aren't migrated yet).

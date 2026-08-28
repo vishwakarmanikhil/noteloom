@@ -8,7 +8,12 @@
 import { defineBlock, defineInline } from './registry/define.js';
 
 // Re-exported so the whole extension-authoring workflow is one import.
-export { defineBlock, defineInline, registerExtensions } from './registry/define.js';
+export {
+  defineBlock,
+  defineInline,
+  defineExtension,
+  registerExtensions,
+} from './registry/define.js';
 import {
   paragraphBlockType,
   headingBlockType,

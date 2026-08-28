@@ -687,12 +687,30 @@ export interface DefineInlineConfig {
 export type BlockDefinition = BlockTypeDefinition & { name: string; kind: 'block' };
 /** A `defineInline()` result — an `InlineRegistry` entry tagged `kind: 'inline'`. */
 export type InlineDefinition = InlineTypeDefinition & { name: string; kind: 'inline' };
-export type Extension = BlockDefinition | InlineDefinition;
+/** A `defineExtension()` result — a named bundle of block/inline definitions. */
+export interface ExtensionBundle {
+  name: string;
+  kind: 'extension';
+  blocks: BlockDefinition[];
+  inlineTypes: InlineDefinition[];
+  [key: string]: unknown;
+}
+export type Extension = BlockDefinition | InlineDefinition | ExtensionBundle;
+
+export interface DefineExtensionConfig {
+  /** Label for the bundle (diagnostics only). */
+  name: string;
+  blocks?: BlockDefinition[];
+  inlineTypes?: InlineDefinition[];
+  [key: string]: unknown;
+}
 
 export function defineBlock(config: DefineBlockConfig): BlockDefinition;
 export function defineInline(config: DefineInlineConfig): InlineDefinition;
+/** Groups several `defineBlock()` / `defineInline()` results under one name (bundle-only in v1). */
+export function defineExtension(config: DefineExtensionConfig): ExtensionBundle;
 
-/** Registers a flat/nested array of `defineBlock()` / `defineInline()` results onto the given registries. */
+/** Registers a flat/nested array of `defineBlock()` / `defineInline()` results (and `defineExtension()` bundles) onto the given registries. */
 export function registerExtensions(
   extensions: ReadonlyArray<Extension | ReadonlyArray<Extension>>,
   registries: { registry?: BlockRegistry; inlineRegistry?: InlineRegistry },

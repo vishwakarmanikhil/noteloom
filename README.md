@@ -225,6 +225,7 @@ function Editor() {
 - Passing `extensions` turns off the automatic built-ins (it's opt-in, like `registerBlocks`) — spread `starterKit()` in if you want them. A `registerBlocks` callback passed alongside `extensions` still runs, on top.
 - `defineBlock` validates its config and throws on obvious mistakes (missing `name`/`component`, bad `contentModel`). The result is still a plain registry entry, so `registry.register('rating', rating)` also works.
 - `registerExtensions(array, { registry, inlineRegistry })` does the same registration against registries you made yourself.
+- `defineExtension({ name, blocks, inlineTypes })` groups several definitions into one bundle you can drop into `extensions` as a single item — for a plugin that ships more than one type. (Behavior extensions — keymaps, input rules — are not in this yet; see `docs/repackaging-plan.md`.)
 
 ## Custom dropdown / mention field types (static, or dynamic/API-backed)
 

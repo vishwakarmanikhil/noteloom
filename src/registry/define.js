@@ -8,6 +8,7 @@
 
 const BLOCK_KIND = 'block';
 const INLINE_KIND = 'inline';
+const EXTENSION_KIND = 'extension';
 
 // 'blocks' -> holds child blocks (isLeaf false); 'runs'/'void' -> a leaf
 // (isLeaf true) whose contentIds point at text runs, or nothing at all.
@@ -100,6 +101,35 @@ export function defineInline(config) {
   };
 }
 
+/**
+ * Groups several `defineBlock()` / `defineInline()` results under one name so
+ * they can be dropped into an `extensions: [...]` array as a single unit — e.g.
+ * a plugin that ships three blocks and a chip.
+ *
+ * @param {object} config
+ *   - `name` (required): a label for the bundle (diagnostics only).
+ *   - `blocks`: array of `defineBlock()` results.
+ *   - `inlineTypes`: array of `defineInline()` results.
+ * v1 is bundle-only. Behavior hooks (keymap / input rules / paste transforms)
+ * and a `setup(ctx)` lifecycle are still TODO — see docs/repackaging-plan.md.
+ */
+export function defineExtension(config) {
+  if (!config || typeof config !== 'object') fail('defineExtension', 'config must be an object');
+  const { name, blocks = [], inlineTypes = [], ...rest } = config;
+
+  if (typeof name !== 'string' || !name.trim()) {
+    fail('defineExtension', '`name` must be a non-empty string');
+  }
+  if (!Array.isArray(blocks)) {
+    fail('defineExtension', `extension "${name}": \`blocks\` must be an array`);
+  }
+  if (!Array.isArray(inlineTypes)) {
+    fail('defineExtension', `extension "${name}": \`inlineTypes\` must be an array`);
+  }
+
+  return { ...rest, name, kind: EXTENSION_KIND, blocks, inlineTypes };
+}
+
 export function isBlockDefinition(value) {
   return Boolean(value) && value.kind === BLOCK_KIND;
 }
@@ -108,9 +138,14 @@ export function isInlineDefinition(value) {
   return Boolean(value) && value.kind === INLINE_KIND;
 }
 
+export function isExtensionBundle(value) {
+  return Boolean(value) && value.kind === EXTENSION_KIND;
+}
+
 /**
  * Registers a flat or nested array of `defineBlock()` / `defineInline()`
- * results onto the given registries — the primitive behind
+ * results (and `defineExtension()` bundles, which are unpacked recursively)
+ * onto the given registries — the primitive behind
  * `useEditor({ extensions: [...] })`, also usable directly against your own
  * `createBlockRegistry()` / `createInlineRegistry()`.
  */
@@ -119,7 +154,9 @@ export function registerExtensions(extensions, { registry, inlineRegistry }) {
     fail('registerExtensions', '`extensions` must be an array');
   }
   for (const ext of extensions.flat(Infinity)) {
-    if (isBlockDefinition(ext)) {
+    if (isExtensionBundle(ext)) {
+      registerExtensions([...ext.blocks, ...ext.inlineTypes], { registry, inlineRegistry });
+    } else if (isBlockDefinition(ext)) {
       if (!registry) fail('registerExtensions', `no block registry given for "${ext.name}"`);
       registry.register(ext.name, ext);
     } else if (isInlineDefinition(ext)) {
@@ -128,7 +165,7 @@ export function registerExtensions(extensions, { registry, inlineRegistry }) {
     } else {
       fail(
         'registerExtensions',
-        'each item must be a defineBlock() or defineInline() result (missing `kind`)',
+        'each item must be a defineBlock() / defineInline() result or a defineExtension() bundle (missing `kind`)',
       );
     }
   }

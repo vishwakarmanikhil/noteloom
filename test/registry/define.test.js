@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   defineBlock,
   defineInline,
+  defineExtension,
   isBlockDefinition,
   isInlineDefinition,
+  isExtensionBundle,
   registerExtensions,
 } from '../../src/registry/define.js';
 import { createBlockRegistry } from '../../src/registry/blockRegistry.js';
@@ -88,7 +90,33 @@ describe('registerExtensions', () => {
 
   it('throws on a plain object that is not a definition', () => {
     expect(() => registerExtensions([{ name: 'x' }], { registry: createBlockRegistry() })).toThrow(
-      /must be a defineBlock\(\) or defineInline\(\) result/,
+      /defineBlock\(\) \/ defineInline\(\) result or a defineExtension\(\) bundle/,
+    );
+  });
+
+  it('unpacks a defineExtension() bundle recursively', () => {
+    const registry = createBlockRegistry();
+    const inlineRegistry = createInlineRegistry();
+    const pack = defineExtension({
+      name: 'my-pack',
+      blocks: [defineBlock({ name: 'b1', component: Comp })],
+      inlineTypes: [defineInline({ name: 'i1', component: Comp })],
+    });
+    expect(isExtensionBundle(pack)).toBe(true);
+
+    registerExtensions([pack, defineBlock({ name: 'b2', component: Comp })], {
+      registry,
+      inlineRegistry,
+    });
+
+    expect([...registry._types.keys()].sort()).toEqual(['b1', 'b2']);
+    expect(inlineRegistry.get('i1')).toBeTruthy();
+  });
+
+  it('defineExtension validates its shape', () => {
+    expect(() => defineExtension({})).toThrow(/`name` must be a non-empty string/);
+    expect(() => defineExtension({ name: 'p', blocks: 'nope' })).toThrow(
+      /`blocks` must be an array/,
     );
   });
 });
