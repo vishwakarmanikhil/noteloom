@@ -593,7 +593,9 @@ Still **TODO** (later increments):
 
 - Promote the new APIs to "recommended", freeze them under semver: the `ctx`
   facade, the `define*` field sets, the document schema, and the list of subpath
-  entry points.
+  entry points. **[done as `docs/stability.md`]** — enumerates Stable /
+  Experimental / Deprecated / Internal; already holds in `0.4.x`. Cutting `1.0`
+  is then just the version bump + a "no API changes, semver now in force" note.
 - Auto-theme-injection becomes opt-in _by default_ only here. The one-time
   dev-only deprecation `console.warn` shipped in **0.4.x** (`injectDefaultStyles`
   with the `{ auto }` flag; suppressed under `NODE_ENV` `production`/`test`);

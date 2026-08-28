@@ -71,6 +71,7 @@ ESLint (`eslint.config.js`) and Prettier (`.prettierrc.json`) are configured. `n
 - `tools/` — reference tooling (e.g. the LAN signaling relay) that's Node-only and also not part of the published package.
 - `scripts/` — build helpers (`copy-dist-assets.mjs`).
 - `bin/noteloom.mjs` — the `npx noteloom new block|inline <name>` scaffolder (zero-dependency, published in the package's `bin`).
+- `docs/` — `stability.md` (what semver covers), `migration.md` (upgrade guide), `document.schema.json` (the format), `repackaging-plan.md` (the architecture record). A public API change means checking it against `docs/stability.md`.
 
 ## Questions / bugs
 

@@ -1090,7 +1090,7 @@ npm run typecheck        # tsc --noEmit against src/index.d.ts
 npm run build            # library build (dist/, ESM + CJS + index.d.ts)
 ```
 
-See `examples/README.md` for the rest of the runnable examples, and `CONTRIBUTING.md` for the full contributor guide. Upgrading from an earlier version? See **[`docs/migration.md`](docs/migration.md)**.
+See `examples/README.md` for the rest of the runnable examples, and `CONTRIBUTING.md` for the full contributor guide. Upgrading from an earlier version? See **[`docs/migration.md`](docs/migration.md)**. What semver covers: **[`docs/stability.md`](docs/stability.md)**.
 
 ## Known limitations
 
