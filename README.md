@@ -116,6 +116,32 @@ a bundle that doesn't use them drops the code:
 Every name in a feature entry is still exported from `noteloom` too (deprecated;
 see [`docs/migration.md`](docs/migration.md)).
 
+---
+
+> [!TIP]
+>
+> **🛰️ Offline, serverless group editing**
+>
+> `noteloom/collab` is a **custom block-tree CRDT over WebRTC** — peers connect
+> directly, so a group can co-edit one document over a LAN or an offline hotspot
+> with **nothing in the cloud**. Bring any channel to exchange connection setup:
+> a `BroadcastChannel` (same-machine tabs), a tiny WebSocket relay on the LAN
+> (`tools/lan-relay-server/`), or Firebase / Supabase realtime.
+>
+> ```jsx
+> import { CollabSession } from 'noteloom/collab';
+>
+> const session = new CollabSession({ history: editor.store, signaling });
+> session.connect(remotePeerId, { initiator: true });
+> // every edit now syncs to connected peers; incoming edits merge live
+> ```
+>
+> Pair it with `noteloom/persistence` and the doc survives every peer
+> disconnecting. _Experimental_ —
+> [guide → live collaboration](docs/guide.md#live-collaboration-experimental).
+
+---
+
 ## Styling
 
 No CSS import needed — the default theme injects on mount. Retheme via CSS
@@ -165,19 +191,47 @@ button: [guide → exporting](docs/guide.md#exporting-the-document-json--html--m
 | [Accessibility](docs/guide.md#accessibility)                                                                            | keyboard-operable menus, live-region announcements                |
 | [The granular API](docs/guide.md#advanced-the-granular-api)                                                             | build the editor surface by hand                                  |
 
-## Development
+## Requirements
+
+React 18.2+ or 19, and a modern browser (`contentEditable` + `beforeinput`;
+IndexedDB for `noteloom/persistence`; WebRTC for `noteloom/collab`;
+`SpeechRecognition` for `noteloom/voice`). SSR-safe — renders nothing on the
+server and hydrates on mount.
+
+## Status
+
+Pre-1.0 (`0.4.x`). Changes are **additive only** until a deliberate major —
+existing code keeps working, deprecations get a full minor-version notice, and
+the frozen list in [`docs/stability.md`](docs/stability.md) says exactly what
+semver covers. `noteloom/collab` is **experimental**.
+
+## Contributing
+
+Issues and PRs welcome — it's a small, opinionated project.
 
 ```bash
-npm install
-npm run dev:quickstart   # examples/01-quickstart
-npm test                 # vitest
-npm run test:e2e         # Playwright
-npm run build            # dist/ (ESM + CJS + .d.ts + CSS)
+git clone https://github.com/vishwakarmanikhil/noteloom.git
+cd noteloom && npm install
+npm test                 # vitest (no build step needed)
+npm run dev:quickstart   # or dev:custom-block / dev:collab / dev:lan-collab / …
 ```
 
-See [`examples/`](examples/README.md) for the learning ladder, [`CONTRIBUTING.md`](CONTRIBUTING.md)
-for the contributor guide, and [`docs/stability.md`](docs/stability.md) for what
-semver covers.
+Before a PR:
+
+- **`npm test`** and **`npm run lint`** (CI runs the suite on Node 18/20/22;
+  errors block, warnings don't).
+- **Add/update tests** — `test/` mirrors `src/`. Touching rendering or export
+  output? Refresh the golden snapshots (`npx playwright test golden-document
+--update-snapshots`) in the same commit.
+- **Public API change?** Update the entry file, its `.d.ts`, and the frozen list
+  in `test/publicApi.test.js` — the diff is the review signal.
+- **`npm run changeset`** for anything user-facing — it becomes the release note.
+- **Keep the zero-runtime-dependency rule** — nothing in `src/` may add a runtime
+  `dependency`.
+
+Full detail — code layout, the framework-free-core boundary, sync-layer testing
+advice — in [`CONTRIBUTING.md`](CONTRIBUTING.md). Example apps and what each
+teaches: [`examples/README.md`](examples/README.md).
 
 ## License
 
