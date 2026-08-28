@@ -1088,7 +1088,7 @@ npm run typecheck        # tsc --noEmit against src/index.d.ts
 npm run build            # library build (dist/, ESM + CJS + index.d.ts)
 ```
 
-See `examples/README.md` for the rest of the runnable examples, and `CONTRIBUTING.md` for the full contributor guide.
+See `examples/README.md` for the rest of the runnable examples, and `CONTRIBUTING.md` for the full contributor guide. Upgrading from an earlier version? See **[`docs/migration.md`](docs/migration.md)**.
 
 ## Known limitations
 
