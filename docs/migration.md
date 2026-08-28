@@ -88,8 +88,17 @@ matters if you deep-linked a file path.
 No date — 2.0 comes only after the replacements have shipped across several
 minor versions. Until then, both paths work.
 
-## Undecided
+## Heads-up: default-theme auto-injection is deprecated
 
-- Whether the default theme stops auto-injecting (making `import 'noteloom/theme'`
-  required). If it changes, a deprecation warning ships at least one minor
-  version ahead.
+`<NoteloomEditor>` / `<EditorProvider>` currently inject the default theme
+automatically. A **future major version will stop doing this.** As of this
+release a one-time dev-only `console.warn` fires when auto-injection happens.
+
+To silence it now and be future-proof, pick one:
+
+- **Keep the default theme** → add `import 'noteloom/theme'` once in your app
+  (or call `injectDefaultStyles()` yourself).
+- **You style the editor yourself** → pass `theme="none"` to `<NoteloomEditor>` /
+  `<EditorProvider>`.
+
+Nothing breaks in this release either way.

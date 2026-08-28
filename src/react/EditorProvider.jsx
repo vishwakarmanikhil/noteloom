@@ -65,7 +65,7 @@ export function EditorProvider({
   children,
 }) {
   useEffect(() => {
-    if (theme !== 'none') injectDefaultStyles();
+    if (theme !== 'none') injectDefaultStyles({ auto: true });
   }, [theme]);
 
   // `store` may be a plain EditorStore or a History instance (same read/write

@@ -815,7 +815,8 @@ export function useBlockClassName(
   block: Block,
 ): string | undefined;
 
-export function injectDefaultStyles(): void;
+/** Inject the default theme `<style>` tag once. The explicit alternative to letting `<EditorProvider>` auto-inject (which a future major will stop doing) — or `import 'noteloom/theme'`. */
+export function injectDefaultStyles(options?: { auto?: boolean }): void;
 
 export function useBlock(id: string): Block | undefined;
 export function useRun(id: string): Run | undefined;

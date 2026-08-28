@@ -110,6 +110,8 @@ There's no separate hardcoded `mention` type — an `@name` chip is just an ordi
 
 You don't need to import any CSS. The moment `<NoteloomEditor>` mounts, it injects a single `<style>` tag with a minimal, clean default theme — no `import 'noteloom/style.css'` line, no build-tool CSS configuration, nothing to wire up. It's idempotent (mounting more than one editor on a page only injects it once) and client-only (a no-op under SSR; hydrate as normal and it injects on mount).
 
+> **Deprecated:** a future major version will stop auto-injecting (a one-time dev `console.warn` says so). To be future-proof now: add `import 'noteloom/theme'` once in your app to keep the default theme, or pass `theme="none"` if you style the editor yourself.
+
 **Retheme it** by overriding the CSS custom properties it reads from — defined on `:root` (not scoped to a wrapper element, since portaled pieces like the slash menu and Select's popover aren't DOM descendants of the editor itself):
 
 ```css

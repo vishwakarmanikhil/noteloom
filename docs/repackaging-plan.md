@@ -1,15 +1,16 @@
 # Repackaging plan — making noteloom easy to install, extend, and contribute to
 
-Status: **Phases 0–4 shipped** (staged for `0.5.0`) · Phase 5 = release management
-· Owner: @vishwakarmanikhil · Target: `noteloom` 0.5 → 1.0
+Status: **Phases 0–4 shipped in `0.4.0`** · Phase 5 = freeze contracts → `1.0`
+· Owner: @vishwakarmanikhil
 
 **Progress:** Phase −1 (gates), 0 (tooling), 1 (subpath entries), 2 (framework-free
 core), 3 (`defineBlock`/`defineInline`/`defineExtension` + `extensions` + `ctx` +
 CLI), and 4 (canonical document format) are done and committed, each behind the
 export-surface + golden-document gates. See per-phase `DONE` notes below.
-`docs/migration.md` is the consumer-facing 0.3.x → 0.5.0 guide. What remains
-(Phase 5) is cutting the release and the one open product decision (auto-theme
-injection).
+Shipped as **`0.4.0`** (npm + GitHub Packages). `docs/migration.md` is the
+consumer-facing upgrade guide. `0.4.x` also carries the one-time dev deprecation
+`console.warn` for auto-theme-injection. What remains is Phase 5 (freeze the
+contracts under semver → `1.0`) and Phase 6 (`2.0` removals).
 
 ---
 
@@ -593,9 +594,11 @@ Still **TODO** (later increments):
 - Promote the new APIs to "recommended", freeze them under semver: the `ctx`
   facade, the `define*` field sets, the document schema, and the list of subpath
   entry points.
-- Auto-theme-injection becomes opt-in _by default_ only here, with `injectTheme()`
-  and a starter-kit component covering the old behavior; the deprecation warning
-  has been visible since 0.4.
+- Auto-theme-injection becomes opt-in _by default_ only here. The one-time
+  dev-only deprecation `console.warn` shipped in **0.4.x** (`injectDefaultStyles`
+  with the `{ auto }` flag; suppressed under `NODE_ENV` `production`/`test`);
+  `injectDefaultStyles()` / `import 'noteloom/theme'` / `theme="none"` are the
+  explicit alternatives, all working today.
 - `collab` labelled `experimental` and versioned separately if not yet solid.
 - Write the migration guide + a codemod for the mechanical import moves.
 
@@ -637,8 +640,9 @@ shim` path covers it, but confirm we're willing to make people add one import.
 4. **One document format** (the "simple" JSON), schema'd + versioned
    (`docs/document.schema.json`); internal graph via
    `toJSON({ format: 'internal' })` — ✅ shipped.
-5. **Explicit `import 'noteloom/theme'`** — alias shipped; making it _mandatory_
-   (dropping auto-injection) is the one **open** decision. See §9 / Phase 5.
+5. **Explicit `import 'noteloom/theme'`** — alias shipped, and a one-time
+   dev-only deprecation `console.warn` on auto-injection shipped in 0.4.x.
+   Dropping auto-injection by default happens at a future major (Phase 5/6).
 6. **ESLint, Prettier, Changesets, size-limit, `.d.ts`-sync test, a scaffolding
    CLI (`npx noteloom new`)** — ✅ shipped. Types stay hand-written (§9); a
    standalone plugin-template repo and a docs site are still nice-to-haves.
