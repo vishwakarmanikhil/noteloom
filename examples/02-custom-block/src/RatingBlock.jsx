@@ -23,9 +23,10 @@ function Star({ filled, label, onClick }) {
   );
 }
 
-// A block doesn't have to hold text at all -- see ratingBlockType.js for the
-// registry entry (isLeaf: false, contentIds always empty). This one keeps a
-// plain number in `props.value` and renders it as clickable stars.
+// A block doesn't have to hold text at all -- see ratingBlock.js for the
+// defineBlock() definition (contentModel: 'void', contentIds always empty).
+// This one keeps a plain number in `props.value` and renders it as
+// clickable stars.
 export function RatingBlock({ id }) {
   const store = useEditorStore();
   const block = useBlock(id);

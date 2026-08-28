@@ -1,21 +1,22 @@
-import { operations } from 'noteloom';
+import { defineBlock, operations } from 'noteloom';
 import { RatingBlock } from './RatingBlock.jsx';
 
-// The registry entry every block type needs (see README's "Registering your
-// own block/inline types") -- `component` renders it, everything else is
-// for clipboard/export/the slash menu.
-export const ratingBlockType = {
-  component: RatingBlock,
-  isLeaf: false, // no text content -- contentIds stays empty, the value lives in props
+// A whole custom block type, authored only through the public API:
+// `defineBlock()` for the definition, `operations` for the slash command's
+// edit. No imports from inside the package.
+export const ratingBlock = defineBlock({
+  name: 'rating', // the block `type`
+  component: RatingBlock, // renders it; gets { id }
+  contentModel: 'void', // no text and no child blocks — the value lives in props (like divider/embed)
   defaultProps: { value: 0 },
   toPlainText: (block) => `Rating: ${block.props?.value ?? 0}/5`,
   toHTML: (block) => `<p>Rating: ${block.props?.value ?? 0}/5</p>`,
   slashCommand: {
     label: 'Rating',
     keywords: ['rating', 'stars'],
-    // Every slashCommand's `run` gets (store, { blockId, runId, sliceStart, sliceEnd })
-    // -- those describe exactly where "/rating" was typed, so it can be
-    // erased before inserting the real block right after it.
+    // `run` gets (store, { blockId, runId, sliceStart, sliceEnd }) — where
+    // "/rating" was typed, so it can be erased before the real block is
+    // inserted right after it.
     run(store, { runId, sliceStart, sliceEnd, blockId }) {
       const run = store.getRun(runId);
       const value = run?.value ?? '';
@@ -41,4 +42,4 @@ export const ratingBlockType = {
       );
     },
   },
-};
+});

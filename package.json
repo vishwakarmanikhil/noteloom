@@ -35,6 +35,9 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "style": "./dist/style.css",
+  "bin": {
+    "noteloom": "./bin/noteloom.mjs"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -89,7 +92,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
   "engines": {
     "node": ">=18"

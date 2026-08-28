@@ -70,6 +70,7 @@ ESLint (`eslint.config.js`) and Prettier (`.prettierrc.json`) are configured. `n
 - `examples/` — runnable demo apps, not part of the published npm package.
 - `tools/` — reference tooling (e.g. the LAN signaling relay) that's Node-only and also not part of the published package.
 - `scripts/` — build helpers (`copy-dist-assets.mjs`).
+- `bin/noteloom.mjs` — the `npx noteloom new block|inline <name>` scaffolder (zero-dependency, published in the package's `bin`).
 
 ## Questions / bugs
 

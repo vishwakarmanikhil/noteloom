@@ -196,6 +196,8 @@ function Editor() {
 
 `examples/02-custom-block/` is a complete runnable version of this pattern.
 
+**Scaffold one:** `npx noteloom new block <name>` (or `new inline <name>`) writes a `<name>/` folder with a `defineBlock()`/`defineInline()` starting point, a component, and a test.
+
 ### `defineBlock` / `extensions` — the newer way
 
 The `registerBlocks` callback above still works, but the recommended way to author and register a type is now `defineBlock()` / `defineInline()` plus an `extensions` array:

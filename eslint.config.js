@@ -86,6 +86,7 @@ export default [
       'test/**/*.{js,jsx}',
       'test-e2e/**/*.{js,jsx}',
       'scripts/**/*.{js,mjs}',
+      'bin/**/*.{js,mjs}',
       '**/*.config.{js,mjs}',
       'tools/**/*.js',
     ],

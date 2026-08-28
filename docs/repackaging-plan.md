@@ -537,6 +537,17 @@ event)`, and `setup(ctx) → cleanup?`. "Return truthy = handled" — the editor
   new main-entry exports. The older `useSmartQuotes` / `useAutoPairBrackets`
   hooks stay as-is.
 
+Increment 3e — **DONE** (scaffolding + example):
+
+- **[done]** `bin/noteloom.mjs` — zero-dependency CLI, published in the
+  package's `bin`. `npx noteloom new block <name>` / `new inline <name>` writes
+  `<name>/{index.js, <Name>Block.jsx, <name>.test.js}` off a `defineBlock()` /
+  `defineInline()` template. Covered by `test/cli.test.js`.
+- **[done]** `examples/02-custom-block/` rewritten to author its `rating` block
+  with `defineBlock()` and register it via
+  `extensions: [...starterKit(), ratingBlock]` — no imports from inside the
+  package (the plan's Phase 3 exit criterion). Builds clean.
+
 Still **TODO** (later increments):
 
 - **Markdown-style input rules** that convert a whole block ("# " → heading)
@@ -544,12 +555,8 @@ Still **TODO** (later increments):
   expressible through `defineExtension` yet.
 - Richer `ctx` mutators (`insertAfterCurrent`, `replaceRange`, …) and passing
   `ctx` to block `commands` too.
-- Rewrite each built-in's own `src/blocks/*/index.js` to call `defineBlock`
-  directly (right now `starterKit()` wraps the existing entry objects — behavior
-  proven identical, but the source files aren't migrated yet).
-- Scaffolding CLI + `noteloom-block-starter` template repo.
-- An `examples/` app that authors a custom block purely through public
-  `defineBlock` + `ctx`.
+- A standalone `noteloom-block-starter` template repo (the CLI covers the
+  in-repo case for now).
 
 ### Phase 4 — document format · `0.6.0` (opt-in default, escape hatch kept)
 
