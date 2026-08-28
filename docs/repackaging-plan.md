@@ -514,15 +514,36 @@ Increment 3c — **DONE** (satisfies the "reimplement built-ins on top" exit ite
   vitest (1398) + the `starterKit()` ≡ `registerBuiltIn*` equivalence test still
   green. No public API change.
 
+Increment 3d — **DONE** (the `ctx` facade + behavior extensions):
+
+- **[done]** `defineExtension` now also accepts `keymap` (`{ 'Mod-Shift-x':
+(ctx, event) => boolean }`), `onBeforeInput(ctx, event)`, `onPaste(ctx,
+event)`, and `setup(ctx) → cleanup?`. "Return truthy = handled" — the editor
+  then `preventDefault()`s and `stopImmediatePropagation()`s so the built-in
+  handler on the same element doesn't also fire.
+- **[done]** `src/react/useExtensionBehaviors.js` — builds the **stable `ctx`
+  facade** (`store`, `registry`, `inlineRegistry`, `container` getter,
+  `getBlock/getRun/getRootId`, `applyOperation/applyOperations` wrapped in
+  `flushSync`, `getSelection/getCaret/setCaret`, `subscribe`) and runs the
+  behavior hooks via native listeners on the editor surface.
+  `<NoteloomEditor>` calls it **before** `useEditorKeyboardShortcuts` so an
+  extension keymap gets first crack. `useEditor()` returns the flattened
+  `extensions` list; `<NoteloomEditor>` forwards it.
+- **[done]** Proven inert when unused: golden-document e2e byte-identical.
+  New tests cover `matchesKeymap`, a keymap handler claiming a key, `setup`
+  mount/cleanup, and the two ported typing extensions end-to-end.
+- **[done]** `smartQuotes()` / `autoPairBrackets()` (in `src/extensions/typing.js`,
+  framework-free) reimplement those behaviors as `onBeforeInput` extensions —
+  new main-entry exports. The older `useSmartQuotes` / `useAutoPairBrackets`
+  hooks stay as-is.
+
 Still **TODO** (later increments):
 
-- `defineExtension`'s **behavior** half — `keymap` / `inputRules` / `onPaste` /
-  a `setup(ctx)` lifecycle — needs an effect loop wired into `<NoteloomEditor>`
-  and the `ctx` facade below. This is where the ad-hoc `useSmartQuotes` /
-  `useAutoPairBrackets` / markdown-shortcut hooks would eventually fold in.
-- The stable `ctx` facade (`ctx.store`, `ctx.insertAfterCurrent`,
-  `ctx.selection`, `ctx.replaceRange`, …) passed to `setup` and, later, to block
-  `commands`.
+- **Markdown-style input rules** that convert a whole block ("# " → heading)
+  stay block-coupled (`ParagraphBlock` / `EditableBlockContent`), not
+  expressible through `defineExtension` yet.
+- Richer `ctx` mutators (`insertAfterCurrent`, `replaceRange`, …) and passing
+  `ctx` to block `commands` too.
 - Rewrite each built-in's own `src/blocks/*/index.js` to call `defineBlock`
   directly (right now `starterKit()` wraps the existing entry objects — behavior
   proven identical, but the source files aren't migrated yet).

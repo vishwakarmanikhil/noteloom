@@ -6,6 +6,7 @@ import { BlockRangeActionMenu } from './BlockRangeActionMenu.jsx';
 import { CommentsPanel } from './CommentsPanel.jsx';
 import { useClipboardHandlers } from './useClipboardHandlers.js';
 import { useEditorKeyboardShortcuts } from './useEditorKeyboardShortcuts.js';
+import { useExtensionBehaviors } from './useExtensionBehaviors.js';
 import { useBlockRangeDrag } from './useBlockRangeDrag.js';
 import { SlashMenu } from '../commands/SlashMenu.jsx';
 import { useSlashMenuTrigger } from '../commands/useSlashMenuTrigger.js';
@@ -16,7 +17,7 @@ import { useFloatingToolbarTrigger } from '../commands/useFloatingToolbarTrigger
 import { FindBar } from './FindBar.jsx';
 import { useFindInDocument } from './useFindInDocument.js';
 
-function EditorSurface({ store, rootId, onComment, commentAuthorId }) {
+function EditorSurface({ store, rootId, extensions, onComment, commentAuthorId }) {
   const containerRef = useRef(null);
   const { onCopy, onCut, onPaste } = useClipboardHandlers();
   const slashMenu = useSlashMenuTrigger(containerRef);
@@ -24,6 +25,8 @@ function EditorSurface({ store, rootId, onComment, commentAuthorId }) {
   const atMenu = useAtMenuTrigger(containerRef);
   const floatingToolbar = useFloatingToolbarTrigger(containerRef);
   const findInDocument = useFindInDocument(containerRef);
+  // Before useEditorKeyboardShortcuts, so an extension keymap can claim a key.
+  useExtensionBehaviors(extensions, containerRef);
   useEditorKeyboardShortcuts(containerRef);
   useBlockRangeDrag(containerRef);
 
@@ -141,7 +144,7 @@ export function NoteloomEditor({
   maxFileSize,
   children,
 }) {
-  const { store, registry, inlineRegistry } = editor;
+  const { store, registry, inlineRegistry, extensions } = editor;
   const rootId = store.getRootId();
   return (
     <EditorProvider
@@ -160,6 +163,7 @@ export function NoteloomEditor({
       <EditorSurface
         store={store}
         rootId={rootId}
+        extensions={extensions}
         onComment={onComment}
         commentAuthorId={commentAuthorId}
       />

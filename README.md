@@ -225,7 +225,34 @@ function Editor() {
 - Passing `extensions` turns off the automatic built-ins (it's opt-in, like `registerBlocks`) — spread `starterKit()` in if you want them. A `registerBlocks` callback passed alongside `extensions` still runs, on top.
 - `defineBlock` validates its config and throws on obvious mistakes (missing `name`/`component`, bad `contentModel`). The result is still a plain registry entry, so `registry.register('rating', rating)` also works.
 - `registerExtensions(array, { registry, inlineRegistry })` does the same registration against registries you made yourself.
-- `defineExtension({ name, blocks, inlineTypes })` groups several definitions into one bundle you can drop into `extensions` as a single item — for a plugin that ships more than one type. (Behavior extensions — keymaps, input rules — are not in this yet; see `docs/repackaging-plan.md`.)
+- `defineExtension({ name, blocks?, inlineTypes?, keymap?, onBeforeInput?, onPaste?, setup? })` is one extension unit for the `extensions` array. Beyond bundling types, it carries **behavior**:
+
+  ```jsx
+  import { useEditor, NoteloomEditor, defineExtension, smartQuotes } from 'noteloom';
+
+  const clearFormatting = defineExtension({
+    name: 'clear-formatting',
+    keymap: {
+      'Mod-\\': (ctx) => {
+        // ctx: { store, registry, inlineRegistry, container, getBlock, getRun,
+        //        getRootId, applyOperation, applyOperations, getSelection,
+        //        getCaret, setCaret, subscribe }
+        /* …strip marks over ctx.getSelection()… */
+        return true; // truthy = handled: preventDefault + don't let built-ins see it
+      },
+    },
+    setup: (ctx) => {
+      const stop = ctx.subscribe(() => {
+        /* react to every change */
+      });
+      return stop; // cleanup on unmount
+    },
+  });
+
+  const editor = useEditor({ extensions: [...starterKit(), smartQuotes(), clearFormatting] });
+  ```
+
+  `keymap` keys use `Mod` (Ctrl/Cmd), `Shift`, `Alt`; `onBeforeInput` / `onPaste` get `(ctx, event)` and follow the same "return truthy = handled" rule. `smartQuotes()` and `autoPairBrackets()` are ready-made ones. (Markdown-style "# " → heading rules are still block-coupled and not expressible here yet.)
 
 ## Custom dropdown / mention field types (static, or dynamic/API-backed)
 

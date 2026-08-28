@@ -93,6 +93,10 @@ export {
   registerExtensions,
 } from './registry/define.js';
 export { starterKit } from './starter-kit.js';
+// Ready-made behavior extensions (opt-in typing helpers). The older
+// useSmartQuotes/useAutoPairBrackets hooks still work; these are the
+// `extensions: [...]`-array form.
+export { smartQuotes, autoPairBrackets } from './extensions/typing.js';
 
 // registerBuiltInBlocks/registerBuiltInInlineTypes register EVERY built-in
 // type at once — the quickest way to get a fully-featured editor running.

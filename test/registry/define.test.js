@@ -118,6 +118,22 @@ describe('registerExtensions', () => {
     expect(() => defineExtension({ name: 'p', blocks: 'nope' })).toThrow(
       /`blocks` must be an array/,
     );
+    expect(() => defineExtension({ name: 'p', keymap: 7 })).toThrow(/`keymap` must be an object/);
+    expect(() => defineExtension({ name: 'p', onPaste: 7 })).toThrow(
+      /`onPaste` must be a function/,
+    );
+    expect(() => defineExtension({ name: 'p', setup: 7 })).toThrow(/`setup` must be a function/);
+  });
+
+  it('defineExtension carries behavior fields through', () => {
+    const keymap = { 'Mod-k': () => true };
+    const onBeforeInput = () => false;
+    const setup = () => () => {};
+    const ext = defineExtension({ name: 'b', keymap, onBeforeInput, setup });
+    expect(ext.keymap).toBe(keymap);
+    expect(ext.onBeforeInput).toBe(onBeforeInput);
+    expect(ext.setup).toBe(setup);
+    expect(ext.onPaste).toBeUndefined();
   });
 });
 

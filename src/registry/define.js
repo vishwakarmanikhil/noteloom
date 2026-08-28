@@ -102,20 +102,35 @@ export function defineInline(config) {
 }
 
 /**
- * Groups several `defineBlock()` / `defineInline()` results under one name so
- * they can be dropped into an `extensions: [...]` array as a single unit — e.g.
- * a plugin that ships three blocks and a chip.
+ * A named unit dropped into an `extensions: [...]` array. Can carry:
+ *   - `blocks` / `inlineTypes` — `defineBlock()` / `defineInline()` results to
+ *     register (a plugin that ships several types as one install).
+ *   - `keymap` — `{ 'Mod-Shift-x': (ctx, event) => boolean }`; return truthy to
+ *     mark the key handled (the editor calls preventDefault + stops it there).
+ *   - `onBeforeInput(ctx, event)` / `onPaste(ctx, event)` — same "return truthy
+ *     = handled" contract, for `beforeinput` / `paste` on the editor surface.
+ *   - `setup(ctx)` — run once when the editor mounts; may return a cleanup fn.
  *
- * @param {object} config
- *   - `name` (required): a label for the bundle (diagnostics only).
- *   - `blocks`: array of `defineBlock()` results.
- *   - `inlineTypes`: array of `defineInline()` results.
- * v1 is bundle-only. Behavior hooks (keymap / input rules / paste transforms)
- * and a `setup(ctx)` lifecycle are still TODO — see docs/repackaging-plan.md.
+ * The behavior fields only do anything when the extension is passed through
+ * `useEditor({ extensions })` and rendered by `<NoteloomEditor>` (which wires
+ * `useExtensionBehaviors`). `ctx` is the stable facade that hook builds — see
+ * its doc comment for the shape. Markdown-style input rules that convert a
+ * whole block are still block-coupled and not expressible here yet.
+ *
+ * @param {object} config — `name` (required, a label) plus any of the above.
  */
 export function defineExtension(config) {
   if (!config || typeof config !== 'object') fail('defineExtension', 'config must be an object');
-  const { name, blocks = [], inlineTypes = [], ...rest } = config;
+  const {
+    name,
+    blocks = [],
+    inlineTypes = [],
+    keymap,
+    onBeforeInput,
+    onPaste,
+    setup,
+    ...rest
+  } = config;
 
   if (typeof name !== 'string' || !name.trim()) {
     fail('defineExtension', '`name` must be a non-empty string');
@@ -126,8 +141,30 @@ export function defineExtension(config) {
   if (!Array.isArray(inlineTypes)) {
     fail('defineExtension', `extension "${name}": \`inlineTypes\` must be an array`);
   }
+  if (keymap !== undefined && (typeof keymap !== 'object' || keymap === null)) {
+    fail('defineExtension', `extension "${name}": \`keymap\` must be an object`);
+  }
+  for (const [field, value] of [
+    ['onBeforeInput', onBeforeInput],
+    ['onPaste', onPaste],
+    ['setup', setup],
+  ]) {
+    if (value !== undefined && typeof value !== 'function') {
+      fail('defineExtension', `extension "${name}": \`${field}\` must be a function`);
+    }
+  }
 
-  return { ...rest, name, kind: EXTENSION_KIND, blocks, inlineTypes };
+  return {
+    ...rest,
+    name,
+    kind: EXTENSION_KIND,
+    blocks,
+    inlineTypes,
+    ...(keymap !== undefined ? { keymap } : {}),
+    ...(onBeforeInput !== undefined ? { onBeforeInput } : {}),
+    ...(onPaste !== undefined ? { onPaste } : {}),
+    ...(setup !== undefined ? { setup } : {}),
+  };
 }
 
 export function isBlockDefinition(value) {

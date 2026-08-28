@@ -82,6 +82,11 @@ export function useEditor({
       store: history ? new History(store, { defaultActorId: currentUserId }) : store,
       registry,
       inlineRegistry,
+      // Flattened extension list — <NoteloomEditor> feeds this to
+      // useExtensionBehaviors for the keymap/onBeforeInput/onPaste/setup half.
+      // Block/inline definitions are already registered above; they're kept in
+      // the list too but ignored there (no behavior fields).
+      extensions: extensions != null ? extensions.flat(Infinity) : [],
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

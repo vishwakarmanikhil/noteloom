@@ -687,28 +687,67 @@ export interface DefineInlineConfig {
 export type BlockDefinition = BlockTypeDefinition & { name: string; kind: 'block' };
 /** A `defineInline()` result — an `InlineRegistry` entry tagged `kind: 'inline'`. */
 export type InlineDefinition = InlineTypeDefinition & { name: string; kind: 'inline' };
-/** A `defineExtension()` result — a named bundle of block/inline definitions. */
+/** A `defineExtension()` result — a named bundle of block/inline definitions and/or behavior. */
 export interface ExtensionBundle {
   name: string;
   kind: 'extension';
   blocks: BlockDefinition[];
   inlineTypes: InlineDefinition[];
+  keymap?: Record<string, KeymapHandler>;
+  onBeforeInput?: ExtensionEventHandler;
+  onPaste?: ExtensionEventHandler;
+  setup?: (ctx: ExtensionCtx) => void | (() => void);
   [key: string]: unknown;
 }
 export type Extension = BlockDefinition | InlineDefinition | ExtensionBundle;
 
+/** The stable facade passed to every `defineExtension()` behavior handler. */
+export interface ExtensionCtx {
+  store: EditorStore | History;
+  registry: BlockRegistry;
+  inlineRegistry: InlineRegistry;
+  /** The editor's root element (null before mount). */
+  readonly container: HTMLElement | null;
+  getBlock(id: string): Block | undefined;
+  getRun(id: string): Run | undefined;
+  getRootId(): string | null;
+  /** Apply an operation, flushing React synchronously so the DOM is current before `setCaret`. */
+  applyOperation(op: Operation): void;
+  applyOperations(ops: Operation[]): void;
+  getSelection(): { blockId: string; runId: string; startOffset: number; endOffset: number } | null;
+  getCaret(): { blockId: string; runId: string; offset: number } | null;
+  setCaret(runId: string, offset: number): void;
+  subscribe(listener: () => void): () => void;
+}
+
+/** A keymap handler — return truthy to mark the key handled. */
+export type KeymapHandler = (ctx: ExtensionCtx, event: KeyboardEvent) => boolean | void;
+/** A beforeinput/paste handler — return truthy to mark the event handled. */
+export type ExtensionEventHandler = (ctx: ExtensionCtx, event: Event) => boolean | void;
+
 export interface DefineExtensionConfig {
-  /** Label for the bundle (diagnostics only). */
+  /** Label for the bundle / diagnostics. */
   name: string;
   blocks?: BlockDefinition[];
   inlineTypes?: InlineDefinition[];
+  /** `{ 'Mod-Shift-x': (ctx, event) => boolean }` — `Mod` is Ctrl/Cmd. */
+  keymap?: Record<string, KeymapHandler>;
+  onBeforeInput?: ExtensionEventHandler;
+  onPaste?: ExtensionEventHandler;
+  /** Runs once on mount; may return a cleanup function. */
+  setup?: (ctx: ExtensionCtx) => void | (() => void);
   [key: string]: unknown;
 }
 
 export function defineBlock(config: DefineBlockConfig): BlockDefinition;
 export function defineInline(config: DefineInlineConfig): InlineDefinition;
-/** Groups several `defineBlock()` / `defineInline()` results under one name (bundle-only in v1). */
+/** Groups block/inline definitions and/or behavior (keymap/onBeforeInput/onPaste/setup) under one name. */
 export function defineExtension(config: DefineExtensionConfig): ExtensionBundle;
+
+/** Opt-in typing behavior: straight quotes -> curly. */
+export function smartQuotes(): ExtensionBundle;
+/** Opt-in typing behavior: auto-close `(` `[` `{`. */
+export function autoPairBrackets(): ExtensionBundle;
 
 /** Registers a flat/nested array of `defineBlock()` / `defineInline()` results (and `defineExtension()` bundles) onto the given registries. */
 export function registerExtensions(
@@ -1068,6 +1107,8 @@ export interface UseEditorResult {
   store: History | EditorStore;
   registry: BlockRegistry;
   inlineRegistry: InlineRegistry;
+  /** The flattened `extensions` list, forwarded to `<NoteloomEditor>` for the behavior half. */
+  extensions: Extension[];
 }
 
 /** The one-call path to a working editor — see the README's Quick start. */
