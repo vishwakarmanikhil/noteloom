@@ -11,13 +11,14 @@ permissions:
 jobs:
   lint:
     # Lint + format + bundle-size budget. One Node version — these don't vary
-    # across the engines range. See docs/repackaging-plan.md Phase 0.
+    # across the engines range. Node 22: size-limit v13 imports `glob` from
+    # `node:fs/promises`, which only exists on Node 22+.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run lint
