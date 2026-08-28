@@ -50,26 +50,50 @@ or the internal shape, auto-detected), or `history: false` to drop undo/redo.
   unused.
 - **Retheme-able**, RTL-aware, keyboard-operable, mobile/touch-first.
 
-## Add a custom block
+## Composing the block set
+
+`useEditor()` registers every built-in type. Pass `extensions` to control the
+set — drop what you don't need, add the freehand-drawing `canvas` block from its
+own (heavier) entry point, and register your own via `defineBlock`:
 
 ```jsx
-import { useEditor, NoteloomEditor, defineBlock, starterKit } from 'noteloom';
+import { useEditor, NoteloomEditor, starterKit, defineBlock } from 'noteloom';
+import { canvasBlockType } from 'noteloom/canvas';
+import { RatingBlock } from './RatingBlock.jsx'; // a React component, receives { id }
 
+// A whole custom block type — no text, no children, value lives in props.
+// examples/02-custom-block/ is the runnable version of this.
 const rating = defineBlock({
   name: 'rating',
-  component: RatingBlock, // your React component, gets { id }
+  component: RatingBlock,
   contentModel: 'void', // 'blocks' | 'runs' | 'void'
   defaultProps: { stars: 0 },
   toHTML: (block) => `<div data-stars="${block.props.stars}"></div>`,
-  slashCommand: { label: 'Rating', keywords: ['stars'], run: /* … */ },
+  slashCommand: {
+    label: 'Rating',
+    keywords: ['stars'],
+    run: (store, { blockId }) => {
+      /* erase "/rating", insert a { type: 'rating' } block after blockId */
+    },
+  },
 });
 
-const editor = useEditor({ extensions: [...starterKit(), rating] });
+function Editor() {
+  const editor = useEditor({
+    extensions: [
+      ...starterKit({ exclude: ['canvas'] }), // every built-in except canvas…
+      canvasBlockType, // …then canvas back, explicitly, from noteloom/canvas
+      rating, // …plus your own
+    ],
+  });
+  return <NoteloomEditor editor={editor} />;
+}
 ```
 
-`defineExtension` also carries **behavior** — `keymap`, `onBeforeInput`,
-`onPaste`, `setup(ctx)` — for typing rules, shortcuts, and side effects.
-`smartQuotes()` / `autoPairBrackets()` are ready-made ones. Full walkthrough:
+`starterKit()` on its own is the full default set (`useEditor()` with no
+`extensions` is identical). `defineExtension` also carries **behavior** —
+`keymap`, `onBeforeInput`, `onPaste`, `setup(ctx)` — and `smartQuotes()` /
+`autoPairBrackets()` are ready-made ones. Full walkthrough:
 [guide → extension API](docs/guide.md#defineblock--extensions--the-newer-way).
 
 ## Import map
