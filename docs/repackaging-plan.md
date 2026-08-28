@@ -313,13 +313,13 @@ can remain as the implementation underneath for one release, then be dropped.
 
 ## 7. Docs & contribution
 
-- **Split the 923-line README** into a docs site (`docs/` → the existing
-  noteloom.qusere.in): Quickstart · Configuration · Styling · one page per
-  optional feature · **"Build a custom block"** tutorial · **"Build a behavior
-  extension"** · API reference (generated) · Migration guide · Architecture
-  (this doc's §3, for contributors).
-- README shrinks to: what it is, the 3-line quickstart, the feature matrix with
-  links, contributing pointer.
+- **[done]** README cut from ~1100 lines to ~150: what it is, the 3-line
+  quickstart, a custom-block example, the import map, styling / document-format
+  one-liners, and a feature matrix linking into the full guide. The former
+  README moved verbatim to `docs/guide.md`; `docs/` now also holds
+  `migration.md`, `stability.md`, `document.schema.json`, this plan. Wiring the
+  guide into the docs site (noteloom.qusere.in) is a site-build task, separate
+  from the package.
 - **`CONTRIBUTING.md` per concern**: core, react, a feature package, a block. Each
   says where the sibling tests live and what "done" means.
 - **Plugin template repo** (`noteloom-block-starter`) — a standalone repo a

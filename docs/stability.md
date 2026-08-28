@@ -46,7 +46,7 @@ simple format.
 ## Experimental — may change in a minor
 
 - **`noteloom/collab`** (the CRDT + WebRTC layer). Documented as experimental in
-  the README; the merge/wire format is not frozen.
+  the guide; the merge/wire format is not frozen.
 - The **internal document shape** (`{ rootId, blocks, runs }`) reachable via
   `editor.toJSON({ format: 'internal' })` / `exportDocumentJSON` — unversioned,
   an implementation detail. Use it for collab/debug, not as a storage contract.
