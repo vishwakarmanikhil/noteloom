@@ -1,11 +1,7 @@
 import { useEffect, useRef } from 'react';
-import {
-  useEditorStore,
-  useInlineRegistry,
-  useFieldTypeEditor,
-} from '../../react/EditorProvider.jsx';
-import { useFieldTypes } from '../../react/useFieldTypes.js';
-import { registerStoredFieldTypes } from './registerStoredFieldTypes.js';
+import { useEditorStore, useInlineRegistry, useFieldTypeEditor } from './EditorProvider.jsx';
+import { useFieldTypes } from './useFieldTypes.js';
+import { registerStoredFieldTypes } from '../inlineTypes/customSelect/registerStoredFieldTypes.js';
 
 /**
  * Keeps the inline registry in sync with the store's persisted field types

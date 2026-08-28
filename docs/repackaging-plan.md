@@ -442,13 +442,30 @@ that affect the public API moved; nothing was removed.
 - **Exit:** ✔ `examples/*` unchanged and green; `npm run lint` / `typecheck` /
   `size` / vitest (1382) / e2e (16) all green; every 0.3.x import still resolves.
 
-### Phase 2 — framework-free core boundary · part of `0.4.0` (internal only)
+### Phase 2 — framework-free core boundary · part of `0.4.0` (internal only) — **DONE**
 
-- Move engine files so core code never imports `react`/`react-dom`; add the
-  lint rule at error level. Export surface of `noteloom` is unchanged — it still
-  re-exports the React pieces for back-compat; internally they now live behind
-  `noteloom/react`.
-- **Exit:** `import/no-restricted-imports` passes; no export added or removed.
+- **[revised — no bulk move]** The engine was already React-free: nothing under
+  `src/store`, `src/registry`, `src/crdt`, `src/sync`, `src/persistence`,
+  `src/clipboard`, `src/search`, `src/inline`, `src/comments`, `src/versions`,
+  `src/voice`, `src/templates`, `src/people`, `src/utils` imports react. Only
+  **two** stray React hooks lived in logic folders; they moved to `src/react/`:
+  - `src/blocks/shared/useDragResize.js` → `src/react/useDragResize.js`
+  - `src/inlineTypes/customSelect/useRegisterFieldTypes.js` →
+    `src/react/useRegisterFieldTypes.js`
+
+  A `src/core/` vs `src/react/` physical split would be pure churn for no
+  behavior gain, so it's deferred (a cosmetic move anytime, or at Phase 2's
+  real graduation).
+
+- **[done]** ESLint `no-restricted-imports` rule at **error** level: every `.js`
+  under `src/` except the two React zones (`src/react/**`, `src/commands/**`) and
+  any `.jsx` may not import `react`/`react-dom`. Verified it fires (probe) and
+  that the tree passes it clean.
+- **[done]** Export surface unchanged — `test/publicApi.test.js` still green
+  (217 main + all subpath surfaces); `useRegisterFieldTypes` re-export path in
+  `src/index.js` updated, declaration in `index.d.ts` unchanged.
+- **Exit:** ✔ `no-restricted-imports` passes at error level; no export added,
+  removed, or renamed; typecheck / build / size / vitest (1382) / e2e (16) green.
 
 ### Phase 3 — the `defineBlock` extension API · `0.5.0` (additive only)
 

@@ -25,7 +25,7 @@ import {
   pointInPolygon,
   rotatePoint,
 } from './shapeGeometry.js';
-import { useDragResize } from '../shared/useDragResize.js';
+import { useDragResize } from '../../react/useDragResize.js';
 import { DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from './createCanvasBlock.js';
 import { buildCanvasSVGMarkup } from './exportSvg.js';
 import { orderedDrawables, nextZIndex, minZIndex } from './zOrder.js';

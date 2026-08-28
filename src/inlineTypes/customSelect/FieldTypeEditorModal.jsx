@@ -5,7 +5,7 @@ import { addFieldType, updateFieldType, removeFieldType } from '../../store/oper
 import { genId } from '../../utils/idGen.js';
 import { XIcon } from '../../react/icons.jsx';
 import { pickTagColor } from '../../blocks/table/tagColors.js';
-import { useRegisterFieldTypes } from './useRegisterFieldTypes.js';
+import { useRegisterFieldTypes } from '../../react/useRegisterFieldTypes.js';
 
 /**
  * Create/edit/delete UI for a user-created custom select field type — the

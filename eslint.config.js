@@ -16,9 +16,15 @@ const jsxA11yWarnings = Object.fromEntries(
 // Phase 0 of docs/repackaging-plan.md: get a linter in place at all. Rules
 // are deliberately conservative — real-bug rules stay as errors, everything
 // stylistic or aspirational is `warn` so `npm run lint` passes in CI today
-// without forcing a cleanup. The import-boundary rules that matter (core must
-// not import react; feature packages must not import each other) land in
-// Phase 1/2, once src/ is actually split into those layers.
+// without forcing a cleanup.
+//
+// Phase 2 adds the one import-boundary rule that matters: the framework-free
+// core (every `.js` under src/ except the two React zones, src/react/ and
+// src/commands/, and any `.jsx`) may not import react/react-dom. This is what
+// keeps "is this engine logic or view logic?" an enforceable question and
+// leaves the door open to a non-React adapter later.
+const REACT_IMPORT_PATHS = ['react', 'react-dom', 'react-dom/client', 'react-dom/server'];
+const REACT_IMPORT_PATTERNS = ['react-dom/*'];
 export default [
   {
     ignores: [
@@ -89,6 +95,27 @@ export default [
     rules: {
       'react-hooks/rules-of-hooks': 'off',
       'react-hooks/exhaustive-deps': 'off',
+    },
+  },
+
+  // The framework-free core: every `.js` under src/ that isn't in a React zone.
+  // `.jsx` is excluded by the glob; src/react/ and src/commands/ are the two
+  // folders allowed to be React-coupled.
+  {
+    files: ['src/**/*.js'],
+    ignores: ['src/react/**', 'src/commands/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: REACT_IMPORT_PATHS.map((name) => ({
+            name,
+            message:
+              'Core modules must stay framework-free. Move React-coupled code into src/react/ (or src/commands/).',
+          })),
+          patterns: REACT_IMPORT_PATTERNS,
+        },
+      ],
     },
   },
 

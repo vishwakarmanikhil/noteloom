@@ -282,5 +282,5 @@ export { copyBlockRangeToClipboard } from './clipboard/copyBlockRange.js';
 
 export { createSelectFieldType } from './inlineTypes/customSelect/createSelectFieldType.jsx';
 export { registerStoredFieldTypes } from './inlineTypes/customSelect/registerStoredFieldTypes.js';
-export { useRegisterFieldTypes } from './inlineTypes/customSelect/useRegisterFieldTypes.js';
+export { useRegisterFieldTypes } from './react/useRegisterFieldTypes.js';
 export { FieldTypeEditorModal } from './inlineTypes/customSelect/FieldTypeEditorModal.jsx';
