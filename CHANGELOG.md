@@ -1,5 +1,99 @@
 # Changelog
 
+## 0.4.0
+
+### Minor Changes
+
+- 3e2b774: Make the simple JSON format (`{ version, blocks: [{ id, type, data, children? }] }`)
+  the canonical one:
+  
+  - `useEditor({ doc })` now accepts **either** the simple format or the internal
+    `{ rootId, blocks, runs }` shape — auto-detected. New export `isSimpleDocument()`.
+  - `editor.toJSON({ format })` reads the live document out — `'simple'` (default)
+    or `'internal'`.
+  - `docs/document.schema.json` is a versioned JSON Schema for the format; a test
+    validates every export against it and checks `simple → store → simple` is
+    byte-stable.
+  
+  No change to `exportDocumentSimpleJSON` / `importDocumentSimpleJSON` /
+  `exportDocumentJSON` behavior; internal-shape docs load exactly as before.
+- f85353d: Add `defineBlock()` / `defineInline()` — validating factories for authoring a
+  block or inline type — plus `registerExtensions()` and a new
+  `useEditor({ extensions: [...] })` option. `noteloom/starter-kit` exports
+  `starterKit()` (every built-in type as an `extensions` array; `{ exclude }` drops
+  some) alongside the factories.
+  
+  These sit next to the existing `registerBlocks` / `registerBuiltInBlocks` /
+  `registerInlineTypes` callbacks, which are unchanged. A `defineBlock()` result is
+  still a plain registry entry, and `useEditor({ extensions: starterKit() })`
+  registers the identical set as `useEditor()` — verified by the golden-document
+  e2e fixture, which now renders through that path with byte-identical output.
+- 35c15b0: Add `defineExtension({ name, blocks?, inlineTypes? })` — a named bundle of
+  `defineBlock()` / `defineInline()` results that drops into the
+  `useEditor({ extensions: [...] })` array as one item, for a plugin that ships
+  more than one type. `registerExtensions` unpacks bundles recursively. Also
+  exported from `noteloom/starter-kit`.
+  
+  Behavior extensions (keymaps, input rules, paste transforms) and a `ctx` facade
+  are not part of this yet.
+- 4ee634e: `defineExtension()` gains a behavior half: `keymap`, `onBeforeInput`, `onPaste`,
+  and `setup(ctx)`. When such an extension is passed to `useEditor({ extensions })`
+  and rendered by `<NoteloomEditor>`, the handlers run against a stable `ctx`
+  facade (`store`, `registry`, `inlineRegistry`, `container`, `getBlock/getRun`,
+  `applyOperation` (flushSync-wrapped), `getSelection/getCaret/setCaret`,
+  `subscribe`, …). Returning truthy marks the event handled — the editor then
+  prevents it and stops built-in handlers on the same element from also firing.
+  
+  New exports `smartQuotes()` and `autoPairBrackets()` are the older
+  `useSmartQuotes` / `useAutoPairBrackets` behaviors in this new form (the hooks
+  still work). Markdown-style block-conversion input rules are not part of this
+  yet. Entirely inert for an editor with no behavior extensions.
+- 4aeed11: Add a zero-dependency CLI (published in the package's `bin`):
+  `npx noteloom new block <name>` / `npx noteloom new inline <name>` scaffolds a
+  `<name>/` folder with a `defineBlock()` / `defineInline()` starting point, a
+  component, and a test.
+  
+  `examples/02-custom-block/` is rewritten to author its block with `defineBlock()`
+  and register it via `extensions: [...starterKit(), ratingBlock]`.
+- e06d231: Add opt-in subpath entry points so heavy optional features can be dropped from a
+  bundle that doesn't use them:
+  
+  - `noteloom/collab` — real-time collaboration + CRDT primitives
+  - `noteloom/persistence` — IndexedDB persistence + service-worker update hook
+  - `noteloom/comments` — comment threads + the built-in comment UI
+  - `noteloom/versions` — automatic version history + `<VersionHistory>`
+  - `noteloom/voice` — voice typing
+  - `noteloom/canvas` — the freehand-drawing block (the heaviest single component)
+  - `noteloom/theme` — the default theme stylesheet (alias of `noteloom/style.css`)
+  
+  Every name in these entries is still exported from the main `noteloom` entry, so
+  existing imports are unaffected. The build is now multi-entry with shared code in
+  `dist/shared/*` chunks; the built file for the main entry is `dist/index.js` /
+  `dist/index.cjs` (was `dist/noteloom.es.js` / `dist/noteloom.cjs`), reachable
+  only through the package `exports` map.
+
+### Patch Changes
+
+- 610a5b5: Internal: every built-in block and inline type is now authored with
+  `defineBlock()` / `defineInline()` in its own module (`isLeaf` → `contentModel`).
+  `starterKit()` returns those definitions directly instead of wrapping them.
+  Behavior-neutral — no public API change, golden-document snapshots unchanged.
+- 8ce82d3: Internal: enforce a framework-free core. Two React hooks that lived in logic
+  folders moved into `src/react/` (`useDragResize`, `useRegisterFieldTypes`), and
+  an ESLint rule now blocks any `.js` outside `src/react/` / `src/commands/` from
+  importing `react`/`react-dom`. No public API change — every export resolves from
+  the same paths as before.
+- 81c4a52: Add `docs/migration.md` — a 0.3.x → 0.5.0 upgrade guide covering the new subpath
+  imports, the `defineBlock` / `extensions` API, and the document format, plus what
+  is slated for removal in a future 2.0.
+- e4f64a3: Add missing type declarations for `addPerson`, `updatePerson`, `removePerson`,
+  `usePeople`, `useSmartQuotes`, and `useAutoPairBrackets` — these were exported at
+  runtime but absent from `index.d.ts`.
+  
+  Internal: introduce ESLint, Prettier, Changesets, and a `size-limit` bundle
+  budget; add an export-surface + `.d.ts`-sync test and a golden-document e2e
+  regression gate (see `docs/repackaging-plan.md`). No runtime behavior change.
+
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
