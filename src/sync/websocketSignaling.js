@@ -27,6 +27,7 @@ export function createWebSocketSignaling({ url, roomId, peerId, WebSocketImpl = 
   const messageHandlers = new Set();
   const peerJoinedHandlers = new Set();
   const peerLeftHandlers = new Set();
+  const closeHandlers = new Set();
   const pendingSends = []; // queued {toPeerId, payload} while the socket is still connecting
 
   const connectUrl = `${url}${url.includes('?') ? '&' : '?'}room=${encodeURIComponent(roomId)}&peerId=${encodeURIComponent(peerId)}`;
@@ -35,6 +36,16 @@ export function createWebSocketSignaling({ url, roomId, peerId, WebSocketImpl = 
   socket.addEventListener('open', () => {
     for (const { toPeerId, payload } of pendingSends) sendSignal(toPeerId, payload);
     pendingSends.length = 0;
+  });
+
+  // Fires for *any* close — a deliberate `close()` call from this side included.
+  // That's deliberate: a host app that only cares about *unexpected* drops
+  // (e.g. to decide whether to reconnect) can track its own "I called
+  // close() on purpose" flag around that call; baking the distinction in
+  // here would mean this module guessing at a policy that's really the
+  // host's to make.
+  socket.addEventListener('close', () => {
+    for (const cb of closeHandlers) cb();
   });
 
   socket.addEventListener('message', (event) => {
@@ -87,6 +98,19 @@ export function createWebSocketSignaling({ url, roomId, peerId, WebSocketImpl = 
     onPeerLeft(cb) {
       peerLeftHandlers.add(cb);
       return () => peerLeftHandlers.delete(cb);
+    },
+
+    /**
+     * Not part of the base SignalingChannel contract -- lets a host app
+     * tell "this device's own connection to the relay just dropped" (a
+     * real disconnect worth reconnecting and re-syncing over) apart from
+     * "we're just alone in the room right now" (zero *peers*, but nothing
+     * wrong with our *own* connection) -- those are very different
+     * situations that look identical if all you have is a peer count.
+     */
+    onClose(cb) {
+      closeHandlers.add(cb);
+      return () => closeHandlers.delete(cb);
     },
 
     close() {

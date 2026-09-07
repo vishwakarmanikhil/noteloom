@@ -1237,6 +1237,14 @@ export function removePerson(store: EditorStore | History, id: string): void;
 export function usePeople(): Person[];
 
 // ---------------------------------------------------------------------------
+// title/title.js, react/useTitle.js — a document's own title
+// ---------------------------------------------------------------------------
+
+export function setTitle(store: EditorStore | History, title: string): void;
+/** Reactive view of the document's own title (see EditorStore.getTitle). */
+export function useTitle(): string;
+
+// ---------------------------------------------------------------------------
 // react/useSmartQuotes.js, react/useAutoPairBrackets.js — optional typing behaviors
 // ---------------------------------------------------------------------------
 

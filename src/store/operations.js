@@ -20,6 +20,7 @@ export const OP = {
   ADD_PERSON: 'addPerson',
   UPDATE_PERSON: 'updatePerson',
   REMOVE_PERSON: 'removePerson',
+  SET_TITLE: 'setTitle',
 };
 
 export function insertBlock(block, parentId, index, subtree) {
@@ -173,4 +174,18 @@ export function updatePerson(id, patch) {
 
 export function removePerson(id) {
   return { type: OP.REMOVE_PERSON, id };
+}
+
+/**
+ * Sets the document's own title — real, collaboration-aware document data
+ * (see EditorStore's `docTitle` fieldWrite handling), merged last-write-wins
+ * via the same per-field HLC (`FieldClockRegistry`) a block's own props/type
+ * use, rather than the simple existence-check merge comments/people/field
+ * types get: unlike those (append-only-ish collections keyed by their own
+ * id), two peers editing the title at once really can produce two
+ * different values for the *same* field, which needs an actual winner
+ * rather than "both survive".
+ */
+export function setTitle(title) {
+  return { type: OP.SET_TITLE, title };
 }

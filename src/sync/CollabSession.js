@@ -237,7 +237,20 @@ export class CollabSession {
     this._store.runs = new Map((doc.runs ?? []).map((r) => [r.id, r]));
     this._store.rootId = doc.rootId ?? null;
     this._store._orders = new Map(); // reseed lazily from the newly-adopted contentIds, same as a fresh EditorStore(doc) would
-    this._store._notify([...this._store.blocks.keys(), ...this._store.runs.keys()]);
+    // Everything else `toJSON`/`fromJSON` round-trip (field types, comment
+    // threads, the people list, the title) is document data too, and a
+    // joiner needs the host's *existing* copy of it just as much as the
+    // blocks/runs above — none of it arrives any other way. Live edits to
+    // these after this point keep syncing through their own envelope kinds
+    // (fieldWrite/commentWrite/peopleWrite) as before; this only covers
+    // what already existed before this peer connected, which those
+    // diff-only mechanisms never replay on their own.
+    this._store.fieldTypes = new Map((doc.fieldTypes ?? []).map((f) => [f.id, f]));
+    this._store._fieldTypesSnapshot = null;
+    this._store.comments = new Map((doc.comments ?? []).map((c) => [c.id, c]));
+    this._store.people = new Map((doc.people ?? []).map((p) => [p.id, p]));
+    this._store.title = doc.title ?? '';
+    this._store._notify([...this._store.blocks.keys(), ...this._store.runs.keys(), '$fieldTypes', '$comments', '$people', '$title']);
   }
 
   disconnect(remotePeerId) {

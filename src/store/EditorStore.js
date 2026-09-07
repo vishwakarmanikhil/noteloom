@@ -21,6 +21,7 @@ import {
   addPerson,
   updatePerson,
   removePerson,
+  setTitle,
 } from './operations.js';
 import { ListCrdtState } from '../crdt/listCrdt.js';
 import { HLC, genPeerId } from '../crdt/clock.js';
@@ -36,6 +37,9 @@ const COMMENTS_KEY = '$comments';
 
 /** Sentinel subscribe/notify key for "the document's people list changed" — see usePeople. */
 const PEOPLE_KEY = '$people';
+
+/** Sentinel subscribe/notify key for "the document's title changed" — see useTitle. */
+const TITLE_KEY = '$title';
 
 /**
  * Flat, normalized document store with per-id pub-sub.
@@ -62,6 +66,7 @@ export class EditorStore {
     this._commentsSnapshot = null; // invalidated (set to null) on every comments mutation — see getComments
     this.people = new Map((doc?.people ?? []).map((p) => [p.id, p]));
     this._peopleSnapshot = null; // invalidated (set to null) on every people mutation — see getPeople
+    this.title = doc?.title ?? '';
     this._listeners = new Map(); // id -> Set<() => void>
     this._globalListeners = new Set(); // fired on every mutation regardless of which id(s) changed -- see subscribeAll
 
@@ -279,6 +284,17 @@ export class EditorStore {
 
   getPerson(id) {
     return this.people.get(id);
+  }
+
+  /**
+   * The document's own title — real, collaboration-aware document data
+   * (see `docTitle` in applyOperation/applyRemoteOperation below), not a
+   * device-local/storage-layer concern. A host app that wants title edits
+   * on one collaborator's device to show up on another's reads this
+   * (via `useTitle`) instead of keeping its own separate title state.
+   */
+  getTitle() {
+    return this.title;
   }
 
   /**
@@ -788,6 +804,16 @@ export class EditorStore {
         return addPerson(existing);
       }
 
+      case OP.SET_TITLE: {
+        const previousTitle = this.title;
+        const clock = this._clock.tick();
+        this._fieldClocks.recordLocal('$doc', 'title', clock);
+        this.title = op.title;
+        this._lastEnvelope = { kind: 'fieldWrite', target: 'docTitle', title: op.title, clock };
+        this._notify([TITLE_KEY]);
+        return setTitle(previousTitle);
+      }
+
       default:
         throw new Error(`Unknown operation type: ${op.type}`);
     }
@@ -929,6 +955,12 @@ export class EditorStore {
               props: envelope.props,
             });
             this._notify([envelope.id]);
+          }
+        } else if (envelope.target === 'docTitle') {
+          if (this._fieldClocks.shouldApplyRemote('$doc', 'title', envelope.clock)) {
+            this._fieldClocks.recordRemote('$doc', 'title', envelope.clock);
+            this.title = envelope.title;
+            this._notify([TITLE_KEY]);
           }
         }
         for (const ts of Object.values(envelope.clocks ?? {})) this._clock.receive(ts);
@@ -1101,6 +1133,7 @@ export class EditorStore {
       fieldTypes: [...this.fieldTypes.values()],
       comments: [...this.comments.values()],
       people: [...this.people.values()],
+      title: this.title,
     };
   }
 

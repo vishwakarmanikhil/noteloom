@@ -79,6 +79,12 @@ export { CommentAvatar } from './react/CommentAvatar.jsx';
 export { addPerson, updatePerson, removePerson } from './people/people.js';
 export { usePeople } from './react/usePeople.js';
 
+// A document's own title — same "real, collaboration-aware document data"
+// treatment as the people list above, so a title edit on one collaborator's
+// device shows up on another's. See src/title/title.js.
+export { setTitle } from './title/title.js';
+export { useTitle } from './react/useTitle.js';
+
 export { BlockRegistry, createBlockRegistry } from './registry/blockRegistry.js';
 export { InlineRegistry, createInlineRegistry } from './registry/inlineRegistry.js';
 

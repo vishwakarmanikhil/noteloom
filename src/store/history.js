@@ -272,6 +272,10 @@ export class History {
     return this.store.getPerson(id);
   }
 
+  getTitle() {
+    return this.store.getTitle();
+  }
+
   getAllRunIds() {
     return this.store.getAllRunIds();
   }
