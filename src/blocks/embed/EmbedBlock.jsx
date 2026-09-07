@@ -33,14 +33,14 @@ function clampWidth(pct) {
   return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(pct)));
 }
 
-function EmbedPreview({ kind, src, name, alt, provider }) {
+function EmbedPreview({ kind, src, name, alt, provider, onError }) {
   // Deliberately never falls back to `name` (the uploaded file's raw
   // filename, e.g. "IMG_2481.HEIC", or a pasted URL string) — neither is
   // meaningful alt text, and silently presenting one as if it were a real
   // description is worse than an empty (but at least honest) alt.
-  if (kind === 'image') return <img className="be-embed-image" src={src} alt={alt || ''} />;
-  if (kind === 'video') return <video className="be-embed-video" src={src} controls />;
-  if (kind === 'audio') return <audio className="be-embed-audio" src={src} controls />;
+  if (kind === 'image') return <img className="be-embed-image" src={src} alt={alt || ''} onError={onError} />;
+  if (kind === 'video') return <video className="be-embed-video" src={src} controls onError={onError} />;
+  if (kind === 'audio') return <audio className="be-embed-audio" src={src} controls onError={onError} />;
   if (kind === 'oembed') {
     return (
       <iframe
@@ -110,7 +110,7 @@ function EmbedPreview({ kind, src, name, alt, provider }) {
 export function EmbedBlock({ id }) {
   const store = useEditorStore();
   const block = useBlock(id);
-  const { uploadFile, maxFileSize } = useFileUpload();
+  const { uploadFile, maxFileSize, resolveEmbedSrc, onEmbedError } = useFileUpload();
   const [urlInput, setUrlInput] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragWidth, setDragWidth] = useState(null);
@@ -267,6 +267,13 @@ export function EmbedBlock({ id }) {
 
   const className = useBlockClassName('be-embed', block);
 
+  // Called unconditionally, before the `!block` early return below, since a
+  // host-configured `resolveEmbedSrc` is allowed to be a real React hook
+  // (see useFileUpload's doc comment) — hooks can't be called conditionally,
+  // so this can't wait until after a guard that skips rendering entirely
+  // once a block is deleted out from under this still-mounted instance.
+  const resolvedSrc = resolveEmbedSrc(block?.props?.src);
+
   if (!block) return null;
   const {
     kind = 'file',
@@ -281,6 +288,11 @@ export function EmbedBlock({ id }) {
   const canResize = kind === 'image' || kind === 'video' || kind === 'oembed';
   const effectiveWidth = dragWidth ?? width;
   const isOEmbed = kind === 'oembed';
+  // Not a stable useCallback — deliberately: it isn't a dependency of any
+  // other memoized hook, EmbedPreview isn't React.memo'd, and defining it
+  // here (rather than above the early `!block` return) keeps it a plain
+  // function instead of one more hook that would need to run unconditionally.
+  const handleMediaError = () => onEmbedError?.(src);
 
   return (
     // tabIndex={-1}: focusable via .focus() (see setSelectedBlockId in
@@ -346,7 +358,14 @@ export function EmbedBlock({ id }) {
                 Remove
               </button>
             </div>
-            <EmbedPreview kind={kind} src={src} name={name} alt={alt} provider={provider} />
+            <EmbedPreview
+              kind={kind}
+              src={resolvedSrc}
+              name={name}
+              alt={alt}
+              provider={provider}
+              onError={handleMediaError}
+            />
             {canResize && (
               <div
                 className="be-embed-resize-handle"

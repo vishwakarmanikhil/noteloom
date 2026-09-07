@@ -322,6 +322,8 @@ export class CollabSession {
   setLocalPresence(data: Record<string, unknown>): void;
   getPresence(): Map<string, Record<string, unknown>>;
   onPresenceChange(callback: (presence: Map<string, Record<string, unknown>>) => void): () => void;
+  sendCustom(channel: string, payload: unknown, remotePeerId?: string | null): void;
+  onCustomMessage(callback: (channel: string, payload: unknown, remotePeerId: string) => void): () => void;
 }
 
 export function createWebSocketSignaling(options: {
@@ -782,6 +784,10 @@ export interface EditorProviderProps {
   ) => Promise<{ src: string; name?: string; mimeType?: string }>;
   /** Byte cap for the in-document data: URL fallback ONLY (no effect once uploadFile is configured) -- an oversized file is rejected with a clear error instead of bloating the document. */
   maxFileSize?: number;
+  /** Turns block.props.src into whatever's actually loadable on this device right now, before EmbedBlock hands it to an img/video/audio -- see useFileUpload's own doc comment. May be a real React hook (called unconditionally on every EmbedBlock render) if it needs to be reactive. Identity when not configured. */
+  resolveEmbedSrc?: (src: string) => string;
+  /** Called once if the resolved src actually fails to load (the element's native error event) -- see useFileUpload's own doc comment. Never called for oembed/file kinds. */
+  onEmbedError?: (src: string) => void;
   children?: ReactNode;
 }
 
@@ -804,6 +810,8 @@ export function useFileUpload(): {
     ctx: { kind: 'image' | 'video' | 'audio' | 'file' },
   ) => Promise<{ src: string; name?: string; mimeType?: string }>;
   maxFileSize?: number;
+  resolveEmbedSrc: (src: string) => string;
+  onEmbedError?: (src: string) => void;
 };
 export function useFieldTypeEditor(): {
   editingFieldTypeId: string | null;
@@ -1151,6 +1159,10 @@ export interface NoteloomEditorProps {
   ) => Promise<{ src: string; name?: string; mimeType?: string }>;
   /** Byte cap for the in-document data: URL fallback ONLY (no effect once uploadFile is configured). */
   maxFileSize?: number;
+  /** Turns block.props.src into whatever's actually loadable on this device right now -- see EditorProviderProps.resolveEmbedSrc / useFileUpload's own doc comment. */
+  resolveEmbedSrc?: (src: string) => string;
+  /** Called once if the resolved src actually fails to load -- see EditorProviderProps.onEmbedError. */
+  onEmbedError?: (src: string) => void;
   children?: ReactNode;
 }
 

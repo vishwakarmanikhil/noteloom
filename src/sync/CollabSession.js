@@ -7,6 +7,7 @@ import {
   syncRequestMessage,
   syncResponseMessage,
   presenceMessage,
+  customMessage,
 } from './syncProtocol.js';
 import { PeerConnection } from './peerConnection.js';
 
@@ -54,6 +55,8 @@ export class CollabSession {
     this._presenceThrottleMs = presenceThrottleMs;
     this._presenceThrottleTimer = null;
     this._presenceDirty = false;
+
+    this._customListeners = new Set();
   }
 
   /**
@@ -187,6 +190,30 @@ export class CollabSession {
     for (const cb of this._presenceListeners) cb(snapshot);
   }
 
+  /**
+   * Sends a host-app-defined message over the same peer connection(s) the
+   * document/presence sync itself uses — for data this package has no
+   * opinion on (e.g. noteloom-app's attachment bytes). `remotePeerId`
+   * omitted broadcasts to every connected peer, same as an op; supplied,
+   * it goes to that one peer only (e.g. a reply to a specific request).
+   * Silently a no-op if that peer isn't currently connected — same
+   * "nothing to do" semantics as every other send here, not an error.
+   */
+  sendCustom(channel, payload, remotePeerId = null) {
+    const raw = encodeMessage(customMessage(channel, payload));
+    if (remotePeerId) {
+      this._peers.get(remotePeerId)?.send(raw);
+    } else {
+      for (const peer of this._peers.values()) peer.send(raw);
+    }
+  }
+
+  /** Fires for every incoming sendCustom from any peer: `cb(channel, payload, remotePeerId)`. Returns an unsubscribe function. */
+  onCustomMessage(cb) {
+    this._customListeners.add(cb);
+    return () => this._customListeners.delete(cb);
+  }
+
   _handleMessage(peer, raw) {
     let message;
     try {
@@ -214,6 +241,8 @@ export class CollabSession {
     } else if (message.type === MESSAGE_TYPE.PRESENCE) {
       this._remotePresence.set(message.peerId, message.data);
       this._notifyPresenceListeners();
+    } else if (message.type === MESSAGE_TYPE.CUSTOM) {
+      for (const cb of this._customListeners) cb(message.channel, message.payload, peer.remotePeerId);
     }
     // HELLO carries no required action yet -- reserved for future use.
   }
@@ -265,5 +294,6 @@ export class CollabSession {
     this._peers.clear();
     this._remotePresence.clear();
     this._presenceListeners.clear();
+    this._customListeners.clear();
   }
 }

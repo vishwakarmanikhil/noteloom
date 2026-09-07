@@ -62,6 +62,8 @@ export function EditorProvider({
   showLineNumbers = false,
   uploadFile,
   maxFileSize,
+  resolveEmbedSrc,
+  onEmbedError,
   children,
 }) {
   useEffect(() => {
@@ -177,6 +179,8 @@ export function EditorProvider({
       showLineNumbers,
       uploadFile,
       maxFileSize,
+      resolveEmbedSrc,
+      onEmbedError,
     }),
     [
       store,
@@ -198,6 +202,8 @@ export function EditorProvider({
       showLineNumbers,
       uploadFile,
       maxFileSize,
+      resolveEmbedSrc,
+      onEmbedError,
     ],
   );
   const content =
@@ -405,10 +411,42 @@ export function useShowLineNumbers() {
  *   return uploadToS3Multipart(file); // large: chunked/multipart
  * }
  * ```
+ *
+ * Also carries two more, narrower host-injectable pieces of the same
+ * "media I/O is the host's business" surface:
+ *
+ * `resolveEmbedSrc(src)` — called by `EmbedBlock` on every render to turn
+ * `block.props.src` into whatever URL is actually loadable *right now, on
+ * this device* before handing it to the `<img>`/`<video>`/`<audio>`.
+ * Identity (`(src) => src`) when not configured, so `EmbedBlock` always has
+ * something to call. This is the counterpart a host needs when `src` isn't
+ * a universally-fetchable URL by itself — e.g. a portable reference like
+ * `attachment://<id>` a host resolves to a local file path/blob URL that's
+ * only meaningful on this specific device, exactly the shape that needs to
+ * differ per device when the *same* document (and thus the same `src`) is
+ * open on more than one via real-time collaboration. If it needs to be
+ * *reactive* (the resolved value can change without `src` itself changing —
+ * e.g. a file that arrives from a collaborator moments after the block
+ * synced in referencing it), pass a proper React hook here (internally
+ * using `useState`/`useSyncExternalStore`/etc.); `EmbedBlock` calls
+ * whatever's configured unconditionally on every render, so a hook
+ * implementation works exactly as it would called directly from
+ * `EmbedBlock` itself.
+ *
+ * `onEmbedError(src)` — called once if the resolved `src` actually fails to
+ * load (the element's native `error` event), letting a host notice and
+ * react (e.g. request the missing file from a collaborator) instead of the
+ * failure being silent beyond the browser's own broken-media rendering.
+ * Never called for `oembed`/`file` kinds (an iframe/anchor, not a
+ * loadable-or-not media element).
  */
 export function useFileUpload() {
-  const { uploadFile, maxFileSize } = useEditorContext();
-  return { uploadFile, maxFileSize };
+  const { uploadFile, maxFileSize, resolveEmbedSrc, onEmbedError } = useEditorContext();
+  return { uploadFile, maxFileSize, resolveEmbedSrc: resolveEmbedSrc ?? IDENTITY, onEmbedError };
+}
+
+function IDENTITY(src) {
+  return src;
 }
 
 export function useFieldTypeEditor() {

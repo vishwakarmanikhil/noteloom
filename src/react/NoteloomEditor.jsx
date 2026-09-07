@@ -142,6 +142,8 @@ export function NoteloomEditor({
   showCommentsPanel,
   uploadFile,
   maxFileSize,
+  resolveEmbedSrc,
+  onEmbedError,
   children,
 }) {
   const { store, registry, inlineRegistry, extensions } = editor;
@@ -159,6 +161,8 @@ export function NoteloomEditor({
       commentAuthorId={commentAuthorId}
       uploadFile={uploadFile}
       maxFileSize={maxFileSize}
+      resolveEmbedSrc={resolveEmbedSrc}
+      onEmbedError={onEmbedError}
     >
       <EditorSurface
         store={store}

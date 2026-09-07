@@ -4,6 +4,7 @@ export const MESSAGE_TYPE = {
   SYNC_REQUEST: 'syncRequest',
   SYNC_RESPONSE: 'syncResponse',
   PRESENCE: 'presence',
+  CUSTOM: 'custom',
 };
 
 export function encodeMessage(message) {
@@ -47,4 +48,17 @@ export function syncResponseMessage(doc) {
  */
 export function presenceMessage(peerId, data) {
   return { type: MESSAGE_TYPE.PRESENCE, peerId, data };
+}
+
+/**
+ * A host-app-defined message riding the same peer connections as
+ * everything above, for data this package has no opinion on (attachment
+ * bytes, say — see CollabSession.sendCustom/onCustomMessage). `channel` is
+ * a plain string the host app picks to namespace its own message kinds;
+ * `payload` is opaque here, exactly like presence's `data`. Chunking/
+ * reassembly for a large payload is handled transparently below this,
+ * by PeerConnection.send — a host app doesn't need its own.
+ */
+export function customMessage(channel, payload) {
+  return { type: MESSAGE_TYPE.CUSTOM, channel, payload };
 }

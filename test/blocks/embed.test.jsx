@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { EditorProvider } from '../../src/react/EditorProvider.jsx';
@@ -405,6 +405,64 @@ describe('embed block: maxFileSize (no uploadFile configured) -- caps the in-doc
     });
 
     await waitFor(() => expect(store.getBlock(id).props.src).toMatch(/^data:application\/pdf/));
+  });
+});
+
+describe('embed block: resolveEmbedSrc / onEmbedError', () => {
+  it('renders resolveEmbedSrc(src) as the actual img src, not the raw stored value', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'image', src: 'attachment://xyz.png' }),
+    );
+    const resolveEmbedSrc = (src) =>
+      src.startsWith('attachment://') ? `file:///local/attachments/${src.slice('attachment://'.length)}` : src;
+    const { container } = renderDocWithUpload(store, { resolveEmbedSrc });
+
+    const img = container.querySelector(`[data-block-id="${id}"] img.be-embed-image`);
+    expect(img.getAttribute('src')).toBe('file:///local/attachments/xyz.png');
+    expect(store.getBlock(id).props.src).toBe('attachment://xyz.png'); // the stored/synced value is untouched
+  });
+
+  it('without resolveEmbedSrc configured, the raw src is used as-is (identity default)', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(store, createEmbedBlock({ kind: 'image', src: 'https://x/a.png' }));
+    const { container } = renderDoc(store);
+
+    expect(
+      container.querySelector(`[data-block-id="${id}"] img.be-embed-image`).getAttribute('src'),
+    ).toBe('https://x/a.png');
+  });
+
+  it('onEmbedError(src) fires with the raw (unresolved) src when the element fails to load', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'image', src: 'attachment://missing.png' }),
+    );
+    const onEmbedError = vi.fn();
+    const resolveEmbedSrc = (src) => `resolved:${src}`;
+    const { container } = renderDocWithUpload(store, { resolveEmbedSrc, onEmbedError });
+
+    const img = container.querySelector(`[data-block-id="${id}"] img.be-embed-image`);
+    fireEvent.error(img);
+
+    expect(onEmbedError).toHaveBeenCalledWith('attachment://missing.png');
+  });
+
+  it('onEmbedError is never called for oembed (iframe) or file (anchor) kinds — there is no error event wired for them', () => {
+    const store = new EditorStore(emptyDoc());
+    const id = insertAtRoot(
+      store,
+      createEmbedBlock({ kind: 'file', src: 'https://x/report.pdf', name: 'report.pdf' }),
+    );
+    const onEmbedError = vi.fn();
+    const { container } = renderDocWithUpload(store, { onEmbedError });
+
+    const link = container.querySelector(`[data-block-id="${id}"] a.be-embed-file-link`);
+    expect(link).not.toBeNull();
+    // no onerror-capable element exists to even fire on for this kind
+    expect(onEmbedError).not.toHaveBeenCalled();
   });
 });
 

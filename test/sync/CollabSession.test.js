@@ -359,4 +359,87 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
       sessionB.destroy();
     });
   });
+
+  describe('sendCustom/onCustomMessage', () => {
+    it('a broadcast sendCustom (no remotePeerId) reaches every connected peer', async () => {
+      const historyA = new History(new EditorStore(makeDoc()));
+      const historyB = new History(new EditorStore(makeDoc()));
+      const { sessionA, sessionB } = await connectPair(historyA, historyB);
+
+      const received = [];
+      sessionB.onCustomMessage((channel, payload, remotePeerId) => received.push({ channel, payload, remotePeerId }));
+
+      sessionA.sendCustom('attachments', { kind: 'request', filename: 'a.png' });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(received).toEqual([{ channel: 'attachments', payload: { kind: 'request', filename: 'a.png' }, remotePeerId: 'peer-a' }]);
+
+      sessionA.destroy();
+      sessionB.destroy();
+    });
+
+    it('sendCustom with a remotePeerId reaches only that peer, not every peer', async () => {
+      const historyA = new History(new EditorStore(makeDoc()));
+      const historyB = new History(new EditorStore(makeDoc()));
+      const historyC = new History(new EditorStore(makeDoc()));
+      const network = makeFakeSignalingNetwork();
+      const sessionA = new CollabSession({ history: historyA, signaling: network.makeChannelFor('peer-a') });
+      const sessionB = new CollabSession({ history: historyB, signaling: network.makeChannelFor('peer-b') });
+      const sessionC = new CollabSession({ history: historyC, signaling: network.makeChannelFor('peer-c') });
+
+      const abToA = sessionA.connect('peer-b', { initiator: true });
+      const abToB = sessionB.connect('peer-a', { initiator: false });
+      const acToA = sessionA.connect('peer-c', { initiator: true });
+      const acToC = sessionC.connect('peer-a', { initiator: false });
+      await Promise.all([waitForOpen(abToA), waitForOpen(abToB), waitForOpen(acToA), waitForOpen(acToC)]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const receivedB = [];
+      const receivedC = [];
+      sessionB.onCustomMessage((channel, payload) => receivedB.push(payload));
+      sessionC.onCustomMessage((channel, payload) => receivedC.push(payload));
+
+      sessionA.sendCustom('attachments', { filename: 'only-for-b.png' }, 'peer-b');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(receivedB).toEqual([{ filename: 'only-for-b.png' }]);
+      expect(receivedC).toEqual([]);
+
+      sessionA.destroy();
+      sessionB.destroy();
+      sessionC.destroy();
+    });
+
+    it('sendCustom to a remotePeerId that is not connected is silently a no-op, not an error', async () => {
+      const historyA = new History(new EditorStore(makeDoc()));
+      const historyB = new History(new EditorStore(makeDoc()));
+      const { sessionA, sessionB } = await connectPair(historyA, historyB);
+
+      expect(() => sessionA.sendCustom('attachments', { filename: 'x.png' }, 'nobody-here')).not.toThrow();
+
+      sessionA.destroy();
+      sessionB.destroy();
+    });
+
+    it('unsubscribing onCustomMessage stops further delivery to that callback', async () => {
+      const historyA = new History(new EditorStore(makeDoc()));
+      const historyB = new History(new EditorStore(makeDoc()));
+      const { sessionA, sessionB } = await connectPair(historyA, historyB);
+
+      const received = [];
+      const unsubscribe = sessionB.onCustomMessage((channel, payload) => received.push(payload));
+
+      sessionA.sendCustom('attachments', { n: 1 });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      unsubscribe();
+      sessionA.sendCustom('attachments', { n: 2 });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(received).toEqual([{ n: 1 }]);
+
+      sessionA.destroy();
+      sessionB.destroy();
+    });
+  });
 });
