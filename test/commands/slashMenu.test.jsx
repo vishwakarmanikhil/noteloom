@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { useRef } from 'react';
 import { EditorStore } from '../../src/store/EditorStore.js';
@@ -68,6 +68,38 @@ function typeIntoRunWithCaretAt(runNode, text, caretOffset) {
   selection.addRange(range);
   fireEvent.input(runNode);
 }
+
+function makeMatchMedia(matches) {
+  return () => ({ matches, addEventListener: () => {}, removeEventListener: () => {} });
+}
+
+describe('slash command menu: suppressed on a real phone/tablet (MobileActionBar\'s "+" is the intended path there instead)', () => {
+  const originalMatchMedia = window.matchMedia;
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
+  it('never opens on a touch-only device (hover: none, pointer: coarse) — "/" becomes plain typed text', () => {
+    window.matchMedia = makeMatchMedia(true); // matches "(hover: none) and (pointer: coarse)"
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store);
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    typeIntoRun(runNode, '/table');
+    expect(container.querySelectorAll('.be-slash-menu-item').length).toBe(0);
+    expect(container.querySelector('.be-slash-menu[aria-expanded="true"], [role="listbox"]')).toBeNull();
+  });
+
+  it('still opens normally on a laptop touchscreen (a trackpad/mouse is still the primary pointer, so hover:hover matches)', () => {
+    window.matchMedia = makeMatchMedia(false); // does NOT match "(hover: none) and (pointer: coarse)"
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store);
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    typeIntoRun(runNode, '/');
+    expect(container.querySelectorAll('.be-slash-menu-item').length).toBeGreaterThan(1);
+  });
+});
 
 describe('slash command menu', () => {
   it('opens on "/" and filters commands by query, driven entirely by the registry', () => {

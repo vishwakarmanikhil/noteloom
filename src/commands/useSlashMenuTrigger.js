@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useBlockRegistry, useInlineRegistry } from '../react/EditorProvider.jsx';
+import { useTouchOnlyDevice } from '../react/useTouchOnlyDevice.js';
 import { useTriggerMenu } from './useTriggerMenu.js';
 
 // Matches a "/" at the very start of the text, or right after whitespace,
@@ -24,17 +25,27 @@ const SLASH_RE = /(^|\s)\/(\w*)$/;
  * merged in here — so it doesn't crowd out every other "/" command with
  * ~60 emoji entries.
  *
+ * Suppressed entirely on a real phone/tablet (see `useTouchOnlyDevice`) —
+ * `MobileActionBar`'s own "+" button (opening `MobileBlockPickerSheet`) is
+ * the intended way to insert a block there instead: a floating dropdown
+ * anchored to a caret under an on-screen keyboard is a poor fit for a small
+ * touch screen, and the bottom-sheet picker is already pinned right above
+ * the keyboard for exactly this. A laptop's touchscreen (2-in-1s included)
+ * is deliberately NOT affected — typing "/" from a physical or on-screen
+ * keyboard there still opens this menu as usual.
+ *
  * See useTriggerMenu for the shared caret-resolution/query-matching
  * machinery this and useEmojiMenuTrigger both build on.
  */
 export function useSlashMenuTrigger(containerRef) {
   const registry = useBlockRegistry();
   const inlineRegistry = useInlineRegistry();
+  const isTouchOnlyDevice = useTouchOnlyDevice();
 
   const getCommands = useCallback(
     () => [...registry.listSlashCommands(), ...(inlineRegistry?.listSlashCommands() ?? [])],
     [registry, inlineRegistry],
   );
 
-  return useTriggerMenu(containerRef, SLASH_RE, getCommands);
+  return useTriggerMenu(containerRef, SLASH_RE, getCommands, isTouchOnlyDevice);
 }

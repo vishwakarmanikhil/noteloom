@@ -12,6 +12,7 @@ import {
   StrikethroughIcon,
   LinkIcon,
   CommentIcon,
+  MicIcon,
 } from '../react/icons.jsx';
 import { addCommentMarkOverRange, removeCommentMarkEverywhere } from '../comments/commentMarks.js';
 import { addCommentThread } from '../store/operations.js';
@@ -81,6 +82,20 @@ const HIGHLIGHT_COLORS = [
  * Google Docs have) — Cancel strips that mark back off
  * (`removeCommentMarkEverywhere`), Submit creates the thread using the
  * same id the mark already carries.
+ *
+ * A mic button, shown whenever `voice` is passed AND `voice.isSupported` is
+ * true, toggles dictation: click to start, click again to stop ("pause" —
+ * there's no true pause/resume in `useVoiceTyping`, so stopping and
+ * starting again begins a fresh session anchored at the caret/selection at
+ * that moment). `voice` is the exact object `useVoiceTyping()` (from the
+ * separate `noteloom/voice` entry point) returns — this component takes it
+ * as a prop rather than calling the hook itself so that importing
+ * `FloatingToolbar`/`NoteloomEditor` never pulls `SpeechRecognition`-related
+ * code into an app that doesn't use voice at all; omit `voice` and the mic
+ * button simply doesn't render. `VoiceListeningIndicator`/
+ * `VoicePermissionModal` are NOT rendered by this component for the same
+ * reason — mount those yourself alongside the same `useVoiceTyping()` call
+ * if you want that feedback UI (see `noteloom/voice`'s own exports).
  */
 export function FloatingToolbar({
   isOpen,
@@ -92,6 +107,7 @@ export function FloatingToolbar({
   store,
   onComment,
   commentAuthorId,
+  voice,
 }) {
   const isCoarsePointer = useCoarsePointer();
   const [openPicker, setOpenPicker] = useState(null); // 'color' | 'highlight' | 'comment' | null
@@ -432,6 +448,22 @@ export function FloatingToolbar({
                 onClick={() => (onComment ? onComment(selection) : openCommentComposer())}
               >
                 <CommentIcon />
+              </button>
+            </>
+          )}
+
+          {voice?.isSupported && (
+            <>
+              <span className="be-floating-toolbar-divider" />
+              <button
+                type="button"
+                className={`be-floating-toolbar-btn${voice.isListening ? ' be-floating-toolbar-btn-active' : ''}`}
+                title={voice.isListening ? 'Pause dictation' : 'Start dictation'}
+                aria-label={voice.isListening ? 'Pause dictation' : 'Start dictation'}
+                aria-pressed={voice.isListening}
+                onClick={() => (voice.isListening ? voice.stop() : voice.start())}
+              >
+                <MicIcon />
               </button>
             </>
           )}

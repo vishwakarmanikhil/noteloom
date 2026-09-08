@@ -49,14 +49,20 @@ function caretOffsetInRun(runEl, selection) {
  * precedes the trigger character (start-of-string or whitespace, so it
  * isn't consumed as part of the query), group 2 is the query typed after
  * the trigger character.
+ *
+ * `disabled`, if true, makes this a permanent no-op — the trigger character
+ * just becomes ordinary typed text, and the menu never opens. Used by
+ * `useSlashMenuTrigger` to suppress "/" on a real phone/tablet (see
+ * `useTouchOnlyDevice`), where `MobileActionBar`'s own "+" picker is the
+ * intended way to insert a block instead.
  */
-export function useTriggerMenu(containerRef, regex, getCommands) {
+export function useTriggerMenu(containerRef, regex, getCommands, disabled = false) {
   const store = useEditorStore();
   const [state, setState] = useState(null); // { query, blockId, runId, sliceStart, sliceEnd, rect }
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return undefined;
+    if (!container || disabled) return undefined;
 
     const handleInput = () => {
       const selection = window.getSelection?.();
@@ -105,7 +111,14 @@ export function useTriggerMenu(containerRef, regex, getCommands) {
       container.removeEventListener('input', handleInput);
       container.removeEventListener('keydown', handleKeyDown);
     };
-  }, [containerRef, regex]);
+  }, [containerRef, regex, disabled]);
+
+  // Closes an already-open menu if `disabled` flips true mid-session (e.g.
+  // an external mouse being detached from a tablet) rather than leaving it
+  // stuck open with no listener left to close it.
+  useEffect(() => {
+    if (disabled) setState(null);
+  }, [disabled]);
 
   const commands = state ? getCommands().filter((cmd) => matchesQuery(cmd, state.query)) : [];
 

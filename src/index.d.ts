@@ -881,6 +881,7 @@ export const BlockGutterRow: ComponentType<Record<string, unknown>>;
 export const BlockRangeActionMenu: ComponentType<Record<string, unknown>>;
 export function useBlockRangeDrag(containerRef: RefObject<HTMLElement | null>): void;
 export function useCoarsePointer(): boolean;
+export function useTouchOnlyDevice(): boolean;
 export function useVirtualKeyboardInset(): number;
 export const MobileActionBar: ComponentType<{ containerRef: RefObject<HTMLElement | null> }>;
 export const MobileBlockPickerSheet: ComponentType<Record<string, unknown>>;
@@ -1016,6 +1017,8 @@ export interface FloatingToolbarProps {
   onComment?: (range: CommentRange) => void;
   /** Adds a Comment button using a built-in inline composer (addComment(store, range, {authorId: commentAuthorId, text})) instead of onComment -- see NoteloomEditorProps.commentAuthorId. */
   commentAuthorId?: string;
+  /** Surfaces a mic start/stop button when given and voice.isSupported is true -- pass the exact object useVoiceTyping() (from the separate `noteloom/voice` entry point) returns. Omit to keep SpeechRecognition-related code out of your bundle entirely. */
+  voice?: Record<string, unknown>;
 }
 
 export const FloatingToolbar: ComponentType<FloatingToolbarProps>;
@@ -1163,6 +1166,8 @@ export interface NoteloomEditorProps {
   resolveEmbedSrc?: (src: string) => string;
   /** Called once if the resolved src actually fails to load -- see EditorProviderProps.onEmbedError. */
   onEmbedError?: (src: string) => void;
+  /** Surfaces a mic start/stop button in the floating format toolbar -- pass the exact object useVoiceTyping() (from the separate `noteloom/voice` entry point) returns. Omit to keep SpeechRecognition-related code out of your bundle entirely -- see FloatingToolbarProps.voice. */
+  voice?: Record<string, unknown>;
   children?: ReactNode;
 }
 

@@ -201,6 +201,7 @@ export { BlockGutterRow } from './react/BlockGutterRow.jsx';
 export { BlockRangeActionMenu } from './react/BlockRangeActionMenu.jsx';
 export { useBlockRangeDrag } from './react/useBlockRangeDrag.js';
 export { useCoarsePointer } from './react/useCoarsePointer.js';
+export { useTouchOnlyDevice } from './react/useTouchOnlyDevice.js';
 export { useVirtualKeyboardInset } from './react/useVirtualKeyboardInset.js';
 export { MobileActionBar } from './react/MobileActionBar.jsx';
 export { MobileBlockPickerSheet } from './react/MobileBlockPickerSheet.jsx';

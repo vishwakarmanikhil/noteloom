@@ -244,6 +244,7 @@ const EXPECTED_EXPORTS = [
   'useTemplates',
   'useTextFormattingActions',
   'useTitle',
+  'useTouchOnlyDevice',
   'useVirtualKeyboardInset',
   'useVoiceTyping',
   'useWholeDocumentSelection',

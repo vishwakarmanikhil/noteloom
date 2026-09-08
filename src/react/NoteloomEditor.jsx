@@ -17,7 +17,7 @@ import { useFloatingToolbarTrigger } from '../commands/useFloatingToolbarTrigger
 import { FindBar } from './FindBar.jsx';
 import { useFindInDocument } from './useFindInDocument.js';
 
-function EditorSurface({ store, rootId, extensions, onComment, commentAuthorId }) {
+function EditorSurface({ store, rootId, extensions, onComment, commentAuthorId, voice }) {
   const containerRef = useRef(null);
   const { onCopy, onCut, onPaste } = useClipboardHandlers();
   const slashMenu = useSlashMenuTrigger(containerRef);
@@ -81,6 +81,7 @@ function EditorSurface({ store, rootId, extensions, onComment, commentAuthorId }
         store={store}
         onComment={onComment}
         commentAuthorId={commentAuthorId}
+        voice={voice}
       />
     </div>
   );
@@ -125,6 +126,22 @@ function EditorSurface({ store, rootId, extensions, onComment, commentAuthorId }
  * `useFileUpload`'s own doc comment for the full contract (wiring a picked/
  * dropped file to local disk, S3, or any other cloud storage).
  *
+ * `voice`, if given, surfaces a mic button in the floating format toolbar
+ * that toggles dictation — pass the exact object `useVoiceTyping()` (from
+ * the separate `noteloom/voice` entry point) returns:
+ *
+ *   import { useVoiceTyping } from 'noteloom/voice';
+ *   const voice = useVoiceTyping();
+ *   return <NoteloomEditor editor={editor} voice={voice} />;
+ *
+ * Omit it (default) and no mic button appears — `NoteloomEditor` itself
+ * never imports anything from `noteloom/voice`, so an app that doesn't use
+ * this prop never pulls `SpeechRecognition`-related code into its bundle.
+ * The button only toggles start/stop; mount `VoiceListeningIndicator`/
+ * `VoicePermissionModal` (also from `noteloom/voice`) yourself alongside
+ * the same `voice` object for the "Listening…" badge and the mic-blocked
+ * dialog.
+ *
  * Ctrl/Cmd+F, while the editor has focus, opens a built-in find/replace bar
  * (only while THIS editor has focus — a host page's own native find
  * elsewhere is left alone). See `useFindInDocument`'s own doc comment for
@@ -144,6 +161,7 @@ export function NoteloomEditor({
   maxFileSize,
   resolveEmbedSrc,
   onEmbedError,
+  voice,
   children,
 }) {
   const { store, registry, inlineRegistry, extensions } = editor;
@@ -170,6 +188,7 @@ export function NoteloomEditor({
         extensions={extensions}
         onComment={onComment}
         commentAuthorId={commentAuthorId}
+        voice={voice}
       />
       {showCommentsPanel && <CommentsPanel authorId={commentAuthorId} />}
       {children}

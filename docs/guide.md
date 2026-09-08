@@ -717,9 +717,26 @@ function MicButton() {
 
 No speech-to-text SDK is bundled (same zero-runtime-dependency reasoning as PDF export above) — this is built entirely on the browser's own `SpeechRecognition`/`webkitSpeechRecognition`, so `isSupported` is `false` wherever that API doesn't exist. A command is only recognized when an entire _finalized_ spoken utterance (a natural pause before/after, as reported by the Speech API itself) matches a known phrase exactly — see `src/voice/voiceCommands.js` for the full table — so a command word merely mentioned mid-sentence while dictating prose is never misread as a command.
 
+Using `<NoteloomEditor>`, skip the hand-rolled `MicButton` above and pass `voice` straight through instead — it surfaces a mic start/stop button right in the built-in floating format toolbar:
+
+```jsx
+import { NoteloomEditor, useEditor } from 'noteloom';
+import { useVoiceTyping } from 'noteloom/voice';
+
+function App() {
+  const editor = useEditor();
+  const voice = useVoiceTyping();
+  return <NoteloomEditor editor={editor} voice={voice} />;
+}
+```
+
+`NoteloomEditor`/`FloatingToolbar` never import anything from `noteloom/voice` themselves — the button only appears (and `SpeechRecognition`-related code only ends up in your bundle at all) once you pass `voice` in. It only toggles start/stop ("pause" — there's no true pause/resume, so starting again begins a fresh session anchored wherever the caret/selection is at that moment); mount `VoiceListeningIndicator`/`VoicePermissionModal` (also from `noteloom/voice`) yourself alongside the same `voice` object for the "Listening…" badge and the mic-blocked dialog, same as the hand-rolled example above.
+
 ## Mobile / touch support
 
-Typing "/"/"@" still works on a phone keyboard, but it's not a reliable or discoverable primary path there (autocorrect, awkward key access, nothing to discover it by) — so on a coarse (touch) pointer, `MobileActionBar` takes over as the touch-first equivalent, pinned above the on-screen keyboard. It needs direct access to the same DOM element your editor surface renders into (to track focus/selection inside it), which `<NoteloomEditor>` doesn't expose — so this one piece needs the [granular API](#advanced-the-granular-api):
+On a real phone or tablet, typing "/" doesn't open the slash command menu at all — `MobileActionBar`'s own "+" button (pinned above the on-screen keyboard, see below) is the reliable, discoverable path there instead; a floating dropdown anchored under an on-screen keyboard is a poor fit for a small touch screen. A laptop's touchscreen (2-in-1s included) is unaffected — "/" still opens the menu there as usual, whether typed on a physical keyboard or the on-screen one. This is `useTouchOnlyDevice()` (also exported): a STATIC device classification (`(hover: none) and (pointer: coarse)` — no hover-capable pointer at all), unlike `useCoarsePointer` below, which deliberately reacts to whatever was tapped/clicked most recently. A device with a trackpad or mouse always reports `hover: hover` as its primary pointer even while its touchscreen is being used, which is exactly what keeps a 2-in-1 laptop out of this check.
+
+Typing "@" still works on a phone keyboard, but it's not a reliable or discoverable primary path there (autocorrect, awkward key access, nothing to discover it by) — so on a coarse (touch) pointer, `MobileActionBar` takes over as the touch-first equivalent, pinned above the on-screen keyboard. It needs direct access to the same DOM element your editor surface renders into (to track focus/selection inside it), which `<NoteloomEditor>` doesn't expose — so this one piece needs the [granular API](#advanced-the-granular-api):
 
 ```jsx
 import { MobileActionBar } from 'noteloom';

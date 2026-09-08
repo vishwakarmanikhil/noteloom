@@ -25,7 +25,7 @@ function makeDoc() {
   };
 }
 
-function Harness({ onComment, commentAuthorId }) {
+function Harness({ onComment, commentAuthorId, voice }) {
   const containerRef = useRef(null);
   const store = useEditorStore();
   const toolbar = useFloatingToolbarTrigger(containerRef);
@@ -42,17 +42,18 @@ function Harness({ onComment, commentAuthorId }) {
         store={store}
         onComment={onComment}
         commentAuthorId={commentAuthorId}
+        voice={voice}
       />
     </div>
   );
 }
 
-function renderHarness(store, { onComment, commentAuthorId } = {}) {
+function renderHarness(store, { onComment, commentAuthorId, voice } = {}) {
   const registry = createBlockRegistry();
   registerBuiltInBlocks(registry);
   return render(
     <EditorProvider store={store} registry={registry}>
-      <Harness onComment={onComment} commentAuthorId={commentAuthorId} />
+      <Harness onComment={onComment} commentAuthorId={commentAuthorId} voice={voice} />
     </EditorProvider>,
   );
 }
@@ -432,5 +433,59 @@ describe('FloatingToolbar: comment button', () => {
 
     expect(onComment).toHaveBeenCalledTimes(1);
     expect(container.querySelector('.be-comment-composer-textarea')).toBeNull();
+  });
+});
+
+describe('FloatingToolbar: mic button (dictation)', () => {
+  it('is not rendered when no voice prop is given', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderHarness(store);
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5);
+    expect(container.querySelector('.be-floating-toolbar-btn[aria-label$="dictation"]')).toBeNull();
+  });
+
+  it('is not rendered when voice.isSupported is false', () => {
+    const store = new EditorStore(makeDoc());
+    const voice = { isSupported: false, isListening: false, start: vi.fn(), stop: vi.fn() };
+    const { container } = renderHarness(store, { voice });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5);
+    expect(container.querySelector('.be-floating-toolbar-btn[aria-label$="dictation"]')).toBeNull();
+  });
+
+  it('shows "Start dictation" when not listening, and calls voice.start() on click', () => {
+    const store = new EditorStore(makeDoc());
+    const voice = { isSupported: true, isListening: false, start: vi.fn(), stop: vi.fn() };
+    const { container } = renderHarness(store, { voice });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5);
+    const micBtn = container.querySelector('.be-floating-toolbar-btn[aria-label="Start dictation"]');
+    expect(micBtn).not.toBeNull();
+    expect(micBtn.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(micBtn);
+    expect(voice.start).toHaveBeenCalledTimes(1);
+    expect(voice.stop).not.toHaveBeenCalled();
+  });
+
+  it('shows "Pause dictation" (pressed) when listening, and calls voice.stop() on click', () => {
+    const store = new EditorStore(makeDoc());
+    const voice = { isSupported: true, isListening: true, start: vi.fn(), stop: vi.fn() };
+    const { container } = renderHarness(store, { voice });
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5);
+    const micBtn = container.querySelector('.be-floating-toolbar-btn[aria-label="Pause dictation"]');
+    expect(micBtn).not.toBeNull();
+    expect(micBtn.getAttribute('aria-pressed')).toBe('true');
+    expect(micBtn.className).toContain('be-floating-toolbar-btn-active');
+
+    fireEvent.click(micBtn);
+    expect(voice.stop).toHaveBeenCalledTimes(1);
+    expect(voice.start).not.toHaveBeenCalled();
   });
 });
