@@ -1017,7 +1017,7 @@ export interface FloatingToolbarProps {
   onComment?: (range: CommentRange) => void;
   /** Adds a Comment button using a built-in inline composer (addComment(store, range, {authorId: commentAuthorId, text})) instead of onComment -- see NoteloomEditorProps.commentAuthorId. */
   commentAuthorId?: string;
-  /** Surfaces a mic start/stop button when given and voice.isSupported is true -- pass the exact object useVoiceTyping() (from the separate `noteloom/voice` entry point) returns. Omit to keep SpeechRecognition-related code out of your bundle entirely. */
+  /** Surfaces a mic start/stop button when given and voice.isSupported is true -- pass the object useVoiceTyping({ store: editor.store }) (from the separate `noteloom/voice` entry point) returns; the explicit `store` is required here since this call site sits outside the <EditorProvider> the toolbar itself renders inside of. Omit to keep SpeechRecognition-related code out of your bundle entirely. */
   voice?: Record<string, unknown>;
 }
 
@@ -1166,7 +1166,7 @@ export interface NoteloomEditorProps {
   resolveEmbedSrc?: (src: string) => string;
   /** Called once if the resolved src actually fails to load -- see EditorProviderProps.onEmbedError. */
   onEmbedError?: (src: string) => void;
-  /** Surfaces a mic start/stop button in the floating format toolbar -- pass the exact object useVoiceTyping() (from the separate `noteloom/voice` entry point) returns. Omit to keep SpeechRecognition-related code out of your bundle entirely -- see FloatingToolbarProps.voice. */
+  /** Surfaces a mic start/stop button in the floating format toolbar -- pass the object useVoiceTyping({ store: editor.store }) (from the separate `noteloom/voice` entry point) returns; see FloatingToolbarProps.voice for why the explicit `store` is required here. Omit to keep SpeechRecognition-related code out of your bundle entirely. */
   voice?: Record<string, unknown>;
   children?: ReactNode;
 }

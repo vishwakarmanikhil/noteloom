@@ -87,9 +87,11 @@ const HIGHLIGHT_COLORS = [
  * true, toggles dictation: click to start, click again to stop ("pause" —
  * there's no true pause/resume in `useVoiceTyping`, so stopping and
  * starting again begins a fresh session anchored at the caret/selection at
- * that moment). `voice` is the exact object `useVoiceTyping()` (from the
- * separate `noteloom/voice` entry point) returns — this component takes it
- * as a prop rather than calling the hook itself so that importing
+ * that moment). `voice` is the object `useVoiceTyping({ store: editor.store })`
+ * (from the separate `noteloom/voice` entry point — the explicit `store` is
+ * required since that call site sits outside the `<EditorProvider>` this
+ * toolbar itself renders inside of) returns — this component takes it as a
+ * prop rather than calling the hook itself so that importing
  * `FloatingToolbar`/`NoteloomEditor` never pulls `SpeechRecognition`-related
  * code into an app that doesn't use voice at all; omit `voice` and the mic
  * button simply doesn't render. `VoiceListeningIndicator`/

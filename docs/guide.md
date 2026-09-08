@@ -725,7 +725,10 @@ import { useVoiceTyping } from 'noteloom/voice';
 
 function App() {
   const editor = useEditor();
-  const voice = useVoiceTyping();
+  // An explicit `store` is required here: <NoteloomEditor> creates its own
+  // <EditorProvider> internally, and this call sits outside it, so
+  // useVoiceTyping can't read a store off context the way it normally does.
+  const voice = useVoiceTyping({ store: editor.store });
   return <NoteloomEditor editor={editor} voice={voice} />;
 }
 ```

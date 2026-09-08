@@ -127,11 +127,14 @@ function EditorSurface({ store, rootId, extensions, onComment, commentAuthorId, 
  * dropped file to local disk, S3, or any other cloud storage).
  *
  * `voice`, if given, surfaces a mic button in the floating format toolbar
- * that toggles dictation — pass the exact object `useVoiceTyping()` (from
- * the separate `noteloom/voice` entry point) returns:
+ * that toggles dictation — pass the object `useVoiceTyping()` (from the
+ * separate `noteloom/voice` entry point) returns, with an explicit `store`
+ * (this call site sits outside the `<EditorProvider>` `<NoteloomEditor>`
+ * creates internally, so `useVoiceTyping` can't read one off context here):
  *
  *   import { useVoiceTyping } from 'noteloom/voice';
- *   const voice = useVoiceTyping();
+ *   const editor = useEditor();
+ *   const voice = useVoiceTyping({ store: editor.store });
  *   return <NoteloomEditor editor={editor} voice={voice} />;
  *
  * Omit it (default) and no mic button appears — `NoteloomEditor` itself

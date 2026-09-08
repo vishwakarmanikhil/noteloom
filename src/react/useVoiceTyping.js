@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { useEditorStore } from './EditorProvider.jsx';
+import { useOptionalEditorStore } from './EditorProvider.jsx';
 import { resolveCollapsedCaret } from './selectionResolve.js';
 import { setCaretSync } from './focusRun.js';
 import { updateRun } from '../store/operations.js';
@@ -165,9 +165,24 @@ const PERMISSION_DENIED_MESSAGE =
  * host has already decided its engine is usable) — the browser-detection
  * path (`getSpeechRecognitionCtor`) is only consulted when `engine` is
  * omitted, so existing callers are unaffected.
+ *
+ * `store`, if given, is used directly instead of reading one off
+ * `<EditorProvider>` context — needed to call this hook from a component
+ * that ISN'T inside a Provider yet, most notably right before rendering
+ * `<NoteloomEditor editor={editor} voice={...}>` (which creates its own
+ * Provider internally, so its caller necessarily sits outside it):
+ *
+ *   const editor = useEditor();
+ *   const voice = useVoiceTyping({ store: editor.store });
+ *   return <NoteloomEditor editor={editor} voice={voice} />;
+ *
+ * Omit it when this hook is already called from somewhere inside an
+ * `<EditorProvider>` (e.g. the granular API, building your own toolbar) —
+ * it falls back to context the same as before.
  */
-export function useVoiceTyping({ shortcut = true, engine } = {}) {
-  const store = useEditorStore();
+export function useVoiceTyping({ shortcut = true, engine, store: explicitStore } = {}) {
+  const contextStore = useOptionalEditorStore();
+  const store = explicitStore ?? contextStore;
   const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState('idle');
   const [permissionState, setPermissionState] = useState('unknown');
@@ -409,6 +424,11 @@ export function useVoiceTyping({ shortcut = true, engine } = {}) {
 
   const start = useCallback(() => {
     if (!isSupported || recognitionRef.current) return;
+    if (!store) {
+      throw new Error(
+        'useVoiceTyping needs a store: call it inside an <EditorProvider>, or pass { store } explicitly (e.g. useVoiceTyping({ store: editor.store })).',
+      );
+    }
     setError(null);
     const initialCaret = resolveCollapsedCaret();
     sessionAnchorRef.current = initialCaret;

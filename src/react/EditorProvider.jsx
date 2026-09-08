@@ -230,6 +230,20 @@ export function useEditorStore() {
   return useEditorContext().store;
 }
 
+/**
+ * Null-safe counterpart to `useEditorStore` — for the rare hook (currently
+ * just `useVoiceTyping`) that also accepts an explicit `store` option so it
+ * can be called from a component that ISN'T inside an `<EditorProvider>` yet
+ * (e.g. right before rendering `<NoteloomEditor editor={editor} voice={...}>`,
+ * which creates its own Provider internally — the caller of `useVoiceTyping`
+ * necessarily sits outside that Provider). Not part of the public API: an
+ * internal escape hatch, not a general-purpose "maybe I'm inside a provider"
+ * hook other code should reach for.
+ */
+export function useOptionalEditorStore() {
+  return useContext(EditorContext)?.store ?? null;
+}
+
 export function useBlockRegistry() {
   return useEditorContext().registry;
 }
