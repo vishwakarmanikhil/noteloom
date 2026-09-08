@@ -10,12 +10,17 @@ import { defineConfig, devices } from '@playwright/test';
  * behavior, most UI states) is already covered far more cheaply by the
  * vitest suite (`npm test`), which should stay the first line of defense.
  *
- * Two fixtures, each on its own fixed port so they don't collide with
+ * Three fixtures, each on its own fixed port so they don't collide with
  * `npm run dev`/other example servers a developer might already have on 5173:
  *   - examples/06-comments/ (5190) — the comments flow (comments.spec.js).
  *   - test-e2e/fixtures/golden/ (5191) — the deterministic golden-document
  *     fixture whose serialized output is snapshotted (golden-document.spec.js).
- *     Specs use absolute URLs, so there's no single shared baseURL.
+ *   - examples/01-quickstart/ (5192) — the plain `useEditor()`/`<NoteloomEditor>`
+ *     quickstart, reused for real-clipboard-permission and real-mouse-drag
+ *     coverage (clipboard-inputs.spec.js, resize.spec.js) that doesn't need
+ *     any bespoke fixture of its own.
+ *     Every spec besides comments.spec.js uses an absolute URL, so there's no
+ *     single shared baseURL.
  */
 export default defineConfig({
   testDir: './test-e2e',
@@ -46,6 +51,12 @@ export default defineConfig({
     {
       command: 'npx vite --config test-e2e/fixtures/golden/vite.config.js --port 5191 --strictPort',
       port: 5191,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30000,
+    },
+    {
+      command: 'npx vite --config examples/01-quickstart/vite.config.js --port 5192 --strictPort',
+      port: 5192,
       reuseExistingServer: !process.env.CI,
       timeout: 30000,
     },
