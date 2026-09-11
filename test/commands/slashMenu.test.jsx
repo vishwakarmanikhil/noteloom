@@ -87,7 +87,9 @@ describe('slash command menu: suppressed on a real phone/tablet (MobileActionBar
 
     typeIntoRun(runNode, '/table');
     expect(container.querySelectorAll('.be-slash-menu-item').length).toBe(0);
-    expect(container.querySelector('.be-slash-menu[aria-expanded="true"], [role="listbox"]')).toBeNull();
+    expect(
+      container.querySelector('.be-slash-menu[aria-expanded="true"], [role="listbox"]'),
+    ).toBeNull();
   });
 
   it('still opens normally on a laptop touchscreen (a trackpad/mouse is still the primary pointer, so hover:hover matches)', () => {

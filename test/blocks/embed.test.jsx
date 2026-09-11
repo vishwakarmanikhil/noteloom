@@ -416,7 +416,9 @@ describe('embed block: resolveEmbedSrc / onEmbedError', () => {
       createEmbedBlock({ kind: 'image', src: 'attachment://xyz.png' }),
     );
     const resolveEmbedSrc = (src) =>
-      src.startsWith('attachment://') ? `file:///local/attachments/${src.slice('attachment://'.length)}` : src;
+      src.startsWith('attachment://')
+        ? `file:///local/attachments/${src.slice('attachment://'.length)}`
+        : src;
     const { container } = renderDocWithUpload(store, { resolveEmbedSrc });
 
     const img = container.querySelector(`[data-block-id="${id}"] img.be-embed-image`);

@@ -367,12 +367,20 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
       const { sessionA, sessionB } = await connectPair(historyA, historyB);
 
       const received = [];
-      sessionB.onCustomMessage((channel, payload, remotePeerId) => received.push({ channel, payload, remotePeerId }));
+      sessionB.onCustomMessage((channel, payload, remotePeerId) =>
+        received.push({ channel, payload, remotePeerId }),
+      );
 
       sessionA.sendCustom('attachments', { kind: 'request', filename: 'a.png' });
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(received).toEqual([{ channel: 'attachments', payload: { kind: 'request', filename: 'a.png' }, remotePeerId: 'peer-a' }]);
+      expect(received).toEqual([
+        {
+          channel: 'attachments',
+          payload: { kind: 'request', filename: 'a.png' },
+          remotePeerId: 'peer-a',
+        },
+      ]);
 
       sessionA.destroy();
       sessionB.destroy();
@@ -383,15 +391,29 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
       const historyB = new History(new EditorStore(makeDoc()));
       const historyC = new History(new EditorStore(makeDoc()));
       const network = makeFakeSignalingNetwork();
-      const sessionA = new CollabSession({ history: historyA, signaling: network.makeChannelFor('peer-a') });
-      const sessionB = new CollabSession({ history: historyB, signaling: network.makeChannelFor('peer-b') });
-      const sessionC = new CollabSession({ history: historyC, signaling: network.makeChannelFor('peer-c') });
+      const sessionA = new CollabSession({
+        history: historyA,
+        signaling: network.makeChannelFor('peer-a'),
+      });
+      const sessionB = new CollabSession({
+        history: historyB,
+        signaling: network.makeChannelFor('peer-b'),
+      });
+      const sessionC = new CollabSession({
+        history: historyC,
+        signaling: network.makeChannelFor('peer-c'),
+      });
 
       const abToA = sessionA.connect('peer-b', { initiator: true });
       const abToB = sessionB.connect('peer-a', { initiator: false });
       const acToA = sessionA.connect('peer-c', { initiator: true });
       const acToC = sessionC.connect('peer-a', { initiator: false });
-      await Promise.all([waitForOpen(abToA), waitForOpen(abToB), waitForOpen(acToA), waitForOpen(acToC)]);
+      await Promise.all([
+        waitForOpen(abToA),
+        waitForOpen(abToB),
+        waitForOpen(acToA),
+        waitForOpen(acToC),
+      ]);
       await new Promise((resolve) => setTimeout(resolve, 0));
       await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -416,7 +438,9 @@ describe('CollabSession (over a fake in-memory WebRTC transport)', () => {
       const historyB = new History(new EditorStore(makeDoc()));
       const { sessionA, sessionB } = await connectPair(historyA, historyB);
 
-      expect(() => sessionA.sendCustom('attachments', { filename: 'x.png' }, 'nobody-here')).not.toThrow();
+      expect(() =>
+        sessionA.sendCustom('attachments', { filename: 'x.png' }, 'nobody-here'),
+      ).not.toThrow();
 
       sessionA.destroy();
       sessionB.destroy();

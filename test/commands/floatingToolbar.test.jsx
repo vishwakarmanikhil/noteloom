@@ -463,7 +463,9 @@ describe('FloatingToolbar: mic button (dictation)', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5);
-    const micBtn = container.querySelector('.be-floating-toolbar-btn[aria-label="Start dictation"]');
+    const micBtn = container.querySelector(
+      '.be-floating-toolbar-btn[aria-label="Start dictation"]',
+    );
     expect(micBtn).not.toBeNull();
     expect(micBtn.getAttribute('aria-pressed')).toBe('false');
 
@@ -479,7 +481,9 @@ describe('FloatingToolbar: mic button (dictation)', () => {
     const runNode = container.querySelector('[data-run-id="r1"]');
 
     selectWithinRunNode(runNode, 0, 5);
-    const micBtn = container.querySelector('.be-floating-toolbar-btn[aria-label="Pause dictation"]');
+    const micBtn = container.querySelector(
+      '.be-floating-toolbar-btn[aria-label="Pause dictation"]',
+    );
     expect(micBtn).not.toBeNull();
     expect(micBtn.getAttribute('aria-pressed')).toBe('true');
     expect(micBtn.className).toContain('be-floating-toolbar-btn-active');

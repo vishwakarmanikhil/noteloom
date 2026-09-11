@@ -45,7 +45,9 @@ describe('useTouchOnlyDevice', () => {
     const { getByTestId } = render(<Probe />);
     expect(getByTestId('probe').textContent).toBe('false');
 
-    act(() => window.dispatchEvent(Object.assign(new Event('pointerdown'), { pointerType: 'touch' })));
+    act(() =>
+      window.dispatchEvent(Object.assign(new Event('pointerdown'), { pointerType: 'touch' })),
+    );
     expect(getByTestId('probe').textContent).toBe('false'); // still false: no listener for this at all
   });
 

@@ -44,7 +44,9 @@ async function insertImageEmbedWithSrc(page, src) {
   await page.waitForSelector('.be-embed-resize-handle');
 }
 
-test('dragging the resize handle left shrinks the embed frame, based on real layout', async ({ page }) => {
+test('dragging the resize handle left shrinks the embed frame, based on real layout', async ({
+  page,
+}) => {
   await insertImageEmbedWithSrc(page, 'https://example.com/photo.jpg');
 
   const frame = page.locator('.be-embed-frame');
@@ -70,7 +72,9 @@ test('dragging the resize handle left shrinks the embed frame, based on real lay
   expect(ariaNow).toBeGreaterThanOrEqual(20); // MIN_WIDTH
 });
 
-test('dragging past the left edge clamps at the minimum width instead of collapsing to nothing', async ({ page }) => {
+test('dragging past the left edge clamps at the minimum width instead of collapsing to nothing', async ({
+  page,
+}) => {
   await insertImageEmbedWithSrc(page, 'https://example.com/photo2.jpg');
 
   const handle = page.locator('.be-embed-resize-handle');

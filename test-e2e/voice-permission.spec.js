@@ -56,8 +56,12 @@ test('the mic button appears in the floating toolbar (real Chromium implements w
   // useVoiceTyping({ store: editor.store }) into FloatingToolbar actually
   // drives a real, live SpeechRecognition instance, not just a static prop.
   await micBtn.click();
-  await expect(page.locator('.be-floating-toolbar-btn[aria-label="Pause dictation"]')).toBeVisible();
+  await expect(
+    page.locator('.be-floating-toolbar-btn[aria-label="Pause dictation"]'),
+  ).toBeVisible();
 
   await page.locator('.be-floating-toolbar-btn[aria-label="Pause dictation"]').click();
-  await expect(page.locator('.be-floating-toolbar-btn[aria-label="Start dictation"]')).toBeVisible();
+  await expect(
+    page.locator('.be-floating-toolbar-btn[aria-label="Start dictation"]'),
+  ).toBeVisible();
 });

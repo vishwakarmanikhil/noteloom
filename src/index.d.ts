@@ -323,7 +323,9 @@ export class CollabSession {
   getPresence(): Map<string, Record<string, unknown>>;
   onPresenceChange(callback: (presence: Map<string, Record<string, unknown>>) => void): () => void;
   sendCustom(channel: string, payload: unknown, remotePeerId?: string | null): void;
-  onCustomMessage(callback: (channel: string, payload: unknown, remotePeerId: string) => void): () => void;
+  onCustomMessage(
+    callback: (channel: string, payload: unknown, remotePeerId: string) => void,
+  ): () => void;
 }
 
 export function createWebSocketSignaling(options: {

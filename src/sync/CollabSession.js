@@ -242,7 +242,8 @@ export class CollabSession {
       this._remotePresence.set(message.peerId, message.data);
       this._notifyPresenceListeners();
     } else if (message.type === MESSAGE_TYPE.CUSTOM) {
-      for (const cb of this._customListeners) cb(message.channel, message.payload, peer.remotePeerId);
+      for (const cb of this._customListeners)
+        cb(message.channel, message.payload, peer.remotePeerId);
     }
     // HELLO carries no required action yet -- reserved for future use.
   }
@@ -279,7 +280,14 @@ export class CollabSession {
     this._store.comments = new Map((doc.comments ?? []).map((c) => [c.id, c]));
     this._store.people = new Map((doc.people ?? []).map((p) => [p.id, p]));
     this._store.title = doc.title ?? '';
-    this._store._notify([...this._store.blocks.keys(), ...this._store.runs.keys(), '$fieldTypes', '$comments', '$people', '$title']);
+    this._store._notify([
+      ...this._store.blocks.keys(),
+      ...this._store.runs.keys(),
+      '$fieldTypes',
+      '$comments',
+      '$people',
+      '$title',
+    ]);
   }
 
   disconnect(remotePeerId) {

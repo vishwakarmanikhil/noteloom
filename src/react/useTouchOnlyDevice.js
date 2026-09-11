@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 
 function matchesTouchOnly() {
-  return typeof window !== 'undefined' && window.matchMedia?.('(hover: none) and (pointer: coarse)')?.matches === true;
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(hover: none) and (pointer: coarse)')?.matches === true
+  );
 }
 
 /**

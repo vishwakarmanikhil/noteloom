@@ -50,7 +50,7 @@ async function insertEmbedBlock(page) {
   await page.waitForSelector('.be-embed-url-input');
 }
 
-test('pasting real clipboard content into the embed block\'s URL field lands in the field, not as a stray new block', async ({
+test("pasting real clipboard content into the embed block's URL field lands in the field, not as a stray new block", async ({
   page,
 }) => {
   await insertEmbedBlock(page);
@@ -75,5 +75,8 @@ test('committing the pasted URL still works normally afterward', async ({ page }
   await page.keyboard.press('Control+v');
   await page.click('.be-embed-url-commit');
 
-  await expect(page.locator('.be-embed-image')).toHaveAttribute('src', 'https://example.com/pasted.png');
+  await expect(page.locator('.be-embed-image')).toHaveAttribute(
+    'src',
+    'https://example.com/pasted.png',
+  );
 });

@@ -11,7 +11,10 @@ const TITLE_KEY = '$title';
  */
 export function useTitle() {
   const store = useEditorStore();
-  const subscribe = useCallback((onStoreChange) => store.subscribe(TITLE_KEY, onStoreChange), [store]);
+  const subscribe = useCallback(
+    (onStoreChange) => store.subscribe(TITLE_KEY, onStoreChange),
+    [store],
+  );
   const getSnapshot = useCallback(() => store.getTitle(), [store]);
   return useSyncExternalStore(subscribe, getSnapshot);
 }

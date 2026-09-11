@@ -38,9 +38,12 @@ function EmbedPreview({ kind, src, name, alt, provider, onError }) {
   // filename, e.g. "IMG_2481.HEIC", or a pasted URL string) — neither is
   // meaningful alt text, and silently presenting one as if it were a real
   // description is worse than an empty (but at least honest) alt.
-  if (kind === 'image') return <img className="be-embed-image" src={src} alt={alt || ''} onError={onError} />;
-  if (kind === 'video') return <video className="be-embed-video" src={src} controls onError={onError} />;
-  if (kind === 'audio') return <audio className="be-embed-audio" src={src} controls onError={onError} />;
+  if (kind === 'image')
+    return <img className="be-embed-image" src={src} alt={alt || ''} onError={onError} />;
+  if (kind === 'video')
+    return <video className="be-embed-video" src={src} controls onError={onError} />;
+  if (kind === 'audio')
+    return <audio className="be-embed-audio" src={src} controls onError={onError} />;
   if (kind === 'oembed') {
     return (
       <iframe
