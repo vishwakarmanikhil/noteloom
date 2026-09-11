@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://noteloom.qusere.in/document.schema.json",
+  "$id": "https://noteloom.nikhilvishwakarma.com/document.schema.json",
   "title": "noteloom document (simple format), version 1",
   "description": "The canonical interchange format: what `exportDocumentSimpleJSON` produces and `editor.toJSON()` returns by default, and what `useEditor({ doc })` / `importDocumentSimpleJSON` accept. Self-contained blocks in an array; `children` for nesting; each block's own fields under `data`. The internal engine shape (`{ rootId, blocks, runs }`) is a separate, unversioned implementation detail reachable via `editor.toJSON({ format: 'internal' })`.",
   "type": "object",

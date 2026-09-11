@@ -26,7 +26,7 @@
   "bugs": {
     "url": "https://github.com/vishwakarmanikhil/noteloom/issues"
   },
-  "homepage": "https://noteloom.qusere.in",
+  "homepage": "https://noteloom.nikhilvishwakarma.com",
   "type": "module",
   "sideEffects": [
     "*.css"

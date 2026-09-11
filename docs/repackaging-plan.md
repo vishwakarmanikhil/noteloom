@@ -318,7 +318,7 @@ can remain as the implementation underneath for one release, then be dropped.
   one-liners, and a feature matrix linking into the full guide. The former
   README moved verbatim to `docs/guide.md`; `docs/` now also holds
   `migration.md`, `stability.md`, `document.schema.json`, this plan. Wiring the
-  guide into the docs site (noteloom.qusere.in) is a site-build task, separate
+  guide into the docs site (noteloom.nikhilvishwakarma.com) is a site-build task, separate
   from the package.
 - **`CONTRIBUTING.md` per concern**: core, react, a feature package, a block. Each
   says where the sibling tests live and what "done" means.

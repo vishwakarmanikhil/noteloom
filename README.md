@@ -10,7 +10,7 @@ widgets mid-sentence, slash commands, tables, undo/redo, clipboard — all built
 a small normalized store. The only things it needs from your app are `react` and
 `react-dom`.
 
-**[Docs & demo →](https://noteloom.qusere.in)** · **[Playground →](https://noteloom.qusere.in/playground/)** · **[Full guide](docs/guide.md)**
+**[Docs & demo →](https://noteloom.nikhilvishwakarma.com)** · **[Playground →](https://noteloom.nikhilvishwakarma.com/playground/)** · **[Full guide](docs/guide.md)**
 
 ```bash
 npm install noteloom react react-dom
