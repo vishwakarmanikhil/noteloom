@@ -427,6 +427,7 @@
 }
 
 .be-code-block-pre {
+  position: relative;
   margin: 0;
   padding: 0.9em 1em;
   overflow-x: auto;
@@ -438,6 +439,46 @@
 .be-code-block-pre code {
   position: relative;
   display: block;
+}
+
+/* Syntax-highlight overlay (EditorProvider's `highlightCode` prop, see
+   useHighlightCode's doc comment) -- a read-only, aria-hidden <code> painted
+   directly behind the real editable one, which be-code-block-highlighted
+   below makes text-transparent (caret still visible) so only this overlay's
+   colors actually show. Matches the editable layer's own box exactly:
+   absolutely positioned to be-code-block-pre's padding edges (not inset: 0,
+   which would land on the *border* edge and double the padding), same font
+   inherited from be-code-block-pre.
+
+   white-space: pre (NOT pre-wrap) is deliberate and load-bearing, matching
+   be-code-block-pre's own overflow-x: auto -- long lines scroll instead of
+   wrapping, same as the real editable text underneath, which inherits
+   plain `white-space: pre` from the <pre> element's UA-default styling
+   (nothing here ever set pre-wrap on it). Wrapping the overlay while the
+   real text doesn't wrap desyncs the two layers' line breaks the moment a
+   line is long enough to wrap -- the overlay's *visible* colored text
+   reflows onto a new line while the real (invisible) text, and therefore
+   the browser's actual caret, stays on the original unwrapped line,
+   landing the caret nowhere near where it visually appears to be. Left
+   unset (no clip/overflow:hidden) so the overflowing text is still
+   painted -- .be-code-block-pre's own overflow-x: auto is what makes both
+   layers scroll together (see the containing-block note below); pre-wrap
+   must never be reintroduced here without also adding it to the real
+   editable layer's own CSS. */
+.be-code-block-highlight {
+  position: absolute;
+  top: 0.9em;
+  left: 1em;
+  bottom: 0.9em;
+  display: block;
+  margin: 0;
+  pointer-events: none;
+  white-space: pre;
+}
+
+.be-code-block-highlighted code[data-placeholder] .be-editable {
+  color: transparent;
+  caret-color: var(--noteloom-code-text);
 }
 
 .be-code-block-body {

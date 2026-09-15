@@ -31,11 +31,11 @@ function makeDoc() {
   };
 }
 
-function renderDoc(store) {
+function renderDoc(store, providerProps = {}) {
   const registry = createBlockRegistry();
   registerBuiltInBlocks(registry);
   return render(
-    <EditorProvider store={store} registry={registry}>
+    <EditorProvider store={store} registry={registry} {...providerProps}>
       <BlockChildren parentId="root" />
     </EditorProvider>,
   );
@@ -108,6 +108,44 @@ describe('code block: Enter inserts a literal newline instead of splitting into 
 
     expect(store.getBlock('root').contentIds).toEqual(['p1', 'c1']); // still just one code block
     expect(store.getRun('r-c1').value).toBe('const\n x = 1;');
+  });
+
+  it('a run ending in "\\n" gets a trailing zero-width anchor character in the DOM, disambiguating the browser\'s native trailing-newline caret position', () => {
+    // Regression: a text node whose very last character is "\n" inside a
+    // white-space: pre/pre-wrap element has an ambiguous trailing caret
+    // position in every major browser -- typing right after it frequently
+    // inserts the new character BEFORE the "\n" instead of after it
+    // (swapping the newline and the just-typed text), which is what "press
+    // Enter in a code block, then type" looked like from the outside: text
+    // landing next to the visible content instead of at the caret, with
+    // the real (invisible) caret several lines away from where it visually
+    // appeared. jsdom doesn't simulate native contentEditable typing well
+    // enough to reproduce the browser bug itself, but this asserts the
+    // actual fix's mechanism: the host span's raw DOM text carries one
+    // more real (zero-width) character right after the "\n" for the
+    // browser to anchor "end of text" to -- see displayValueFor in
+    // EditableBlockContent.jsx.
+    const store = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
+        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'const x = 1;\n', marks: {} }],
+    });
+    const { container } = renderDoc(store);
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    expect(runNode.textContent).toBe('const x = 1;\n​');
+    expect(runNode.textContent.replace(/​/g, '')).toBe('const x = 1;\n');
+  });
+
+  it('a run NOT ending in "\\n" carries no anchor character (only the "\\n" case needs it)', () => {
+    const store = new EditorStore(makeDoc()); // r-c1: 'const x = 1;'
+    const { container } = renderDoc(store);
+    const runNode = container.querySelector('[data-run-id="r-c1"]');
+
+    expect(runNode.textContent).toBe('const x = 1;');
   });
 });
 
@@ -249,6 +287,92 @@ describe('code block: clipboard round-trip', () => {
     expect(inserts).toHaveLength(1);
     expect(inserts[0].block.props.language).toBeUndefined();
     expect(inserts[0].runs[0].value).toBe('plain text');
+  });
+
+  it('walkDomToBlocks finds a <pre> wrapped inside container elements (real "copy code" clipboard HTML from VS Code/GitHub/doc sites) instead of falling back to one squished, unformatted paragraph', () => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+
+    const inserts = walkDomToBlocks(
+      '<div class="highlight"><div><pre><code>line one\nline two</code></pre></div></div>',
+      registry,
+    );
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0].block.type).toBe('code');
+    expect(inserts[0].runs[0].value).toBe('line one\nline two');
+  });
+
+  it('walkDomToBlocks + code fromHTML reconstruct line breaks from a <pre> built out of one <div> per line (no literal "\\n" characters at all) instead of squishing every line together', () => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+
+    const inserts = walkDomToBlocks(
+      '<pre><code><div>function greet(name) {</div><div>  return name;</div><div>}</div></code></pre>',
+      registry,
+    );
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0].block.type).toBe('code');
+    expect(inserts[0].runs[0].value).toBe('function greet(name) {\n  return name;\n}');
+  });
+
+  it('walkDomToBlocks + code fromHTML treat a <br> the same way as a line-per-<div> source', () => {
+    const registry = createBlockRegistry();
+    registerBuiltInBlocks(registry);
+
+    const inserts = walkDomToBlocks(
+      '<pre><code>line one<br>line two<br>line three</code></pre>',
+      registry,
+    );
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0].runs[0].value).toBe('line one\nline two\nline three');
+  });
+});
+
+describe("code block: syntax-highlight overlay (EditorProvider's highlightCode prop)", () => {
+  it('without highlightCode configured, renders plain text with no overlay', () => {
+    const store = new EditorStore(makeDoc());
+    const { container } = renderDoc(store);
+
+    const pre = container.querySelector('[data-block-id="c1"] pre');
+    expect(pre.classList.contains('be-code-block-highlighted')).toBe(false);
+    expect(pre.querySelector('.be-code-block-highlight')).toBeNull();
+  });
+
+  it('with highlightCode configured, renders its HTML in an aria-hidden overlay fed the current code and language', () => {
+    const store = new EditorStore(makeDoc());
+    const highlightCode = (code, language) =>
+      `<span class="tok" data-lang="${language}">${code}</span>`;
+    const { container } = renderDoc(store, { highlightCode });
+
+    const pre = container.querySelector('[data-block-id="c1"] pre');
+    expect(pre.classList.contains('be-code-block-highlighted')).toBe(true);
+    const overlay = pre.querySelector('.be-code-block-highlight');
+    expect(overlay).not.toBeNull();
+    expect(overlay.getAttribute('aria-hidden')).toBe('true');
+    expect(overlay.querySelector('.tok').getAttribute('data-lang')).toBe('javascript');
+    expect(overlay.textContent).toBe('const x = 1;');
+  });
+
+  it('the overlay is NOT a <code> element (regression: .be-code-block-pre code { position: relative } would otherwise beat .be-code-block-highlight\'s position: absolute by CSS specificity, pulling the overlay back into normal document flow and rendering it as a second, stacked copy of the code, pushed above the real editable text instead of layered behind it)', () => {
+    const store = new EditorStore(makeDoc());
+    const highlightCode = (code) => code;
+    const { container } = renderDoc(store, { highlightCode });
+
+    const overlay = container.querySelector('[data-block-id="c1"] .be-code-block-highlight');
+    expect(overlay.tagName).not.toBe('CODE');
+  });
+
+  it('the overlay stays in sync as the code text changes (Enter splicing a literal newline)', () => {
+    const store = new EditorStore(makeDoc());
+    const highlightCode = (code) => code;
+    const { container } = renderDoc(store, { highlightCode });
+    const runNode = container.querySelector('[data-run-id="r-c1"]');
+
+    placeCollapsedCaret(runNode, 5);
+    fireEvent.keyDown(runNode, { key: 'Enter' });
+
+    const overlay = container.querySelector('[data-block-id="c1"] .be-code-block-highlight');
+    expect(overlay.textContent).toBe('const\n x = 1;');
   });
 });
 

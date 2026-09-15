@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { EditableBlockContent } from '../../react/EditableBlockContent.jsx';
 import { Select } from '../../react/Select.jsx';
 import { useBlock } from '../../react/useBlock.js';
@@ -6,6 +6,7 @@ import {
   useEditorStore,
   useBlockClassName,
   useShowLineNumbers,
+  useHighlightCode,
 } from '../../react/EditorProvider.jsx';
 import { mergeWithPreviousOrDelete } from '../shared/mergeCommands.js';
 import { isRunsEmpty } from '../shared/blockEmpty.js';
@@ -50,6 +51,69 @@ function insertLiteralTextAtCaret(store, blockId, text) {
 }
 
 /**
+ * Live-subscribes to every run in `runIds` (plural, unlike useRun) and
+ * returns their values joined into one plain string — what
+ * CodeHighlightOverlay feeds to the host's `highlightCode`. Reuses each
+ * run's OWN store subscription (the same one TextRunSpan/useRun rely on),
+ * not the block's, since a run's *value* changing (ordinary typing,
+ * handleEnter/handleTab's literal-text splices, paste) only ever notifies
+ * that run's subscribers — see EditableBlockContent's doc comments. A code
+ * block's runIds are effectively always a single run after creation (every
+ * edit path here splices into the existing run rather than creating new
+ * ones), but this stays correct for however many there are.
+ */
+function useCodeText(store, runIds) {
+  const subscribe = useCallback(
+    (onStoreChange) => {
+      const unsubscribes = runIds.map((id) => store.subscribe(id, onStoreChange));
+      return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+    },
+    [store, runIds],
+  );
+  const getSnapshot = useCallback(
+    () => runIds.map((id) => store.getRun(id)?.value ?? '').join(''),
+    [store, runIds],
+  );
+  return useSyncExternalStore(subscribe, getSnapshot);
+}
+
+/**
+ * Read-only syntax-colored text, layered via CSS directly behind the real
+ * editable layer (which CodeBlock makes text-transparent, caret still
+ * visible, whenever this renders — see the be-code-block-highlighted class
+ * below) — the same "highlighted overlay behind a transparent live editor"
+ * technique react-simple-code-editor/CodeMirror-style widgets use. Typing,
+ * selection, undo/redo all keep going through the ordinary plain-text run
+ * the rest of this file already uses for code blocks; only the *painted*
+ * color comes from here. `aria-hidden` since it's pure decoration — the
+ * real text (and its own accessible name) lives in the editable layer.
+ *
+ * Deliberately a `<span>`, not a `<code>` — this sits as a sibling of the
+ * real `<code>` inside `.be-code-block-pre`, and `.be-code-block-pre code {
+ * position: relative; display: block; }` (meant only for the real one)
+ * would otherwise ALSO match this element by tag, at higher CSS specificity
+ * (0-1-1) than `.be-code-block-highlight`'s own `position: absolute`
+ * (0-1-0) — silently overriding it back to `position: relative`. That left
+ * this element sitting in normal document flow instead of being pulled out
+ * of it: a full-height, full-width copy of the code shoved BEFORE the real
+ * editable text, pushing it down by the overlay's own height, rendering as
+ * two stacked, slightly offset copies of the same content instead of one
+ * layered on top of the other. Any element tag that isn't `code` sidesteps
+ * the collision entirely.
+ */
+function CodeHighlightOverlay({ store, runIds, language, highlightCode }) {
+  const code = useCodeText(store, runIds);
+  const html = highlightCode(code, language);
+  return (
+    <span
+      className="be-code-block-highlight"
+      aria-hidden="true"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+/**
  * A leaf block (own runs, same mechanism as paragraph/heading) rendered
  * inside a <pre><code> so embedded "\n" characters actually break lines
  * (white-space: pre-wrap, see the CSS) — the only block type where Enter
@@ -61,16 +125,20 @@ function insertLiteralTextAtCaret(store, blockId, text) {
  * previous sibling; an *empty* one is still removed outright, landing
  * focus on whatever came before it.
  *
- * No syntax highlighting (tokenizing/coloring code) is performed — that
- * needs a highlighter library, which the zero-runtime-dependency
- * constraint on this package rules out. `props.language` is kept as plain
- * metadata (round-trips through copy/paste and serialization) for a host
- * app to feed into its own highlighter if it has one.
+ * No syntax highlighter ships with this package (tokenizing/coloring code
+ * needs one, which the zero-runtime-dependency constraint rules out
+ * bundling) — but a host app can wire its own in via EditorProvider's
+ * `highlightCode` prop (see useHighlightCode's doc comment), rendered as a
+ * read-only colored overlay behind the real editable text. Without it, this
+ * still renders as plain monochrome text like before. `props.language` is
+ * kept as plain metadata (round-trips through copy/paste and serialization)
+ * either way, and is exactly what gets passed to `highlightCode`.
  */
 export function CodeBlock({ id }) {
   const store = useEditorStore();
   const block = useBlock(id);
   const showLineNumbers = useShowLineNumbers();
+  const highlightCode = useHighlightCode();
 
   const handleEnter = useCallback(() => insertLiteralTextAtCaret(store, id, '\n'), [store, id]);
   const handleTab = useCallback(() => insertLiteralTextAtCaret(store, id, '  '), [store, id]);
@@ -145,7 +213,20 @@ export function CodeBlock({ id }) {
             ))}
           </div>
         )}
-        <pre className="be-code-block-pre" dir="ltr">
+        <pre
+          className={
+            highlightCode ? 'be-code-block-pre be-code-block-highlighted' : 'be-code-block-pre'
+          }
+          dir="ltr"
+        >
+          {highlightCode && (
+            <CodeHighlightOverlay
+              store={store}
+              runIds={block.contentIds}
+              language={language}
+              highlightCode={highlightCode}
+            />
+          )}
           <code data-empty={isEmpty ? '' : undefined} data-placeholder="Empty code block">
             <EditableBlockContent
               blockId={id}

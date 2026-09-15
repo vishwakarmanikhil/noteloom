@@ -108,6 +108,39 @@ function setHostText(host, displayValue) {
   }
 }
 
+/**
+ * A run's value ending in a literal "\n" (the only place that happens is a
+ * code block — see CodeBlock.jsx's insertLiteralTextAtCaret, used for
+ * Enter/Tab — every other leaf block type splits Enter into a new sibling
+ * block instead of embedding "\n" in a run's own value) needs the SAME
+ * "give the browser a real anchor" treatment EMPTY_RUN_PLACEHOLDER already
+ * gets for an empty run, for the same underlying reason: a text node whose
+ * very last character is "\n" inside a `white-space: pre`/`pre-wrap`
+ * element has an ambiguous trailing caret position in every major browser
+ * — DOM offset `value.length` visually renders on the new empty line the
+ * "\n" created, but the browser's own native typing at that offset
+ * frequently inserts the next character BEFORE the "\n" instead of after
+ * it (swapping the newline and the just-typed character). That reliably
+ * reproduced as "press Enter in a code block, then type — the new text
+ * lands before the line break instead of after it, and every following
+ * keystroke keeps landing one position further behind the misplaced
+ * newline" — with the visual symptom being the *rendered* text and the
+ * real (invisible) caret ending up several lines apart. Appending the same
+ * zero-width placeholder character right after the trailing "\n" gives the
+ * browser one more real, non-"\n" character to anchor the "very end"
+ * caret position to — indistinguishable to a reader (zero width, no
+ * newline of its own), but no longer ambiguous to insert before/after.
+ * stripEmptyRunPlaceholder already removes every occurrence of this
+ * character wherever it appears when reading DOM text back into a run's
+ * logical value (see readRunText in domRunSync.js), so this needs no
+ * special-case unwrapping of its own.
+ */
+function displayValueFor(value) {
+  if (value === '') return EMPTY_RUN_PLACEHOLDER;
+  if (value.endsWith('\n')) return value + EMPTY_RUN_PLACEHOLDER;
+  return value;
+}
+
 function TextRunSpan({ id, host, onValueSynced }) {
   const run = useRun(id);
   const [hoveredCommentId] = useHoveredComment();
@@ -118,7 +151,7 @@ function TextRunSpan({ id, host, onValueSynced }) {
     const currentLogicalText = stripEmptyRunPlaceholder(host.textContent);
     const needsRewrite = currentLogicalText !== value || (value === '' && host.textContent === '');
     if (needsRewrite) {
-      setHostText(host, value === '' ? EMPTY_RUN_PLACEHOLDER : value);
+      setHostText(host, displayValueFor(value));
     }
 
     const style = marksToStyle(run.marks);

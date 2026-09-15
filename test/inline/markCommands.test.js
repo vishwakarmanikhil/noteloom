@@ -569,3 +569,83 @@ describe('getMarksSummaryOverBlockRange: cross-block toolbar indicator', () => {
     expect(summary.italic).toBe(true);
   });
 });
+
+describe('code blocks never accept marks (CodeBlock never reads run.marks, so applying one would silently no-op visually)', () => {
+  function makeCodeDoc() {
+    return {
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
+        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'const x = 1;', marks: {} }],
+    };
+  }
+
+  it('toggleMarkOnRunRange is a no-op against a code block run', () => {
+    const store = new EditorStore(makeCodeDoc());
+    const resultId = toggleMarkOnRunRange(store, 'c1', 'r1', 0, 5, 'bold');
+
+    expect(resultId).toBe('r1');
+    expect(store.getBlock('c1').contentIds).toEqual(['r1']); // no split
+    expect(store.getRun('r1').marks.bold).toBeUndefined();
+  });
+
+  it('toggleMarkOverSelection is a no-op against a code block', () => {
+    const store = new EditorStore(makeCodeDoc());
+    const result = toggleMarkOverSelection(
+      store,
+      'c1',
+      { startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      'bold',
+    );
+
+    expect(result).toBeNull();
+    expect(store.getRun('r1').marks.bold).toBeUndefined();
+  });
+
+  it('setMarksOverSelection (value-based marks, e.g. color) is also a no-op against a code block', () => {
+    const store = new EditorStore(makeCodeDoc());
+    setMarksOverSelection(
+      store,
+      'c1',
+      { startRunId: 'r1', startOffset: 0, endRunId: 'r1', endOffset: 5 },
+      { color: '#e03131' },
+    );
+
+    expect(store.getRun('r1').marks.color).toBeUndefined();
+  });
+
+  it('toggleMarkOverBlockRange skips a code block encountered within a cross-block range', () => {
+    const store = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'c1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r2'], props: {} },
+      ],
+      runs: [
+        { id: 'r1', type: 'text', value: 'hello', marks: {} },
+        { id: 'r2', type: 'text', value: 'const x = 1;', marks: {} },
+      ],
+    });
+
+    toggleMarkOverBlockRange(
+      store,
+      {
+        blockIds: ['p1', 'c1'],
+        startBlockId: 'p1',
+        startRunId: 'r1',
+        startOffset: 0,
+        endBlockId: 'c1',
+        endRunId: 'r2',
+        endOffset: 5,
+      },
+      'bold',
+    );
+
+    // The paragraph portion still gets bolded -- only the code block is skipped.
+    expect(store.getRun('r1').marks.bold).toBe(true);
+    expect(store.getRun('r2').marks.bold).toBeUndefined();
+  });
+});

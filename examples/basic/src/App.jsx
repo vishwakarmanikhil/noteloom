@@ -37,6 +37,7 @@ import {
 } from '../../../src/index.js';
 import { genId } from '../../../src/utils/idGen.js';
 import { MentionIcon } from '../../../src/react/icons.jsx';
+import { highlightCode } from './highlightCode.js';
 import './style.css';
 
 function makeInitialDoc() {
@@ -610,6 +611,7 @@ export function App() {
       inlineRegistry={inlineRegistry}
       history={store}
       commentAuthorId={COMMENT_AUTHOR_ID}
+      highlightCode={highlightCode}
     >
       <EditorSurface />
     </EditorProvider>

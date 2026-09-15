@@ -159,6 +159,25 @@ describe('useEditorKeyboardShortcuts: mark toggling', () => {
     expect(p2Runs.find((r) => r.value === 'second').marks.bold).toBe(true);
     expect(p2Runs.find((r) => r.value === ' line').marks.bold).toBeUndefined();
   });
+
+  it('Ctrl+B inside a code block does nothing -- CodeBlock never reads run marks', () => {
+    const store = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
+        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'const x = 1;', marks: {} }],
+    });
+    const { container } = renderHarness(store);
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "const"
+    fireEvent.keyDown(runNode, { key: 'b', ctrlKey: true });
+
+    expect(store.getBlock('c1').contentIds).toEqual(['r1']); // no split
+    expect(store.getRun('r1').marks.bold).toBeUndefined();
+  });
 });
 
 describe('useEditorKeyboardShortcuts: select-all (two-stage Ctrl+A)', () => {

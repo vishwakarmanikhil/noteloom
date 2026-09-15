@@ -22,7 +22,7 @@ import {
   deleteEntireDocument,
 } from '../inline/deleteCommands.js';
 import { deleteBlockRange } from '../blocks/shared/blockRangeActions.js';
-import { focusRunAtOffset } from './focusRun.js';
+import { focusRunAtOffset, focusRunEnd } from './focusRun.js';
 import { resolveFileToEmbedInsert } from '../blocks/embed/resolveFileEmbed.js';
 
 // Several plain `<input>`/`<textarea>` fields live inside the editor's own
@@ -318,16 +318,86 @@ export function useClipboardHandlers() {
       // below.
       const deleteResult = deleteCurrentSelection(store);
 
-      // Simple, single-run plain-text paste — by far the common case (a
-      // word, a phrase, a URL) — splices directly into the run at the
-      // caret instead of always creating a whole new sibling block,
-      // a common rich text editor convention. Multi-block or structured clipboard
-      // content (tables, lists, several paragraphs) still inserts as new
-      // block(s) after the current one; splitting the current block
-      // around it is a further follow-up.
+      // A code block is multi-line *within one block* (like a <textarea> —
+      // see CodeBlock.jsx's insertLiteralTextAtCaret, used for Enter/Tab),
+      // not a container whose lines are separate sibling blocks — the same
+      // convention ProseMirror's own `code: true` node spec uses: pasted
+      // content lands as literal text inside the existing code node
+      // instead of being parsed into new sibling block nodes. Without this
+      // branch, a multi-line paste falls through to the generic "insert
+      // new sibling blocks after the current one" path below, which lands
+      // the pasted content as new paragraphs *next to* the code block
+      // instead of inside it. Flatten every pasted block down to plain
+      // text (blocks joined by "\n", same convention textToParagraphs used
+      // to split them apart) and splice it into the current run, exactly
+      // like the simple single-run case does.
+      const pasteAtBlockId =
+        deleteResult?.blockId ?? closestBlockId(window.getSelection?.()?.anchorNode);
+      const pasteAtBlock = pasteAtBlockId && store.getBlock(pasteAtBlockId);
+      if (pasteAtBlock?.type === 'code') {
+        const caret = deleteResult
+          ? {
+              blockId: deleteResult.blockId,
+              runId: deleteResult.runId,
+              offset: deleteResult.offset,
+            }
+          : resolveCollapsedCaret();
+        if (caret) {
+          const text = inserts
+            .map(({ runs }) =>
+              runs
+                .filter((r) => r.type === 'text')
+                .map((r) => r.value)
+                .join(''),
+            )
+            .join('\n');
+          const result = insertTextAtCaret(store, caret, text);
+          if (result) {
+            focusRunAtOffset(result.runId, result.offset);
+            event.preventDefault();
+            return;
+          }
+        }
+      }
+
+      // Simple, single-run, UNFORMATTED plain-text paste — by far the
+      // common case (a word, a phrase, a URL) — splices directly into the
+      // run at the caret instead of always creating a whole new sibling
+      // block, a common rich text editor convention. Multi-block or
+      // structured clipboard content (tables, lists, several paragraphs)
+      // still inserts as new block(s) after the current one; splitting the
+      // current block around it is a further follow-up.
+      //
+      // Deliberately requires exactly one run with no marks at all, not
+      // just `run.type === 'text'` — a run's TYPE stays 'text' even when it
+      // carries marks (bold, a link, inline code, ...), so a single-block
+      // HTML paste with multiple marked runs (e.g. "`useActionState` is a
+      // React Hook ... using [Actions](...).") used to satisfy the old,
+      // looser check just as easily as an actual plain word does. That
+      // silently joined every run's plain VALUE with no separator and no
+      // marks and spliced the result into the current run — discarding all
+      // formatting from the paste AND merging it into whatever text
+      // already sat at the caret, instead of landing as its own block. Any
+      // mark, or more than one run, now falls through to the block-insert
+      // path below instead, which preserves both.
+      //
+      // Also requires the pasted block itself to be a plain `paragraph` —
+      // a single-run `code`/`heading`/`blockquote`/etc. insert (e.g.
+      // pasting a short one-line code snippet, which walkDomToBlocks/
+      // domWalk.js's <pre> detection turns into exactly one code-typed
+      // insert with one run) shape-matches "simple text" just as easily,
+      // but splicing its plain text into whatever run already sits at the
+      // caret would silently swallow the fact that it's a DIFFERENT block
+      // type — landing plain unformatted text in a paragraph instead of
+      // becoming its own code block. Only a `paragraph` insert is
+      // semantically interchangeable with "just some more text here."
+      const soleRun = inserts.length === 1 ? inserts[0].runs[0] : null;
       const isSimpleTextPaste =
         inserts.length === 1 &&
-        inserts[0].runs.every((r) => r.type === 'text') &&
+        inserts[0].block.type === 'paragraph' &&
+        inserts[0].runs.length === 1 &&
+        soleRun?.type === 'text' &&
+        Object.keys(soleRun?.marks ?? {}).length === 0 &&
         (inserts[0].subtreeBlocks ?? []).length === 0;
 
       if (isSimpleTextPaste) {
@@ -339,8 +409,7 @@ export function useClipboardHandlers() {
             }
           : resolveCollapsedCaret();
         if (caret) {
-          const text = inserts[0].runs.map((r) => r.value).join('');
-          const result = insertTextAtCaret(store, caret, text);
+          const result = insertTextAtCaret(store, caret, soleRun.value);
           if (result) {
             focusRunAtOffset(result.runId, result.offset);
             event.preventDefault();
@@ -369,6 +438,21 @@ export function useClipboardHandlers() {
       // One atomic undo step for the whole paste, regardless of how many
       // blocks it inserts — previously each was its own separate step.
       applyOps(store, insertOps);
+
+      // Land the caret at the end of the last pasted content, the same
+      // convention every other insert path in this handler follows
+      // (isSimpleTextPaste's insertTextAtCaret always ends with a
+      // focusRunAtOffset call). Without this, a multi-block paste left the
+      // DOM's real focus/selection wherever it happened to be before the
+      // paste (often nowhere inside the new blocks at all) — Backspace/
+      // Delete's own "is the caret at this container's start/end" checks
+      // (see EditableBlockContent) read that stale/absent selection, so
+      // they silently no-op instead of merging, until some other
+      // interaction (e.g. typing a character, which itself forces the
+      // browser to resolve a real caret position) established real focus.
+      const lastInsertWithRuns = [...inserts].reverse().find((i) => (i.runs ?? []).length > 0);
+      const lastRun = lastInsertWithRuns?.runs[lastInsertWithRuns.runs.length - 1];
+      if (lastRun) focusRunEnd(lastRun.id);
 
       event.preventDefault();
     },

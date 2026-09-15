@@ -81,3 +81,20 @@ body {
     display: none !important;
   }
 }
+
+/* Token colors for this demo's own highlightCode.js (see Editor.jsx/App.jsx's
+   `highlightCode` prop) -- a real app wires in Prism/Shiki/highlight.js
+   instead and would use that library's own theme CSS here, not this. */
+.tok-keyword {
+  color: #c678dd;
+}
+.tok-string {
+  color: #98c379;
+}
+.tok-number {
+  color: #d19a66;
+}
+.tok-comment {
+  color: #7f848e;
+  font-style: italic;
+}

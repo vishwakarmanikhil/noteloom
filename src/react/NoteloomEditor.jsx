@@ -126,6 +126,10 @@ function EditorSurface({ store, rootId, extensions, onComment, commentAuthorId, 
  * `useFileUpload`'s own doc comment for the full contract (wiring a picked/
  * dropped file to local disk, S3, or any other cloud storage).
  *
+ * `highlightCode` also forwards straight to `EditorProvider` — see
+ * `useHighlightCode`'s own doc comment for wiring in a syntax highlighter
+ * (Prism, Shiki, highlight.js, ...) for CodeBlock.
+ *
  * `voice`, if given, surfaces a mic button in the floating format toolbar
  * that toggles dictation — pass the object `useVoiceTyping()` (from the
  * separate `noteloom/voice` entry point) returns, with an explicit `store`
@@ -164,6 +168,7 @@ export function NoteloomEditor({
   maxFileSize,
   resolveEmbedSrc,
   onEmbedError,
+  highlightCode,
   voice,
   children,
 }) {
@@ -184,6 +189,7 @@ export function NoteloomEditor({
       maxFileSize={maxFileSize}
       resolveEmbedSrc={resolveEmbedSrc}
       onEmbedError={onEmbedError}
+      highlightCode={highlightCode}
     >
       <EditorSurface
         store={store}

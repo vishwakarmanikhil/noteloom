@@ -141,6 +141,17 @@ function applyPatchToSingleRun(store, blockId, run, from, to, marksPatch) {
  * value-based mark like color/highlight) ultimately applies per block.
  */
 function applyMarksPatchOverRunSpan(store, blockId, selection, marksPatch) {
+  // A code block's own text never carries or renders marks (see
+  // CodeBlock's own doc comment: "no rich inline formatting is offered for
+  // it in this UI" -- CodeBlock's render never even reads run.marks) — a
+  // no-op guard here, rather than one only in the UI paths that normally
+  // reach this (the floating toolbar, Ctrl+B/I/U), covers every caller
+  // that funnels through this shared primitive (toggleMarkOverSelection,
+  // setMarksOverSelection, and setMarksOverBlockRange's own per-block
+  // delegation) in one place, including a host app calling the public
+  // mark-command API directly against a code block by id.
+  if (store.getBlock(blockId)?.type === 'code') return null;
+
   const { startRunId, startOffset, endRunId, endOffset } = selection;
   const runIds = getBlockRunIds(store, blockId);
   const startIndex = runIds.indexOf(startRunId);
@@ -233,6 +244,7 @@ function computeShouldEnableForRange(store, blockId, selection, markName) {
  * (or the whole run, if no split was needed) — useful for restoring focus.
  */
 export function toggleMarkOnRunRange(store, blockId, runId, startOffset, endOffset, markName) {
+  if (store.getBlock(blockId)?.type === 'code') return runId; // see applyMarksPatchOverRunSpan's own guard
   const run = store.getRun(runId);
   const value = run.value ?? '';
   const from = Math.max(0, Math.min(startOffset, endOffset));

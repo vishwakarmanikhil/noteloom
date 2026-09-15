@@ -245,6 +245,127 @@ describe('useClipboardHandlers: Paste replaces an active selection', () => {
     expect(store.getBlock('root').contentIds).toEqual(['p1']);
   });
 
+  it('pasting multiple blocks lands the real browser Selection at the end of the pasted content, instead of leaving it stale', async () => {
+    // A real Selection landing somewhere inside the newly-inserted blocks is
+    // what subsequent keyboard interaction (e.g. Backspace/Delete at a block
+    // boundary, to merge two blocks) depends on in a real browser --
+    // without it, EditableBlockContent's own "is the caret at this
+    // container's start/end" checks (isCaretAtContainerStart/End) read
+    // whatever window.getSelection() returned from *before* the paste
+    // (often nothing inside the new content at all), so Backspace/Delete
+    // silently no-ops there until some unrelated interaction (e.g. typing a
+    // character) forces the browser to resolve a real caret position first.
+    const rawStore = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'hello', marks: {} }],
+    });
+    const store = new History(rawStore);
+    const { container } = renderHarness(store);
+    const r1Node = container.querySelector('[data-run-id="r1"]');
+
+    const range = document.createRange();
+    range.setStart(r1Node.firstChild, 5);
+    range.setEnd(r1Node.firstChild, 5);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    const dt = new FakeDataTransfer({ 'text/plain': 'line one\nline two\nline three' });
+    fireClipboardEvent(container.firstChild, 'paste', dt);
+
+    const rootIdsAfterPaste = store.getBlock('root').contentIds;
+    expect(rootIdsAfterPaste.length).toBe(4);
+    const lastPastedBlockId = rootIdsAfterPaste[3];
+
+    // focusRunEnd is rAF-deferred.
+    await waitFor(() => {
+      const lastRunNode = container.querySelector(
+        `[data-block-id="${lastPastedBlockId}"] [data-run-id]`,
+      );
+      const selection = window.getSelection();
+      expect(selection.rangeCount).toBeGreaterThan(0);
+      expect(lastRunNode.contains(selection.anchorNode)).toBe(true);
+      expect(selection.isCollapsed).toBe(true);
+    });
+  });
+
+  it('pasting a single-block HTML paragraph with MULTIPLE marked runs (inline code + a link) inserts as its own new block with every mark intact, instead of being flattened to plain text and merged into the current run', () => {
+    // Regression: `isSimpleTextPaste` used to only check `run.type ===
+    // 'text'`, which stays 'text' even for a run carrying marks (a run's
+    // TYPE and its MARKS are separate) -- so a real single-<p> HTML paste
+    // like this one (copied from a doc site: inline `<code>` + a `<a
+    // href>`) satisfied that check just as easily as an actual bare word
+    // does, silently discarded every mark, and spliced the joined plain
+    // text into whatever run already sat at the caret instead of landing
+    // as its own block.
+    const store = new History(new EditorStore(makeTwoParagraphDoc()));
+    const { container } = renderHarness(store);
+    const r1Node = container.querySelector('[data-run-id="r1"]');
+
+    const range = document.createRange();
+    range.setStart(r1Node.firstChild, 0);
+    range.setEnd(r1Node.firstChild, 0);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    const html =
+      '<p><code>useActionState</code> is a React Hook that lets you update state with side effects using <a href="https://react.dev/reference/react/useTransition#functions-called-in-starttransition-are-called-actions">Actions</a>.</p>';
+    const dt = new FakeDataTransfer({
+      'text/html': html,
+      'text/plain':
+        'useActionState is a React Hook that lets you update state with side effects using Actions.',
+    });
+    fireClipboardEvent(container.firstChild, 'paste', dt);
+
+    // p1's own text is untouched -- the paste landed as a new sibling block,
+    // not merged into it.
+    expect(store.getRun('r1').value).toBe('first line');
+    const rootIds = store.getBlock('root').contentIds;
+    expect(rootIds.length).toBe(3); // p1, the new pasted paragraph, p2
+    const pastedBlock = store.getBlock(rootIds[1]);
+    expect(pastedBlock.type).toBe('paragraph');
+
+    const runs = pastedBlock.contentIds.map((id) => store.getRun(id));
+    expect(runs.map((r) => r.value).join('')).toBe(
+      'useActionState is a React Hook that lets you update state with side effects using Actions.',
+    );
+    expect(runs.find((r) => r.value === 'useActionState').marks.code).toBe(true);
+    expect(runs.find((r) => r.value === 'Actions').marks.link.href).toBe(
+      'https://react.dev/reference/react/useTransition#functions-called-in-starttransition-are-called-actions',
+    );
+  });
+
+  it('pasting multi-line text with the caret inside a code block lands it inside that block, not as new sibling paragraphs', () => {
+    const rawStore = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
+        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: '', marks: {} }],
+    });
+    const store = new History(rawStore);
+    const { container } = renderHarness(store);
+    const r1Node = container.querySelector('[data-run-id="r1"]');
+
+    const range = document.createRange();
+    range.setStart(r1Node, 0);
+    range.setEnd(r1Node, 0);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    const dt = new FakeDataTransfer({ 'text/plain': 'const y = 2;\nconst z = 3;' });
+    fireClipboardEvent(container.firstChild, 'paste', dt);
+
+    // stays a single code block — no new sibling blocks created
+    expect(store.getBlock('root').contentIds).toEqual(['c1']);
+    expect(store.getBlock('c1').contentIds).toEqual(['r1']);
+    expect(store.getRun('r1').value).toBe('const y = 2;\nconst z = 3;');
+  });
+
   it('pasting a single-run app-native MIME block over a selection splices its text inline too', () => {
     const sourceStore = new EditorStore(makeTwoParagraphDoc());
     const registry = createBlockRegistry();
@@ -282,6 +403,37 @@ describe('useClipboardHandlers: Paste replaces an active selection', () => {
     expect(store.getRun('r1').value).toBe('first line'); // untouched: not a simple single-run text paste
     const rootIds = store.getBlock('root').contentIds;
     expect(rootIds.length).toBe(4); // p1, p2, + 2 inserted list items
+  });
+
+  it('pasting a single-line <pre> code snippet becomes its own new code block, instead of being spliced as plain text into the paragraph at the caret', () => {
+    // Regression: a single-run `code` insert (a short one-line snippet)
+    // shape-matches the "simple text paste" fast path just as easily as an
+    // actual plain word does (one run, no marks) -- without also checking
+    // the inserted block's OWN type, this used to splice its text straight
+    // into whatever paragraph run sat at the caret, silently discarding
+    // the fact that it should have become a code block at all.
+    const store = new History(new EditorStore(makeTwoParagraphDoc()));
+    const { container } = renderHarness(store);
+    const r1Node = container.querySelector('[data-run-id="r1"]');
+
+    const range = document.createRange();
+    range.setStart(r1Node.firstChild, 5);
+    range.setEnd(r1Node.firstChild, 5);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    const dt = new FakeDataTransfer({
+      'text/html': '<pre><code>const x = 1;</code></pre>',
+      'text/plain': 'const x = 1;',
+    });
+    fireClipboardEvent(container.firstChild, 'paste', dt);
+
+    expect(store.getRun('r1').value).toBe('first line'); // untouched
+    const rootIds = store.getBlock('root').contentIds;
+    expect(rootIds.length).toBe(3); // p1, the new code block, p2
+    const pastedBlock = store.getBlock(rootIds[1]);
+    expect(pastedBlock.type).toBe('code');
+    expect(store.getRun(pastedBlock.contentIds[0]).value).toBe('const x = 1;');
   });
 });
 

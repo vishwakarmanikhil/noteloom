@@ -48,6 +48,13 @@ const EditorContext = createContext(null);
  * of silently bloating the document with a huge base64 string; has no
  * effect once `uploadFile` is configured, since the host's own function (or
  * backend) is what decides what it can handle.
+ *
+ * `highlightCode(code, language) -> string` (trusted HTML), if given, is
+ * how `CodeBlock` gets syntax-colored text — see `useHighlightCode`'s own
+ * doc comment for the full contract (this package ships no highlighter of
+ * its own, staying zero-runtime-dependency; wire in Prism/Shiki/
+ * highlight.js/anything else here). Without it, a code block renders as
+ * plain monochrome text, same as always.
  */
 export function EditorProvider({
   store,
@@ -64,6 +71,7 @@ export function EditorProvider({
   maxFileSize,
   resolveEmbedSrc,
   onEmbedError,
+  highlightCode,
   children,
 }) {
   useEffect(() => {
@@ -181,6 +189,7 @@ export function EditorProvider({
       maxFileSize,
       resolveEmbedSrc,
       onEmbedError,
+      highlightCode,
     }),
     [
       store,
@@ -204,6 +213,7 @@ export function EditorProvider({
       maxFileSize,
       resolveEmbedSrc,
       onEmbedError,
+      highlightCode,
     ],
   );
   const content =
@@ -364,6 +374,47 @@ export function useHoveredComment() {
 /** Whether `CodeBlock` should render its line-number gutter — see `EditorProvider`'s `showLineNumbers` prop. */
 export function useShowLineNumbers() {
   return useEditorContext().showLineNumbers;
+}
+
+/**
+ * `highlightCode(code, language) -> string` from `EditorProvider` — see its
+ * own doc comment. `undefined` when not configured, in which case
+ * `CodeBlock` renders plain monochrome text exactly as before; this hook
+ * doesn't provide a default itself since "no highlighter configured" is a
+ * real state `CodeBlock` needs to see, not something to paper over.
+ *
+ * The returned string is trusted HTML — `CodeBlock` renders it via
+ * `dangerouslySetInnerHTML` in a read-only overlay layered visually behind
+ * the real (transparent-text) editable layer, the same technique
+ * react-simple-code-editor/CodeMirror-style "highlighted textarea" widgets
+ * use: typing, selection, and undo/redo all still go through the ordinary
+ * plain-text run the rest of this package already uses for code blocks —
+ * only the *painted* color changes, never the underlying document model.
+ * Escaping the code text into safe HTML is `highlightCode`'s own
+ * responsibility (any real tokenizer already does this as part of
+ * tokenizing); this package trusts it the same way it trusts a host's own
+ * `resolveEmbedSrc`/`uploadFile`.
+ *
+ * `language` is `block.props.language` (one of `CodeBlock`'s `LANGUAGES`,
+ * defaulting to `'plaintext'`) — typically passed straight through to
+ * whatever highlighter library is wired in here, e.g.:
+ *
+ * ```js
+ * import Prism from 'prismjs';
+ * import 'prismjs/components/prism-python';
+ * // ...
+ * <NoteloomEditor
+ *   editor={editor}
+ *   highlightCode={(code, language) =>
+ *     Prism.languages[language]
+ *       ? Prism.highlight(code, Prism.languages[language], language)
+ *       : escapeHtml(code) // unknown language / 'plaintext': no tokens, just escape
+ *   }
+ * />
+ * ```
+ */
+export function useHighlightCode() {
+  return useEditorContext().highlightCode;
 }
 
 /**

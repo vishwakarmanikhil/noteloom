@@ -13,6 +13,7 @@ import {
   SlashMenu,
 } from 'noteloom';
 import { useMemo, useRef } from 'react';
+import { highlightCode } from './highlightCode.js';
 
 export function Editor() {
   const containerRef = useRef(null);
@@ -46,6 +47,7 @@ export function Editor() {
       registry={registry}
       inlineRegistry={inlineRegistry}
       history={store}
+      highlightCode={highlightCode}
     >
       <div ref={containerRef} onCopy={onCopy} onCut={onCut} onPaste={onPaste}>
         <BlockChildren parentId="root" />

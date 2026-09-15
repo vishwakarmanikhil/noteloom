@@ -97,6 +97,24 @@ export function walkDomToBlocks(html, registry, inlineRegistry) {
       }
     }
 
+    // `code`'s own fromHTML only claims a <pre> that IS the top-level
+    // node — real "copy code" clipboard HTML (VS Code, GitHub, most
+    // syntax-highlighted doc sites) very often wraps that <pre> in one or
+    // more container elements instead (a <div class="highlight">, a
+    // fragment-marker wrapper, ...), so the loop above never finds a
+    // match: the whole thing then fell through to the plain-paragraph
+    // branch below, flattening actual source code into one line of
+    // unformatted text with no code block at all. Searching descendants
+    // for a <pre> here (once no top-level matcher claimed the node) routes
+    // that same common case to a real code block instead — same "look
+    // inside a container tag" idea as consumeList/consumeBlockquote above,
+    // just for an unpredictable wrapper rather than a fixed UL/OL/
+    // BLOCKQUOTE tag.
+    if (!matched) {
+      const nestedPre = node.querySelector?.('pre');
+      if (nestedPre) matched = registry.get('code')?.fromHTML(nestedPre, ctx) ?? null;
+    }
+
     if (matched) {
       results.push(matched);
     } else if (node.textContent.trim()) {

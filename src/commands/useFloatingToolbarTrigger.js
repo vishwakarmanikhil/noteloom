@@ -71,6 +71,17 @@ export function useFloatingToolbarTrigger(containerRef) {
 
       const sameBlock = resolveMultiRunSelection();
       if (sameBlock) {
+        // A code block's own text is deliberately never offered rich
+        // formatting (see CodeBlock's own doc comment: "no rich inline
+        // formatting is offered for it in this UI") -- a bold/italic/etc.
+        // mark on a code run has no meaning there (CodeBlock never even
+        // reads marks when rendering), so the format toolbar has nothing
+        // useful to do for a selection inside one and shouldn't pop up
+        // offering controls that would silently no-op.
+        if (store.getBlock(sameBlock.blockId)?.type === 'code') {
+          setState(null);
+          return;
+        }
         setState({
           kind: 'same-block',
           rect,
@@ -82,6 +93,15 @@ export function useFloatingToolbarTrigger(containerRef) {
 
       const crossBlock = resolveCrossBlockSelection(store);
       if (crossBlock) {
+        // Same rationale as the same-block guard above -- if a code block
+        // is anywhere in the spanned range, the whole cross-block format
+        // action would need to skip it anyway (markCommands.js's own
+        // guard), so there's nothing meaningful left to offer once even
+        // one of the blocks can't take marks.
+        if (crossBlock.blockIds.some((id) => store.getBlock(id)?.type === 'code')) {
+          setState(null);
+          return;
+        }
         setState({
           kind: 'cross-block',
           rect,

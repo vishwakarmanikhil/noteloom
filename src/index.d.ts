@@ -790,6 +790,8 @@ export interface EditorProviderProps {
   resolveEmbedSrc?: (src: string) => string;
   /** Called once if the resolved src actually fails to load (the element's native error event) -- see useFileUpload's own doc comment. Never called for oembed/file kinds. */
   onEmbedError?: (src: string) => void;
+  /** Syntax-colors CodeBlock's text -- returns trusted HTML, rendered via dangerouslySetInnerHTML in a read-only overlay behind the real editable text. No highlighter ships with this package (zero-runtime-dependency); wire in Prism/Shiki/highlight.js/etc. here. Plain monochrome text when not configured. See useHighlightCode's own doc comment. */
+  highlightCode?: (code: string, language: string) => string;
   children?: ReactNode;
 }
 
@@ -805,6 +807,8 @@ export function usePreviewMode(): [boolean, (value: boolean) => void];
 export function useCommentAuthorId(): string | undefined;
 /** Whether CodeBlock should render its line-number gutter -- see EditorProviderProps.showLineNumbers. */
 export function useShowLineNumbers(): boolean;
+/** `highlightCode` from EditorProvider, or undefined if not configured -- see EditorProviderProps.highlightCode. */
+export function useHighlightCode(): ((code: string, language: string) => string) | undefined;
 /** `{ uploadFile, maxFileSize }` from EditorProvider -- see EditorProviderProps and useFileUpload's own doc comment for the full contract. */
 export function useFileUpload(): {
   uploadFile?: (
@@ -1168,6 +1172,8 @@ export interface NoteloomEditorProps {
   resolveEmbedSrc?: (src: string) => string;
   /** Called once if the resolved src actually fails to load -- see EditorProviderProps.onEmbedError. */
   onEmbedError?: (src: string) => void;
+  /** Syntax-colors CodeBlock's text -- see EditorProviderProps.highlightCode / useHighlightCode's own doc comment. */
+  highlightCode?: (code: string, language: string) => string;
   /** Surfaces a mic start/stop button in the floating format toolbar -- pass the object useVoiceTyping({ store: editor.store }) (from the separate `noteloom/voice` entry point) returns; see FloatingToolbarProps.voice for why the explicit `store` is required here. Omit to keep SpeechRecognition-related code out of your bundle entirely. */
   voice?: Record<string, unknown>;
   children?: ReactNode;

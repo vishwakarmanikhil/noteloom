@@ -129,6 +129,43 @@ describe('useFloatingToolbarTrigger: when the toolbar shows', () => {
     collapseSelection(runNode, 0);
     expect(container.querySelector('.be-floating-toolbar')).toBeNull();
   });
+
+  it('never shows for a selection inside a code block -- CodeBlock never reads run marks, so there is nothing meaningful to format', () => {
+    const store = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['c1'], props: {} },
+        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r1'], props: {} },
+      ],
+      runs: [{ id: 'r1', type: 'text', value: 'const x = 1;', marks: {} }],
+    });
+    const { container } = renderHarness(store);
+    const runNode = container.querySelector('[data-run-id="r1"]');
+
+    selectWithinRunNode(runNode, 0, 5); // "const"
+    expect(container.querySelector('.be-floating-toolbar')).toBeNull();
+  });
+
+  it('never shows for a selection spanning a code block and a sibling paragraph', () => {
+    const store = new EditorStore({
+      rootId: 'root',
+      blocks: [
+        { id: 'root', type: 'page', parentId: null, contentIds: ['p1', 'c1'], props: {} },
+        { id: 'p1', type: 'paragraph', parentId: 'root', contentIds: ['r1'], props: {} },
+        { id: 'c1', type: 'code', parentId: 'root', contentIds: ['r2'], props: {} },
+      ],
+      runs: [
+        { id: 'r1', type: 'text', value: 'hello', marks: {} },
+        { id: 'r2', type: 'text', value: 'const x = 1;', marks: {} },
+      ],
+    });
+    const { container } = renderHarness(store);
+    const r1Node = container.querySelector('[data-run-id="r1"]');
+    const r2Node = container.querySelector('[data-run-id="r2"]');
+
+    selectAcrossRunNodes(r1Node, 2, r2Node, 5);
+    expect(container.querySelector('.be-floating-toolbar')).toBeNull();
+  });
 });
 
 describe('FloatingToolbar: applying marks over a same-block selection', () => {
