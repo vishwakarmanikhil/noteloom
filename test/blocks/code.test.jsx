@@ -353,7 +353,7 @@ describe("code block: syntax-highlight overlay (EditorProvider's highlightCode p
     expect(overlay.textContent).toBe('const x = 1;');
   });
 
-  it('the overlay is NOT a <code> element (regression: .be-code-block-pre code { position: relative } would otherwise beat .be-code-block-highlight\'s position: absolute by CSS specificity, pulling the overlay back into normal document flow and rendering it as a second, stacked copy of the code, pushed above the real editable text instead of layered behind it)', () => {
+  it("the overlay is NOT a <code> element (regression: .be-code-block-pre code { position: relative } would otherwise beat .be-code-block-highlight's position: absolute by CSS specificity, pulling the overlay back into normal document flow and rendering it as a second, stacked copy of the code, pushed above the real editable text instead of layered behind it)", () => {
     const store = new EditorStore(makeDoc());
     const highlightCode = (code) => code;
     const { container } = renderDoc(store, { highlightCode });

@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { EditorStore } from '../../src/store/EditorStore.js';
 import { History } from '../../src/store/history.js';
 import { updateRun } from '../../src/store/operations.js';
@@ -112,7 +112,16 @@ describe('createAutoVersionHistory', () => {
       await sleep(80);
     }
 
-    expect(await listDocumentVersions(docId)).toHaveLength(2);
+    // finalizeWindow's own prune step (list, then delete each excess
+    // version) is itself async — a fixed sleep only guarantees the idle
+    // timer FIRED, not that those trailing IndexedDB writes finished before
+    // this assertion runs, so under enough parallel test-suite load the
+    // last version's delete can still be in flight here, intermittently
+    // observing 3 versions instead of 2. Poll instead of trusting one more
+    // fixed sleep to be "enough" margin.
+    await vi.waitFor(async () => {
+      expect(await listDocumentVersions(docId)).toHaveLength(2);
+    });
 
     auto.stop();
   });

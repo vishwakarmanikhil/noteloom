@@ -110,21 +110,24 @@ export function useBlockRangeDrag(containerRef) {
     document.documentElement.classList.remove('be-block-range-dragging');
   }, []);
 
-  const armDrag = useCallback((blockId, event) => {
-    // Defensive reset first: if a previous drag's mouseup never reached this
-    // document (button released outside the window — mouseup isn't
-    // delivered to the page at all in that case, only the 'mouseup'
-    // document listener below would normally clear this state), the old
-    // drag's user-select:none class would otherwise stay stuck on
-    // <html> forever, silently breaking both native text selection and
-    // Ctrl+A everywhere in the editor until reload. Starting every new
-    // press from a clean slate bounds the breakage to at most one missed
-    // release instead of the rest of the session.
-    handleMouseUp();
-    anchorIdRef.current = blockId;
-    isArmedRef.current = false;
-    startPointRef.current = { x: event.clientX, y: event.clientY };
-  }, [handleMouseUp]);
+  const armDrag = useCallback(
+    (blockId, event) => {
+      // Defensive reset first: if a previous drag's mouseup never reached this
+      // document (button released outside the window — mouseup isn't
+      // delivered to the page at all in that case, only the 'mouseup'
+      // document listener below would normally clear this state), the old
+      // drag's user-select:none class would otherwise stay stuck on
+      // <html> forever, silently breaking both native text selection and
+      // Ctrl+A everywhere in the editor until reload. Starting every new
+      // press from a clean slate bounds the breakage to at most one missed
+      // release instead of the rest of the session.
+      handleMouseUp();
+      anchorIdRef.current = blockId;
+      isArmedRef.current = false;
+      startPointRef.current = { x: event.clientX, y: event.clientY };
+    },
+    [handleMouseUp],
+  );
 
   const handleMouseDown = useCallback(
     (event) => {
